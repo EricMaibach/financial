@@ -1,0 +1,371 @@
+// Market Divergence Dashboard - Main JavaScript
+
+// Global chart instances
+let charts = {};
+
+// Utility function to format numbers
+function formatNumber(num, decimals = 0) {
+    return num.toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+// Utility function to format currency
+function formatCurrency(num, decimals = 0) {
+    return '$' + formatNumber(num, decimals);
+}
+
+// Utility function to format percentage
+function formatPercentage(num, decimals = 1) {
+    const sign = num >= 0 ? '+' : '';
+    return sign + num.toFixed(decimals) + '%';
+}
+
+// Load chart with error handling
+async function loadChart(chartId, endpoint, chartConfig) {
+    try {
+        const response = await fetch(`/api/chart/${endpoint}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+
+        const ctx = document.getElementById(chartId);
+        if (!ctx) {
+            console.error(`Canvas element not found: ${chartId}`);
+            return;
+        }
+
+        // Destroy existing chart if it exists
+        if (charts[chartId]) {
+            charts[chartId].destroy();
+        }
+
+        // Create chart with provided config and data
+        charts[chartId] = new Chart(ctx, chartConfig(data));
+
+    } catch (error) {
+        console.error(`Error loading chart ${chartId}:`, error);
+    }
+}
+
+// Common chart options
+const commonChartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    interaction: {
+        mode: 'index',
+        intersect: false,
+    },
+    plugins: {
+        legend: {
+            display: true,
+            position: 'top'
+        }
+    }
+};
+
+// Initialize tooltips and popovers
+function initializeBootstrap() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+// Auto-refresh functionality
+function setupAutoRefresh(refreshInterval = 60000) {
+    setInterval(() => {
+        const event = new CustomEvent('refresh-dashboard');
+        document.dispatchEvent(event);
+    }, refreshInterval);
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBootstrap();
+    setupAutoRefresh();
+    updateLastUpdatedTime();
+});
+
+// Reload data functionality
+async function reloadData() {
+    const button = document.getElementById('reload-data-btn');
+    const originalContent = button.innerHTML;
+
+    try {
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Reloading...';
+
+        // Trigger reload
+        const response = await fetch('/api/reload-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.status === 409) {
+            alert('Data reload is already in progress. Please wait...');
+            button.disabled = false;
+            button.innerHTML = originalContent;
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Failed to start reload');
+        }
+
+        // Poll for completion
+        const pollInterval = setInterval(async () => {
+            try {
+                const statusResponse = await fetch('/api/reload-status');
+                const status = await statusResponse.json();
+
+                if (!status.in_progress) {
+                    clearInterval(pollInterval);
+
+                    if (status.error) {
+                        alert(`Reload failed: ${status.error}`);
+                        button.disabled = false;
+                        button.innerHTML = originalContent;
+                    } else {
+                        // Success - refresh the page
+                        button.innerHTML = '<i class="bi bi-check-circle"></i> Reload Complete!';
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    }
+                }
+            } catch (error) {
+                clearInterval(pollInterval);
+                console.error('Error checking reload status:', error);
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        }, 2000); // Poll every 2 seconds
+
+    } catch (error) {
+        console.error('Error reloading data:', error);
+        alert(`Failed to reload data: ${error.message}`);
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    }
+}
+
+// Update last updated time
+async function updateLastUpdatedTime() {
+    try {
+        const response = await fetch('/api/reload-status');
+        const status = await response.json();
+
+        const updateTimeElement = document.getElementById('update-time');
+        if (updateTimeElement && status.last_reload) {
+            updateTimeElement.textContent = status.last_reload;
+        } else if (updateTimeElement) {
+            updateTimeElement.textContent = 'Never';
+        }
+    } catch (error) {
+        console.error('Error fetching last updated time:', error);
+    }
+}
+
+// Export for use in templates
+window.DashboardUtils = {
+    formatNumber,
+    formatCurrency,
+    formatPercentage,
+    loadChart,
+    commonChartOptions
+};
+
+// Export reload function globally so it can be called from inline onclick
+window.reloadData = reloadData;
+
+// AI Chat Functionality
+const AIChatModule = {
+    chatContainer: null,
+    chatMessages: null,
+    chatInput: null,
+    chatButton: null,
+    sendButton: null,
+    closeButton: null,
+    isOpen: false,
+
+    init() {
+        // Get DOM elements
+        this.chatContainer = document.getElementById('ai-chat-container');
+        this.chatMessages = document.getElementById('ai-chat-messages');
+        this.chatInput = document.getElementById('ai-chat-input');
+        this.chatButton = document.getElementById('ai-chat-button');
+        this.sendButton = document.getElementById('ai-chat-send');
+        this.closeButton = document.getElementById('ai-chat-close');
+
+        if (!this.chatContainer) return;
+
+        // Event listeners
+        this.chatButton.addEventListener('click', () => this.toggleChat());
+        this.closeButton.addEventListener('click', () => this.closeChat());
+        this.sendButton.addEventListener('click', () => this.sendMessage());
+        this.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+
+        // Add welcome message
+        this.addWelcomeMessage();
+    },
+
+    toggleChat() {
+        this.isOpen = !this.isOpen;
+        if (this.isOpen) {
+            this.chatContainer.classList.remove('ai-chat-hidden');
+            this.chatInput.focus();
+        } else {
+            this.chatContainer.classList.add('ai-chat-hidden');
+        }
+    },
+
+    closeChat() {
+        this.isOpen = false;
+        this.chatContainer.classList.add('ai-chat-hidden');
+    },
+
+    addWelcomeMessage() {
+        const welcomeMsg = document.createElement('div');
+        welcomeMsg.className = 'ai-chat-message';
+        welcomeMsg.innerHTML = `
+            <div class="ai-chat-message-label">AI Assistant</div>
+            <div class="ai-chat-message-ai">
+                Hi! I'm your Market AI Assistant. I have access to the latest market data including the historic divergence between gold and credit markets.
+                <br><br>
+                Ask me about:
+                <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+                    <li>What the divergence gap means</li>
+                    <li>Specific metrics (VIX, credit spreads, gold, etc.)</li>
+                    <li>Possible scenarios and outcomes</li>
+                    <li>Historical context</li>
+                </ul>
+            </div>
+        `;
+        this.chatMessages.appendChild(welcomeMsg);
+    },
+
+    async sendMessage() {
+        const message = this.chatInput.value.trim();
+        if (!message) return;
+
+        // Disable input while sending
+        this.chatInput.disabled = true;
+        this.sendButton.disabled = true;
+
+        // Add user message
+        this.addMessage('user', message);
+
+        // Clear input
+        this.chatInput.value = '';
+
+        // Show loading indicator
+        const loadingId = this.addLoadingIndicator();
+
+        try {
+            // Send to API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message })
+            });
+
+            // Remove loading indicator
+            this.removeLoadingIndicator(loadingId);
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to get response');
+            }
+
+            const data = await response.json();
+
+            // Add AI response
+            this.addMessage('ai', data.message);
+
+        } catch (error) {
+            console.error('Chat error:', error);
+            this.removeLoadingIndicator(loadingId);
+            this.addMessage('ai', `Sorry, I encountered an error: ${error.message}. Please make sure the OPENAI_API_KEY environment variable is set.`);
+        } finally {
+            // Re-enable input
+            this.chatInput.disabled = false;
+            this.sendButton.disabled = false;
+            this.chatInput.focus();
+        }
+    },
+
+    addMessage(type, text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'ai-chat-message';
+
+        const label = type === 'user' ? 'You' : 'AI Assistant';
+        const messageClass = type === 'user' ? 'ai-chat-message-user' : 'ai-chat-message-ai';
+
+        msgDiv.innerHTML = `
+            <div class="ai-chat-message-label">${label}</div>
+            <div class="${messageClass}">${this.formatMessage(text)}</div>
+        `;
+
+        this.chatMessages.appendChild(msgDiv);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    },
+
+    formatMessage(text) {
+        // Convert markdown-style formatting to HTML
+        let formatted = text
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+        return formatted;
+    },
+
+    addLoadingIndicator() {
+        const loadingId = 'loading-' + Date.now();
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = loadingId;
+        loadingDiv.className = 'ai-chat-message';
+        loadingDiv.innerHTML = `
+            <div class="ai-chat-message-label">AI Assistant</div>
+            <div class="ai-chat-loading">
+                <div class="ai-chat-loading-dots">
+                    <div class="ai-chat-loading-dot"></div>
+                    <div class="ai-chat-loading-dot"></div>
+                    <div class="ai-chat-loading-dot"></div>
+                </div>
+            </div>
+        `;
+
+        this.chatMessages.appendChild(loadingDiv);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+
+        return loadingId;
+    },
+
+    removeLoadingIndicator(loadingId) {
+        const loadingDiv = document.getElementById(loadingId);
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+    }
+};
+
+// Initialize AI chat when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    AIChatModule.init();
+});

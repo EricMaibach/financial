@@ -1,0 +1,1069 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Market Divergence Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+            Market Divergence Dashboard
+        </h1>
+        <p class="lead">Tracking the historic divergence between credit markets, safe havens, and equities</p>
+    </div>
+</div>
+
+<!-- Crisis Warning Score -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-shield-exclamation"></i> Crisis Warning Score
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center">
+                        <div class="crisis-score-container">
+                            <div class="crisis-score" id="crisis-score">--</div>
+                            <div class="crisis-score-label">/ 100</div>
+                        </div>
+                        <div class="crisis-status mt-2" id="crisis-status">Loading...</div>
+                    </div>
+                    <div class="col-md-8">
+                        <h5>Active Warnings:</h5>
+                        <ul id="warnings-list" class="list-unstyled">
+                            <li><i class="bi bi-hourglass-split"></i> Loading warnings...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Movers Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightning-fill"></i> Top Movers (5 Day) - Biggest Unusual Moves
+                </h5>
+            </div>
+            <div class="card-body py-2">
+                <div class="row" id="top-movers-container">
+                    <div class="col text-center text-muted">Loading top movers...</div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Ranked by z-score: how unusual the 5-day move is relative to historical volatility.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Row 1 -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/divergence_gap" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">DIVERGENCE GAP</h6>
+                    <h2 class="mb-0" id="divergence-gap">-- bp</h2>
+                    <small class="text-muted">
+                        <span id="divergence-change-5d">--</span> bp (5d) / <span id="divergence-change-30d">--</span> bp (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge bg-warning" id="divergence-status">EXTREME</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/hy_spread" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">HY CREDIT SPREADS</h6>
+                    <h2 class="mb-0" id="hy-spread">-- bp</h2>
+                    <small class="text-muted">
+                        <span id="hy-change-5d">--</span> bp (5d) / <span id="hy-change-30d">--</span> bp (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="hy-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/gold_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">GOLD PRICE</h6>
+                    <h2 class="mb-0" id="gold-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="gold-change-5d">--</span>% (5d) / <span id="gold-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge bg-warning">ELEVATED</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/vix" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">VIX (FEAR INDEX)</h6>
+                    <h2 class="mb-0" id="vix-level">--</h2>
+                    <small class="text-muted">
+                        <span id="vix-change-5d">--</span>% (5d) / <span id="vix-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="vix-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Key Metrics Row 2 -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/bitcoin_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">BITCOIN</h6>
+                    <h2 class="mb-0" id="btc-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="btc-change-5d">--</span>% (5d) / <span id="btc-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted"><span id="btc-decline" class="text-danger">--</span> from <span id="btc-peak">$--</span> peak</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/sp500" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">S&P 500</h6>
+                    <h2 class="mb-0" id="spy-price">--</h2>
+                    <small class="text-muted">
+                        <span id="spy-change-5d">--</span>% (5d) / <span id="spy-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge bg-secondary">Tracking</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/ccc_spread" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">CCC/HY RATIO</h6>
+                    <h2 class="mb-0"><span id="ccc-ratio">--</span>x</h2>
+                    <small class="text-muted">
+                        <span id="ccc-change-5d">--</span> (5d) / <span id="ccc-change-30d">--</span> (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge bg-info">Monitoring</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/metric/divergence_gap" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">GOLD-IMPLIED SPREAD</h6>
+                    <h2 class="mb-0" id="implied-spread">-- bp</h2>
+                    <small class="text-muted">What HY "should be" based on gold</small>
+                    <div class="mt-2">
+                        <span class="badge bg-danger">Crisis Level</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Market Concentration Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart-fill"></i> AI/Tech Market Concentration
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <a href="/explorer?metric=smh_spy_ratio" class="metric-link">
+                            <div class="card h-100">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted mb-1">SEMICONDUCTOR / SPY</h6>
+                                    <h3 class="mb-0" id="smh-spy-ratio">--</h3>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <span id="smh-spy-change-5d">--</span>% (5d) / <span id="smh-spy-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="smh-spy-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="/explorer?metric=xlk_spy_ratio" class="metric-link">
+                            <div class="card h-100">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted mb-1">TECH SECTOR / SPY</h6>
+                                    <h3 class="mb-0" id="xlk-spy-ratio">--</h3>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <span id="xlk-spy-change-5d">--</span>% (5d) / <span id="xlk-spy-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="xlk-spy-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="/explorer?metric=growth_value_ratio" class="metric-link">
+                            <div class="card h-100">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted mb-1">GROWTH / VALUE</h6>
+                                    <h3 class="mb-0" id="growth-value-ratio">--</h3>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <span id="growth-value-change-5d">--</span>% (5d) / <span id="growth-value-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="growth-value-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Higher ratios = more concentration in AI/tech sectors. Extreme readings may indicate bubble-like conditions.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yen Carry Trade -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-yen"></i> Yen Carry Trade Monitor
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a href="/explorer?metric=usdjpy_price" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">USD/JPY Exchange Rate</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="usdjpy-value">--</h3>
+                                        <small class="text-muted">
+                                            <span id="usdjpy-change-5d">--</span>% (5d) / <span id="usdjpy-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="usdjpy-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="/explorer?metric=japan_10y_yield" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Japan 10Y Government Bond Yield</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="japan-10y-value">--</h3>
+                                        <small class="text-muted">
+                                            <span id="japan-10y-change-5d">--</span>% (5d) / <span id="japan-10y-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="japan-10y-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Carry trade risk: Investors borrow cheap yen to invest in higher-yielding assets. Sharp yen strengthening (USD/JPY drop) or rising JGB yields can trigger violent unwinds.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Economic Indicators -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart-line-fill"></i> Economic Indicators
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="/explorer?metric=consumer_confidence" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Consumer Confidence</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="consumer-confidence-value">--</h3>
+                                        <span class="badge" id="consumer-confidence-percentile">--</span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <span id="consumer-confidence-change">--</span>% (30d)
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="/explorer?metric=m2_money_supply" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">M2 Money Supply</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="m2-value">--</h3>
+                                        <span class="badge" id="m2-percentile">--</span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <span id="m2-yoy-change">--</span>% YoY
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="/explorer?metric=cpi" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">CPI (Inflation)</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="cpi-value">--</h3>
+                                        <span class="badge" id="cpi-percentile">--</span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <span id="cpi-yoy-change">--</span>% YoY
+                                    </small>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Key economic health indicators. Consumer Confidence leads spending. M2 tracks Fed liquidity. CPI measures inflation pressure.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Markets -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up-arrow"></i> Prediction Markets
+                    <small class="ms-2 opacity-75">(via Kalshi)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row" id="prediction-markets-container">
+                    <div class="col text-center text-muted">Loading prediction markets...</div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Real-money prediction market probabilities. Data from <a href="https://kalshi.com" target="_blank" class="text-decoration-none">Kalshi</a> (CFTC-regulated).
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Divergence Gap Over Time
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="divergence-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    The gap between what gold implies credit spreads should be vs actual spreads.
+                    Gap widening = divergence getting worse.
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-signpost-split"></i> Scenario Probabilities
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="scenario-meter mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>Credit Catches Down</strong>
+                        <span class="badge bg-danger">65-70%</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 67.5%"
+                             aria-valuenow="67.5" aria-valuemin="0" aria-valuemax="100">
+                            Most Likely
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scenario-meter mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>Messy Middle</strong>
+                        <span class="badge bg-warning">25-30%</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 27.5%"
+                             aria-valuenow="27.5" aria-valuemin="0" aria-valuemax="100">
+                            Possible
+                        </div>
+                    </div>
+                </div>
+
+                <div class="scenario-meter mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>Soft Landing</strong>
+                        <span class="badge bg-success">5-10%</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 7.5%"
+                             aria-valuenow="7.5" aria-valuemin="0" aria-valuemax="100">
+                            Unlikely
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <p class="mb-0"><small class="text-muted">
+                    Updated probabilities based on Bitcoin crash from $120k and persistent gold strength.
+                </small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Status -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-check"></i> Market Regime Assessment
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle-fill"></i> EXTREME DIVERGENCE REGIME
+                    </h5>
+                    <hr>
+                    <p class="mb-0">
+                        <strong>Credit/Equity:</strong> "Everything is fine" - Spreads at 276 bp, VIX at 14.49<br>
+                        <strong>Gold:</strong> "Structural crisis ahead" - At $4,145 (89th percentile)<br>
+                        <strong>Bitcoin:</strong> "Liquidity crisis" - Crashed 24% from $120k peak<br>
+                        <strong>Assessment:</strong> One of these markets is catastrophically wrong. Resolution likely Q2-Q4 2026.
+                    </p>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6>What to Watch This Week:</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success"></i> HY spreads breaking above 300 bp</li>
+                            <li><i class="bi bi-check-circle text-success"></i> VIX spiking above 17</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Gold breaking $4,500</li>
+                            <li><i class="bi bi-check-circle text-success"></i> Divergence gap widening further</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Base Case Timeline:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Q1 2026:</strong> Divergence persists (current)</li>
+                            <li><strong>Q2 2026:</strong> AI cracks, spreads widen to 320-400 bp</li>
+                            <li><strong>Q3 2026:</strong> Credit stress obvious (500-650 bp)</li>
+                            <li><strong>Q4 2026:</strong> Peak crisis, spreads 700-900 bp</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let recessionData = []; // Store recession periods for shading
+
+// Fetch recession data on load
+fetch('/api/recessions')
+    .then(response => response.json())
+    .then(data => {
+        recessionData = data;
+    })
+    .catch(error => {
+        console.error('Error loading recession data:', error);
+    });
+
+// Generate recession annotations for chart
+function getRecessionAnnotations(startDate, endDate) {
+    if (!recessionData || recessionData.length === 0) return {};
+
+    const chartStart = new Date(startDate);
+    const chartEnd = new Date(endDate);
+    const annotations = {};
+
+    recessionData.forEach((recession, idx) => {
+        const recStart = new Date(recession.start_date);
+        const recEnd = new Date(recession.end_date);
+
+        // Check if recession overlaps with chart date range
+        if (recEnd >= chartStart && recStart <= chartEnd) {
+            // Clamp to chart boundaries
+            const displayStart = recStart < chartStart ? chartStart : recStart;
+            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
+
+            annotations[`recession_${idx}`] = {
+                type: 'box',
+                xMin: displayStart.toISOString().split('T')[0],
+                xMax: displayEnd.toISOString().split('T')[0],
+                backgroundColor: 'rgba(128, 128, 128, 0.15)',
+                borderWidth: 0,
+                label: {
+                    display: false
+                }
+            };
+        }
+    });
+
+    return annotations;
+}
+
+// Load dashboard data
+async function loadDashboard() {
+    try {
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+
+        // Update timestamp
+        document.getElementById('update-time').textContent = data.timestamp;
+
+        // Update crisis score
+        if (data.metrics.crisis_score !== undefined) {
+            const score = data.metrics.crisis_score;
+            document.getElementById('crisis-score').textContent = score;
+
+            let status = '';
+            let statusClass = '';
+            if (score >= 75) {
+                status = '🔴 EXTREME WARNING';
+                statusClass = 'text-danger';
+            } else if (score >= 60) {
+                status = '🟠 HIGH WARNING';
+                statusClass = 'text-warning';
+            } else if (score >= 40) {
+                status = '🟡 MODERATE WARNING';
+                statusClass = 'text-info';
+            } else {
+                status = '🟢 LOW WARNING';
+                statusClass = 'text-success';
+            }
+            document.getElementById('crisis-status').innerHTML = `<h5 class="${statusClass}">${status}</h5>`;
+        }
+
+        // Update warnings
+        if (data.warnings && data.warnings.length > 0) {
+            const warningsList = document.getElementById('warnings-list');
+            warningsList.innerHTML = data.warnings.map(w =>
+                `<li><i class="bi bi-exclamation-triangle-fill text-danger"></i> ${w}</li>`
+            ).join('');
+        }
+
+        // Update top movers
+        if (data.top_movers && data.top_movers.length > 0) {
+            const container = document.getElementById('top-movers-container');
+            container.innerHTML = data.top_movers.map((mover, idx) => {
+                const isPositive = mover.change_5d >= 0;
+                const changeSign = isPositive ? '+' : '';
+                const changeColor = isPositive ? 'text-success' : 'text-danger';
+                const arrow = isPositive ? 'bi-arrow-up-right' : 'bi-arrow-down-right';
+
+                // Format the change value
+                let changeDisplay;
+                if (mover.unit === 'bp') {
+                    changeDisplay = `${changeSign}${mover.change_5d} bp`;
+                } else {
+                    changeDisplay = `${changeSign}${mover.change_5d.toFixed(1)}%`;
+                }
+
+                // Z-score badge color
+                const absZ = Math.abs(mover.z_score);
+                const zBadgeClass = absZ >= 2.5 ? 'bg-danger' : absZ >= 2 ? 'bg-warning' : 'bg-secondary';
+
+                return `
+                    <div class="col">
+                        <a href="${mover.link}" class="text-decoration-none">
+                            <div class="card h-100 border-0 bg-light">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold text-dark">${mover.name}</span>
+                                        <span class="badge ${zBadgeClass}">${mover.z_score > 0 ? '+' : ''}${mover.z_score}σ</span>
+                                    </div>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <i class="bi ${arrow} ${changeColor} me-1"></i>
+                                        <span class="${changeColor} fw-bold">${changeDisplay}</span>
+                                        <span class="text-muted ms-1">(5d)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update metrics
+        if (data.metrics.divergence) {
+            document.getElementById('divergence-gap').textContent = `${data.metrics.divergence.gap} bp`;
+            document.getElementById('implied-spread').textContent = `${data.metrics.divergence.gold_implied_spread} bp`;
+            document.getElementById('divergence-change-5d').textContent =
+                (data.metrics.divergence.gap_change_5d >= 0 ? '+' : '') + data.metrics.divergence.gap_change_5d;
+            document.getElementById('divergence-change-30d').textContent =
+                (data.metrics.divergence.gap_change_30d >= 0 ? '+' : '') + data.metrics.divergence.gap_change_30d;
+        }
+
+        if (data.metrics.hy_spread) {
+            document.getElementById('hy-spread').textContent = `${data.metrics.hy_spread.current} bp`;
+            document.getElementById('hy-change-5d').textContent =
+                (data.metrics.hy_spread.change_5d >= 0 ? '+' : '') + data.metrics.hy_spread.change_5d;
+            document.getElementById('hy-change-30d').textContent =
+                (data.metrics.hy_spread.change_30d >= 0 ? '+' : '') + data.metrics.hy_spread.change_30d;
+
+            const hyStatus = document.getElementById('hy-status');
+            if (data.metrics.hy_spread.status === 'tight') {
+                hyStatus.textContent = 'TIGHT';
+                hyStatus.className = 'badge bg-danger';
+            } else if (data.metrics.hy_spread.status === 'normal') {
+                hyStatus.textContent = 'NORMAL';
+                hyStatus.className = 'badge bg-success';
+            } else {
+                hyStatus.textContent = 'WIDE';
+                hyStatus.className = 'badge bg-warning';
+            }
+        }
+
+        if (data.metrics.gold) {
+            document.getElementById('gold-price').textContent = `$${data.metrics.gold.price.toLocaleString()}`;
+            document.getElementById('gold-change-5d').textContent =
+                (data.metrics.gold.change_5d >= 0 ? '+' : '') + data.metrics.gold.change_5d.toFixed(1);
+            document.getElementById('gold-change-30d').textContent =
+                (data.metrics.gold.change_30d >= 0 ? '+' : '') + data.metrics.gold.change_30d.toFixed(1);
+        }
+
+        if (data.metrics.vix) {
+            document.getElementById('vix-level').textContent = data.metrics.vix.current;
+            document.getElementById('vix-change-5d').textContent =
+                (data.metrics.vix.change_5d >= 0 ? '+' : '') + data.metrics.vix.change_5d.toFixed(1);
+            document.getElementById('vix-change-30d').textContent =
+                (data.metrics.vix.change_30d >= 0 ? '+' : '') + data.metrics.vix.change_30d.toFixed(1);
+
+            const vixStatus = document.getElementById('vix-status');
+            if (data.metrics.vix.status === 'low') {
+                vixStatus.textContent = 'COMPLACENCY';
+                vixStatus.className = 'badge bg-warning';
+            } else if (data.metrics.vix.status === 'normal') {
+                vixStatus.textContent = 'NORMAL';
+                vixStatus.className = 'badge bg-success';
+            } else {
+                vixStatus.textContent = 'ELEVATED';
+                vixStatus.className = 'badge bg-danger';
+            }
+        }
+
+        if (data.metrics.bitcoin) {
+            document.getElementById('btc-price').textContent = `$${data.metrics.bitcoin.price.toLocaleString()}`;
+            document.getElementById('btc-peak').textContent = `$${data.metrics.bitcoin.peak.toLocaleString()}`;
+            document.getElementById('btc-decline').textContent = `${data.metrics.bitcoin.decline_from_peak.toFixed(1)}%`;
+            document.getElementById('btc-change-5d').textContent =
+                (data.metrics.bitcoin.change_5d >= 0 ? '+' : '') + data.metrics.bitcoin.change_5d.toFixed(1);
+            document.getElementById('btc-change-30d').textContent =
+                (data.metrics.bitcoin.change_30d >= 0 ? '+' : '') + data.metrics.bitcoin.change_30d.toFixed(1);
+        }
+
+        if (data.metrics.spy) {
+            document.getElementById('spy-price').textContent = `$${data.metrics.spy.price.toFixed(2)}`;
+            document.getElementById('spy-change-5d').textContent =
+                (data.metrics.spy.change_5d >= 0 ? '+' : '') + data.metrics.spy.change_5d.toFixed(2);
+            document.getElementById('spy-change-30d').textContent =
+                (data.metrics.spy.change_30d >= 0 ? '+' : '') + data.metrics.spy.change_30d.toFixed(2);
+        }
+
+        if (data.metrics.ccc_hy_ratio) {
+            document.getElementById('ccc-ratio').textContent = data.metrics.ccc_hy_ratio.current.toFixed(2);
+            document.getElementById('ccc-change-5d').textContent =
+                (data.metrics.ccc_hy_ratio.change_5d >= 0 ? '+' : '') + data.metrics.ccc_hy_ratio.change_5d.toFixed(2);
+            document.getElementById('ccc-change-30d').textContent =
+                (data.metrics.ccc_hy_ratio.change_30d >= 0 ? '+' : '') + data.metrics.ccc_hy_ratio.change_30d.toFixed(2);
+        }
+
+        // Update concentration metrics
+        if (data.metrics.concentration) {
+            const conc = data.metrics.concentration;
+
+            if (conc.smh_spy) {
+                document.getElementById('smh-spy-ratio').textContent = conc.smh_spy.current.toFixed(2);
+                document.getElementById('smh-spy-change-5d').textContent =
+                    (conc.smh_spy.change_5d >= 0 ? '+' : '') + conc.smh_spy.change_5d.toFixed(1);
+                document.getElementById('smh-spy-change-30d').textContent =
+                    (conc.smh_spy.change_30d >= 0 ? '+' : '') + conc.smh_spy.change_30d.toFixed(1);
+                const smhBadge = document.getElementById('smh-spy-percentile');
+                smhBadge.textContent = `${conc.smh_spy.percentile.toFixed(0)}%ile`;
+                smhBadge.className = conc.smh_spy.percentile > 80 ? 'badge bg-danger' :
+                                      conc.smh_spy.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            if (conc.xlk_spy) {
+                document.getElementById('xlk-spy-ratio').textContent = conc.xlk_spy.current.toFixed(2);
+                document.getElementById('xlk-spy-change-5d').textContent =
+                    (conc.xlk_spy.change_5d >= 0 ? '+' : '') + conc.xlk_spy.change_5d.toFixed(1);
+                document.getElementById('xlk-spy-change-30d').textContent =
+                    (conc.xlk_spy.change_30d >= 0 ? '+' : '') + conc.xlk_spy.change_30d.toFixed(1);
+                const xlkBadge = document.getElementById('xlk-spy-percentile');
+                xlkBadge.textContent = `${conc.xlk_spy.percentile.toFixed(0)}%ile`;
+                xlkBadge.className = conc.xlk_spy.percentile > 80 ? 'badge bg-danger' :
+                                      conc.xlk_spy.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            if (conc.growth_value) {
+                document.getElementById('growth-value-ratio').textContent = conc.growth_value.current.toFixed(2);
+                document.getElementById('growth-value-change-5d').textContent =
+                    (conc.growth_value.change_5d >= 0 ? '+' : '') + conc.growth_value.change_5d.toFixed(1);
+                document.getElementById('growth-value-change-30d').textContent =
+                    (conc.growth_value.change_30d >= 0 ? '+' : '') + conc.growth_value.change_30d.toFixed(1);
+                const gvBadge = document.getElementById('growth-value-percentile');
+                gvBadge.textContent = `${conc.growth_value.percentile.toFixed(0)}%ile`;
+                gvBadge.className = conc.growth_value.percentile > 80 ? 'badge bg-danger' :
+                                     conc.growth_value.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+        }
+
+        // Update yen carry trade metrics
+        if (data.metrics.carry_trade) {
+            const carry = data.metrics.carry_trade;
+
+            if (carry.usdjpy) {
+                document.getElementById('usdjpy-value').textContent = carry.usdjpy.current.toFixed(2);
+                document.getElementById('usdjpy-change-5d').textContent =
+                    (carry.usdjpy.change_5d >= 0 ? '+' : '') + carry.usdjpy.change_5d.toFixed(1);
+                document.getElementById('usdjpy-change-30d').textContent =
+                    (carry.usdjpy.change_30d >= 0 ? '+' : '') + carry.usdjpy.change_30d.toFixed(1);
+                const usdjpyBadge = document.getElementById('usdjpy-percentile');
+                usdjpyBadge.textContent = `${carry.usdjpy.percentile.toFixed(0)}%ile`;
+                // Lower USD/JPY (stronger yen) = more risk, so invert the warning logic
+                usdjpyBadge.className = carry.usdjpy.percentile < 20 ? 'badge bg-danger' :
+                                        carry.usdjpy.percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            if (carry.japan_10y) {
+                document.getElementById('japan-10y-value').textContent = carry.japan_10y.current.toFixed(2) + '%';
+                document.getElementById('japan-10y-change-5d').textContent =
+                    (carry.japan_10y.change_5d >= 0 ? '+' : '') + carry.japan_10y.change_5d.toFixed(1);
+                document.getElementById('japan-10y-change-30d').textContent =
+                    (carry.japan_10y.change_30d >= 0 ? '+' : '') + carry.japan_10y.change_30d.toFixed(1);
+                const japan10yBadge = document.getElementById('japan-10y-percentile');
+                japan10yBadge.textContent = `${carry.japan_10y.percentile.toFixed(0)}%ile`;
+                // Higher Japan yields = more risk (carry trade unwinding)
+                japan10yBadge.className = carry.japan_10y.percentile > 80 ? 'badge bg-danger' :
+                                          carry.japan_10y.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+        }
+
+        // Update economic indicators
+        if (data.metrics.economic_indicators) {
+            const econ = data.metrics.economic_indicators;
+
+            if (econ.consumer_confidence) {
+                document.getElementById('consumer-confidence-value').textContent = econ.consumer_confidence.current.toFixed(1);
+                document.getElementById('consumer-confidence-change').textContent =
+                    (econ.consumer_confidence.change_30d >= 0 ? '+' : '') + econ.consumer_confidence.change_30d.toFixed(1);
+                const ccBadge = document.getElementById('consumer-confidence-percentile');
+                ccBadge.textContent = `${econ.consumer_confidence.percentile.toFixed(0)}%ile`;
+                // Lower confidence = more warning
+                ccBadge.className = econ.consumer_confidence.percentile < 20 ? 'badge bg-danger' :
+                                    econ.consumer_confidence.percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            if (econ.m2_money_supply) {
+                document.getElementById('m2-value').textContent = '$' + econ.m2_money_supply.current.toFixed(1) + 'T';
+                document.getElementById('m2-yoy-change').textContent =
+                    (econ.m2_money_supply.yoy_change >= 0 ? '+' : '') + econ.m2_money_supply.yoy_change.toFixed(1);
+                const m2Badge = document.getElementById('m2-percentile');
+                m2Badge.textContent = `${econ.m2_money_supply.percentile.toFixed(0)}%ile`;
+                // YoY change is key - negative is very unusual
+                m2Badge.className = econ.m2_money_supply.yoy_change < 0 ? 'badge bg-danger' :
+                                    econ.m2_money_supply.yoy_change > 10 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            if (econ.cpi) {
+                document.getElementById('cpi-value').textContent = econ.cpi.current.toFixed(1);
+                document.getElementById('cpi-yoy-change').textContent =
+                    (econ.cpi.yoy_change >= 0 ? '+' : '') + econ.cpi.yoy_change.toFixed(1);
+                const cpiBadge = document.getElementById('cpi-percentile');
+                cpiBadge.textContent = `${econ.cpi.percentile.toFixed(0)}%ile`;
+                // High inflation = warning
+                cpiBadge.className = econ.cpi.yoy_change > 5 ? 'badge bg-danger' :
+                                    econ.cpi.yoy_change > 3 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
+    }
+}
+
+// Load divergence gap chart
+async function loadDivergenceChart() {
+    try {
+        const response = await fetch('/api/chart/divergence_gap');
+        const data = await response.json();
+
+        // Get recession annotations for the current date range
+        const startDate = data.dates[0];
+        const endDate = data.dates[data.dates.length - 1];
+        const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+        const ctx = document.getElementById('divergence-chart');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.dates,
+                datasets: [
+                    {
+                        label: 'Divergence Gap',
+                        data: data.divergence_gap,
+                        borderColor: 'rgb(220, 53, 69)',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'Gold-Implied Spread',
+                        data: data.implied_spread,
+                        borderColor: 'rgb(255, 193, 7)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Actual HY Spread',
+                        data: data.actual_spread,
+                        borderColor: 'rgb(13, 110, 253)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += context.parsed.y.toFixed(0) + ' bp';
+                                return label;
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: recessionAnnotations
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Credit Spreads (bp)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Divergence Gap (bp)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading divergence chart:', error);
+    }
+}
+
+// Load prediction markets data from Kalshi
+async function loadPredictionMarkets() {
+    try {
+        const response = await fetch('/api/prediction-markets');
+        const data = await response.json();
+
+        const container = document.getElementById('prediction-markets-container');
+
+        if (data.error) {
+            container.innerHTML = `<div class="col text-center text-muted">Unable to load prediction markets</div>`;
+            return;
+        }
+
+        let html = '';
+
+        // Recession probability
+        if (data.recession && data.recession.probability !== null) {
+            const prob = (data.recession.probability * 100).toFixed(0);
+            const probColor = prob > 50 ? 'text-danger' : prob > 30 ? 'text-warning' : 'text-success';
+            html += `
+                <div class="col-md-6 mb-2">
+                    <div class="card h-100">
+                        <div class="card-body py-3">
+                            <h6 class="text-muted mb-1">RECESSION PROBABILITY</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h3 class="mb-0 ${probColor}">${prob}%</h3>
+                                <span class="badge bg-secondary">2026</span>
+                            </div>
+                            <small class="text-muted">${data.recession.title}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Large rate cut probability
+        if (data.large_rate_cut && data.large_rate_cut.probability !== null) {
+            const prob = (data.large_rate_cut.probability * 100).toFixed(0);
+            const probColor = prob > 50 ? 'text-success' : prob > 30 ? 'text-warning' : 'text-secondary';
+            html += `
+                <div class="col-md-6 mb-2">
+                    <div class="card h-100">
+                        <div class="card-body py-3">
+                            <h6 class="text-muted mb-1">LARGE FED CUT (>25bp)</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h3 class="mb-0 ${probColor}">${prob}%</h3>
+                                <span class="badge bg-info">2026</span>
+                            </div>
+                            <small class="text-muted">${data.large_rate_cut.title}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // If we have data, show it; otherwise show message
+        if (html) {
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `<div class="col text-center text-muted">No prediction market data available</div>`;
+        }
+
+    } catch (error) {
+        console.error('Error loading prediction markets:', error);
+        document.getElementById('prediction-markets-container').innerHTML =
+            `<div class="col text-center text-muted">Error loading prediction markets</div>`;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboard();
+    loadDivergenceChart();
+    loadPredictionMarkets();
+
+    // Refresh every 60 seconds
+    setInterval(loadDashboard, 60000);
+    // Refresh prediction markets every 15 minutes (they update less frequently)
+    setInterval(loadPredictionMarkets, 900000);
+});
+</script>
+{% endblock %}

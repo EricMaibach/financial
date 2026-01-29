@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Safe Havens - Market Divergence Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-shield-check"></i> Safe Havens & Alternative Assets
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">🏆 Gold - The Warning Signal</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="display-4" id="sh-gold-price">$--</h2>
+                <p class="mb-0">Gold at $4,145 pricing structural crisis ahead</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">₿ Bitcoin - Liquidity Gauge</h5>
+            </div>
+            <div class="card-body">
+                <h2 class="display-4" id="sh-btc-price">$--</h2>
+                <p class="text-danger fw-bold mb-0" id="sh-btc-decline">Down -- from $120k peak</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Gold vs Bitcoin - The Divergence</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="gold-bitcoin-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    Gold rallying while Bitcoin crashed 24% from peak shows liquidity tight despite safe-haven demand.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-warning">
+            <h5>🔍 Key Insight: Bitcoin's 24% Crash is the Leading Indicator</h5>
+            <p class="mb-0">
+                Bitcoin peaked at $120k three months ago and crashed 24% despite Fed easing.
+                This is the early warning that credit spreads typically follow 6-12 months later.
+                <strong>Timeline: Credit stress expected Q2-Q3 2026.</strong>
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let recessionData = []; // Store recession periods for shading
+
+// Fetch recession data on load
+fetch('/api/recessions')
+    .then(response => response.json())
+    .then(data => {
+        recessionData = data;
+    })
+    .catch(error => {
+        console.error('Error loading recession data:', error);
+    });
+
+// Generate recession annotations for chart
+function getRecessionAnnotations(startDate, endDate) {
+    if (!recessionData || recessionData.length === 0) return {};
+
+    const chartStart = new Date(startDate);
+    const chartEnd = new Date(endDate);
+    const annotations = {};
+
+    recessionData.forEach((recession, idx) => {
+        const recStart = new Date(recession.start_date);
+        const recEnd = new Date(recession.end_date);
+
+        // Check if recession overlaps with chart date range
+        if (recEnd >= chartStart && recStart <= chartEnd) {
+            // Clamp to chart boundaries
+            const displayStart = recStart < chartStart ? chartStart : recStart;
+            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
+
+            annotations[`recession_${idx}`] = {
+                type: 'box',
+                xMin: displayStart.toISOString().split('T')[0],
+                xMax: displayEnd.toISOString().split('T')[0],
+                backgroundColor: 'rgba(128, 128, 128, 0.15)',
+                borderWidth: 0,
+                label: {
+                    display: false
+                }
+            };
+        }
+    });
+
+    return annotations;
+}
+
+async function loadSafeHavensData() {
+    const response = await fetch('/api/dashboard');
+    const data = await response.json();
+
+    if (data.metrics.gold) {
+        document.getElementById('sh-gold-price').textContent = `$${data.metrics.gold.price.toLocaleString()}`;
+    }
+
+    if (data.metrics.bitcoin) {
+        document.getElementById('sh-btc-price').textContent = `$${data.metrics.bitcoin.price.toLocaleString()}`;
+        document.getElementById('sh-btc-decline').textContent =
+            `Down ${Math.abs(data.metrics.bitcoin.decline_from_peak)}% from $${data.metrics.bitcoin.peak.toLocaleString()} peak`;
+    }
+}
+
+async function loadGoldBitcoinChart() {
+    const response = await fetch('/api/chart/gold_bitcoin');
+    const data = await response.json();
+
+    // Get recession annotations for the current date range
+    const startDate = data.dates[0];
+    const endDate = data.dates[data.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+    new Chart(document.getElementById('gold-bitcoin-chart'), {
+        type: 'line',
+        data: {
+            labels: data.dates,
+            datasets: [
+                {
+                    label: 'Gold (Spot proxy)',
+                    data: data.gold,
+                    borderColor: 'rgb(255, 193, 7)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 3,
+                    yAxisID: 'y',
+                    fill: true
+                },
+                {
+                    label: 'Bitcoin',
+                    data: data.bitcoin,
+                    borderColor: 'rgb(255, 107, 0)',
+                    borderWidth: 2,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                annotation: {
+                    annotations: recessionAnnotations
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    title: { display: true, text: 'Gold Price ($)' }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    title: { display: true, text: 'Bitcoin Price ($)' },
+                    grid: { drawOnChartArea: false }
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSafeHavensData();
+    loadGoldBitcoinChart();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}Credit Markets - Market Divergence Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-bank"></i> Credit Markets
+        </h1>
+        <p class="lead">Tracking credit spreads, ETF performance, and corporate debt markets</p>
+    </div>
+</div>
+
+<!-- Current Status -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">HIGH-YIELD SPREADS</h6>
+                <h1 class="display-4 mb-0" id="credit-hy-spread">-- bp</h1>
+                <p class="text-muted mb-0">
+                    <span id="credit-hy-change" class="fw-bold">--</span> (30d)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">INVESTMENT GRADE</h6>
+                <h1 class="display-4 mb-0" id="credit-ig-spread">-- bp</h1>
+                <p class="text-muted mb-0">Extremely tight</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted">CCC/HY RATIO</h6>
+                <h1 class="display-4 mb-0"><span id="credit-ccc-ratio">--</span>x</h1>
+                <p class="text-muted mb-0">Distressed lagging</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Credit Spreads Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-down"></i> Credit Spreads Over Time
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="credit-spreads-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    Lower spreads = less risk priced in. Current levels extremely tight historically.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">⚠️ Warning Signs</h5>
+            </div>
+            <div class="card-body">
+                <ul>
+                    <li><strong>HY at 276 bp:</strong> Tightest in dataset (0th percentile)</li>
+                    <li><strong>IG at 79 bp:</strong> Rock-solid confidence in quality debt</li>
+                    <li><strong>Tightening trend:</strong> Spreads still compressing despite warnings</li>
+                    <li><strong>CCC lagging:</strong> Quality bifurcation emerging</li>
+                </ul>
+                <hr>
+                <p class="mb-0">
+                    <strong>Implication:</strong> Credit markets pricing ZERO systemic risk.
+                    Historically, this level of complacency precedes sharp widening.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">📊 What to Watch</h5>
+            </div>
+            <div class="card-body">
+                <h6>Critical Levels:</h6>
+                <ul>
+                    <li><strong>300 bp:</strong> First warning (early widening)</li>
+                    <li><strong>350 bp:</strong> Clear deterioration beginning</li>
+                    <li><strong>500 bp:</strong> Significant stress</li>
+                    <li><strong>800+ bp:</strong> Crisis mode</li>
+                </ul>
+                <hr>
+                <p class="mb-0">
+                    <strong>Expected:</strong> Spreads begin widening in Q2 2026 (6-9 months from Bitcoin crash).
+                    Target: 320-400 bp by June 2026.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ETF Performance -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-bar-chart-line"></i> Credit ETF Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ETF</th>
+                                <th>Name</th>
+                                <th>Price</th>
+                                <th>30-Day</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="credit-etf-table">
+                            <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let recessionData = []; // Store recession periods for shading
+
+// Fetch recession data on load
+fetch('/api/recessions')
+    .then(response => response.json())
+    .then(data => {
+        recessionData = data;
+    })
+    .catch(error => {
+        console.error('Error loading recession data:', error);
+    });
+
+// Generate recession annotations for chart
+function getRecessionAnnotations(startDate, endDate) {
+    if (!recessionData || recessionData.length === 0) return {};
+
+    const chartStart = new Date(startDate);
+    const chartEnd = new Date(endDate);
+    const annotations = {};
+
+    recessionData.forEach((recession, idx) => {
+        const recStart = new Date(recession.start_date);
+        const recEnd = new Date(recession.end_date);
+
+        // Check if recession overlaps with chart date range
+        if (recEnd >= chartStart && recStart <= chartEnd) {
+            // Clamp to chart boundaries
+            const displayStart = recStart < chartStart ? chartStart : recStart;
+            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
+
+            annotations[`recession_${idx}`] = {
+                type: 'box',
+                xMin: displayStart.toISOString().split('T')[0],
+                xMax: displayEnd.toISOString().split('T')[0],
+                backgroundColor: 'rgba(128, 128, 128, 0.15)',
+                borderWidth: 0,
+                label: {
+                    display: false
+                }
+            };
+        }
+    });
+
+    return annotations;
+}
+
+// Load credit data
+async function loadCreditData() {
+    try {
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+
+        if (data.metrics.hy_spread) {
+            document.getElementById('credit-hy-spread').textContent = `${data.metrics.hy_spread.current} bp`;
+            document.getElementById('credit-hy-change').textContent =
+                (data.metrics.hy_spread.change_30d >= 0 ? '+' : '') + data.metrics.hy_spread.change_30d + ' bp';
+        }
+
+        if (data.metrics.ccc_hy_ratio) {
+            document.getElementById('credit-ccc-ratio').textContent = data.metrics.ccc_hy_ratio.toFixed(2);
+        }
+
+        // Update ETF table
+        const etfData = [
+            { ticker: 'HYG', name: 'High Yield Bond', price: '--', change: '--', status: 'Tracking' },
+            { ticker: 'LQD', name: 'Investment Grade', price: '--', change: '--', status: 'Tracking' },
+            { ticker: 'BKLN', name: 'Leveraged Loans', price: '--', change: '--', status: 'Tracking' }
+        ];
+
+        const tableBody = document.getElementById('credit-etf-table');
+        tableBody.innerHTML = etfData.map(etf => `
+            <tr>
+                <td><strong>${etf.ticker}</strong></td>
+                <td>${etf.name}</td>
+                <td>${etf.price}</td>
+                <td>${etf.change}</td>
+                <td><span class="badge bg-secondary">${etf.status}</span></td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Error loading credit data:', error);
+    }
+}
+
+// Load credit spreads chart
+async function loadCreditChart() {
+    try {
+        const response = await fetch('/api/chart/credit_spreads');
+        const data = await response.json();
+
+        // Get recession annotations for the current date range
+        const startDate = data.dates[0];
+        const endDate = data.dates[data.dates.length - 1];
+        const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+        const ctx = document.getElementById('credit-spreads-chart');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.dates,
+                datasets: [
+                    {
+                        label: 'High Yield',
+                        data: data.hy_spread,
+                        borderColor: 'rgb(220, 53, 69)',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 3,
+                        fill: true
+                    },
+                    {
+                        label: 'Investment Grade',
+                        data: data.ig_spread,
+                        borderColor: 'rgb(13, 110, 253)',
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: 'CCC-Rated',
+                        data: data.ccc_spread,
+                        borderColor: 'rgb(255, 193, 7)',
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(0) + ' bp';
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: recessionAnnotations
+                    }
+                },
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Spread (basis points)'
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading credit chart:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCreditData();
+    loadCreditChart();
+
+    setInterval(loadCreditData, 60000);
+});
+</script>
+{% endblock %}

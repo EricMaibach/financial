@@ -1,0 +1,794 @@
+{% extends "base.html" %}
+
+{% block title %}Metric Explorer - Market Divergence Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Metric Explorer</li>
+                </ol>
+            </nav>
+            <h1 class="display-4 mb-3">Metric Explorer</h1>
+            <p class="lead">Select any metric to view its complete historical data and trends.</p>
+        </div>
+    </div>
+
+    <!-- Metric Selector -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-search"></i> Select Metric</h5>
+                </div>
+                <div class="card-body">
+                    <select class="form-select form-select-lg" id="metricSelector">
+                        <option value="">-- Choose a metric --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare With Section (optional) -->
+    <div class="row mb-4" id="compareSection" style="display: none;">
+        <div class="col-lg-6 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <button class="btn btn-link w-100 text-start text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#compareCollapse" aria-expanded="false" aria-controls="compareCollapse" id="compareToggleBtn">
+                        <h6 class="mb-0">
+                            <i class="bi bi-plus-circle"></i> Compare With (Optional)
+                            <i class="bi bi-chevron-down float-end" id="compareChevron"></i>
+                        </h6>
+                    </button>
+                </div>
+                <div class="collapse" id="compareCollapse">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="compareMetric1" class="form-label small">Comparison Metric 1</label>
+                            <select class="form-select" id="compareMetric1">
+                                <option value="">-- None --</option>
+                            </select>
+                        </div>
+                        <div class="mb-0">
+                            <label for="compareMetric2" class="form-label small">Comparison Metric 2</label>
+                            <select class="form-select" id="compareMetric2">
+                                <option value="">-- None --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric Info Panel (hidden until metric selected) -->
+    <div id="metricInfo" style="display: none;">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle-fill"></i> About This Metric
+                        </h5>
+                        <button class="btn btn-sm btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#infoCollapse" aria-expanded="true" aria-controls="infoCollapse">
+                            <i class="bi bi-chevron-down" id="collapseIcon"></i>
+                        </button>
+                    </div>
+                    <div class="collapse show" id="infoCollapse">
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6 class="text-primary"><i class="bi bi-question-circle"></i> What It Is</h6>
+                                <p id="info-what">--</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-success"><i class="bi bi-lightbulb"></i> Why It Matters</h6>
+                                <p id="info-why">--</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h6 class="text-warning"><i class="bi bi-eye"></i> What To Watch</h6>
+                                <p id="info-watch">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric Details (hidden until metric selected) -->
+    <div id="metricDetails" style="display: none;">
+        <!-- Key Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">CURRENT VALUE</h6>
+                        <h2 class="mb-0" id="current-value">--</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">1-DAY CHANGE</h6>
+                        <h2 class="mb-0" id="change-1d">--</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">30-DAY CHANGE</h6>
+                        <h2 class="mb-0" id="change-30d">--</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">DATA POINTS</h6>
+                        <h2 class="mb-0" id="data-points">--</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Min/Max/Avg Row -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">MINIMUM</h6>
+                        <h4 class="mb-0 text-success" id="min-value">--</h4>
+                        <small class="text-muted" id="min-date"></small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">AVERAGE</h6>
+                        <h4 class="mb-0 text-info" id="avg-value">--</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">MAXIMUM</h6>
+                        <h4 class="mb-0 text-danger" id="max-value">--</h4>
+                        <small class="text-muted" id="max-date"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Indicator (hidden until comparing) -->
+        <div class="row mb-3" id="comparisonIndicator" style="display: none;">
+            <div class="col-12">
+                <div class="alert alert-secondary mb-0">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-graph-up me-2"></i>
+                        <strong>Comparing Metrics:</strong>
+                        <span id="comparisonLegend" class="ms-2"></span>
+                    </div>
+                    <div id="unitWarning" class="mt-2" style="display: none;">
+                        <i class="bi bi-info-circle"></i>
+                        <small><em>Note: Metrics have different units/scales</em></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Frame Selector -->
+        <div class="row mb-3" id="timeFrameSelector" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body py-2">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap">
+                            <small class="text-muted me-3"><i class="bi bi-calendar-range"></i> Time Frame:</small>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="7">1W</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="30">1M</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="90">3M</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="180">6M</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="365">1Y</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="1825">5Y</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="3650">10Y</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="5475">15Y</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="7300">20Y</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="9125">25Y</button>
+                                <button type="button" class="btn btn-outline-secondary" data-timeframe="10950">30Y</button>
+                                <button type="button" class="btn btn-outline-secondary active" data-timeframe="all">All</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0" id="chart-title">Historical Trend</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="explorerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Range -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">DATE RANGE</h6>
+                        <p class="mb-0" id="date-range">--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentChart = null;
+let availableMetrics = [];
+let fullDataCache = null; // Store full unfiltered data for time frame filtering
+let currentMetricsToLoad = []; // Store current metric selection
+let recessionData = []; // Store recession periods for shading
+const metricColors = [
+    'rgb(75, 192, 192)',   // Teal (primary)
+    'rgb(153, 102, 255)',  // Purple
+    'rgb(255, 159, 64)'    // Orange
+];
+
+// Fetch recession data on load
+fetch('/api/recessions')
+    .then(response => response.json())
+    .then(data => {
+        recessionData = data;
+    })
+    .catch(error => {
+        console.error('Error loading recession data:', error);
+    });
+
+// Generate recession annotations for chart
+function getRecessionAnnotations(startDate, endDate) {
+    if (!recessionData || recessionData.length === 0) return {};
+
+    const chartStart = new Date(startDate);
+    const chartEnd = new Date(endDate);
+    const annotations = {};
+
+    recessionData.forEach((recession, idx) => {
+        const recStart = new Date(recession.start_date);
+        const recEnd = new Date(recession.end_date);
+
+        // Check if recession overlaps with chart date range
+        if (recEnd >= chartStart && recStart <= chartEnd) {
+            // Clamp to chart boundaries
+            const displayStart = recStart < chartStart ? chartStart : recStart;
+            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
+
+            annotations[`recession_${idx}`] = {
+                type: 'box',
+                xMin: displayStart.toISOString().split('T')[0],
+                xMax: displayEnd.toISOString().split('T')[0],
+                backgroundColor: 'rgba(128, 128, 128, 0.15)',
+                borderWidth: 0,
+                label: {
+                    display: false
+                }
+            };
+        }
+    });
+
+    return annotations;
+}
+
+// Load all available metrics
+fetch('/api/metrics/list')
+    .then(response => response.json())
+    .then(metrics => {
+        availableMetrics = metrics;
+
+        // Populate main selector
+        const selector = document.getElementById('metricSelector');
+        metrics.forEach(metric => {
+            const option = document.createElement('option');
+            option.value = metric.value;
+            option.textContent = metric.label;
+            selector.appendChild(option);
+        });
+
+        // Populate comparison selectors
+        populateComparisonSelectors();
+
+        // Check for metric query parameter and auto-select
+        const urlParams = new URLSearchParams(window.location.search);
+        const metricParam = urlParams.get('metric');
+        if (metricParam) {
+            // Check if the metric exists in the list
+            const metricExists = metrics.some(m => m.value === metricParam);
+            if (metricExists) {
+                selector.value = metricParam;
+                document.getElementById('compareSection').style.display = 'block';
+                loadMetrics();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error loading metrics list:', error);
+    });
+
+function populateComparisonSelectors() {
+    const compare1 = document.getElementById('compareMetric1');
+    const compare2 = document.getElementById('compareMetric2');
+
+    availableMetrics.forEach(metric => {
+        const option1 = document.createElement('option');
+        option1.value = metric.value;
+        option1.textContent = metric.label;
+        compare1.appendChild(option1);
+
+        const option2 = document.createElement('option');
+        option2.value = metric.value;
+        option2.textContent = metric.label;
+        compare2.appendChild(option2);
+    });
+}
+
+// Handle metric selection
+document.getElementById('metricSelector').addEventListener('change', function() {
+    const metricName = this.value;
+    if (!metricName) {
+        document.getElementById('metricDetails').style.display = 'none';
+        document.getElementById('metricInfo').style.display = 'none';
+        document.getElementById('compareSection').style.display = 'none';
+        return;
+    }
+
+    // Show comparison section
+    document.getElementById('compareSection').style.display = 'block';
+
+    // Load metrics (primary + any selected comparisons)
+    loadMetrics();
+});
+
+// Handle comparison metric changes
+document.getElementById('compareMetric1').addEventListener('change', loadMetrics);
+document.getElementById('compareMetric2').addEventListener('change', loadMetrics);
+
+// Toggle collapse icon
+document.getElementById('infoCollapse')?.addEventListener('shown.bs.collapse', function() {
+    document.getElementById('collapseIcon').className = 'bi bi-chevron-up';
+});
+document.getElementById('infoCollapse')?.addEventListener('hidden.bs.collapse', function() {
+    document.getElementById('collapseIcon').className = 'bi bi-chevron-down';
+});
+
+// Toggle compare section chevron
+document.getElementById('compareCollapse')?.addEventListener('shown.bs.collapse', function() {
+    document.getElementById('compareChevron').className = 'bi bi-chevron-up float-end';
+});
+document.getElementById('compareCollapse')?.addEventListener('hidden.bs.collapse', function() {
+    document.getElementById('compareChevron').className = 'bi bi-chevron-down float-end';
+});
+
+// Time frame selector button handlers
+document.querySelectorAll('#timeFrameSelector button[data-timeframe]').forEach(button => {
+    button.addEventListener('click', function() {
+        // Update active button
+        document.querySelectorAll('#timeFrameSelector button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        // Apply time frame filter
+        const timeFrame = this.getAttribute('data-timeframe');
+        applyTimeFrameFilter(timeFrame);
+    });
+});
+
+function getMetricUnit(metricName) {
+    if (metricName.includes('price') || metricName.includes('gold') || metricName.includes('bitcoin')) {
+        return '$';
+    } else if (metricName.includes('spread') || metricName.includes('gap')) {
+        return ' bp';
+    }
+    return '';
+}
+
+function applyTimeFrameFilter(timeFrame) {
+    if (!fullDataCache || !currentMetricsToLoad.length) return;
+
+    // Filter data based on time frame
+    let filteredData = fullDataCache;
+
+    if (timeFrame !== 'all') {
+        const days = parseInt(timeFrame);
+        const now = new Date();
+        const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+        // Filter each dataset
+        filteredData = fullDataCache.map(data => {
+            const filteredIndices = [];
+            const filteredDates = [];
+            const filteredValues = [];
+
+            data.dates.forEach((dateStr, idx) => {
+                const date = new Date(dateStr);
+                if (date >= cutoffDate) {
+                    filteredIndices.push(idx);
+                    filteredDates.push(dateStr);
+                    filteredValues.push(data.values[idx]);
+                }
+            });
+
+            return {
+                ...data,
+                dates: filteredDates,
+                values: filteredValues
+            };
+        });
+    }
+
+    // Render the chart with filtered data
+    renderChart(filteredData, currentMetricsToLoad);
+}
+
+function renderChart(dataArray, metricsToLoad) {
+    const primaryData = dataArray[0];
+    const primaryMetric = metricsToLoad[0];
+    const unit = getMetricUnit(primaryMetric);
+
+    // FIRST: Align all datasets to have the same dates as the primary metric
+    const primaryDates = primaryData.dates;
+    const alignedData = dataArray.map((data, idx) => {
+        if (idx === 0) {
+            return data; // Primary is already aligned
+        }
+
+        // Create a date-to-value map for this metric
+        const dateMap = new Map();
+        data.dates.forEach((date, i) => {
+            dateMap.set(date, data.values[i]);
+        });
+
+        // Create aligned values array matching primary dates
+        const alignedValues = primaryDates.map(date => {
+            return dateMap.has(date) ? dateMap.get(date) : null;
+        });
+
+        return {
+            ...data,
+            dates: primaryDates,
+            values: alignedValues
+        };
+    });
+
+    console.log('Primary dates range:', primaryDates[0], 'to', primaryDates[primaryDates.length - 1]);
+    console.log('Primary data points:', primaryDates.length);
+
+    // Scale comparison metrics to fit the primary metric's range
+    let scaledData = alignedData;
+    const hasComparison = metricsToLoad.length > 1;
+
+    if (hasComparison) {
+        // Get primary metric's range from the displayed data
+        const primaryValues = alignedData[0].values.filter(v => v !== null && v !== undefined && !isNaN(v));
+        if (primaryValues.length === 0) return;
+
+        const primaryMin = Math.min(...primaryValues);
+        const primaryMax = Math.max(...primaryValues);
+        const primaryRange = primaryMax - primaryMin;
+
+        console.log('Primary metric range:', primaryMin, 'to', primaryMax, 'range:', primaryRange);
+        console.log('Primary metric - first 5 values:', primaryValues.slice(0, 5));
+        console.log('Primary metric - last 5 values:', primaryValues.slice(-5));
+
+        // Scale comparison metrics to use the full visual range of the primary metric
+        scaledData = alignedData.map((data, idx) => {
+            if (idx === 0) {
+                // Keep primary metric unchanged
+                return { ...data };
+            }
+
+            // Scale secondary metric to span the full primary's range
+            const values = data.values.filter(v => v !== null && v !== undefined && !isNaN(v));
+            if (values.length === 0) return { ...data };
+
+            const secMin = Math.min(...values);
+            const secMax = Math.max(...values);
+            const secRange = secMax - secMin;
+
+            console.log(`Comparison metric ${idx} range:`, secMin, 'to', secMax, 'range:', secRange);
+            console.log(`Comparison metric ${idx} - first 5 values:`, values.slice(0, 5));
+            console.log(`Comparison metric ${idx} - last 5 values:`, values.slice(-5));
+            console.log(`Total data points for comparison metric ${idx}:`, values.length);
+            console.log(`Comparison metric ${idx} aligned to primary dates:`, alignedData[idx].dates.length, 'dates');
+
+            // Avoid division by zero
+            if (secRange === 0) {
+                // If no variation, place in middle of primary range
+                const midpoint = primaryMin + (primaryRange / 2);
+                return {
+                    ...data,
+                    values: data.values.map(v => v !== null && v !== undefined && !isNaN(v) ? midpoint : null),
+                    isScaled: true
+                };
+            }
+
+            // Map secondary metric's full range to primary's full range
+            const scaledValues = data.values.map(v => {
+                if (v === null || v === undefined || isNaN(v)) return null;
+                // Normalize to 0-1 range, then scale to primary's range
+                const normalized = (v - secMin) / secRange;
+                const scaled = normalized * primaryRange + primaryMin;
+                return scaled;
+            });
+
+            console.log('Scaled values sample:', scaledValues.slice(0, 5));
+
+            return {
+                ...data,
+                values: scaledValues,
+                isScaled: true
+            };
+        });
+    }
+
+    // Show comparison indicator if comparing
+    if (hasComparison) {
+        document.getElementById('comparisonIndicator').style.display = 'block';
+
+        // Build legend
+        let legendHTML = '';
+        const units = metricsToLoad.map(m => getMetricUnit(m));
+
+        metricsToLoad.forEach((metric, idx) => {
+            const friendlyMetricName = metric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const metricUnit = units[idx];
+            legendHTML += `<span style="color: ${metricColors[idx]}; font-weight: bold;">●</span> ${friendlyMetricName}${metricUnit ? ' (' + metricUnit.trim() + ')' : ''} `;
+        });
+
+        document.getElementById('comparisonLegend').innerHTML = legendHTML;
+
+        // Show scaling info
+        document.getElementById('unitWarning').style.display = 'block';
+        document.getElementById('unitWarning').innerHTML = '<i class="bi bi-info-circle"></i> <small><em>Comparison metrics are scaled to fit the primary metric\'s range. Hover over chart for actual values.</em></small>';
+    } else {
+        document.getElementById('comparisonIndicator').style.display = 'none';
+    }
+
+    // Destroy previous chart if exists
+    if (currentChart) {
+        currentChart.destroy();
+    }
+
+    // Create datasets for chart
+    const datasets = scaledData.map((data, idx) => {
+        const metricName = metricsToLoad[idx];
+        const color = metricColors[idx];
+        return {
+            label: data.column_name,
+            data: data.values,
+            borderColor: color,
+            backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+            borderWidth: 2,
+            tension: 0.1,
+            fill: idx === 0,
+            yAxisID: 'y',
+            originalData: alignedData[idx].values // Store aligned original values for tooltip
+        };
+    });
+
+    // Get recession annotations for the current date range
+    const startDate = primaryData.dates[0];
+    const endDate = primaryData.dates[primaryData.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+    // Create chart
+    const ctx = document.getElementById('explorerChart').getContext('2d');
+    currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: primaryData.dates,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            const metricIdx = context.datasetIndex;
+                            const metricUnit = getMetricUnit(metricsToLoad[metricIdx]);
+
+                            // Always show the original (actual) value
+                            const originalVal = context.dataset.originalData[context.dataIndex];
+
+                            if (originalVal !== null && originalVal !== undefined) {
+                                if (metricUnit === '$') {
+                                    label += '$' + originalVal.toFixed(2);
+                                } else {
+                                    label += originalVal.toFixed(2) + metricUnit;
+                                }
+                            } else {
+                                label += 'N/A';
+                            }
+
+                            return label;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: recessionAnnotations
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'MMM d'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: unit ? `Value (${unit})` : 'Value'
+                    },
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+
+function loadMetrics() {
+    const primaryMetric = document.getElementById('metricSelector').value;
+    if (!primaryMetric) return;
+
+    const compareMetric1 = document.getElementById('compareMetric1').value;
+    const compareMetric2 = document.getElementById('compareMetric2').value;
+
+    // Collect all selected metrics
+    const metricsToLoad = [primaryMetric];
+    if (compareMetric1) metricsToLoad.push(compareMetric1);
+    if (compareMetric2) metricsToLoad.push(compareMetric2);
+
+    // Store current selection
+    currentMetricsToLoad = metricsToLoad;
+
+    // Load metric description (only for primary)
+    fetch(`/api/metrics/description/${primaryMetric}`)
+        .then(response => response.json())
+        .then(description => {
+            if (!description.error) {
+                document.getElementById('metricInfo').style.display = 'block';
+                document.getElementById('info-what').textContent = description.what || 'No description available.';
+                document.getElementById('info-why').textContent = description.why || 'No description available.';
+                document.getElementById('info-watch').textContent = description.watch || 'No description available.';
+            } else {
+                document.getElementById('metricInfo').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading metric description:', error);
+            document.getElementById('metricInfo').style.display = 'none';
+        });
+
+    // Load all metric data in parallel
+    Promise.all(metricsToLoad.map(metric =>
+        fetch(`/api/metrics/${metric}`).then(r => r.json())
+    ))
+    .then(dataArray => {
+        const primaryData = dataArray[0];
+
+        // Cache full data for time frame filtering
+        fullDataCache = dataArray;
+
+        // Show details section and time frame selector
+        document.getElementById('metricDetails').style.display = 'block';
+        document.getElementById('timeFrameSelector').style.display = 'block';
+
+        // Update statistics (primary metric only)
+        const unit = getMetricUnit(primaryMetric);
+
+        const formatValue = (val) => {
+            if (val === null || val === undefined) return '--';
+            if (unit === '$') {
+                return `$${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            } else {
+                return val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + unit;
+            }
+        };
+
+        const formatChange = (val) => {
+            if (val === null || val === undefined) return '--';
+            const formatted = unit === '$' ? `$${Math.abs(val).toFixed(2)}` : `${Math.abs(val).toFixed(2)}${unit}`;
+            const sign = val >= 0 ? '+' : '-';
+            const color = val >= 0 ? 'text-success' : 'text-danger';
+            return `<span class="${color}">${sign}${formatted}</span>`;
+        };
+
+        document.getElementById('current-value').innerHTML = formatValue(primaryData.stats.current);
+        document.getElementById('change-1d').innerHTML = formatChange(primaryData.stats.change_1d);
+        document.getElementById('change-30d').innerHTML = formatChange(primaryData.stats.change_30d);
+        document.getElementById('min-value').innerHTML = formatValue(primaryData.stats.min);
+        document.getElementById('avg-value').innerHTML = formatValue(primaryData.stats.average);
+        document.getElementById('max-value').innerHTML = formatValue(primaryData.stats.max);
+        document.getElementById('data-points').textContent = primaryData.values.length;
+
+        // Find dates for min/max
+        const minIdx = primaryData.values.indexOf(primaryData.stats.min);
+        const maxIdx = primaryData.values.indexOf(primaryData.stats.max);
+        if (minIdx >= 0) {
+            document.getElementById('min-date').textContent = new Date(primaryData.dates[minIdx]).toLocaleDateString();
+        }
+        if (maxIdx >= 0) {
+            document.getElementById('max-date').textContent = new Date(primaryData.dates[maxIdx]).toLocaleDateString();
+        }
+
+        // Update date range
+        if (primaryData.dates.length > 0) {
+            const firstDate = new Date(primaryData.dates[0]).toLocaleDateString();
+            const lastDate = new Date(primaryData.dates[primaryData.dates.length - 1]).toLocaleDateString();
+            document.getElementById('date-range').textContent = `${firstDate} - ${lastDate}`;
+        }
+
+        // Update chart title
+        const friendlyName = primaryMetric.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        document.getElementById('chart-title').textContent = `${friendlyName} - Historical Trend`;
+
+        // Reset time frame selector to "All"
+        document.querySelectorAll('#timeFrameSelector button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector('#timeFrameSelector button[data-timeframe="all"]').classList.add('active');
+
+        // Render chart with full data
+        renderChart(dataArray, metricsToLoad);
+
+        // Scroll to details
+        document.getElementById('metricDetails').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(error => {
+        console.error('Error loading metric data:', error);
+        alert('Error loading metric data. Please try again.');
+    });
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Equity Markets - Market Divergence Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-bar-chart-line"></i> Equity Markets & Market Breadth
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Equity Indices Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="equity-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Market Breadth</h5>
+            </div>
+            <div class="card-body">
+                <p>Monitoring concentration risk in AI/tech stocks.</p>
+                <p class="mb-0"><small class="text-muted">RSP/SPY ratio tracks market breadth. Lower = more concentrated.</small></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let recessionData = []; // Store recession periods for shading
+
+// Fetch recession data on load
+fetch('/api/recessions')
+    .then(response => response.json())
+    .then(data => {
+        recessionData = data;
+    })
+    .catch(error => {
+        console.error('Error loading recession data:', error);
+    });
+
+// Generate recession annotations for chart
+function getRecessionAnnotations(startDate, endDate) {
+    if (!recessionData || recessionData.length === 0) return {};
+
+    const chartStart = new Date(startDate);
+    const chartEnd = new Date(endDate);
+    const annotations = {};
+
+    recessionData.forEach((recession, idx) => {
+        const recStart = new Date(recession.start_date);
+        const recEnd = new Date(recession.end_date);
+
+        // Check if recession overlaps with chart date range
+        if (recEnd >= chartStart && recStart <= chartEnd) {
+            // Clamp to chart boundaries
+            const displayStart = recStart < chartStart ? chartStart : recStart;
+            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
+
+            annotations[`recession_${idx}`] = {
+                type: 'box',
+                xMin: displayStart.toISOString().split('T')[0],
+                xMax: displayEnd.toISOString().split('T')[0],
+                backgroundColor: 'rgba(128, 128, 128, 0.15)',
+                borderWidth: 0,
+                label: {
+                    display: false
+                }
+            };
+        }
+    });
+
+    return annotations;
+}
+
+async function loadEquityChart() {
+    const response = await fetch('/api/chart/equity_indices');
+    const data = await response.json();
+
+    // Get recession annotations for the current date range
+    const startDate = data.dates[0];
+    const endDate = data.dates[data.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+    new Chart(document.getElementById('equity-chart'), {
+        type: 'line',
+        data: {
+            labels: data.dates,
+            datasets: [
+                {
+                    label: 'S&P 500',
+                    data: data.spy,
+                    borderColor: 'rgb(13, 110, 253)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Nasdaq-100',
+                    data: data.qqq,
+                    borderColor: 'rgb(40, 167, 69)',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Small Caps',
+                    data: data.iwm,
+                    borderColor: 'rgb(255, 193, 7)',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                annotation: {
+                    annotations: recessionAnnotations
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', loadEquityChart);
+</script>
+{% endblock %}
