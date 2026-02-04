@@ -1,35 +1,386 @@
 {% extends "base.html" %}
 
-{% block title %}Equity Markets - Market Divergence Tracker{% endblock %}
+{% block title %}Equity Markets - Financial Dashboard{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
-            <i class="bi bi-bar-chart-line"></i> Equity Markets & Market Breadth
+            <i class="bi bi-bar-chart-line text-primary"></i>
+            Equity Markets Overview
         </h1>
+        <p class="lead">Market structure, rotation signals, and key sector leadership</p>
     </div>
 </div>
 
+<!-- Educational Header -->
 <div class="row mb-4">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Equity Indices Performance</h5>
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb-fill"></i> Understanding Equity Market Dynamics
+                </h5>
             </div>
             <div class="card-body">
-                <canvas id="equity-chart"></canvas>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-pie-chart-fill text-primary"></i> Market Breadth</h6>
+                        <p class="small mb-0">Breadth measures how many stocks participate in a rally. Narrow breadth (few stocks driving gains) = fragile. Broad breadth (many stocks participating) = healthy. Watch the RSP/SPY ratio.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-arrow-left-right text-success"></i> Style Rotation</h6>
+                        <p class="small mb-0">Markets rotate between Growth (tech, high P/E) and Value (financials, energy). Growth leads in easy money; Value leads when rates rise or economy slows. The Growth/Value ratio signals regime shifts.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-speedometer2 text-warning"></i> VIX (Fear Gauge)</h6>
+                        <p class="small mb-0">VIX below 15 = complacency (watch for surprises). VIX 15-20 = normal. VIX 20-30 = elevated concern. VIX above 30 = fear/panic. Extreme low VIX often precedes volatility spikes.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Market Breadth</h5>
+</div>
+
+<!-- AI Equity Briefing -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-square-text-fill"></i> Daily Equity Markets Briefing
+                </h5>
+                <small id="equity-summary-timestamp" class="opacity-75"></small>
             </div>
             <div class="card-body">
-                <p>Monitoring concentration risk in AI/tech stocks.</p>
-                <p class="mb-0"><small class="text-muted">RSP/SPY ratio tracks market breadth. Lower = more concentrated.</small></p>
+                <div id="equity-summary-content" class="summary-text">
+                    <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading daily briefing...</p>
+                </div>
+                <div id="equity-summary-error" class="text-muted d-none">
+                    <p class="mb-0"><i class="bi bi-info-circle"></i> No briefing available yet. Click "Reload Data" on the main dashboard to generate one.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Core Indices Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-graph-up-arrow"></i> Core Indices</h5>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=sp500_price" class="metric-link">
+            <div class="card metric-card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">S&P 500</h6>
+                    <h2 class="mb-0 text-primary" id="sp500-price">--</h2>
+                    <small class="text-muted">
+                        <span id="sp500-change-5d">--</span>% (5d) / <span id="sp500-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="sp500-percentile">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=nasdaq_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">NASDAQ 100</h6>
+                    <h2 class="mb-0" id="nasdaq-price">--</h2>
+                    <small class="text-muted">
+                        <span id="nasdaq-change-5d">--</span>% (5d) / <span id="nasdaq-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="nasdaq-percentile">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=small_cap_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">RUSSELL 2000 (Small Caps)</h6>
+                    <h2 class="mb-0" id="iwm-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="iwm-change-5d">--</span>% (5d) / <span id="iwm-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="iwm-percentile">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=vix_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">VIX (VOLATILITY)</h6>
+                    <h2 class="mb-0" id="vix-value">--</h2>
+                    <small class="text-muted">
+                        <span id="vix-change-5d">--</span>% (5d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="vix-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Market Structure Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-diagram-3"></i> Market Structure (Breadth & Concentration)</h5>
+    </div>
+    <div class="col-xl-6 col-md-6 mb-3">
+        <a href="/explorer?metric=market_breadth_ratio" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">MARKET BREADTH (RSP/SPY)</h6>
+                    <h2 class="mb-0" id="breadth-value">--</h2>
+                    <small class="text-muted">
+                        <span id="breadth-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="breadth-status">Loading</span>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Low = narrow rally (few stocks); High = broad participation</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-6 col-md-6 mb-3">
+        <a href="/explorer?metric=smh_spy_ratio" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">SEMICONDUCTOR CONCENTRATION (SMH/SPY)</h6>
+                    <h2 class="mb-0" id="smh-spy-value">--</h2>
+                    <small class="text-muted">
+                        <span id="smh-spy-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="smh-spy-status">Loading</span>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Proxy for AI/Mag 7 concentration in the market</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Style & Size Rotation Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-arrow-left-right"></i> Style & Size Rotation</h5>
+    </div>
+    <div class="col-xl-6 col-md-6 mb-3">
+        <a href="/explorer?metric=growth_value_ratio" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">GROWTH vs VALUE (IWF/IWD)</h6>
+                    <h2 class="mb-0" id="growth-value">--</h2>
+                    <small class="text-muted">
+                        <span id="growth-value-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="growth-value-status">Loading</span>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">High = growth leadership; Low = value rotation</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-6 col-md-6 mb-3">
+        <a href="/explorer?metric=iwm_spy_ratio" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">SMALL CAP vs LARGE CAP (IWM/SPY)</h6>
+                    <h2 class="mb-0" id="iwm-spy-value">--</h2>
+                    <small class="text-muted">
+                        <span id="iwm-spy-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="iwm-spy-status">Loading</span>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Rising = risk-on, economic optimism; Falling = flight to quality</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Key Sectors Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-building"></i> Key Sectors</h5>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-3">
+        <a href="/explorer?metric=semiconductor_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">SEMICONDUCTORS (SMH)</h6>
+                    <h2 class="mb-0" id="semi-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="semi-change-5d">--</span>% (5d) / <span id="semi-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">AI/Tech bellwether</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+        <a href="/explorer?metric=financials_sector_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">FINANCIALS (XLF)</h6>
+                    <h2 class="mb-0" id="xlf-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="xlf-change-5d">--</span>% (5d) / <span id="xlf-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Banks lead economic cycles</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+        <a href="/explorer?metric=energy_sector_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">ENERGY (XLE)</h6>
+                    <h2 class="mb-0" id="xle-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="xle-change-5d">--</span>% (5d) / <span id="xle-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Inflation/commodity signal</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Index Performance Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Index Performance Comparison
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="index-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="7">1W</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="index-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Normalized to 100 at start of period. Shows relative performance of S&P 500, Nasdaq, and Russell 2000.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rotation Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-left-right"></i> Style & Size Rotation
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="rotation-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="7">1W</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="rotation-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Growth/Value ratio (blue) shows style preference. Small/Large ratio (orange) shows size preference. Rising = growth/small caps favored.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Educational Sections -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Bullish Signals</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>Breadth expanding</strong> - More stocks participating in rally</li>
+                    <li><strong>Small caps leading</strong> - Risk appetite, economic confidence</li>
+                    <li><strong>VIX declining from highs</strong> - Fear subsiding</li>
+                    <li><strong>Financials outperforming</strong> - Banks signaling confidence</li>
+                    <li><strong>Growth/Value balanced</strong> - Healthy rotation, not extreme</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Bearish Signals</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>Breadth narrowing</strong> - Few stocks carrying the market</li>
+                    <li><strong>Small caps lagging</strong> - Flight to quality, recession fears</li>
+                    <li><strong>VIX spiking</strong> - Fear increasing</li>
+                    <li><strong>Extreme concentration</strong> - SMH/SPY at historical highs</li>
+                    <li><strong>Financials underperforming</strong> - Credit/rate concerns</li>
+                </ul>
             </div>
         </div>
     </div>
@@ -38,8 +389,18 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
-let recessionData = []; // Store recession periods for shading
+let recessionData = [];
+let indexChart = null;
+let rotationChart = null;
+let fullSp500Data = null;
+let fullNasdaqData = null;
+let fullIwmData = null;
+let fullGrowthValueData = null;
+let fullIwmSpyData = null;
+let currentIndexTimeframe = 365;
+let currentRotationTimeframe = 365;
 
 // Fetch recession data on load
 fetch('/api/recessions')
@@ -63,9 +424,7 @@ function getRecessionAnnotations(startDate, endDate) {
         const recStart = new Date(recession.start_date);
         const recEnd = new Date(recession.end_date);
 
-        // Check if recession overlaps with chart date range
         if (recEnd >= chartStart && recStart <= chartEnd) {
-            // Clamp to chart boundaries
             const displayStart = recStart < chartStart ? chartStart : recStart;
             const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
 
@@ -75,9 +434,7 @@ function getRecessionAnnotations(startDate, endDate) {
                 xMax: displayEnd.toISOString().split('T')[0],
                 backgroundColor: 'rgba(128, 128, 128, 0.15)',
                 borderWidth: 0,
-                label: {
-                    display: false
-                }
+                label: { display: false }
             };
         }
     });
@@ -85,52 +442,563 @@ function getRecessionAnnotations(startDate, endDate) {
     return annotations;
 }
 
-async function loadEquityChart() {
-    const response = await fetch('/api/chart/equity_indices');
-    const data = await response.json();
+// Helper to calculate percentage changes
+function calcChange(values, days) {
+    if (!values || values.length <= days) return null;
+    const current = values[values.length - 1];
+    const past = values[values.length - 1 - days];
+    return ((current / past) - 1) * 100;
+}
 
-    // Get recession annotations for the current date range
-    const startDate = data.dates[0];
-    const endDate = data.dates[data.dates.length - 1];
-    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+// Helper to calculate percentile
+function calcPercentile(values, current) {
+    if (!values || values.length === 0) return 50;
+    const count = values.filter(v => v <= current).length;
+    return (count / values.length) * 100;
+}
 
-    new Chart(document.getElementById('equity-chart'), {
+// Load equity summary
+async function loadEquitySummary() {
+    try {
+        const response = await fetch('/api/equity-summary');
+        const data = await response.json();
+
+        if (data && data.summary) {
+            // Convert markdown-style bold to HTML
+            let formattedSummary = data.summary
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            document.getElementById('equity-summary-content').innerHTML = formattedSummary;
+            document.getElementById('equity-summary-error').classList.add('d-none');
+
+            // Format timestamp
+            if (data.generated_at) {
+                const date = new Date(data.generated_at);
+                const timeStr = date.toLocaleString();
+                const webSearchBadge = data.web_search_used ? ' <span class="badge bg-light text-dark">+ Web Search</span>' : '';
+                document.getElementById('equity-summary-timestamp').innerHTML = `Generated: ${timeStr}${webSearchBadge}`;
+            }
+        } else {
+            document.getElementById('equity-summary-content').classList.add('d-none');
+            document.getElementById('equity-summary-error').classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Error loading equity summary:', error);
+        document.getElementById('equity-summary-content').classList.add('d-none');
+        document.getElementById('equity-summary-error').classList.remove('d-none');
+    }
+}
+
+// Load all metrics data
+async function loadEquityData() {
+    try {
+        // Load S&P 500 data
+        const sp500Response = await fetch('/api/metrics/sp500_price');
+        const sp500Data = await sp500Response.json();
+        fullSp500Data = sp500Data;
+
+        if (sp500Data && sp500Data.values) {
+            const current = sp500Data.values[sp500Data.values.length - 1];
+            document.getElementById('sp500-price').textContent = Math.round(current).toLocaleString();
+
+            const change5d = calcChange(sp500Data.values, 5);
+            const change30d = calcChange(sp500Data.values, 30);
+            if (change5d !== null) document.getElementById('sp500-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            if (change30d !== null) document.getElementById('sp500-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(sp500Data.values, current);
+            const percentileEl = document.getElementById('sp500-percentile');
+            percentileEl.textContent = `${percentile.toFixed(0)}th %ile`;
+            percentileEl.className = percentile > 90 ? 'badge bg-warning' : percentile > 50 ? 'badge bg-success' : 'badge bg-secondary';
+        }
+
+        // Load Nasdaq data
+        const nasdaqResponse = await fetch('/api/metrics/nasdaq_price');
+        const nasdaqData = await nasdaqResponse.json();
+        fullNasdaqData = nasdaqData;
+
+        if (nasdaqData && nasdaqData.values) {
+            const current = nasdaqData.values[nasdaqData.values.length - 1];
+            document.getElementById('nasdaq-price').textContent = Math.round(current).toLocaleString();
+
+            const change5d = calcChange(nasdaqData.values, 5);
+            const change30d = calcChange(nasdaqData.values, 30);
+            if (change5d !== null) document.getElementById('nasdaq-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            if (change30d !== null) document.getElementById('nasdaq-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(nasdaqData.values, current);
+            const percentileEl = document.getElementById('nasdaq-percentile');
+            percentileEl.textContent = `${percentile.toFixed(0)}th %ile`;
+            percentileEl.className = percentile > 90 ? 'badge bg-warning' : percentile > 50 ? 'badge bg-success' : 'badge bg-secondary';
+        }
+
+        // Load Russell 2000 (IWM) data
+        const iwmResponse = await fetch('/api/metrics/small_cap_price');
+        const iwmData = await iwmResponse.json();
+        fullIwmData = iwmData;
+
+        if (iwmData && iwmData.values) {
+            const current = iwmData.values[iwmData.values.length - 1];
+            document.getElementById('iwm-price').textContent = '$' + current.toFixed(2);
+
+            const change5d = calcChange(iwmData.values, 5);
+            const change30d = calcChange(iwmData.values, 30);
+            if (change5d !== null) document.getElementById('iwm-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            if (change30d !== null) document.getElementById('iwm-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(iwmData.values, current);
+            const percentileEl = document.getElementById('iwm-percentile');
+            percentileEl.textContent = `${percentile.toFixed(0)}th %ile`;
+            percentileEl.className = percentile > 90 ? 'badge bg-warning' : percentile > 50 ? 'badge bg-success' : 'badge bg-secondary';
+        }
+
+        // Load VIX data
+        const vixResponse = await fetch('/api/metrics/vix_price');
+        const vixData = await vixResponse.json();
+
+        if (vixData && vixData.values) {
+            const current = vixData.values[vixData.values.length - 1];
+            document.getElementById('vix-value').textContent = current.toFixed(1);
+
+            const change5d = calcChange(vixData.values, 5);
+            if (change5d !== null) document.getElementById('vix-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+
+            const statusEl = document.getElementById('vix-status');
+            if (current < 15) {
+                statusEl.textContent = 'LOW';
+                statusEl.className = 'badge bg-success';
+            } else if (current < 20) {
+                statusEl.textContent = 'NORMAL';
+                statusEl.className = 'badge bg-secondary';
+            } else if (current < 30) {
+                statusEl.textContent = 'ELEVATED';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'HIGH FEAR';
+                statusEl.className = 'badge bg-danger';
+            }
+        }
+
+        // Load Breadth data
+        const breadthResponse = await fetch('/api/metrics/market_breadth_ratio');
+        const breadthData = await breadthResponse.json();
+
+        if (breadthData && breadthData.values) {
+            const current = breadthData.values[breadthData.values.length - 1];
+            document.getElementById('breadth-value').textContent = current.toFixed(2);
+
+            const change30d = calcChange(breadthData.values, 30);
+            if (change30d !== null) document.getElementById('breadth-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(breadthData.values, current);
+            const statusEl = document.getElementById('breadth-status');
+            statusEl.textContent = `${percentile.toFixed(0)}th %ile`;
+            if (percentile < 20) {
+                statusEl.className = 'badge bg-danger';
+            } else if (percentile < 40) {
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.className = 'badge bg-success';
+            }
+        }
+
+        // Load SMH/SPY ratio
+        const smhSpyResponse = await fetch('/api/metrics/smh_spy_ratio');
+        const smhSpyData = await smhSpyResponse.json();
+
+        if (smhSpyData && smhSpyData.values) {
+            const current = smhSpyData.values[smhSpyData.values.length - 1];
+            document.getElementById('smh-spy-value').textContent = current.toFixed(1);
+
+            const change30d = calcChange(smhSpyData.values, 30);
+            if (change30d !== null) document.getElementById('smh-spy-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(smhSpyData.values, current);
+            const statusEl = document.getElementById('smh-spy-status');
+            statusEl.textContent = `${percentile.toFixed(0)}th %ile`;
+            if (percentile > 90) {
+                statusEl.className = 'badge bg-danger';
+            } else if (percentile > 75) {
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.className = 'badge bg-success';
+            }
+        }
+
+        // Load Growth/Value ratio
+        const gvResponse = await fetch('/api/metrics/growth_value_ratio');
+        const gvData = await gvResponse.json();
+        fullGrowthValueData = gvData;
+
+        if (gvData && gvData.values) {
+            const current = gvData.values[gvData.values.length - 1];
+            document.getElementById('growth-value').textContent = current.toFixed(1);
+
+            const change30d = calcChange(gvData.values, 30);
+            if (change30d !== null) document.getElementById('growth-value-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(gvData.values, current);
+            const statusEl = document.getElementById('growth-value-status');
+            if (percentile > 80) {
+                statusEl.textContent = 'GROWTH Leading';
+                statusEl.className = 'badge bg-info';
+            } else if (percentile < 20) {
+                statusEl.textContent = 'VALUE Leading';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'Balanced';
+                statusEl.className = 'badge bg-secondary';
+            }
+        }
+
+        // Load IWM/SPY ratio
+        const iwmSpyResponse = await fetch('/api/metrics/iwm_spy_ratio');
+        const iwmSpyData = await iwmSpyResponse.json();
+        fullIwmSpyData = iwmSpyData;
+
+        if (iwmSpyData && iwmSpyData.values) {
+            const current = iwmSpyData.values[iwmSpyData.values.length - 1];
+            document.getElementById('iwm-spy-value').textContent = current.toFixed(1);
+
+            const change30d = calcChange(iwmSpyData.values, 30);
+            if (change30d !== null) document.getElementById('iwm-spy-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+            const percentile = calcPercentile(iwmSpyData.values, current);
+            const statusEl = document.getElementById('iwm-spy-status');
+            if (percentile > 70) {
+                statusEl.textContent = 'Small Caps Leading';
+                statusEl.className = 'badge bg-success';
+            } else if (percentile < 30) {
+                statusEl.textContent = 'Large Caps Leading';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'Balanced';
+                statusEl.className = 'badge bg-secondary';
+            }
+        }
+
+        // Load Sector data
+        await loadSectorData();
+
+        // Build charts
+        buildIndexChart();
+        buildRotationChart();
+
+    } catch (error) {
+        console.error('Error loading equity data:', error);
+    }
+}
+
+async function loadSectorData() {
+    // Semiconductors
+    const semiResponse = await fetch('/api/metrics/semiconductor_price');
+    const semiData = await semiResponse.json();
+    if (semiData && semiData.values) {
+        const current = semiData.values[semiData.values.length - 1];
+        document.getElementById('semi-price').textContent = '$' + current.toFixed(2);
+        const change5d = calcChange(semiData.values, 5);
+        const change30d = calcChange(semiData.values, 30);
+        if (change5d !== null) document.getElementById('semi-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+        if (change30d !== null) document.getElementById('semi-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+    }
+
+    // Financials
+    const xlfResponse = await fetch('/api/metrics/financials_sector_price');
+    const xlfData = await xlfResponse.json();
+    if (xlfData && xlfData.values) {
+        const current = xlfData.values[xlfData.values.length - 1];
+        document.getElementById('xlf-price').textContent = '$' + current.toFixed(2);
+        const change5d = calcChange(xlfData.values, 5);
+        const change30d = calcChange(xlfData.values, 30);
+        if (change5d !== null) document.getElementById('xlf-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+        if (change30d !== null) document.getElementById('xlf-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+    }
+
+    // Energy
+    const xleResponse = await fetch('/api/metrics/energy_sector_price');
+    const xleData = await xleResponse.json();
+    if (xleData && xleData.values) {
+        const current = xleData.values[xleData.values.length - 1];
+        document.getElementById('xle-price').textContent = '$' + current.toFixed(2);
+        const change5d = calcChange(xleData.values, 5);
+        const change30d = calcChange(xleData.values, 30);
+        if (change5d !== null) document.getElementById('xle-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+        if (change30d !== null) document.getElementById('xle-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+    }
+}
+
+// Helper to align datasets by date
+function alignDataByDate(primaryDates, primaryValues, secondaryDates, secondaryValues) {
+    // Create a date-to-value map for the secondary data
+    const dateMap = new Map();
+    secondaryDates.forEach((date, i) => {
+        dateMap.set(date, secondaryValues[i]);
+    });
+
+    // Create aligned values array matching primary dates
+    const alignedValues = primaryDates.map(date => {
+        return dateMap.has(date) ? dateMap.get(date) : null;
+    });
+
+    return alignedValues;
+}
+
+// Helper to filter data by timeframe (using date-based cutoff)
+function filterByTimeframe(dates, values, days) {
+    if (days === 0) return { dates, values }; // All data
+
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    const filteredDates = [];
+    const filteredValues = [];
+
+    dates.forEach((dateStr, idx) => {
+        const date = new Date(dateStr);
+        if (date >= cutoffDate) {
+            filteredDates.push(dateStr);
+            filteredValues.push(values[idx]);
+        }
+    });
+
+    return { dates: filteredDates, values: filteredValues };
+}
+
+function buildIndexChart() {
+    if (!fullSp500Data || !fullNasdaqData || !fullIwmData) return;
+
+    const ctx = document.getElementById('index-chart').getContext('2d');
+
+    // Filter S&P 500 data by timeframe first (use as the base)
+    const sp500Filtered = filterByTimeframe(fullSp500Data.dates, fullSp500Data.values, currentIndexTimeframe);
+    const sp500Dates = sp500Filtered.dates;
+    const sp500Values = sp500Filtered.values;
+
+    if (sp500Dates.length === 0) return;
+
+    // Align Nasdaq and Russell to S&P dates
+    const nasdaqAligned = alignDataByDate(sp500Dates, sp500Values, fullNasdaqData.dates, fullNasdaqData.values);
+    const iwmAligned = alignDataByDate(sp500Dates, sp500Values, fullIwmData.dates, fullIwmData.values);
+
+    // Find first index where all three have data for normalization base
+    let startIdx = 0;
+    for (let i = 0; i < sp500Values.length; i++) {
+        if (sp500Values[i] != null && nasdaqAligned[i] != null && iwmAligned[i] != null) {
+            startIdx = i;
+            break;
+        }
+    }
+
+    // Normalize to 100 starting from first common data point
+    const sp500Base = sp500Values[startIdx];
+    const nasdaqBase = nasdaqAligned[startIdx];
+    const iwmBase = iwmAligned[startIdx];
+
+    const sp500Normalized = sp500Values.map(v => v != null ? (v / sp500Base) * 100 : null);
+    const nasdaqNormalized = nasdaqAligned.map(v => v != null ? (v / nasdaqBase) * 100 : null);
+    const iwmNormalized = iwmAligned.map(v => v != null ? (v / iwmBase) * 100 : null);
+
+    const recessionAnnotations = getRecessionAnnotations(sp500Dates[0], sp500Dates[sp500Dates.length - 1]);
+
+    if (indexChart) indexChart.destroy();
+
+    indexChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.dates,
+            labels: sp500Dates,
             datasets: [
                 {
                     label: 'S&P 500',
-                    data: data.spy,
+                    data: sp500Normalized,
                     borderColor: 'rgb(13, 110, 253)',
-                    borderWidth: 2
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    fill: false
                 },
                 {
-                    label: 'Nasdaq-100',
-                    data: data.qqq,
-                    borderColor: 'rgb(40, 167, 69)',
-                    borderWidth: 2
+                    label: 'Nasdaq 100',
+                    data: nasdaqNormalized,
+                    borderColor: 'rgb(25, 135, 84)',
+                    backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    fill: false
                 },
                 {
-                    label: 'Small Caps',
-                    data: data.iwm,
+                    label: 'Russell 2000',
+                    data: iwmNormalized,
                     borderColor: 'rgb(255, 193, 7)',
-                    borderWidth: 2
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    fill: false
                 }
             ]
         },
         options: {
             responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: { position: 'top' },
-                annotation: {
-                    annotations: recessionAnnotations
+                annotation: { annotations: recessionAnnotations }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'MMM d'
+                        }
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Normalized (100 = Start)'
+                    }
                 }
             }
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', loadEquityChart);
+function buildRotationChart() {
+    if (!fullGrowthValueData || !fullIwmSpyData) return;
+
+    const ctx = document.getElementById('rotation-chart').getContext('2d');
+
+    // Filter Growth/Value data by timeframe first (use as the base)
+    const gvFiltered = filterByTimeframe(fullGrowthValueData.dates, fullGrowthValueData.values, currentRotationTimeframe);
+    const dates = gvFiltered.dates;
+    const gvValues = gvFiltered.values;
+
+    if (dates.length === 0) return;
+
+    // Align IWM/SPY to Growth/Value dates
+    const iwmSpyAligned = alignDataByDate(dates, gvValues, fullIwmSpyData.dates, fullIwmSpyData.values);
+
+    const recessionAnnotations = getRecessionAnnotations(dates[0], dates[dates.length - 1]);
+
+    if (rotationChart) rotationChart.destroy();
+
+    rotationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Growth/Value Ratio',
+                    data: gvValues,
+                    borderColor: 'rgb(13, 110, 253)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: 'y',
+                    fill: false
+                },
+                {
+                    label: 'Small/Large Cap Ratio',
+                    data: iwmSpyAligned,
+                    borderColor: 'rgb(253, 126, 20)',
+                    backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    yAxisID: 'y1',
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'MMM d'
+                        }
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Growth/Value'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Small/Large Cap'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadEquitySummary();
+    loadEquityData();
+
+    // Index chart timeframe button handlers
+    document.querySelectorAll('#index-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active button
+            document.querySelectorAll('#index-timeframe-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+
+            // Apply time frame filter
+            currentIndexTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildIndexChart();
+        });
+    });
+
+    // Rotation chart timeframe button handlers
+    document.querySelectorAll('#rotation-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            // Update active button
+            document.querySelectorAll('#rotation-timeframe-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+
+            // Apply time frame filter
+            currentRotationTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildRotationChart();
+        });
+    });
+});
 </script>
 {% endblock %}

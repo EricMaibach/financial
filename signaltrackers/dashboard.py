@@ -15,6 +15,17 @@ import threading
 import os
 from openai import OpenAI
 from kalshi_data import fetch_all_prediction_markets
+from web_search import SEARCH_FUNCTION_DEFINITION, execute_search_function, is_tavily_configured
+from ai_summary import (
+    generate_daily_summary, get_summary_for_display, get_latest_summary,
+    generate_crypto_summary, get_crypto_summary_for_display,
+    generate_equity_summary, get_equity_summary_for_display
+)
+from metric_tools import (
+    LIST_METRICS_FUNCTION,
+    GET_METRIC_FUNCTION,
+    execute_metric_function
+)
 
 app = Flask(__name__)
 
@@ -182,6 +193,21 @@ METRIC_DESCRIPTIONS = {
         'why': 'Growth stocks (including AI/tech) outperform when investors chase future earnings. Extreme growth outperformance often precedes corrections.',
         'watch': 'High ratio = growth bubble territory, similar to late 1990s. Falling ratio = value rotation, often signals economic slowdown fears.'
     },
+    'iwm_spy_ratio': {
+        'what': 'Russell 2000 Small Cap (IWM) divided by S&P 500 (SPY), scaled to 100. Measures small cap vs large cap relative performance.',
+        'why': 'Small caps are more economically sensitive. Rising ratio = risk appetite, economic optimism. Falling ratio = flight to quality, economic concern.',
+        'watch': 'Low ratio = large caps dominating (current environment). Rising ratio = small cap rotation, often bullish for broader economy. Watch for divergence from SPY.'
+    },
+    'financials_sector_price': {
+        'what': 'Financial Select Sector ETF (XLF) - tracks major banks, insurance, and financial services companies.',
+        'why': 'Banks are sensitive to yield curve, credit conditions, and economic health. Often leads the market during recoveries.',
+        'watch': 'Strength = economic optimism, steepening yield curve. Weakness = credit concerns, recession fears. Compare to broader market for rotation signals.'
+    },
+    'energy_sector_price': {
+        'what': 'Energy Select Sector ETF (XLE) - tracks major oil, gas, and energy equipment companies.',
+        'why': 'Energy sector performance reflects oil prices and inflation expectations. Counter-cyclical to tech in some environments.',
+        'watch': 'Strength = inflation hedge, commodity cycle. Weakness = deflation fears or oversupply. Often moves opposite to growth stocks.'
+    },
     'usdjpy_price': {
         'what': 'USD/JPY exchange rate - how many Japanese Yen per 1 US Dollar.',
         'why': 'Critical for monitoring the yen carry trade. Investors borrow cheap yen to invest in higher-yielding assets. When yen strengthens (USD/JPY falls), carry trades unwind violently.',
@@ -206,6 +232,71 @@ METRIC_DESCRIPTIONS = {
         'what': 'Consumer Price Index for All Urban Consumers - measures average change in prices paid by consumers for goods and services.',
         'why': 'Primary inflation gauge used by Fed for policy decisions. High CPI = Fed tightening. Low/negative CPI = deflation risk and potential easing.',
         'watch': 'Fed target is ~2% YoY. >3% = elevated inflation. >5% = high inflation requiring aggressive response. Negative readings = deflation, major crisis signal.'
+    },
+    'yield_curve_10y2y': {
+        'what': '10-Year Treasury yield minus 2-Year Treasury yield. The classic yield curve spread used to predict recessions.',
+        'why': 'When short-term rates exceed long-term rates (inversion), it signals markets expect economic weakness ahead. Has preceded every US recession since 1970.',
+        'watch': 'Positive spread = normal (economy healthy). Negative (inverted) = recession warning (typically 12-18 months ahead). Re-steepening after inversion often signals recession is imminent.'
+    },
+    'yield_curve_10y3m': {
+        'what': '10-Year Treasury yield minus 3-Month Treasury yield. The Fed\'s preferred yield curve measure for recession prediction.',
+        'why': 'More directly reflects Fed policy vs market expectations. 3-month rate is tightly tied to Fed Funds rate, while 10-year reflects growth/inflation expectations.',
+        'watch': 'Inversion here is considered more significant by economists. Extended inversion (>3 months) is a stronger recession signal than brief inversions.'
+    },
+    'initial_claims': {
+        'what': 'Weekly count of new unemployment insurance filings. Leading indicator of labor market health.',
+        'why': 'First signal of labor market stress. Rising claims = companies laying off workers. Tends to spike quickly at recession onset.',
+        'watch': 'Current healthy range: 200-250k. Warning zone: 250-300k. Recession signal: >300k sustained. Crisis: >400k. Watch for trend, not single weeks.'
+    },
+    'continuing_claims': {
+        'what': 'Total number of people receiving unemployment benefits. Lagging confirmation of labor market conditions.',
+        'why': 'Shows how long people stay unemployed. Rising continuing claims = harder to find new jobs = weakening economy.',
+        'watch': 'Confirms initial claims trends. Sustained rise indicates recession has begun. Watch for divergence from initial claims (longer unemployment duration).'
+    },
+    'fed_balance_sheet': {
+        'what': 'Total assets held by the Federal Reserve in billions of dollars. Includes Treasury securities, mortgage-backed securities, and other assets acquired through QE programs.',
+        'why': 'Primary measure of Fed liquidity injection. Balance sheet expansion (QE) = adding liquidity = bullish for risk assets. Quantitative tightening (QT) = draining liquidity = headwind for markets.',
+        'watch': 'Peak was ~$9 trillion in 2022. Currently shrinking via QT. Sharp expansion = crisis response. Correlation with Bitcoin and risk assets is strong.'
+    },
+    'reverse_repo': {
+        'what': 'Overnight Reverse Repurchase Agreement Facility usage in billions. Money market funds park excess cash at the Fed overnight.',
+        'why': 'Measures excess liquidity in the system. High RRP = too much cash chasing too few safe assets. Declining RRP = liquidity being absorbed by Treasury issuance or markets.',
+        'watch': 'Peak was ~$2.5 trillion. Declining = liquidity draining from system. Near zero = potential liquidity stress. Rapid drop can signal tightening conditions.'
+    },
+    'nfci': {
+        'what': 'Chicago Fed National Financial Conditions Index. Weighted average of 105 financial indicators including risk, credit, and leverage measures.',
+        'why': 'Comprehensive measure of financial stress. Negative values = loose conditions (below average tightness). Positive values = tight conditions (stress building).',
+        'watch': 'Zero = average conditions. >0.5 = tightening, watch for stress. <-0.5 = very loose, risk-on. Spikes precede or coincide with market stress events.'
+    },
+    'fear_greed_index': {
+        'what': 'Alternative.me Crypto Fear & Greed Index (0-100 scale). Composite of volatility, momentum, social media, surveys, and dominance metrics.',
+        'why': 'Sentiment indicator for crypto markets. Extreme fear often marks bottoms, extreme greed marks tops. Contrarian signal.',
+        'watch': '0-25 = Extreme Fear (potential buying opportunity). 26-46 = Fear. 47-54 = Neutral. 55-75 = Greed. 76-100 = Extreme Greed (potential top).'
+    },
+    'btc_gold_ratio': {
+        'what': 'Bitcoin price divided by gold price (ounces of gold per BTC). Measures Bitcoin\'s value relative to the traditional store of value.',
+        'why': 'Compares two competing store-of-value assets. Rising ratio = Bitcoin outperforming gold. Falling ratio = gold outperforming Bitcoin.',
+        'watch': 'Ratio expansion during risk-on periods, contraction during risk-off. Track alongside Fed liquidity - both assets respond to monetary policy.'
+    },
+    'real_yield_10y': {
+        'what': '10-Year Treasury Inflation-Protected Securities (TIPS) yield. Represents the real (inflation-adjusted) return on 10-year government bonds.',
+        'why': 'Key driver of gold prices - gold has strong inverse correlation with real yields. When real yields fall, gold becomes more attractive.',
+        'watch': 'Rising real yields = headwind for gold. Falling real yields = tailwind for gold. Watch for Fed policy shifts affecting real rates.'
+    },
+    'breakeven_inflation_10y': {
+        'what': '10-Year breakeven inflation rate (nominal Treasury yield minus TIPS yield). Market\'s expectation for average inflation over next 10 years.',
+        'why': 'Measures inflation expectations. Higher breakevens = market expects more inflation, which can support gold prices.',
+        'watch': 'Rising breakevens often coincide with gold rallies. Track alongside CPI and Fed inflation targets (2%).'
+    },
+    'gdx_gld_ratio': {
+        'what': 'Gold miners ETF (GDX) divided by gold price ETF (GLD). Measures how miners are performing relative to gold itself.',
+        'why': 'Miners have leverage to gold moves. When miners lead gold higher, it\'s bullish. When miners lag, it can signal exhaustion.',
+        'watch': 'Rising ratio = miners outperforming (bullish), falling ratio = miners lagging (bearish divergence). Miners often lead gold at turning points.'
+    },
+    'treasury_10y': {
+        'what': '10-Year Treasury Constant Maturity Rate (DGS10). The nominal yield on 10-year US government bonds.',
+        'why': 'Benchmark risk-free rate for the US. Nominal yield = Real yield + Breakeven inflation. Key reference for all financial assets.',
+        'watch': 'Rising yields can pressure gold and growth stocks. Compare to real yields to understand inflation expectations.'
     }
 }
 
@@ -265,6 +356,8 @@ def calculate_top_movers(num_movers=5):
         'small_cap_price': {'display': 'pct', 'unit': '%', 'name': 'Small Caps', 'link': '/explorer?metric=small_cap_price'},
         'tech_sector_price': {'display': 'pct', 'unit': '%', 'name': 'Tech Sector', 'link': '/explorer?metric=tech_sector_price'},
         'semiconductor_price': {'display': 'pct', 'unit': '%', 'name': 'Semiconductors', 'link': '/explorer?metric=semiconductor_price'},
+        'financials_sector_price': {'display': 'pct', 'unit': '%', 'name': 'Financials', 'link': '/explorer?metric=financials_sector_price'},
+        'energy_sector_price': {'display': 'pct', 'unit': '%', 'name': 'Energy', 'link': '/explorer?metric=energy_sector_price'},
         'treasury_20yr_price': {'display': 'pct', 'unit': '%', 'name': 'Treasury 20Y', 'link': '/explorer?metric=treasury_20yr_price'},
         'dollar_index_price': {'display': 'pct', 'unit': '%', 'name': 'Dollar Index', 'link': '/explorer?metric=dollar_index_price'},
         'usdjpy_price': {'display': 'pct', 'unit': '%', 'name': 'USD/JPY', 'link': '/explorer?metric=usdjpy_price'},
@@ -274,11 +367,13 @@ def calculate_top_movers(num_movers=5):
         'smh_spy_ratio': {'display': 'pct', 'unit': '%', 'name': 'Semiconductor/SPY', 'link': '/explorer?metric=smh_spy_ratio'},
         'xlk_spy_ratio': {'display': 'pct', 'unit': '%', 'name': 'Tech/SPY', 'link': '/explorer?metric=xlk_spy_ratio'},
         'growth_value_ratio': {'display': 'pct', 'unit': '%', 'name': 'Growth/Value', 'link': '/explorer?metric=growth_value_ratio'},
+        'iwm_spy_ratio': {'display': 'pct', 'unit': '%', 'name': 'Small/Large Cap', 'link': '/explorer?metric=iwm_spy_ratio'},
         'market_breadth_ratio': {'display': 'pct', 'unit': '%', 'name': 'Market Breadth', 'link': '/explorer?metric=market_breadth_ratio'},
 
         # Yields - use absolute change
         'japan_10y_yield': {'display': 'abs', 'unit': '%', 'name': 'Japan 10Y Yield', 'link': '/explorer?metric=japan_10y_yield', 'multiplier': 1},
         'real_yield_proxy': {'display': 'pct', 'unit': '%', 'name': 'Real Yield Proxy', 'link': '/explorer?metric=real_yield_proxy'},
+        'treasury_10y': {'display': 'abs', 'unit': '%', 'name': '10Y Treasury', 'link': '/explorer?metric=treasury_10y', 'multiplier': 1},
 
         # ETF spreads
         'hyg_treasury_spread': {'display': 'pct', 'unit': '%', 'name': 'HYG-Treasury Spread', 'link': '/explorer?metric=hyg_treasury_spread'},
@@ -288,6 +383,28 @@ def calculate_top_movers(num_movers=5):
         'consumer_confidence': {'display': 'pct', 'unit': '%', 'name': 'Consumer Confidence', 'link': '/explorer?metric=consumer_confidence'},
         'm2_money_supply': {'display': 'pct', 'unit': '%', 'name': 'M2 Money Supply', 'link': '/explorer?metric=m2_money_supply'},
         'cpi': {'display': 'pct', 'unit': '%', 'name': 'CPI (Inflation)', 'link': '/explorer?metric=cpi'},
+
+        # Yield Curve - use absolute change (spread in %)
+        'yield_curve_10y2y': {'display': 'abs', 'unit': '%', 'name': '10Y-2Y Yield Curve', 'link': '/explorer?metric=yield_curve_10y2y', 'multiplier': 1},
+        'yield_curve_10y3m': {'display': 'abs', 'unit': '%', 'name': '10Y-3M Yield Curve', 'link': '/explorer?metric=yield_curve_10y3m', 'multiplier': 1},
+
+        # Labor Market - use % change
+        'initial_claims': {'display': 'pct', 'unit': '%', 'name': 'Initial Claims', 'link': '/explorer?metric=initial_claims'},
+        'continuing_claims': {'display': 'pct', 'unit': '%', 'name': 'Continuing Claims', 'link': '/explorer?metric=continuing_claims'},
+
+        # Fed Liquidity & Financial Conditions - use % change
+        'fed_balance_sheet': {'display': 'pct', 'unit': '%', 'name': 'Fed Balance Sheet', 'link': '/explorer?metric=fed_balance_sheet'},
+        'reverse_repo': {'display': 'pct', 'unit': '%', 'name': 'Reverse Repo', 'link': '/explorer?metric=reverse_repo'},
+        'nfci': {'display': 'abs', 'unit': 'index', 'name': 'NFCI', 'link': '/explorer?metric=nfci', 'multiplier': 1},
+
+        # Crypto Sentiment
+        'fear_greed_index': {'display': 'abs', 'unit': 'pts', 'name': 'Crypto Fear/Greed', 'link': '/explorer?metric=fear_greed_index', 'multiplier': 1},
+        'btc_gold_ratio': {'display': 'pct', 'unit': '%', 'name': 'BTC/Gold Ratio', 'link': '/explorer?metric=btc_gold_ratio'},
+
+        # Real Yields & Inflation (Gold Drivers)
+        'real_yield_10y': {'display': 'abs', 'unit': '%', 'name': '10Y Real Yield', 'link': '/explorer?metric=real_yield_10y', 'multiplier': 1},
+        'breakeven_inflation_10y': {'display': 'abs', 'unit': '%', 'name': '10Y Breakeven', 'link': '/explorer?metric=breakeven_inflation_10y', 'multiplier': 1},
+        'gdx_gld_ratio': {'display': 'pct', 'unit': '%', 'name': 'GDX/GLD Ratio', 'link': '/explorer?metric=gdx_gld_ratio'},
     }
 
     # Process each metric file
@@ -779,10 +896,16 @@ def safe_havens():
     return render_template('safe_havens.html')
 
 
-@app.route('/scenarios')
-def scenarios():
-    """Scenarios page."""
-    return render_template('scenarios.html')
+@app.route('/divergence')
+def divergence():
+    """Divergence gap analysis page."""
+    return render_template('divergence.html')
+
+
+@app.route('/crypto')
+def crypto():
+    """Crypto/Bitcoin analysis page."""
+    return render_template('crypto.html')
 
 
 @app.route('/api/dashboard')
@@ -1100,6 +1223,43 @@ def run_data_collection():
         reload_status['last_reload'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print("Data reload completed successfully!")
 
+        # Generate AI summary after successful data reload
+        print("Generating AI daily summary...")
+        try:
+            market_summary = generate_market_summary()
+            top_movers = calculate_top_movers(5)
+            result = generate_daily_summary(market_summary, top_movers)
+            if result['success']:
+                print("AI summary generated successfully!")
+            else:
+                print(f"AI summary generation failed: {result['error']}")
+        except Exception as summary_error:
+            print(f"AI summary error (non-fatal): {summary_error}")
+
+        # Generate Crypto AI summary
+        print("Generating Crypto AI summary...")
+        try:
+            crypto_summary_data = generate_crypto_market_summary()
+            crypto_result = generate_crypto_summary(crypto_summary_data)
+            if crypto_result['success']:
+                print("Crypto AI summary generated successfully!")
+            else:
+                print(f"Crypto AI summary generation failed: {crypto_result['error']}")
+        except Exception as crypto_summary_error:
+            print(f"Crypto AI summary error (non-fatal): {crypto_summary_error}")
+
+        # Generate Equity AI summary
+        print("Generating Equity Markets AI summary...")
+        try:
+            equity_summary_data = generate_equity_market_summary()
+            equity_result = generate_equity_summary(equity_summary_data)
+            if equity_result['success']:
+                print("Equity AI summary generated successfully!")
+            else:
+                print(f"Equity AI summary generation failed: {equity_result['error']}")
+        except Exception as equity_summary_error:
+            print(f"Equity AI summary error (non-fatal): {equity_summary_error}")
+
     except Exception as e:
         reload_status['error'] = str(e)
         print(f"Data reload error: {e}")
@@ -1151,6 +1311,127 @@ def api_prediction_markets():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/ai-summary')
+def api_ai_summary():
+    """Get the current AI-generated daily summary."""
+    summary = get_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No summary available',
+        'message': 'Run a data reload to generate a summary'
+    }), 404
+
+
+@app.route('/api/ai-summary/generate', methods=['POST'])
+def api_generate_summary():
+    """Manually trigger AI summary generation."""
+    try:
+        market_summary = generate_market_summary()
+        top_movers = calculate_top_movers(5)
+        result = generate_daily_summary(market_summary, top_movers)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/crypto-summary')
+def api_crypto_summary():
+    """Get the current AI-generated crypto/Bitcoin summary."""
+    summary = get_crypto_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No crypto summary available',
+        'message': 'Run a data reload to generate a summary'
+    }), 404
+
+
+@app.route('/api/crypto-summary/generate', methods=['POST'])
+def api_generate_crypto_summary():
+    """Manually trigger crypto AI summary generation."""
+    try:
+        crypto_summary_data = generate_crypto_market_summary()
+        result = generate_crypto_summary(crypto_summary_data)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/equity-summary')
+def api_equity_summary():
+    """Get the current AI-generated equity markets summary."""
+    summary = get_equity_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No equity summary available',
+        'message': 'Run a data reload to generate a summary'
+    }), 404
+
+
+@app.route('/api/equity-summary/generate', methods=['POST'])
+def api_generate_equity_summary():
+    """Manually trigger equity AI summary generation."""
+    try:
+        equity_summary_data = generate_equity_market_summary()
+        result = generate_equity_summary(equity_summary_data)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/debug/web-search-status')
+def api_debug_web_search():
+    """Debug endpoint to check web search configuration."""
+    from web_search import TAVILY_API_KEY
+    return jsonify({
+        'tavily_configured': is_tavily_configured(),
+        'tavily_api_key_in_module': bool(TAVILY_API_KEY),
+        'tavily_api_key_in_environ': bool(os.environ.get('TAVILY_API_KEY')),
+        'tavily_api_key_preview': os.environ.get('TAVILY_API_KEY', '')[:8] + '...' if os.environ.get('TAVILY_API_KEY') else None
+    })
+
+
 def generate_market_summary():
     """Generate a comprehensive market data summary for AI context."""
     try:
@@ -1179,6 +1460,14 @@ def generate_market_summary():
         # Yen Carry Trade
         usdjpy_df = load_csv_data('usdjpy_price.csv')
         japan_10y_df = load_csv_data('japan_10y_yield.csv')
+
+        # Yield Curve
+        yield_curve_10y2y_df = load_csv_data('yield_curve_10y2y.csv')
+        yield_curve_10y3m_df = load_csv_data('yield_curve_10y3m.csv')
+
+        # Labor Market
+        initial_claims_df = load_csv_data('initial_claims.csv')
+        continuing_claims_df = load_csv_data('continuing_claims.csv')
 
         # Economic Indicators
         consumer_confidence_df = load_csv_data('consumer_confidence.csv')
@@ -1305,6 +1594,35 @@ def generate_market_summary():
                 summary_parts.append("  (Rising yields = BOJ tightening = carry trade at risk)")
         summary_parts.append("")
 
+        # Yield Curve (Recession Indicators)
+        summary_parts.append("## YIELD CURVE (Recession Indicators)")
+        if yield_curve_10y2y_df is not None:
+            stats = get_stats(yield_curve_10y2y_df)
+            if stats:
+                status = "INVERTED" if stats['current'] < 0 else "Normal"
+                summary_parts.append(f"10Y-2Y Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.2f}%")
+        if yield_curve_10y3m_df is not None:
+            stats = get_stats(yield_curve_10y3m_df)
+            if stats:
+                status = "INVERTED" if stats['current'] < 0 else "Normal"
+                summary_parts.append(f"10Y-3M Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.2f}%")
+        summary_parts.append("  (Negative = inverted yield curve, historically precedes recessions by 12-18 months)")
+        summary_parts.append("")
+
+        # Labor Market
+        summary_parts.append("## LABOR MARKET (Weekly Data)")
+        if initial_claims_df is not None:
+            stats = get_stats(initial_claims_df)
+            if stats:
+                level = "Low" if stats['current'] < 250 else "Elevated" if stats['current'] > 300 else "Normal"
+                summary_parts.append(f"Initial Claims: {stats['current']:.0f}k [{level}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.0f}k")
+        if continuing_claims_df is not None:
+            stats = get_stats(continuing_claims_df)
+            if stats:
+                summary_parts.append(f"Continuing Claims: {stats['current']:.0f}k ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.0f}k")
+        summary_parts.append("  (Rising claims = labor market weakening; Initial >300k = warning, >400k = recession signal)")
+        summary_parts.append("")
+
         # Economic Indicators
         summary_parts.append("## ECONOMIC INDICATORS (Monthly Data)")
         if consumer_confidence_df is not None:
@@ -1347,12 +1665,387 @@ def generate_market_summary():
         return "Market data summary unavailable."
 
 
+def generate_crypto_market_summary():
+    """Generate a crypto-focused market data summary for the Crypto AI briefing."""
+    try:
+        summary_parts = []
+        summary_parts.append("# CRYPTO/BITCOIN MARKET DATA SUMMARY")
+        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append("")
+
+        def get_stats(df):
+            if df is None or len(df) < 2:
+                return None
+            col = [c for c in df.columns if c != 'date'][0]
+            current = df.iloc[-1][col]
+            values = df[col].dropna().tolist()
+            percentile = sum(1 for v in values if v <= current) / len(values) * 100
+
+            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
+            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
+            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
+
+            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
+            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
+
+            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
+            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
+
+            return {
+                'current': current,
+                'percentile': percentile,
+                'change_1d': change_1d,
+                'change_5d': change_5d,
+                'change_30d': change_30d,
+                'pct_change_5d': pct_change_5d,
+                'pct_change_30d': pct_change_30d,
+                'high_52w': high_52w,
+                'low_52w': low_52w
+            }
+
+        # Load crypto-relevant metrics
+        bitcoin_df = load_csv_data('bitcoin_price.csv')
+        gold_df = load_csv_data('gold_price.csv')
+        btc_gold_ratio_df = load_csv_data('btc_gold_ratio.csv')
+        fear_greed_df = load_csv_data('fear_greed_index.csv')
+        fed_balance_df = load_csv_data('fed_balance_sheet.csv')
+        reverse_repo_df = load_csv_data('reverse_repo.csv')
+        nfci_df = load_csv_data('nfci.csv')
+        m2_df = load_csv_data('m2_money_supply.csv')
+        vix_df = load_csv_data('vix_price.csv')
+        dxy_df = load_csv_data('dollar_index_price.csv')
+        sp500_df = load_csv_data('sp500_price.csv')
+        nasdaq_df = load_csv_data('nasdaq_price.csv')
+
+        # Bitcoin Section
+        summary_parts.append("## BITCOIN")
+        if bitcoin_df is not None:
+            stats = get_stats(bitcoin_df)
+            if stats:
+                summary_parts.append(f"Price: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"  52-week range: ${stats['low_52w']:,.0f} - ${stats['high_52w']:,.0f}")
+
+                # Distance from 52w high/low
+                dist_from_high = ((stats['current'] / stats['high_52w']) - 1) * 100
+                dist_from_low = ((stats['current'] / stats['low_52w']) - 1) * 100
+                summary_parts.append(f"  Distance from 52w high: {dist_from_high:.1f}% | from low: +{dist_from_low:.1f}%")
+        summary_parts.append("")
+
+        # Fear & Greed Index
+        summary_parts.append("## CRYPTO SENTIMENT")
+        if fear_greed_df is not None:
+            stats = get_stats(fear_greed_df)
+            if stats:
+                # Interpret the level
+                level = stats['current']
+                if level <= 25:
+                    interpretation = "EXTREME FEAR (historically good buying zone)"
+                elif level <= 46:
+                    interpretation = "Fear"
+                elif level <= 54:
+                    interpretation = "Neutral"
+                elif level <= 75:
+                    interpretation = "Greed"
+                else:
+                    interpretation = "EXTREME GREED (historically poor time to buy)"
+
+                summary_parts.append(f"Fear & Greed Index: {level:.0f}/100 [{interpretation}]")
+                summary_parts.append(f"  5-day change: {stats['change_5d']:+.0f} pts | 30-day: {stats['change_30d']:+.0f} pts")
+                summary_parts.append(f"  Historical context: {stats['percentile']:.1f}th percentile")
+
+                # Key levels
+                summary_parts.append("  KEY LEVELS: <25 = extreme fear (contrarian buy), >75 = extreme greed (caution)")
+        summary_parts.append("")
+
+        # BTC/Gold Ratio
+        summary_parts.append("## BTC/GOLD RATIO")
+        if btc_gold_ratio_df is not None:
+            stats = get_stats(btc_gold_ratio_df)
+            if stats:
+                summary_parts.append(f"BTC priced in gold: {stats['current']:.1f} oz ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Rising = BTC outperforming gold, risk-on; Falling = gold outperforming, risk-off)")
+        summary_parts.append("")
+
+        # Liquidity Indicators
+        summary_parts.append("## LIQUIDITY INDICATORS (Key BTC Drivers)")
+
+        if fed_balance_df is not None:
+            stats = get_stats(fed_balance_df)
+            if stats:
+                trend = "EXPANDING (bullish for BTC)" if stats['change_30d'] > 0 else "SHRINKING (headwind for BTC)"
+                summary_parts.append(f"Fed Balance Sheet: ${stats['current']/1000:.2f} trillion [{trend}]")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.2f}%")
+
+        if reverse_repo_df is not None:
+            stats = get_stats(reverse_repo_df)
+            if stats:
+                trend = "Rising (liquidity parking at Fed)" if stats['change_30d'] > 0 else "Declining (liquidity entering markets)"
+                summary_parts.append(f"Reverse Repo (RRP): ${stats['current']:.0f}B [{trend}]")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
+
+        if nfci_df is not None:
+            stats = get_stats(nfci_df)
+            if stats:
+                if stats['current'] > 0.5:
+                    condition = "TIGHT (bearish for risk assets)"
+                elif stats['current'] > 0:
+                    condition = "Tightening"
+                elif stats['current'] > -0.5:
+                    condition = "Loose (bullish for risk assets)"
+                else:
+                    condition = "VERY LOOSE (bullish for risk assets)"
+                summary_parts.append(f"NFCI (Financial Conditions): {stats['current']:.2f} [{condition}]")
+                summary_parts.append(f"  30-day change: {stats['change_30d']:+.2f}")
+                summary_parts.append("  (Negative = loose conditions favor BTC; Positive = tight conditions = headwind)")
+
+        if m2_df is not None:
+            stats = get_stats(m2_df)
+            if stats:
+                # Calculate YoY change
+                if len(m2_df) > 12:
+                    yoy = ((stats['current'] / m2_df.iloc[-13][[c for c in m2_df.columns if c != 'date'][0]]) - 1) * 100
+                else:
+                    yoy = 0
+                summary_parts.append(f"M2 Money Supply: ${stats['current']/1000:.1f} trillion | YoY: {yoy:+.1f}%")
+                summary_parts.append("  (BTC correlates ~0.7-0.8 with global M2)")
+        summary_parts.append("")
+
+        # Risk Context
+        summary_parts.append("## RISK CONTEXT")
+        if vix_df is not None:
+            stats = get_stats(vix_df)
+            if stats:
+                level = "HIGH FEAR" if stats['current'] > 30 else "Elevated" if stats['current'] > 20 else "Low"
+                summary_parts.append(f"VIX: {stats['current']:.1f} [{level}] | 5d: {stats['pct_change_5d']:+.1f}%")
+
+        if dxy_df is not None:
+            stats = get_stats(dxy_df)
+            if stats:
+                trend = "Strengthening (BTC headwind)" if stats['change_30d'] > 0 else "Weakening (BTC tailwind)"
+                summary_parts.append(f"Dollar Index (DXY): {stats['current']:.2f} [{trend}] | 30d: {stats['pct_change_30d']:+.1f}%")
+
+        if sp500_df is not None:
+            stats = get_stats(sp500_df)
+            if stats:
+                summary_parts.append(f"S&P 500: {stats['current']:,.0f} | 30d: {stats['pct_change_30d']:+.1f}%")
+
+        if nasdaq_df is not None:
+            stats = get_stats(nasdaq_df)
+            if stats:
+                summary_parts.append(f"Nasdaq 100: {stats['current']:,.0f} | 30d: {stats['pct_change_30d']:+.1f}%")
+        summary_parts.append("")
+
+        # Key Insights
+        summary_parts.append("## KEY RELATIONSHIPS TO MONITOR")
+        summary_parts.append("- Fed Balance Sheet expanding + NFCI negative = bullish liquidity setup for BTC")
+        summary_parts.append("- Fear & Greed <25 + Fed not tightening = historical buying opportunity")
+        summary_parts.append("- BTC/Gold ratio falling while gold rises = risk-off rotation")
+        summary_parts.append("- VIX spiking + NFCI positive = expect BTC volatility/downside")
+        summary_parts.append("")
+
+        return "\n".join(summary_parts)
+
+    except Exception as e:
+        print(f"Error generating crypto market summary: {e}")
+        return "Crypto market data summary unavailable."
+
+
+def generate_equity_market_summary():
+    """Generate an equity-focused market data summary for the Equity AI briefing."""
+    try:
+        summary_parts = []
+        summary_parts.append("# EQUITY MARKETS DATA SUMMARY")
+        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append("")
+
+        def get_stats(df):
+            if df is None or len(df) < 2:
+                return None
+            col = [c for c in df.columns if c != 'date'][0]
+            current = df.iloc[-1][col]
+            values = df[col].dropna().tolist()
+            percentile = sum(1 for v in values if v <= current) / len(values) * 100
+
+            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
+            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
+            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
+
+            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
+            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
+
+            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
+            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
+
+            return {
+                'current': current,
+                'percentile': percentile,
+                'change_1d': change_1d,
+                'change_5d': change_5d,
+                'change_30d': change_30d,
+                'pct_change_5d': pct_change_5d,
+                'pct_change_30d': pct_change_30d,
+                'high_52w': high_52w,
+                'low_52w': low_52w
+            }
+
+        # Load equity-relevant metrics
+        sp500_df = load_csv_data('sp500_price.csv')
+        nasdaq_df = load_csv_data('nasdaq_price.csv')
+        small_cap_df = load_csv_data('small_cap_price.csv')
+        vix_df = load_csv_data('vix_price.csv')
+        breadth_df = load_csv_data('market_breadth_ratio.csv')
+        smh_spy_df = load_csv_data('smh_spy_ratio.csv')
+        growth_value_df = load_csv_data('growth_value_ratio.csv')
+        iwm_spy_df = load_csv_data('iwm_spy_ratio.csv')
+        financials_df = load_csv_data('financials_sector_price.csv')
+        energy_df = load_csv_data('energy_sector_price.csv')
+        semi_df = load_csv_data('semiconductor_price.csv')
+
+        # Core Indices Section
+        summary_parts.append("## CORE INDICES")
+        if sp500_df is not None:
+            stats = get_stats(sp500_df)
+            if stats:
+                summary_parts.append(f"S&P 500: {stats['current']:,.0f} ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
+
+        if nasdaq_df is not None:
+            stats = get_stats(nasdaq_df)
+            if stats:
+                summary_parts.append(f"Nasdaq 100: {stats['current']:,.0f} ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
+
+        if small_cap_df is not None:
+            stats = get_stats(small_cap_df)
+            if stats:
+                summary_parts.append(f"Russell 2000 (Small Caps): ${stats['current']:,.2f} ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
+        summary_parts.append("")
+
+        # VIX Section
+        summary_parts.append("## VOLATILITY")
+        if vix_df is not None:
+            stats = get_stats(vix_df)
+            if stats:
+                if stats['current'] < 15:
+                    level = "LOW (complacency)"
+                elif stats['current'] < 20:
+                    level = "Normal"
+                elif stats['current'] < 30:
+                    level = "Elevated"
+                else:
+                    level = "HIGH FEAR"
+                summary_parts.append(f"VIX: {stats['current']:.1f} [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  KEY LEVELS: <15 = complacent, 15-20 = normal, 20-30 = elevated, >30 = fear")
+        summary_parts.append("")
+
+        # Market Structure Section
+        summary_parts.append("## MARKET STRUCTURE (Breadth & Concentration)")
+        if breadth_df is not None:
+            stats = get_stats(breadth_df)
+            if stats:
+                if stats['percentile'] < 20:
+                    condition = "VERY NARROW (concentrated)"
+                elif stats['percentile'] < 40:
+                    condition = "Narrow"
+                elif stats['percentile'] < 60:
+                    condition = "Normal"
+                elif stats['percentile'] < 80:
+                    condition = "Broad"
+                else:
+                    condition = "VERY BROAD (healthy)"
+                summary_parts.append(f"Market Breadth (RSP/SPY): {stats['current']:.2f} [{condition}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Low = few stocks driving gains; High = broad participation)")
+
+        if smh_spy_df is not None:
+            stats = get_stats(smh_spy_df)
+            if stats:
+                if stats['percentile'] > 90:
+                    level = "EXTREME concentration"
+                elif stats['percentile'] > 75:
+                    level = "High concentration"
+                else:
+                    level = "Normal"
+                summary_parts.append(f"Semiconductor/SPY Ratio: {stats['current']:.1f} [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Proxy for AI/Mag 7 concentration)")
+        summary_parts.append("")
+
+        # Style Rotation Section
+        summary_parts.append("## STYLE & SIZE ROTATION")
+        if growth_value_df is not None:
+            stats = get_stats(growth_value_df)
+            if stats:
+                if stats['percentile'] > 80:
+                    bias = "Strong GROWTH leadership"
+                elif stats['percentile'] > 60:
+                    bias = "Growth favored"
+                elif stats['percentile'] > 40:
+                    bias = "Balanced"
+                elif stats['percentile'] > 20:
+                    bias = "Value favored"
+                else:
+                    bias = "Strong VALUE leadership"
+                summary_parts.append(f"Growth/Value Ratio: {stats['current']:.1f} [{bias}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
+
+        if iwm_spy_df is not None:
+            stats = get_stats(iwm_spy_df)
+            if stats:
+                if stats['percentile'] > 70:
+                    bias = "Small caps leading (risk-on)"
+                elif stats['percentile'] > 40:
+                    bias = "Balanced"
+                else:
+                    bias = "Large caps leading (quality flight)"
+                summary_parts.append(f"Small Cap/Large Cap Ratio: {stats['current']:.1f} [{bias}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
+        summary_parts.append("")
+
+        # Key Sectors Section
+        summary_parts.append("## KEY SECTORS")
+        if semi_df is not None:
+            stats = get_stats(semi_df)
+            if stats:
+                summary_parts.append(f"Semiconductors (SMH): ${stats['current']:,.2f} | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+
+        if financials_df is not None:
+            stats = get_stats(financials_df)
+            if stats:
+                summary_parts.append(f"Financials (XLF): ${stats['current']:,.2f} | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+
+        if energy_df is not None:
+            stats = get_stats(energy_df)
+            if stats:
+                summary_parts.append(f"Energy (XLE): ${stats['current']:,.2f} | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        summary_parts.append("")
+
+        # Key Insights
+        summary_parts.append("## KEY RELATIONSHIPS TO MONITOR")
+        summary_parts.append("- Breadth low + indices high = fragile rally dependent on few stocks")
+        summary_parts.append("- Small caps leading = risk appetite, economic optimism")
+        summary_parts.append("- Growth/Value ratio falling = potential rotation to defensives")
+        summary_parts.append("- VIX <15 with indices at highs = complacency (watch for reversal)")
+        summary_parts.append("")
+
+        return "\n".join(summary_parts)
+
+    except Exception as e:
+        print(f"Error generating equity market summary: {e}")
+        return "Equity market data summary unavailable."
+
+
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
-    """Handle chat messages with OpenAI API."""
+    """Handle chat messages with OpenAI API, with web search capability."""
     try:
         data = request.json
         user_message = data.get('message', '')
+        conversation_history = data.get('history', [])  # Get conversation history
 
         if not user_message:
             return jsonify({'error': 'No message provided'}), 400
@@ -1363,52 +2056,193 @@ def api_chat():
                 'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'
             }), 500
 
-        # Generate market data summary for context
-        market_summary = generate_market_summary()
+        # Check if web search is available
+        web_search_available = is_tavily_configured()
+        print(f"[CHAT] Web search available: {web_search_available}")
 
-        # System message with context
-        system_message = f"""You are a financial markets expert assistant helping users understand market divergence data.
+        # Build system message - now tool-based, not data-dump
+        system_message = """You are a financial markets expert assistant with access to real-time market data through tools.
 
-You have access to current market data showing an unprecedented divergence between safe havens (gold) and credit markets.
+AVAILABLE TOOLS:
+1. **list_available_metrics** - Discover all available market data series (credit spreads, equities, safe havens, etc.)
+2. **get_metric_data** - Fetch detailed data for any metric (current value, percentile, historical stats, recent changes)
+3. **search_web** - Search for current news, market commentary, or recent events (if configured)
 
-CURRENT MARKET DATA:
-{market_summary}
+HOW TO USE TOOLS EFFECTIVELY:
+- When users ask about specific metrics, USE get_metric_data to fetch current data rather than guessing
+- When users ask "what data do you have?" or ask about a metric you're unsure of, USE list_available_metrics first
+- Only search the web for news/current events - use metric tools for market data
 
 KEY CONTEXT:
-- The "Divergence Gap" measures the difference between what gold prices imply credit spreads should be versus actual spreads
-- A large divergence suggests one market is catastrophically wrong
-- Gold at 90+ percentile = pricing in crisis
-- Credit spreads at <10 percentile = pricing in no risk
-- This setup is historically unprecedented
+- This dashboard tracks a wide range of financial market data: credit spreads, equities, safe havens, yield curves, economic indicators, and more
+- The divergence_gap metric compares gold-implied spreads vs actual HY spreads - one of many useful cross-market comparisons
+- Use percentiles to contextualize whether current values are historically high/low
+- Yield curve metrics (10y2y, 10y3m) are important recession indicators
+- Credit spreads (HY, IG, CCC) reflect market stress levels
+- Historical recession data is available to correlate with other indicators
 
 YOUR ROLE:
-- Help users understand what the numbers mean
-- Explain market dynamics and risks
-- Answer questions about specific metrics
-- Provide context about historical precedents
-- Discuss possible scenarios and outcomes
+- Help users understand what the numbers mean and their implications
+- Fetch specific data when asked about metrics (don't make up numbers!)
+- Explain market dynamics, risks, and historical context
 - Be objective and data-driven
 - Don't give specific investment advice (no "you should buy/sell X")
-- Be conversational and helpful
+- Be conversational and educational
 
-Be concise but thorough. Focus on education and understanding."""
+IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools to get current data. Don't rely on potentially stale information."""
 
-        # Call OpenAI API
-        response = openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message}
-            ],
-            temperature=0.7,
-            max_tokens=800
-        )
+        # Build messages array: system message + conversation history + current message
+        messages = [{"role": "system", "content": system_message}]
 
-        ai_message = response.choices[0].message.content
+        # Add conversation history (excluding the current message which is already in history)
+        # The history includes the current user message, so we add all but the last one
+        for msg in conversation_history[:-1] if conversation_history else []:
+            if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
+                messages.append({"role": msg['role'], "content": msg['content']})
+
+        # Add current user message
+        messages.append({"role": "user", "content": user_message})
+
+        # Build API call parameters
+        api_params = {
+            "model": "gpt-5.2",
+            "messages": messages,
+            "temperature": 0.7,
+            "max_completion_tokens": 800
+        }
+
+        # Add function calling tools - metric tools always available, web search if configured
+        tools = [
+            {"type": "function", "function": LIST_METRICS_FUNCTION},
+            {"type": "function", "function": GET_METRIC_FUNCTION}
+        ]
+        if web_search_available:
+            tools.append({"type": "function", "function": SEARCH_FUNCTION_DEFINITION})
+
+        api_params["tools"] = tools
+        api_params["tool_choice"] = "auto"
+
+        # API call with tool calling loop (handles multiple rounds of tool calls)
+        max_iterations = 5  # Prevent infinite loops
+        iteration = 0
+        ai_message = None
+
+        print(f"[CHAT] Starting chat request for message: {user_message[:100]}...")
+        print(f"[CHAT] Using model: {api_params['model']}")
+        print(f"[CHAT] Web search enabled: {web_search_available}")
+        print(f"[CHAT] Conversation history length: {len(conversation_history)}")
+
+        while iteration < max_iterations:
+            iteration += 1
+            print(f"[CHAT] API call iteration {iteration}/{max_iterations}")
+
+            response = openai_client.chat.completions.create(**api_params)
+            response_message = response.choices[0].message
+
+            # Log full response details
+            print(f"[CHAT] Response finish_reason: {response.choices[0].finish_reason}")
+            print(f"[CHAT] Response message role: {response_message.role}")
+            print(f"[CHAT] Response message content type: {type(response_message.content)}")
+            print(f"[CHAT] Response message content: {repr(response_message.content)[:200] if response_message.content else 'None'}")
+            print(f"[CHAT] Response has tool_calls: {bool(response_message.tool_calls)}")
+
+            # Check for refusal (some models have this)
+            if hasattr(response_message, 'refusal') and response_message.refusal:
+                print(f"[CHAT] Model refused: {response_message.refusal}")
+
+            if response_message.tool_calls:
+                print(f"[CHAT] Tool calls requested: {[tc.function.name for tc in response_message.tool_calls]}")
+                # Process each tool call
+                messages.append(response_message)
+
+                for tool_call in response_message.tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+                    print(f"[CHAT] Executing {function_name} with args: {function_args}")
+
+                    # Route to appropriate function handler
+                    if function_name == "search_web":
+                        result = execute_search_function(function_args)
+                    elif function_name in ["list_available_metrics", "get_metric_data"]:
+                        result = execute_metric_function(function_name, function_args)
+                    else:
+                        result = json.dumps({"error": f"Unknown function: {function_name}"})
+
+                    print(f"[CHAT] {function_name} returned {len(result)} chars")
+
+                    # Add function result to messages
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": function_name,
+                        "content": result
+                    })
+
+                # Update api_params messages for next iteration
+                api_params["messages"] = messages
+                api_params["max_completion_tokens"] = 1000  # Allow longer response with tool results
+            else:
+                # No more tool calls - we have the final response
+                ai_message = response_message.content
+                print(f"[CHAT] Final response - content is {'present' if ai_message else 'EMPTY/NONE'}")
+                if ai_message:
+                    print(f"[CHAT] Response preview: {ai_message[:200]}...")
+                break
+
+        print(f"[CHAT] Loop completed after {iteration} iterations")
+
+        # Handle case where we exhausted iterations or got None content
+        if ai_message is None or ai_message.strip() == "":
+            print(f"[CHAT] ERROR: Model returned empty content after {iteration} iterations")
+            print(f"[CHAT] Attempting retry without tools...")
+
+            # Retry without tools - simpler request
+            try:
+                retry_params = {
+                    "model": "gpt-5.2",
+                    "messages": [
+                        {"role": "system", "content": "You are a helpful financial markets assistant. Answer the user's question concisely."},
+                        {"role": "user", "content": user_message}
+                    ],
+                    "temperature": 0.7,
+                    "max_completion_tokens": 500
+                }
+                retry_response = openai_client.chat.completions.create(**retry_params)
+                retry_content = retry_response.choices[0].message.content
+                print(f"[CHAT] Retry finish_reason: {retry_response.choices[0].finish_reason}")
+                print(f"[CHAT] Retry content: {repr(retry_content)[:200] if retry_content else 'None'}")
+
+                if retry_content and retry_content.strip():
+                    ai_message = retry_content
+                    print(f"[CHAT] Retry successful!")
+                else:
+                    print(f"[CHAT] Retry also returned empty content!")
+                    ai_message = "I apologize, but the AI service is returning empty responses. This appears to be a temporary issue with the GPT-5.2 model. Please try again in a moment."
+            except Exception as retry_error:
+                print(f"[CHAT] Retry failed with error: {retry_error}")
+                ai_message = f"I apologize, but I wasn't able to generate a response. Error details: Model returned empty content."
+        else:
+            # Filter out any reasoning artifacts that might leak through
+            import re
+            lines = ai_message.split('\n')
+            filtered_lines = []
+            for line in lines:
+                # Skip lines that look like internal reasoning
+                if re.match(r'^(Need |Oops |Let me |I should |Thinking:|<think>|</think>)', line.strip()):
+                    print(f"[CHAT] Filtering out reasoning artifact: {line[:50]}")
+                    continue
+                filtered_lines.append(line)
+            ai_message = '\n'.join(filtered_lines).strip()
+
+            # If filtering removed everything, use fallback
+            if not ai_message:
+                print(f"[CHAT] WARNING: All content was filtered as reasoning artifacts")
+                ai_message = "I apologize, but I wasn't able to generate a response. Please try asking your question again."
 
         return jsonify({
             'message': ai_message,
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'web_search_enabled': web_search_available
         })
 
     except Exception as e:

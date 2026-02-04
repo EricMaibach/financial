@@ -196,6 +196,8 @@ const AIChatModule = {
     sendButton: null,
     closeButton: null,
     isOpen: false,
+    conversationHistory: [],  // Store conversation history
+    maxHistoryMessages: 10,   // Keep last 10 messages (5 exchanges)
 
     init() {
         // Get DOM elements
@@ -244,14 +246,14 @@ const AIChatModule = {
         welcomeMsg.innerHTML = `
             <div class="ai-chat-message-label">AI Assistant</div>
             <div class="ai-chat-message-ai">
-                Hi! I'm your Market AI Assistant. I have access to the latest market data including the historic divergence between gold and credit markets.
+                Hi! I'm your Financial Markets AI Assistant. I have access to real-time market data across equities, credit, safe havens, and economic indicators.
                 <br><br>
                 Ask me about:
                 <ul style="margin: 8px 0 0 0; padding-left: 20px;">
-                    <li>What the divergence gap means</li>
-                    <li>Specific metrics (VIX, credit spreads, gold, etc.)</li>
-                    <li>Possible scenarios and outcomes</li>
-                    <li>Historical context</li>
+                    <li>Specific metrics (VIX, credit spreads, yield curves, etc.)</li>
+                    <li>Market conditions and historical context</li>
+                    <li>Correlations between different indicators</li>
+                    <li>Economic data and recession indicators</li>
                 </ul>
             </div>
         `;
@@ -266,7 +268,10 @@ const AIChatModule = {
         this.chatInput.disabled = true;
         this.sendButton.disabled = true;
 
-        // Add user message
+        // Add user message to history
+        this.conversationHistory.push({ role: 'user', content: message });
+
+        // Add user message to UI
         this.addMessage('user', message);
 
         // Clear input
@@ -276,13 +281,16 @@ const AIChatModule = {
         const loadingId = this.addLoadingIndicator();
 
         try {
-            // Send to API
+            // Send to API with conversation history
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message })
+                body: JSON.stringify({
+                    message,
+                    history: this.conversationHistory.slice(-this.maxHistoryMessages)
+                })
             });
 
             // Remove loading indicator
@@ -295,13 +303,23 @@ const AIChatModule = {
 
             const data = await response.json();
 
-            // Add AI response
+            // Add AI response to history
+            this.conversationHistory.push({ role: 'assistant', content: data.message });
+
+            // Trim history if too long
+            if (this.conversationHistory.length > this.maxHistoryMessages) {
+                this.conversationHistory = this.conversationHistory.slice(-this.maxHistoryMessages);
+            }
+
+            // Add AI response to UI
             this.addMessage('ai', data.message);
 
         } catch (error) {
             console.error('Chat error:', error);
             this.removeLoadingIndicator(loadingId);
             this.addMessage('ai', `Sorry, I encountered an error: ${error.message}. Please make sure the OPENAI_API_KEY environment variable is set.`);
+            // Remove the failed user message from history
+            this.conversationHistory.pop();
         } finally {
             // Re-enable input
             this.chatInput.disabled = false;
@@ -327,7 +345,17 @@ const AIChatModule = {
     },
 
     formatMessage(text) {
-        // Convert markdown-style formatting to HTML
+        // Use marked library for full markdown rendering
+        if (typeof marked !== 'undefined') {
+            // Configure marked for safe rendering
+            marked.setOptions({
+                breaks: true,  // Convert \n to <br>
+                gfm: true,     // GitHub Flavored Markdown
+                sanitize: false
+            });
+            return marked.parse(text);
+        }
+        // Fallback if marked isn't loaded
         let formatted = text
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.+?)\*/g, '<em>$1</em>')

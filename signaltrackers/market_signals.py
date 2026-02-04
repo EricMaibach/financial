@@ -65,10 +65,24 @@ class MarketSignalsTracker:
             'ccc_spread': 'BAMLH0A3HYC',
             # Japan 10-Year Government Bond Yield (for yen carry trade monitoring)
             'japan_10y_yield': 'IRLTLT01JPM156N',
+            # Yield Curve (Recession Indicators)
+            'yield_curve_10y2y': 'T10Y2Y',  # 10-Year Treasury Constant Maturity Minus 2-Year
+            'yield_curve_10y3m': 'T10Y3M',  # 10-Year Treasury Constant Maturity Minus 3-Month
+            # Labor Market
+            'initial_claims': 'ICSA',  # Initial Jobless Claims (Weekly)
+            'continuing_claims': 'CCSA',  # Continuing Claims (Insured Unemployment)
             # Economic Indicators
             'consumer_confidence': 'UMCSENT',  # University of Michigan Consumer Sentiment
             'm2_money_supply': 'M2SL',  # M2 Money Stock (Billions of Dollars)
-            'cpi': 'CPIAUCSL'  # Consumer Price Index for All Urban Consumers
+            'cpi': 'CPIAUCSL',  # Consumer Price Index for All Urban Consumers
+            # Fed Liquidity & Financial Conditions
+            'fed_balance_sheet': 'WALCL',  # Federal Reserve Total Assets (Billions)
+            'reverse_repo': 'RRPONTSYD',  # Overnight Reverse Repurchase Agreements (Billions)
+            'nfci': 'NFCI',  # Chicago Fed National Financial Conditions Index
+            # Real Yields & Inflation Expectations (Gold Drivers)
+            'real_yield_10y': 'DFII10',  # 10-Year Real Interest Rate (TIPS yield)
+            'breakeven_inflation_10y': 'T10YIE',  # 10-Year Breakeven Inflation Rate
+            'treasury_10y': 'DGS10'  # 10-Year Treasury Constant Maturity Rate (nominal yield)
         }
 
         # ETF tickers organized by category
@@ -95,6 +109,10 @@ class MarketSignalsTracker:
             'tech_sector': 'XLK',        # Technology Select Sector SPDR
             'growth': 'IWF',             # iShares Russell 1000 Growth
             'value': 'IWD',              # iShares Russell 1000 Value
+
+            # Key Sectors
+            'financials_sector': 'XLF',  # Financial Select Sector SPDR
+            'energy_sector': 'XLE',      # Energy Select Sector SPDR
 
             # Volatility
             'vix': '^VIX',
@@ -234,27 +252,44 @@ class MarketSignalsTracker:
             return None
 
     def append_to_csv(self, df, filepath, date_column='date'):
-        """Append new data to CSV file, avoiding duplicates."""
+        """Append new data to CSV file, avoiding duplicates. Updates today's data if it exists."""
         if df is None or df.empty:
             print(f"No data to append to {filepath}")
             return
 
         df[date_column] = pd.to_datetime(df[date_column])
+        today = pd.Timestamp.now().normalize()  # Today at midnight for comparison
 
         if filepath.exists():
             existing_df = pd.read_csv(filepath)
             existing_df[date_column] = pd.to_datetime(existing_df[date_column])
 
-            new_data = df[~df[date_column].isin(existing_df[date_column])]
+            # Separate today's data from historical data
+            existing_historical = existing_df[existing_df[date_column].dt.normalize() < today]
+
+            # Get new data that doesn't exist in historical records
+            new_data = df[~df[date_column].isin(existing_historical[date_column])]
 
             if new_data.empty:
                 print(f"No new data to append to {filepath.name}")
                 return
 
-            combined_df = pd.concat([existing_df, new_data], ignore_index=True)
-            combined_df = combined_df.sort_values(date_column)
-            combined_df.to_csv(filepath, index=False)
-            print(f"Added {len(new_data)} new rows to {filepath.name}")
+            # Check if we're updating today's data
+            today_in_new = new_data[new_data[date_column].dt.normalize() == today]
+            today_in_existing = existing_df[existing_df[date_column].dt.normalize() == today]
+
+            if not today_in_new.empty and not today_in_existing.empty:
+                # We're updating today's data
+                combined_df = pd.concat([existing_historical, new_data], ignore_index=True)
+                combined_df = combined_df.sort_values(date_column)
+                combined_df.to_csv(filepath, index=False)
+                print(f"Updated today's data + added {len(new_data) - len(today_in_new)} new rows to {filepath.name}")
+            else:
+                # Normal append (no update needed)
+                combined_df = pd.concat([existing_df, new_data], ignore_index=True)
+                combined_df = combined_df.sort_values(date_column)
+                combined_df.to_csv(filepath, index=False)
+                print(f"Added {len(new_data)} new rows to {filepath.name}")
         else:
             df = df.sort_values(date_column)
             df.to_csv(filepath, index=False)
@@ -318,6 +353,57 @@ class MarketSignalsTracker:
 
             # Add delay to avoid rate limiting
             time.sleep(2)
+
+    def fetch_fear_greed_index(self):
+        """
+        Fetch Crypto Fear & Greed Index from Alternative.me API.
+
+        Returns:
+            DataFrame with date and fear_greed_index columns
+        """
+        url = 'https://api.alternative.me/fng/'
+        # Fetch max available history (API provides up to ~2000 days)
+        params = {'limit': 2000, 'format': 'json'}
+
+        try:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            if 'data' not in data:
+                print("No data found in Fear & Greed API response")
+                return None
+
+            records = []
+            for item in data['data']:
+                records.append({
+                    'date': datetime.fromtimestamp(int(item['timestamp'])).strftime('%Y-%m-%d'),
+                    'fear_greed_index': float(item['value'])
+                })
+
+            df = pd.DataFrame(records)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.sort_values('date')
+
+            return df
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching Fear & Greed Index: {e}")
+            return None
+
+    def collect_fear_greed_index(self):
+        """Collect Crypto Fear & Greed Index data."""
+        print("\n=== Collecting Crypto Fear & Greed Index ===")
+
+        filepath = self.data_dir / "fear_greed_index.csv"
+
+        print("Fetching Fear & Greed Index from Alternative.me...")
+        df = self.fetch_fear_greed_index()
+
+        if df is not None and not df.empty:
+            self.append_to_csv(df, filepath)
+        else:
+            print("Failed to fetch Fear & Greed Index data")
 
     def calculate_derived_metrics(self):
         """Calculate derived metrics like spreads and ratios."""
@@ -453,6 +539,51 @@ class MarketSignalsTracker:
             self.append_to_csv(ratio_df, self.data_dir / "growth_value_ratio.csv")
             print("IWF/IWD ratio (growth vs value) calculated")
 
+        # IWM/SPY ratio - Small Cap vs Large Cap
+        if spy_file.exists() and iwm_file.exists():
+            spy_df = pd.read_csv(spy_file)
+            iwm_df = pd.read_csv(iwm_file)
+            spy_df.columns = ['date', 'spy']
+            iwm_df.columns = ['date', 'iwm']
+
+            merged = pd.merge(spy_df, iwm_df, on='date')
+            merged['iwm_spy_ratio'] = (merged['iwm'] / merged['spy']) * 100
+
+            ratio_df = merged[['date', 'iwm_spy_ratio']]
+            self.append_to_csv(ratio_df, self.data_dir / "iwm_spy_ratio.csv")
+            print("IWM/SPY ratio (small cap vs large cap) calculated")
+
+        # Bitcoin/Gold ratio - BTC priced in ounces of gold
+        btc_file = self.data_dir / "bitcoin_price.csv"
+        if btc_file.exists() and gold_file.exists():
+            btc_df = pd.read_csv(btc_file)
+            gold_df = pd.read_csv(gold_file)
+            btc_df.columns = ['date', 'btc']
+            gold_df.columns = ['date', 'gold']
+
+            merged = pd.merge(btc_df, gold_df, on='date')
+            merged['btc_gold_ratio'] = merged['btc'] / merged['gold']
+
+            ratio_df = merged[['date', 'btc_gold_ratio']]
+            self.append_to_csv(ratio_df, self.data_dir / "btc_gold_ratio.csv")
+            print("BTC/Gold ratio (Bitcoin priced in gold ounces) calculated")
+
+        # GDX/GLD ratio - Gold miners vs Gold (miner leverage indicator)
+        gdx_file = self.data_dir / "gold_miners_price.csv"
+        gld_file = self.data_dir / "gold_price.csv"
+        if gdx_file.exists() and gld_file.exists():
+            gdx_df = pd.read_csv(gdx_file)
+            gld_df = pd.read_csv(gld_file)
+            gdx_df.columns = ['date', 'gdx']
+            gld_df.columns = ['date', 'gld']
+
+            merged = pd.merge(gdx_df, gld_df, on='date')
+            merged['gdx_gld_ratio'] = (merged['gdx'] / merged['gld']) * 100
+
+            ratio_df = merged[['date', 'gdx_gld_ratio']]
+            self.append_to_csv(ratio_df, self.data_dir / "gdx_gld_ratio.csv")
+            print("GDX/GLD ratio (gold miners vs gold) calculated")
+
     def run_daily_collection(self, lookback_days=12775):
         """Run the daily data collection process.
 
@@ -464,6 +595,7 @@ class MarketSignalsTracker:
 
         self.collect_fred_signals(lookback_days=lookback_days)
         self.collect_etf_signals(lookback_days=lookback_days)
+        self.collect_fear_greed_index()
         self.calculate_derived_metrics()
 
         print("\n=== Collection Complete ===")

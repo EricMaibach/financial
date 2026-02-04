@@ -152,8 +152,13 @@ def generate_markdown_summary():
     output.append("7. [Market Ratios](#market-ratios)")
     output.append("8. [Market Concentration](#market-concentration)")
     output.append("9. [Yen Carry Trade](#yen-carry-trade)")
-    output.append("10. [Economic Indicators](#economic-indicators)")
-    output.append("11. [Complete Dataset (JSON)](#complete-dataset-json)")
+    output.append("10. [Yield Curve](#yield-curve)")
+    output.append("11. [Labor Market](#labor-market)")
+    output.append("12. [Economic Indicators](#economic-indicators)")
+    output.append("13. [Fed Liquidity & Conditions](#fed-liquidity--conditions)")
+    output.append("14. [Crypto Sentiment](#crypto-sentiment)")
+    output.append("15. [Safe Haven Drivers](#safe-haven-drivers)")
+    output.append("16. [Complete Dataset (JSON)](#complete-dataset-json)")
     output.append("")
     output.append("---")
     output.append("")
@@ -215,10 +220,33 @@ def generate_markdown_summary():
             'usdjpy_price': ('usdjpy_price.csv', 'usdjpy_price', 'JPY per USD'),
             'japan_10y_yield': ('japan_10y_yield.csv', 'japan_10y_yield', '%'),
         },
+        'yield_curve': {
+            'yield_curve_10y2y': ('yield_curve_10y2y.csv', 'yield_curve_10y2y', '% (spread)'),
+            'yield_curve_10y3m': ('yield_curve_10y3m.csv', 'yield_curve_10y3m', '% (spread)'),
+        },
+        'labor_market': {
+            'initial_claims': ('initial_claims.csv', 'initial_claims', 'thousands'),
+            'continuing_claims': ('continuing_claims.csv', 'continuing_claims', 'thousands'),
+        },
         'economic_indicators': {
             'consumer_confidence': ('consumer_confidence.csv', 'consumer_confidence', 'index'),
             'm2_money_supply': ('m2_money_supply.csv', 'm2_money_supply', 'billions $'),
             'cpi': ('cpi.csv', 'cpi', 'index'),
+        },
+        'fed_liquidity_conditions': {
+            'fed_balance_sheet': ('fed_balance_sheet.csv', 'fed_balance_sheet', 'billions $'),
+            'reverse_repo': ('reverse_repo.csv', 'reverse_repo', 'billions $'),
+            'nfci': ('nfci.csv', 'nfci', 'index'),
+        },
+        'crypto_sentiment': {
+            'fear_greed_index': ('fear_greed_index.csv', 'fear_greed_index', 'index (0-100)'),
+            'btc_gold_ratio': ('btc_gold_ratio.csv', 'btc_gold_ratio', 'ratio (oz gold per BTC)'),
+        },
+        'safe_haven_drivers': {
+            'treasury_10y': ('treasury_10y.csv', 'treasury_10y', '% (nominal yield)'),
+            'real_yield_10y': ('real_yield_10y.csv', 'real_yield_10y', '% (TIPS yield)'),
+            'breakeven_inflation_10y': ('breakeven_inflation_10y.csv', 'breakeven_inflation_10y', '% (inflation expectations)'),
+            'gdx_gld_ratio': ('gdx_gld_ratio.csv', 'gdx_gld_ratio', 'ratio (miners vs gold)'),
         }
     }
 
@@ -364,11 +392,51 @@ def generate_markdown_summary():
     output.append("- Sharp USD/JPY drops indicate carry trade unwinding (risk-off)")
     output.append("- Japan 10Y Yield: Rising yields = BOJ tightening, carry trade at risk")
     output.append("")
+    output.append("**Note on Yield Curve:**")
+    output.append("- 10Y-2Y Spread: 10-Year minus 2-Year Treasury yield (classic recession predictor)")
+    output.append("- 10Y-3M Spread: 10-Year minus 3-Month Treasury yield (Fed's preferred measure)")
+    output.append("- Negative (inverted) yield curve historically precedes recessions by 12-18 months")
+    output.append("- Steepening after inversion often signals recession is imminent")
+    output.append("")
+    output.append("**Note on Labor Market:**")
+    output.append("- Initial Claims: Weekly new unemployment filings (leading indicator)")
+    output.append("- Continuing Claims: Total insured unemployed (lagging confirmation)")
+    output.append("- Rising claims = labor market weakening, potential recession")
+    output.append("- Key levels: Initial claims >300k = warning, >400k = recession signal")
+    output.append("")
     output.append("**Note on Economic Indicators:**")
     output.append("- Consumer Confidence: University of Michigan Sentiment (survey-based)")
     output.append("- M2 Money Supply: Total money stock in billions USD")
     output.append("- CPI: Consumer Price Index (inflation measure)")
     output.append("- These are monthly data series (lower frequency than market data)")
+    output.append("")
+    output.append("**Note on Fed Liquidity & Financial Conditions:**")
+    output.append("- Fed Balance Sheet (WALCL): Total Federal Reserve assets in billions USD")
+    output.append("- Expansion = QE/adding liquidity (bullish for risk assets)")
+    output.append("- Contraction = QT/draining liquidity (headwind for markets)")
+    output.append("- Reverse Repo (RRP): Overnight reverse repurchase facility usage")
+    output.append("- High RRP = excess liquidity parked at Fed, declining = liquidity draining")
+    output.append("- NFCI: Chicago Fed National Financial Conditions Index")
+    output.append("- Positive values = tight conditions (stress), negative = loose conditions")
+    output.append("- Zero = average conditions, spikes often precede market stress")
+    output.append("")
+    output.append("**Note on Crypto Sentiment:**")
+    output.append("- Fear & Greed Index: Alternative.me composite sentiment indicator (0-100)")
+    output.append("- 0-25 = Extreme Fear (historically good buying opportunities)")
+    output.append("- 26-46 = Fear, 47-54 = Neutral, 55-75 = Greed")
+    output.append("- 76-100 = Extreme Greed (historically poor time to buy)")
+    output.append("- Based on volatility, momentum, social media, surveys, and dominance")
+    output.append("")
+    output.append("**Note on Safe Haven Drivers:**")
+    output.append("- Treasury 10Y (DGS10): 10-Year nominal Treasury yield - benchmark risk-free rate")
+    output.append("- Key relationship: Nominal Yield = Real Yield + Breakeven Inflation")
+    output.append("- Real Yield 10Y (DFII10): 10-Year TIPS yield - inflation-adjusted return")
+    output.append("- Gold has strong inverse correlation with real yields")
+    output.append("- Falling real yields = tailwind for gold, rising = headwind")
+    output.append("- Breakeven Inflation 10Y (T10YIE): Market's 10-year inflation expectations")
+    output.append("- Rising breakevens often support gold prices")
+    output.append("- GDX/GLD Ratio: Gold miners vs gold performance")
+    output.append("- Rising ratio = miners outperforming (bullish), miners often lead gold at turning points")
     output.append("")
 
     return "\n".join(output)

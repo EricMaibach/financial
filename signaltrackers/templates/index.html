@@ -1,42 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Market Divergence Tracker{% endblock %}
+{% block title %}Dashboard - Financial Markets{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
-            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-            Market Divergence Dashboard
+            <i class="bi bi-graph-up-arrow text-primary"></i>
+            Financial Markets Dashboard
         </h1>
-        <p class="lead">Tracking the historic divergence between credit markets, safe havens, and equities</p>
+        <p class="lead">Real-time tracking of credit markets, equities, safe havens, and economic indicators</p>
     </div>
 </div>
 
-<!-- Crisis Warning Score -->
+<!-- AI Daily Summary -->
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card border-danger">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0">
-                    <i class="bi bi-shield-exclamation"></i> Crisis Warning Score
-                </h4>
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-square-text-fill"></i> Daily Market Briefing
+                </h5>
+                <small id="summary-timestamp" class="opacity-75"></small>
             </div>
             <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-4 text-center">
-                        <div class="crisis-score-container">
-                            <div class="crisis-score" id="crisis-score">--</div>
-                            <div class="crisis-score-label">/ 100</div>
-                        </div>
-                        <div class="crisis-status mt-2" id="crisis-status">Loading...</div>
-                    </div>
-                    <div class="col-md-8">
-                        <h5>Active Warnings:</h5>
-                        <ul id="warnings-list" class="list-unstyled">
-                            <li><i class="bi bi-hourglass-split"></i> Loading warnings...</li>
-                        </ul>
-                    </div>
+                <div id="ai-summary-content" class="summary-text">
+                    <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading daily briefing...</p>
+                </div>
+                <div id="ai-summary-error" class="text-muted d-none">
+                    <p class="mb-0"><i class="bi bi-info-circle"></i> No briefing available yet. Click "Reload Data" to generate one.</p>
                 </div>
             </div>
         </div>
@@ -66,25 +58,41 @@
     </div>
 </div>
 
-<!-- Key Metrics Row 1 -->
+<!-- Top Movers Chart -->
 <div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/metric/divergence_gap" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">DIVERGENCE GAP</h6>
-                    <h2 class="mb-0" id="divergence-gap">-- bp</h2>
-                    <small class="text-muted">
-                        <span id="divergence-change-5d">--</span> bp (5d) / <span id="divergence-change-30d">--</span> bp (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge bg-warning" id="divergence-status">EXTREME</span>
-                    </div>
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Top Movers Trends
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="movers-timeframe-selector">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="7">1W</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-light btn-sm active" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="7300">20Y</button>
+                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="all">All</button>
                 </div>
             </div>
-        </a>
+            <div class="card-body">
+                <div id="movers-chart-legend" class="mb-2 small"></div>
+                <canvas id="movers-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Each metric normalized to show relative trend (0-100 scale). Hover for actual values. Grey bands indicate recession periods.
+                </small>
+            </div>
+        </div>
     </div>
+</div>
 
+<!-- Key Metrics Row 1 -->
+<div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-3">
         <a href="/metric/hy_spread" class="metric-link">
             <div class="card metric-card">
@@ -424,131 +432,6 @@
     </div>
 </div>
 
-<!-- Charts -->
-<div class="row mb-4">
-    <div class="col-lg-8 mb-3">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> Divergence Gap Over Time
-                </h5>
-            </div>
-            <div class="card-body">
-                <canvas id="divergence-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    The gap between what gold implies credit spreads should be vs actual spreads.
-                    Gap widening = divergence getting worse.
-                </small>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4 mb-3">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-signpost-split"></i> Scenario Probabilities
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="scenario-meter mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong>Credit Catches Down</strong>
-                        <span class="badge bg-danger">65-70%</span>
-                    </div>
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: 67.5%"
-                             aria-valuenow="67.5" aria-valuemin="0" aria-valuemax="100">
-                            Most Likely
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scenario-meter mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong>Messy Middle</strong>
-                        <span class="badge bg-warning">25-30%</span>
-                    </div>
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 27.5%"
-                             aria-valuenow="27.5" aria-valuemin="0" aria-valuemax="100">
-                            Possible
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scenario-meter mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong>Soft Landing</strong>
-                        <span class="badge bg-success">5-10%</span>
-                    </div>
-                    <div class="progress" style="height: 25px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 7.5%"
-                             aria-valuenow="7.5" aria-valuemin="0" aria-valuemax="100">
-                            Unlikely
-                        </div>
-                    </div>
-                </div>
-
-                <hr>
-                <p class="mb-0"><small class="text-muted">
-                    Updated probabilities based on Bitcoin crash from $120k and persistent gold strength.
-                </small></p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Quick Status -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clipboard-check"></i> Market Regime Assessment
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-danger" role="alert">
-                    <h5 class="alert-heading">
-                        <i class="bi bi-exclamation-triangle-fill"></i> EXTREME DIVERGENCE REGIME
-                    </h5>
-                    <hr>
-                    <p class="mb-0">
-                        <strong>Credit/Equity:</strong> "Everything is fine" - Spreads at 276 bp, VIX at 14.49<br>
-                        <strong>Gold:</strong> "Structural crisis ahead" - At $4,145 (89th percentile)<br>
-                        <strong>Bitcoin:</strong> "Liquidity crisis" - Crashed 24% from $120k peak<br>
-                        <strong>Assessment:</strong> One of these markets is catastrophically wrong. Resolution likely Q2-Q4 2026.
-                    </p>
-                </div>
-
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <h6>What to Watch This Week:</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="bi bi-check-circle text-success"></i> HY spreads breaking above 300 bp</li>
-                            <li><i class="bi bi-check-circle text-success"></i> VIX spiking above 17</li>
-                            <li><i class="bi bi-check-circle text-success"></i> Gold breaking $4,500</li>
-                            <li><i class="bi bi-check-circle text-success"></i> Divergence gap widening further</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Base Case Timeline:</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Q1 2026:</strong> Divergence persists (current)</li>
-                            <li><strong>Q2 2026:</strong> AI cracks, spreads widen to 320-400 bp</li>
-                            <li><strong>Q3 2026:</strong> Credit stress obvious (500-650 bp)</li>
-                            <li><strong>Q4 2026:</strong> Peak crisis, spreads 700-900 bp</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_js %}
@@ -608,37 +491,6 @@ async function loadDashboard() {
         // Update timestamp
         document.getElementById('update-time').textContent = data.timestamp;
 
-        // Update crisis score
-        if (data.metrics.crisis_score !== undefined) {
-            const score = data.metrics.crisis_score;
-            document.getElementById('crisis-score').textContent = score;
-
-            let status = '';
-            let statusClass = '';
-            if (score >= 75) {
-                status = '🔴 EXTREME WARNING';
-                statusClass = 'text-danger';
-            } else if (score >= 60) {
-                status = '🟠 HIGH WARNING';
-                statusClass = 'text-warning';
-            } else if (score >= 40) {
-                status = '🟡 MODERATE WARNING';
-                statusClass = 'text-info';
-            } else {
-                status = '🟢 LOW WARNING';
-                statusClass = 'text-success';
-            }
-            document.getElementById('crisis-status').innerHTML = `<h5 class="${statusClass}">${status}</h5>`;
-        }
-
-        // Update warnings
-        if (data.warnings && data.warnings.length > 0) {
-            const warningsList = document.getElementById('warnings-list');
-            warningsList.innerHTML = data.warnings.map(w =>
-                `<li><i class="bi bi-exclamation-triangle-fill text-danger"></i> ${w}</li>`
-            ).join('');
-        }
-
         // Update top movers
         if (data.top_movers && data.top_movers.length > 0) {
             const container = document.getElementById('top-movers-container');
@@ -680,18 +532,12 @@ async function loadDashboard() {
                     </div>
                 `;
             }).join('');
+
+            // Load the movers chart with the top movers data
+            loadMoversChart(data.top_movers);
         }
 
         // Update metrics
-        if (data.metrics.divergence) {
-            document.getElementById('divergence-gap').textContent = `${data.metrics.divergence.gap} bp`;
-            document.getElementById('implied-spread').textContent = `${data.metrics.divergence.gold_implied_spread} bp`;
-            document.getElementById('divergence-change-5d').textContent =
-                (data.metrics.divergence.gap_change_5d >= 0 ? '+' : '') + data.metrics.divergence.gap_change_5d;
-            document.getElementById('divergence-change-30d').textContent =
-                (data.metrics.divergence.gap_change_30d >= 0 ? '+' : '') + data.metrics.divergence.gap_change_30d;
-        }
-
         if (data.metrics.hy_spread) {
             document.getElementById('hy-spread').textContent = `${data.metrics.hy_spread.current} bp`;
             document.getElementById('hy-change-5d').textContent =
@@ -881,110 +727,6 @@ async function loadDashboard() {
     }
 }
 
-// Load divergence gap chart
-async function loadDivergenceChart() {
-    try {
-        const response = await fetch('/api/chart/divergence_gap');
-        const data = await response.json();
-
-        // Get recession annotations for the current date range
-        const startDate = data.dates[0];
-        const endDate = data.dates[data.dates.length - 1];
-        const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
-
-        const ctx = document.getElementById('divergence-chart');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: data.dates,
-                datasets: [
-                    {
-                        label: 'Divergence Gap',
-                        data: data.divergence_gap,
-                        borderColor: 'rgb(220, 53, 69)',
-                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        yAxisID: 'y1'
-                    },
-                    {
-                        label: 'Gold-Implied Spread',
-                        data: data.implied_spread,
-                        borderColor: 'rgb(255, 193, 7)',
-                        borderWidth: 2,
-                        borderDash: [5, 5],
-                        fill: false,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Actual HY Spread',
-                        data: data.actual_spread,
-                        borderColor: 'rgb(13, 110, 253)',
-                        borderWidth: 2,
-                        fill: false,
-                        yAxisID: 'y'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                label += context.parsed.y.toFixed(0) + ' bp';
-                                return label;
-                            }
-                        }
-                    },
-                    annotation: {
-                        annotations: recessionAnnotations
-                    }
-                },
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Credit Spreads (bp)'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Divergence Gap (bp)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
-            }
-        });
-
-    } catch (error) {
-        console.error('Error loading divergence chart:', error);
-    }
-}
-
 // Load prediction markets data from Kalshi
 async function loadPredictionMarkets() {
     try {
@@ -1054,16 +796,297 @@ async function loadPredictionMarkets() {
     }
 }
 
+// Load AI-generated daily summary
+async function loadAISummary() {
+    try {
+        const response = await fetch('/api/ai-summary');
+        const data = await response.json();
+
+        const contentDiv = document.getElementById('ai-summary-content');
+        const errorDiv = document.getElementById('ai-summary-error');
+        const timestampSpan = document.getElementById('summary-timestamp');
+
+        if (data.error) {
+            contentDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-none');
+            timestampSpan.textContent = '';
+            return;
+        }
+
+        // Format the summary with proper paragraphs
+        const paragraphs = data.summary.split('\n\n').filter(p => p.trim());
+        const formattedHtml = paragraphs.map(p => `<p class="mb-2">${p}</p>`).join('');
+
+        contentDiv.innerHTML = formattedHtml;
+        contentDiv.classList.remove('d-none');
+        errorDiv.classList.add('d-none');
+
+        // Format timestamp
+        if (data.generated_at) {
+            const genDate = new Date(data.generated_at);
+            const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            timestampSpan.textContent = `${dateStr} at ${timeStr}`;
+        }
+
+    } catch (error) {
+        console.error('Error loading AI summary:', error);
+        document.getElementById('ai-summary-content').classList.add('d-none');
+        document.getElementById('ai-summary-error').classList.remove('d-none');
+    }
+}
+
+// Top Movers Chart
+let moversChart = null;
+let topMoversData = []; // Store top mover metric IDs
+let moversTimeSeriesCache = null; // Cache full time series data
+let currentMoversTimeframe = 90; // Default to 3 months
+let moversChartInitialized = false; // Only load chart data once
+
+// Colors for the movers chart lines
+const moversColors = [
+    'rgb(255, 99, 132)',   // Red
+    'rgb(54, 162, 235)',   // Blue
+    'rgb(255, 206, 86)',   // Yellow
+    'rgb(75, 192, 192)',   // Teal
+    'rgb(153, 102, 255)'   // Purple
+];
+
+// Load top movers chart data
+async function loadMoversChart(topMovers) {
+    if (!topMovers || topMovers.length === 0) return;
+
+    // Only load chart data once (don't reload on refresh)
+    if (moversChartInitialized) return;
+    moversChartInitialized = true;
+
+    // Store movers data
+    topMoversData = topMovers;
+
+    // Build legend
+    const legendHtml = topMovers.map((mover, idx) => {
+        const color = moversColors[idx];
+        return `<span style="color: ${color}; margin-right: 15px;"><strong>●</strong> ${mover.name}</span>`;
+    }).join('');
+    document.getElementById('movers-chart-legend').innerHTML = legendHtml;
+
+    // Fetch time series data for each metric
+    try {
+        const metricIds = topMovers.map(m => m.metric);
+        const dataPromises = metricIds.map(metric =>
+            fetch(`/api/metrics/${metric}`).then(r => r.json())
+        );
+
+        const dataArray = await Promise.all(dataPromises);
+        moversTimeSeriesCache = dataArray.map((data, idx) => ({
+            metric: metricIds[idx],
+            name: topMovers[idx].name,
+            dates: data.dates,
+            values: data.values
+        }));
+
+        // Render chart with current timeframe
+        renderMoversChart(currentMoversTimeframe);
+
+    } catch (error) {
+        console.error('Error loading movers chart data:', error);
+    }
+}
+
+// Render the movers chart with specified timeframe
+function renderMoversChart(days) {
+    if (!moversTimeSeriesCache || moversTimeSeriesCache.length === 0) return;
+
+    // Filter data by timeframe
+    const now = new Date();
+    const useAllData = days === 'all' || isNaN(days);
+    const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    // Find the common date range across all metrics
+    let commonDates = null;
+
+    const filteredData = moversTimeSeriesCache.map(metric => {
+        // Create date-value map
+        const dateMap = new Map();
+        metric.dates.forEach((date, idx) => {
+            const d = new Date(date);
+            if (d >= cutoffDate) {
+                dateMap.set(date, metric.values[idx]);
+            }
+        });
+
+        // Get filtered dates
+        const filteredDates = metric.dates.filter(date => new Date(date) >= cutoffDate);
+
+        if (!commonDates) {
+            commonDates = new Set(filteredDates);
+        } else {
+            // Find intersection of dates
+            const newCommon = new Set();
+            filteredDates.forEach(d => {
+                if (commonDates.has(d)) newCommon.add(d);
+            });
+            commonDates = newCommon;
+        }
+
+        return {
+            ...metric,
+            dateMap
+        };
+    });
+
+    // Convert to sorted array
+    const sortedDates = Array.from(commonDates).sort();
+
+    if (sortedDates.length === 0) {
+        console.warn('No common dates found for movers chart');
+        return;
+    }
+
+    // Normalize each metric to 0-100 scale (min-max normalization)
+    // This handles negative values correctly and shows relative trends
+    const datasets = filteredData.map((metric, idx) => {
+        // Get values aligned to common dates
+        const alignedValues = sortedDates.map(date => metric.dateMap.get(date));
+
+        // Get valid values for min/max calculation
+        const validValues = alignedValues.filter(v => v !== null && v !== undefined && !isNaN(v));
+        if (validValues.length === 0) return null;
+
+        const minVal = Math.min(...validValues);
+        const maxVal = Math.max(...validValues);
+        const range = maxVal - minVal;
+
+        // Normalize to 0-100 scale (or flat line at 50 if no variation)
+        const normalizedValues = alignedValues.map(v => {
+            if (v === null || v === undefined || isNaN(v)) return null;
+            if (range === 0) return 50; // No variation
+            return ((v - minVal) / range) * 100;
+        });
+
+        return {
+            label: metric.name,
+            data: normalizedValues,
+            borderColor: moversColors[idx],
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            tension: 0.1,
+            fill: false,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            // Store original values for tooltip
+            originalValues: alignedValues
+        };
+    }).filter(d => d !== null);
+
+    // Get recession annotations
+    const startDate = sortedDates[0];
+    const endDate = sortedDates[sortedDates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+    // Destroy existing chart
+    if (moversChart) {
+        moversChart.destroy();
+    }
+
+    // Create the chart
+    const ctx = document.getElementById('movers-chart').getContext('2d');
+    moversChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: sortedDates,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    display: false // We have custom legend above
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            // Show the original (actual) value
+                            const originalVal = context.dataset.originalValues?.[context.dataIndex];
+                            if (originalVal === null || originalVal === undefined) return '';
+                            // Format based on magnitude
+                            const formatted = Math.abs(originalVal) >= 100
+                                ? originalVal.toFixed(0)
+                                : originalVal.toFixed(2);
+                            return `${context.dataset.label}: ${formatted}`;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: recessionAnnotations
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: useAllData ? 'year' : days <= 30 ? 'day' : days <= 180 ? 'week' : days <= 1825 ? 'month' : 'year',
+                        displayFormats: {
+                            day: 'MMM d',
+                            week: 'MMM d',
+                            month: 'MMM yyyy',
+                            year: 'yyyy'
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    title: {
+                        display: false // Hide y-axis title since scale is normalized
+                    },
+                    ticks: {
+                        display: false // Hide tick values since they're just 0-100
+                    },
+                    grid: {
+                        color: 'rgba(128, 128, 128, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Set up timeframe selector event handlers
+document.querySelectorAll('#movers-timeframe-selector button').forEach(button => {
+    button.addEventListener('click', function() {
+        // Update active button
+        document.querySelectorAll('#movers-timeframe-selector button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        // Get timeframe and render chart
+        const timeframe = this.getAttribute('data-timeframe');
+        currentMoversTimeframe = timeframe === 'all' ? 'all' : parseInt(timeframe);
+        renderMoversChart(currentMoversTimeframe);
+    });
+});
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadDashboard();
-    loadDivergenceChart();
     loadPredictionMarkets();
+    loadAISummary();
 
     // Refresh every 60 seconds
     setInterval(loadDashboard, 60000);
     // Refresh prediction markets every 15 minutes (they update less frequently)
     setInterval(loadPredictionMarkets, 900000);
+    // Refresh AI summary every 5 minutes (in case it was regenerated)
+    setInterval(loadAISummary, 300000);
 });
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 {% endblock %}

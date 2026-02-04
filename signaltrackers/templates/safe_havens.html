@@ -1,69 +1,383 @@
 {% extends "base.html" %}
 
-{% block title %}Safe Havens - Market Divergence Tracker{% endblock %}
+{% block title %}Safe Havens - Financial Markets{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
-            <i class="bi bi-shield-check"></i> Safe Havens & Alternative Assets
+            <i class="bi bi-shield-check text-warning"></i>
+            Safe Havens & Precious Metals
         </h1>
+        <p class="lead">Key drivers and indicators for gold and silver</p>
     </div>
 </div>
 
+<!-- Educational Header -->
 <div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-header bg-warning">
-                <h5 class="mb-0">🏆 Gold - The Warning Signal</h5>
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb-fill"></i> Understanding Gold's Key Drivers
+                </h5>
             </div>
             <div class="card-body">
-                <h2 class="display-4" id="sh-gold-price">$--</h2>
-                <p class="mb-0">Gold at $4,145 pricing structural crisis ahead</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 mb-3">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">₿ Bitcoin - Liquidity Gauge</h5>
-            </div>
-            <div class="card-body">
-                <h2 class="display-4" id="sh-btc-price">$--</h2>
-                <p class="text-danger fw-bold mb-0" id="sh-btc-decline">Down -- from $120k peak</p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-percent text-danger"></i> Real Yields (Most Important)</h6>
+                        <p class="small mb-0">Gold has a strong inverse correlation with real yields (TIPS yield). When real yields fall, gold's opportunity cost decreases - bullish. Rising real yields are a headwind for gold.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-graph-up-arrow text-warning"></i> Inflation Expectations</h6>
+                        <p class="small mb-0">Breakeven inflation reflects market's expected inflation over 10 years. Rising inflation expectations tend to support gold as an inflation hedge. Watch for divergences between nominal and real yields.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-currency-dollar text-success"></i> Dollar Strength</h6>
+                        <p class="small mb-0">Gold is priced in dollars globally, creating an inverse relationship. A weakening dollar makes gold cheaper for foreign buyers - bullish. Dollar strength is typically a headwind.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Safe Haven Prices Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=gold_price" class="metric-link">
+            <div class="card metric-card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">GOLD PRICE</h6>
+                    <h2 class="mb-0 text-warning" id="gold-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="gold-change-5d">--</span>% (5d) / <span id="gold-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="gold-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=silver_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">SILVER PRICE</h6>
+                    <h2 class="mb-0" id="silver-price">$--</h2>
+                    <small class="text-muted">
+                        <span id="silver-change-5d">--</span>% (5d) / <span id="silver-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="silver-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=gold_silver_ratio" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">GOLD/SILVER RATIO</h6>
+                    <h2 class="mb-0" id="gold-silver-ratio">--</h2>
+                    <small class="text-muted">
+                        <span id="gold-silver-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Avg ~60, >80 = silver cheap</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=gdx_gld_ratio" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">GDX/GLD RATIO</h6>
+                    <h2 class="mb-0" id="gdx-gld-ratio">--</h2>
+                    <small class="text-muted">
+                        <span id="gdx-gld-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Miners vs gold performance</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Key Driver Indicators Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-key-fill"></i> Key Gold Drivers</h5>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=real_yield_10y" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">10Y REAL YIELD (TIPS)</h6>
+                    <h2 class="mb-0" id="real-yield-value">--%</h2>
+                    <small class="text-muted">
+                        <span id="real-yield-change">--</span> bps (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="real-yield-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=breakeven_inflation_10y" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">10Y BREAKEVEN INFLATION</h6>
+                    <h2 class="mb-0" id="breakeven-value">--%</h2>
+                    <small class="text-muted">
+                        <span id="breakeven-change">--</span> bps (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="breakeven-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=dollar_index_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">DOLLAR INDEX (DXY)</h6>
+                    <h2 class="mb-0" id="dxy-value">--</h2>
+                    <small class="text-muted">
+                        <span id="dxy-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="dxy-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=treasury_10y" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">10Y TREASURY (NOMINAL)</h6>
+                    <h2 class="mb-0" id="treasury-10y-value">--%</h2>
+                    <small class="text-muted">
+                        <span id="treasury-10y-change">--</span> bps (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Nominal yield comparison</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Time Frame Selector -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center justify-content-between flex-wrap">
+                    <small class="text-muted me-3"><i class="bi bi-calendar-range"></i> Time Frame:</small>
+                    <div class="btn-group btn-group-sm" role="group" id="timeframe-selector">
+                        <button type="button" class="btn btn-outline-secondary" data-timeframe="90">3M</button>
+                        <button type="button" class="btn btn-outline-secondary" data-timeframe="180">6M</button>
+                        <button type="button" class="btn btn-outline-secondary active" data-timeframe="365">1Y</button>
+                        <button type="button" class="btn btn-outline-secondary" data-timeframe="1825">5Y</button>
+                        <button type="button" class="btn btn-outline-secondary" data-timeframe="3650">10Y</button>
+                        <button type="button" class="btn btn-outline-secondary" data-timeframe="7300">20Y</button>
+                        <button type="button" class="btn btn-outline-secondary" data-timeframe="all">All</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gold vs Real Yields Chart -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Gold vs Bitcoin - The Divergence</h5>
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Gold vs Real Yields (Inverse Correlation)
+                </h5>
             </div>
             <div class="card-body">
-                <canvas id="gold-bitcoin-chart"></canvas>
+                <canvas id="gold-real-yields-chart"></canvas>
             </div>
             <div class="card-footer">
                 <small class="text-muted">
-                    Gold rallying while Bitcoin crashed 24% from peak shows liquidity tight despite safe-haven demand.
+                    <i class="bi bi-info-circle"></i> Gold typically moves inversely to real yields. Note: Real yield axis is inverted to show the correlation more clearly. Grey bands = recession periods.
                 </small>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row">
+<!-- Gold vs Dollar Chart -->
+<div class="row mb-4">
     <div class="col-12">
-        <div class="alert alert-warning">
-            <h5>🔍 Key Insight: Bitcoin's 24% Crash is the Leading Indicator</h5>
-            <p class="mb-0">
-                Bitcoin peaked at $120k three months ago and crashed 24% despite Fed easing.
-                This is the early warning that credit spreads typically follow 6-12 months later.
-                <strong>Timeline: Credit stress expected Q2-Q3 2026.</strong>
-            </p>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Gold vs Dollar Index (DXY)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="gold-dxy-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Gold typically moves inversely to the dollar. Dollar strength creates headwinds for gold; dollar weakness is supportive.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Educational Sections -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Bullish Signals for Gold</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>Real yields falling</strong> - Lower opportunity cost for holding gold</li>
+                    <li><strong>Breakeven inflation rising</strong> - Inflation hedge demand increases</li>
+                    <li><strong>Dollar weakening (DXY down)</strong> - Gold becomes cheaper globally</li>
+                    <li><strong>GDX/GLD ratio rising</strong> - Miners outperforming gold = bullish confirmation</li>
+                    <li><strong>Gold/Silver ratio falling</strong> - Risk-on sentiment in metals</li>
+                    <li><strong>Central bank buying</strong> - De-dollarization trend</li>
+                    <li><strong>Negative real yields</strong> - Cash is guaranteed to lose purchasing power</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Bearish Signals for Gold</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>Real yields rising sharply</strong> - Higher opportunity cost, bonds more attractive</li>
+                    <li><strong>Breakeven inflation falling</strong> - Deflation fears reduce inflation hedge demand</li>
+                    <li><strong>Dollar strengthening (DXY up)</strong> - Flight to safety often hurts gold short-term</li>
+                    <li><strong>GDX/GLD ratio falling</strong> - Miners underperforming = negative divergence</li>
+                    <li><strong>Gold/Silver ratio spiking (>80)</strong> - Extreme fear, but silver historically cheap</li>
+                    <li><strong>Fed hawkish pivot</strong> - Higher rates ahead = real yield risk</li>
+                    <li><strong>Risk-on rally</strong> - Capital flows to equities instead</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Miner Indicators Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3"><i class="bi bi-minecart-loaded"></i> Mining Sector Indicators</h5>
+    </div>
+    <div class="col-xl-4 col-md-6 mb-3">
+        <a href="/explorer?metric=gold_miners_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">GOLD MINERS (GDX)</h6>
+                    <h2 class="mb-0" id="gdx-value">$--</h2>
+                    <small class="text-muted">
+                        <span id="gdx-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Major gold miners ETF</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+        <a href="/explorer?metric=vix_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">VIX (FEAR GAUGE)</h6>
+                    <h2 class="mb-0" id="vix-value">--</h2>
+                    <small class="text-muted">
+                        <span id="vix-change">--</span>% (5d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="vix-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+        <a href="/explorer?metric=sp500_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">S&P 500</h6>
+                    <h2 class="mb-0" id="sp500-value">--</h2>
+                    <small class="text-muted">
+                        <span id="sp500-change">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <small class="text-muted">Risk asset comparison</small>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Historical Context -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history"></i> Historical Context & Key Levels
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h6>Real Yield Framework</h6>
+                        <p class="text-muted small mb-0">Real yields above 2% historically create significant headwinds for gold. Near-zero or negative real yields are very bullish. The 2020-2022 gold rally coincided with deeply negative real yields.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Gold/Silver Ratio</h6>
+                        <p class="text-muted small mb-0">Historical average ~60. Ratios above 80 indicate silver is historically cheap vs gold (often at market stress peaks). Below 50 suggests silver is relatively expensive.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Miners as Leading Indicator</h6>
+                        <p class="text-muted small mb-0">Gold miners (GDX) often lead gold at major turning points. Rising GDX/GLD ratio = miners outperforming = bullish confirmation. Falling ratio = negative divergence warning.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Central Bank Demand</h6>
+                        <p class="text-muted small mb-0">Since 2022, central banks have been net buyers at multi-decade highs. De-dollarization trend provides structural support. China, Russia, India leading buyers.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -71,14 +385,25 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
-let recessionData = []; // Store recession periods for shading
+let recessionData = [];
+let goldRealYieldsChart = null;
+let goldDxyChart = null;
+let fullGoldData = null;
+let fullRealYieldData = null;
+let fullDxyData = null;
+let currentTimeframe = 365;
 
 // Fetch recession data on load
 fetch('/api/recessions')
     .then(response => response.json())
     .then(data => {
         recessionData = data;
+        // Re-render charts if data is already loaded
+        if (fullGoldData) {
+            applyTimeFrameFilter(currentTimeframe);
+        }
     })
     .catch(error => {
         console.error('Error loading recession data:', error);
@@ -96,9 +421,7 @@ function getRecessionAnnotations(startDate, endDate) {
         const recStart = new Date(recession.start_date);
         const recEnd = new Date(recession.end_date);
 
-        // Check if recession overlaps with chart date range
         if (recEnd >= chartStart && recStart <= chartEnd) {
-            // Clamp to chart boundaries
             const displayStart = recStart < chartStart ? chartStart : recStart;
             const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
 
@@ -108,9 +431,7 @@ function getRecessionAnnotations(startDate, endDate) {
                 xMax: displayEnd.toISOString().split('T')[0],
                 backgroundColor: 'rgba(128, 128, 128, 0.15)',
                 borderWidth: 0,
-                label: {
-                    display: false
-                }
+                label: { display: false }
             };
         }
     });
@@ -118,84 +439,562 @@ function getRecessionAnnotations(startDate, endDate) {
     return annotations;
 }
 
+// Load all metrics data
 async function loadSafeHavensData() {
-    const response = await fetch('/api/dashboard');
-    const data = await response.json();
+    try {
+        // Load Gold data
+        const goldResponse = await fetch('/api/metrics/gold_price');
+        const goldData = await goldResponse.json();
 
-    if (data.metrics.gold) {
-        document.getElementById('sh-gold-price').textContent = `$${data.metrics.gold.price.toLocaleString()}`;
-    }
+        if (goldData && goldData.values) {
+            const currentGold = goldData.values[goldData.values.length - 1] * 10; // GLD to spot proxy
+            document.getElementById('gold-price').textContent = `$${Math.round(currentGold).toLocaleString()}`;
 
-    if (data.metrics.bitcoin) {
-        document.getElementById('sh-btc-price').textContent = `$${data.metrics.bitcoin.price.toLocaleString()}`;
-        document.getElementById('sh-btc-decline').textContent =
-            `Down ${Math.abs(data.metrics.bitcoin.decline_from_peak)}% from $${data.metrics.bitcoin.peak.toLocaleString()} peak`;
+            // Calculate changes
+            if (goldData.values.length > 5) {
+                const change5d = ((goldData.values[goldData.values.length - 1] / goldData.values[goldData.values.length - 6]) - 1) * 100;
+                document.getElementById('gold-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (goldData.values.length > 30) {
+                const change30d = ((goldData.values[goldData.values.length - 1] / goldData.values[goldData.values.length - 31]) - 1) * 100;
+                document.getElementById('gold-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+                const statusEl = document.getElementById('gold-status');
+                if (change30d > 5) {
+                    statusEl.textContent = 'BULLISH';
+                    statusEl.className = 'badge bg-success';
+                } else if (change30d < -5) {
+                    statusEl.textContent = 'BEARISH';
+                    statusEl.className = 'badge bg-danger';
+                } else {
+                    statusEl.textContent = 'NEUTRAL';
+                    statusEl.className = 'badge bg-secondary';
+                }
+            }
+
+            fullGoldData = goldData;
+        }
+
+        // Load Silver data
+        const silverResponse = await fetch('/api/metrics/silver_price');
+        const silverData = await silverResponse.json();
+
+        if (silverData && silverData.values && silverData.values.length > 0) {
+            const currentSilver = silverData.values[silverData.values.length - 1];
+            document.getElementById('silver-price').textContent = `$${currentSilver.toFixed(2)}`;
+
+            if (silverData.values.length > 5) {
+                const change5d = ((currentSilver / silverData.values[silverData.values.length - 6]) - 1) * 100;
+                document.getElementById('silver-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (silverData.values.length > 30) {
+                const change30d = ((currentSilver / silverData.values[silverData.values.length - 31]) - 1) * 100;
+                document.getElementById('silver-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+                const statusEl = document.getElementById('silver-status');
+                if (change30d > 5) {
+                    statusEl.textContent = 'BULLISH';
+                    statusEl.className = 'badge bg-success';
+                } else if (change30d < -5) {
+                    statusEl.textContent = 'BEARISH';
+                    statusEl.className = 'badge bg-danger';
+                } else {
+                    statusEl.textContent = 'NEUTRAL';
+                    statusEl.className = 'badge bg-secondary';
+                }
+            }
+        }
+
+        // Load Gold/Silver Ratio
+        const gsRatioResponse = await fetch('/api/metrics/gold_silver_ratio');
+        const gsRatioData = await gsRatioResponse.json();
+
+        if (gsRatioData && gsRatioData.values && gsRatioData.values.length > 0) {
+            const currentRatio = gsRatioData.values[gsRatioData.values.length - 1];
+            document.getElementById('gold-silver-ratio').textContent = currentRatio.toFixed(1);
+
+            if (gsRatioData.values.length > 30) {
+                const change30d = ((currentRatio / gsRatioData.values[gsRatioData.values.length - 31]) - 1) * 100;
+                document.getElementById('gold-silver-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+        }
+
+        // Load GDX/GLD Ratio
+        const gdxGldResponse = await fetch('/api/metrics/gdx_gld_ratio');
+        const gdxGldData = await gdxGldResponse.json();
+
+        if (gdxGldData && gdxGldData.values && gdxGldData.values.length > 0) {
+            const currentGdxGld = gdxGldData.values[gdxGldData.values.length - 1];
+            document.getElementById('gdx-gld-ratio').textContent = currentGdxGld.toFixed(2);
+
+            if (gdxGldData.values.length > 30) {
+                const change30d = ((currentGdxGld / gdxGldData.values[gdxGldData.values.length - 31]) - 1) * 100;
+                document.getElementById('gdx-gld-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+        }
+
+        // Load Real Yield
+        const realYieldResponse = await fetch('/api/metrics/real_yield_10y');
+        const realYieldData = await realYieldResponse.json();
+
+        if (realYieldData && realYieldData.values && realYieldData.values.length > 0) {
+            const currentRealYield = realYieldData.values[realYieldData.values.length - 1];
+            document.getElementById('real-yield-value').textContent = currentRealYield.toFixed(2) + '%';
+
+            if (realYieldData.values.length > 30) {
+                const change30d = (currentRealYield - realYieldData.values[realYieldData.values.length - 31]) * 100;
+                document.getElementById('real-yield-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
+
+                const statusEl = document.getElementById('real-yield-status');
+                if (currentRealYield < 0) {
+                    statusEl.textContent = 'NEGATIVE (BULLISH)';
+                    statusEl.className = 'badge bg-success';
+                } else if (currentRealYield < 1) {
+                    statusEl.textContent = 'LOW';
+                    statusEl.className = 'badge bg-warning';
+                } else if (currentRealYield < 2) {
+                    statusEl.textContent = 'MODERATE';
+                    statusEl.className = 'badge bg-secondary';
+                } else {
+                    statusEl.textContent = 'HIGH (BEARISH)';
+                    statusEl.className = 'badge bg-danger';
+                }
+            }
+
+            fullRealYieldData = realYieldData;
+        }
+
+        // Load Breakeven Inflation
+        const breakevenResponse = await fetch('/api/metrics/breakeven_inflation_10y');
+        const breakevenData = await breakevenResponse.json();
+
+        if (breakevenData && breakevenData.values && breakevenData.values.length > 0) {
+            const currentBreakeven = breakevenData.values[breakevenData.values.length - 1];
+            document.getElementById('breakeven-value').textContent = currentBreakeven.toFixed(2) + '%';
+
+            if (breakevenData.values.length > 30) {
+                const change30d = (currentBreakeven - breakevenData.values[breakevenData.values.length - 31]) * 100;
+                document.getElementById('breakeven-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
+
+                const statusEl = document.getElementById('breakeven-status');
+                if (currentBreakeven > 2.5) {
+                    statusEl.textContent = 'ELEVATED';
+                    statusEl.className = 'badge bg-warning';
+                } else if (currentBreakeven > 2) {
+                    statusEl.textContent = 'ABOVE TARGET';
+                    statusEl.className = 'badge bg-info';
+                } else if (currentBreakeven > 1.5) {
+                    statusEl.textContent = 'ANCHORED';
+                    statusEl.className = 'badge bg-success';
+                } else {
+                    statusEl.textContent = 'LOW';
+                    statusEl.className = 'badge bg-secondary';
+                }
+            }
+        }
+
+        // Load DXY
+        const dxyResponse = await fetch('/api/metrics/dollar_index_price');
+        const dxyData = await dxyResponse.json();
+
+        if (dxyData && dxyData.values && dxyData.values.length > 0) {
+            const currentDXY = dxyData.values[dxyData.values.length - 1];
+            document.getElementById('dxy-value').textContent = currentDXY.toFixed(2);
+
+            if (dxyData.values.length > 30) {
+                const change30d = ((currentDXY / dxyData.values[dxyData.values.length - 31]) - 1) * 100;
+                document.getElementById('dxy-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+
+                const statusEl = document.getElementById('dxy-status');
+                if (change30d > 2) {
+                    statusEl.textContent = 'STRENGTHENING';
+                    statusEl.className = 'badge bg-danger';
+                } else if (change30d < -2) {
+                    statusEl.textContent = 'WEAKENING';
+                    statusEl.className = 'badge bg-success';
+                } else {
+                    statusEl.textContent = 'STABLE';
+                    statusEl.className = 'badge bg-secondary';
+                }
+            }
+
+            fullDxyData = dxyData;
+        }
+
+        // Load 10Y Treasury
+        const treasuryResponse = await fetch('/api/metrics/treasury_10y');
+        const treasuryData = await treasuryResponse.json();
+
+        if (treasuryData && treasuryData.values && treasuryData.values.length > 0) {
+            const currentTreasury = treasuryData.values[treasuryData.values.length - 1];
+            document.getElementById('treasury-10y-value').textContent = currentTreasury.toFixed(2) + '%';
+
+            if (treasuryData.values.length > 30) {
+                const change30d = (currentTreasury - treasuryData.values[treasuryData.values.length - 31]) * 100;
+                document.getElementById('treasury-10y-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
+            }
+        }
+
+        // Load GDX
+        const gdxResponse = await fetch('/api/metrics/gold_miners_price');
+        const gdxData = await gdxResponse.json();
+
+        if (gdxData && gdxData.values && gdxData.values.length > 0) {
+            const currentGDX = gdxData.values[gdxData.values.length - 1];
+            document.getElementById('gdx-value').textContent = `$${currentGDX.toFixed(2)}`;
+
+            if (gdxData.values.length > 30) {
+                const change30d = ((currentGDX / gdxData.values[gdxData.values.length - 31]) - 1) * 100;
+                document.getElementById('gdx-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+        }
+
+        // Load VIX
+        const vixResponse = await fetch('/api/metrics/vix_price');
+        const vixData = await vixResponse.json();
+
+        if (vixData && vixData.values && vixData.values.length > 0) {
+            const currentVIX = vixData.values[vixData.values.length - 1];
+            document.getElementById('vix-value').textContent = currentVIX.toFixed(1);
+
+            if (vixData.values.length > 5) {
+                const change5d = ((currentVIX / vixData.values[vixData.values.length - 6]) - 1) * 100;
+                document.getElementById('vix-change').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+
+            const statusEl = document.getElementById('vix-status');
+            if (currentVIX > 30) {
+                statusEl.textContent = 'HIGH FEAR';
+                statusEl.className = 'badge bg-danger';
+            } else if (currentVIX > 20) {
+                statusEl.textContent = 'ELEVATED';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'LOW';
+                statusEl.className = 'badge bg-success';
+            }
+        }
+
+        // Load S&P 500
+        const sp500Response = await fetch('/api/metrics/sp500_price');
+        const sp500Data = await sp500Response.json();
+
+        if (sp500Data && sp500Data.values && sp500Data.values.length > 0) {
+            const currentSP = sp500Data.values[sp500Data.values.length - 1];
+            document.getElementById('sp500-value').textContent = currentSP.toFixed(0);
+
+            if (sp500Data.values.length > 30) {
+                const change30d = ((currentSP / sp500Data.values[sp500Data.values.length - 31]) - 1) * 100;
+                document.getElementById('sp500-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+        }
+
+        // Render charts
+        applyTimeFrameFilter(currentTimeframe);
+
+    } catch (error) {
+        console.error('Error loading safe havens data:', error);
     }
 }
 
-async function loadGoldBitcoinChart() {
-    const response = await fetch('/api/chart/gold_bitcoin');
-    const data = await response.json();
+// Apply time frame filter and render charts
+function applyTimeFrameFilter(timeframe) {
+    currentTimeframe = timeframe;
+    renderGoldRealYieldsChart(timeframe);
+    renderGoldDxyChart(timeframe);
+}
 
-    // Get recession annotations for the current date range
-    const startDate = data.dates[0];
-    const endDate = data.dates[data.dates.length - 1];
+// Render Gold vs Real Yields chart
+function renderGoldRealYieldsChart(days) {
+    if (!fullGoldData || !fullRealYieldData) return;
+
+    const useAllData = days === 'all' || isNaN(days);
+    const now = new Date();
+    const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    // Create date maps
+    const goldMap = new Map();
+    fullGoldData.dates.forEach((date, idx) => {
+        if (new Date(date) >= cutoffDate) {
+            goldMap.set(date, fullGoldData.values[idx] * 10); // Convert to spot proxy
+        }
+    });
+
+    const realYieldMap = new Map();
+    fullRealYieldData.dates.forEach((date, idx) => {
+        if (new Date(date) >= cutoffDate) {
+            realYieldMap.set(date, fullRealYieldData.values[idx]);
+        }
+    });
+
+    // Find common dates
+    const commonDates = Array.from(goldMap.keys()).filter(d => realYieldMap.has(d)).sort();
+
+    if (commonDates.length === 0) return;
+
+    const alignedData = {
+        dates: commonDates,
+        gold: commonDates.map(d => goldMap.get(d)),
+        realYield: commonDates.map(d => realYieldMap.get(d))
+    };
+
+    // Get recession annotations
+    const startDate = alignedData.dates[0];
+    const endDate = alignedData.dates[alignedData.dates.length - 1];
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
 
-    new Chart(document.getElementById('gold-bitcoin-chart'), {
+    // Destroy existing chart
+    if (goldRealYieldsChart) {
+        goldRealYieldsChart.destroy();
+    }
+
+    // Determine time unit
+    const dateRange = new Date(endDate) - new Date(startDate);
+    const dayRange = dateRange / (1000 * 60 * 60 * 24);
+    let timeUnit = 'year';
+    if (dayRange <= 90) timeUnit = 'day';
+    else if (dayRange <= 365) timeUnit = 'week';
+    else if (dayRange <= 1825) timeUnit = 'month';
+
+    const ctx = document.getElementById('gold-real-yields-chart').getContext('2d');
+    goldRealYieldsChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.dates,
+            labels: alignedData.dates,
             datasets: [
                 {
-                    label: 'Gold (Spot proxy)',
-                    data: data.gold,
+                    label: 'Gold Price ($)',
+                    data: alignedData.gold,
                     borderColor: 'rgb(255, 193, 7)',
                     backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                    borderWidth: 3,
+                    borderWidth: 2,
+                    fill: false,
                     yAxisID: 'y',
-                    fill: true
+                    pointRadius: 0,
+                    pointHoverRadius: 4
                 },
                 {
-                    label: 'Bitcoin',
-                    data: data.bitcoin,
-                    borderColor: 'rgb(255, 107, 0)',
+                    label: '10Y Real Yield (%)',
+                    data: alignedData.realYield,
+                    borderColor: 'rgb(220, 53, 69)',
                     borderWidth: 2,
-                    yAxisID: 'y1'
+                    fill: false,
+                    yAxisID: 'y1',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: true,
             interaction: {
                 mode: 'index',
                 intersect: false
             },
             plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
                 annotation: {
                     annotations: recessionAnnotations
                 }
             },
             scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: timeUnit,
+                        displayFormats: {
+                            day: 'MMM d',
+                            week: 'MMM d',
+                            month: 'MMM yyyy',
+                            year: 'yyyy'
+                        }
+                    },
+                    grid: { display: false }
+                },
                 y: {
                     type: 'linear',
+                    display: true,
                     position: 'left',
-                    title: { display: true, text: 'Gold Price ($)' }
+                    title: {
+                        display: true,
+                        text: 'Gold ($)'
+                    }
                 },
                 y1: {
                     type: 'linear',
+                    display: true,
                     position: 'right',
-                    title: { display: true, text: 'Bitcoin Price ($)' },
-                    grid: { drawOnChartArea: false }
+                    reverse: true, // Invert to show inverse correlation
+                    title: {
+                        display: true,
+                        text: '10Y Real Yield (%, inverted)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
                 }
             }
         }
     });
 }
 
+// Render Gold vs DXY chart
+function renderGoldDxyChart(days) {
+    if (!fullGoldData || !fullDxyData) return;
+
+    const useAllData = days === 'all' || isNaN(days);
+    const now = new Date();
+    const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    // Create date maps
+    const goldMap = new Map();
+    fullGoldData.dates.forEach((date, idx) => {
+        if (new Date(date) >= cutoffDate) {
+            goldMap.set(date, fullGoldData.values[idx] * 10); // Convert to spot proxy
+        }
+    });
+
+    const dxyMap = new Map();
+    fullDxyData.dates.forEach((date, idx) => {
+        if (new Date(date) >= cutoffDate) {
+            dxyMap.set(date, fullDxyData.values[idx]);
+        }
+    });
+
+    // Find common dates
+    const commonDates = Array.from(goldMap.keys()).filter(d => dxyMap.has(d)).sort();
+
+    if (commonDates.length === 0) return;
+
+    const alignedData = {
+        dates: commonDates,
+        gold: commonDates.map(d => goldMap.get(d)),
+        dxy: commonDates.map(d => dxyMap.get(d))
+    };
+
+    // Get recession annotations
+    const startDate = alignedData.dates[0];
+    const endDate = alignedData.dates[alignedData.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+
+    // Destroy existing chart
+    if (goldDxyChart) {
+        goldDxyChart.destroy();
+    }
+
+    // Determine time unit
+    const dateRange = new Date(endDate) - new Date(startDate);
+    const dayRange = dateRange / (1000 * 60 * 60 * 24);
+    let timeUnit = 'year';
+    if (dayRange <= 90) timeUnit = 'day';
+    else if (dayRange <= 365) timeUnit = 'week';
+    else if (dayRange <= 1825) timeUnit = 'month';
+
+    const ctx = document.getElementById('gold-dxy-chart').getContext('2d');
+    goldDxyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: alignedData.dates,
+            datasets: [
+                {
+                    label: 'Gold Price ($)',
+                    data: alignedData.gold,
+                    borderColor: 'rgb(255, 193, 7)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 2,
+                    fill: false,
+                    yAxisID: 'y',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                },
+                {
+                    label: 'Dollar Index (DXY)',
+                    data: alignedData.dxy,
+                    borderColor: 'rgb(25, 135, 84)',
+                    borderWidth: 2,
+                    fill: false,
+                    yAxisID: 'y1',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                annotation: {
+                    annotations: recessionAnnotations
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: timeUnit,
+                        displayFormats: {
+                            day: 'MMM d',
+                            week: 'MMM d',
+                            month: 'MMM yyyy',
+                            year: 'yyyy'
+                        }
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Gold ($)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Dollar Index (DXY)'
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Time frame selector button handlers
+document.querySelectorAll('#timeframe-selector button[data-timeframe]').forEach(button => {
+    button.addEventListener('click', function() {
+        document.querySelectorAll('#timeframe-selector button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        const timeFrame = this.getAttribute('data-timeframe');
+        applyTimeFrameFilter(timeFrame === 'all' ? 'all' : parseInt(timeFrame));
+    });
+});
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadSafeHavensData();
-    loadGoldBitcoinChart();
 });
 </script>
 {% endblock %}
