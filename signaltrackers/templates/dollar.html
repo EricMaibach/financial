@@ -1,0 +1,1369 @@
+{% extends "base.html" %}
+
+{% block title %}Dollar & Currency - Financial Markets{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-currency-dollar text-success"></i>
+            Dollar & Currency Markets
+        </h1>
+        <p class="lead">Tracking the US Dollar Index, major currency pairs, and global FX dynamics</p>
+    </div>
+</div>
+
+<!-- Educational Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb-fill"></i> Understanding Dollar & Currency Markets
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-globe text-success"></i> Dollar Index (DXY)</h6>
+                        <p class="small mb-0">Measures USD against a basket of 6 major currencies (EUR 57.6%, JPY 13.6%, GBP 11.9%, CAD 9.1%, SEK 4.2%, CHF 3.6%). A rising DXY = stronger dollar = headwind for commodities and EM.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-arrow-repeat text-warning"></i> Dollar Smile Theory</h6>
+                        <p class="small mb-0">The dollar strengthens in <strong>both</strong> risk-on (US growth outperformance) and risk-off (flight to safety) environments. It weakens when global growth is strong but US growth is moderate.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-currency-yen text-danger"></i> Carry Trade & Yen</h6>
+                        <p class="small mb-0">Investors borrow in low-yield currencies (JPY) to invest in higher-yield assets. When USD/JPY falls sharply, carry trades unwind, causing broader deleveraging across risk assets.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-graph-up-arrow text-info"></i> Rate Differentials</h6>
+                        <p class="small mb-0">US-Japan and US-Germany 10Y spreads drive currency flows. Wider spreads = higher yield differential = dollar strength. Central bank policy divergence is the key driver.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Dollar Briefing -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-square-text-fill"></i> Daily Currency Briefing
+                </h5>
+                <small id="dollar-summary-timestamp" class="opacity-75"></small>
+            </div>
+            <div class="card-body">
+                <div id="dollar-summary-content" class="summary-text">
+                    <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading daily briefing...</p>
+                </div>
+                <div id="dollar-summary-error" class="text-muted d-none">
+                    <p class="mb-0"><i class="bi bi-info-circle"></i> No briefing available yet. Click "Reload Data" on the main dashboard to generate one.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=dollar_index_price" class="metric-link">
+            <div class="card metric-card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">DOLLAR INDEX (DXY)</h6>
+                    <h2 class="mb-0 text-success" id="dxy-value">--</h2>
+                    <small class="text-muted">
+                        <span id="dxy-change-5d">--</span>% (5d) |
+                        <span id="dxy-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="dxy-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=usdjpy_price" class="metric-link">
+            <div class="card metric-card">
+                <div class="card-body">
+                    <h6 class="text-muted">USD/JPY</h6>
+                    <h2 class="mb-0" id="usdjpy-value">--</h2>
+                    <small class="text-muted">
+                        <span id="usdjpy-change-5d">--</span>% (5d) |
+                        <span id="usdjpy-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="usdjpy-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">DXY PERCENTILE</h6>
+                <h2 class="mb-0" id="dxy-percentile">--</h2>
+                <small class="text-muted">Historical ranking</small>
+                <div class="mt-2">
+                    <span class="badge" id="dxy-percentile-status">Loading</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">DOLLAR TREND</h6>
+                <h2 class="mb-0" id="dollar-trend">--</h2>
+                <small class="text-muted" id="dollar-trend-detail">Analyzing...</small>
+                <div class="mt-2">
+                    <span class="badge" id="dollar-trend-badge">Loading</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rate Differentials & EUR/USD Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=eurusd_price" class="metric-link">
+            <div class="card metric-card border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">EUR/USD</h6>
+                    <h2 class="mb-0 text-primary" id="eurusd-value">--</h2>
+                    <small class="text-muted">
+                        <span id="eurusd-change-5d">--</span>% (5d) |
+                        <span id="eurusd-change-30d">--</span>% (30d)
+                    </small>
+                    <div class="mt-2">
+                        <span class="badge" id="eurusd-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=us_japan_10y_spread" class="metric-link">
+            <div class="card metric-card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">US-JAPAN 10Y SPREAD</h6>
+                    <h2 class="mb-0 text-warning" id="usjp-spread-value">--</h2>
+                    <small class="text-muted">Rate differential (bps)</small>
+                    <div class="mt-2">
+                        <span class="badge" id="usjp-spread-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <a href="/explorer?metric=us_germany_10y_spread" class="metric-link">
+            <div class="card metric-card border-info">
+                <div class="card-body">
+                    <h6 class="text-muted">US-GERMANY 10Y SPREAD</h6>
+                    <h2 class="mb-0 text-info" id="usde-spread-value">--</h2>
+                    <small class="text-muted">Rate differential (bps)</small>
+                    <div class="mt-2">
+                        <span class="badge" id="usde-spread-status">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">CARRY TRADE INDICATOR</h6>
+                <h2 class="mb-0" id="carry-indicator">--</h2>
+                <small class="text-muted" id="carry-detail">Analyzing...</small>
+                <div class="mt-2">
+                    <span class="badge" id="carry-badge">Loading</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dollar Index Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up"></i> Dollar Index (DXY)
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="dxy-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-success" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-success active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="dxy-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> DXY measures dollar strength vs major currencies. Above 100 = relatively strong dollar. Below 100 = relatively weak. Grey bands = recession periods.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- USD/JPY Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-yen"></i> USD/JPY (Carry Trade Indicator)
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="usdjpy-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-success" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-success active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="usdjpy-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Rising USD/JPY = yen weakening (carry trade favorable). Sharp drops = potential carry unwind, watch for broader risk-off. BOJ policy shifts can cause violent moves.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- EUR/USD Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-euro"></i> EUR/USD Exchange Rate
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="eurusd-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="eurusd-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> EUR/USD is the most traded currency pair. Above 1.10 = relatively strong euro. Parity (1.00) is a psychological level. Inversely related to DXY due to euro's 57.6% weight.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rate Spreads Chart -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up-arrow"></i> Rate Differentials (10Y Spreads)
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="spreads-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-warning" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-warning" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-warning" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-warning active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-warning" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-warning" data-timeframe="3650">10Y</button>
+                    <button type="button" class="btn btn-outline-warning" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="spreads-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Rate differentials drive currency flows. Higher US-Japan spread = more attractive carry trade (borrow yen, buy USD). Higher US-Germany spread = dollar strength vs euro. Widening spreads = dollar tailwind.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dollar vs Assets Comparison -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-arrow-left-right"></i> Dollar vs Other Assets
+                </h5>
+                <div class="btn-group btn-group-sm" role="group" id="comparison-timeframe-buttons">
+                    <button type="button" class="btn btn-outline-success" data-timeframe="30">1M</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="90">3M</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="180">6M</button>
+                    <button type="button" class="btn btn-outline-success active" data-timeframe="365">1Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="1825">5Y</button>
+                    <button type="button" class="btn btn-outline-success" data-timeframe="0">All</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="comparison-chart"></canvas>
+            </div>
+            <div class="card-footer">
+                <small class="text-muted">
+                    <i class="bi bi-info-circle"></i> Normalized to 100. Shows inverse relationship between dollar and gold/commodities. Divergences can signal turning points.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Educational Sections -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Warning Signs</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>Sharp yen strengthening</strong> - USD/JPY down 5%+ quickly can trigger carry unwind</li>
+                    <li><strong>DXY breaking 100</strong> - Psychological level, below can accelerate weakness</li>
+                    <li><strong>DXY above 110</strong> - Very strong dollar, pressures EM and commodities</li>
+                    <li><strong>Dollar diverging from rates</strong> - If yields rise but dollar falls, watch Fed credibility</li>
+                    <li><strong>Rapid spread compression</strong> - US-Japan spread narrowing fast = carry unwind risk</li>
+                    <li><strong>EUR/USD breaking parity</strong> - Euro below 1.00 signals severe dollar strength</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-bookmark-check"></i> Key Levels to Watch</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0 small">
+                    <li><strong>DXY 100</strong> - Psychological pivot level</li>
+                    <li><strong>DXY 105</strong> - Strong dollar territory, EM/commodity headwinds</li>
+                    <li><strong>DXY 110+</strong> - Very strong, last seen 2022 (Fed aggressive tightening)</li>
+                    <li><strong>USD/JPY 150</strong> - BOJ intervention risk zone</li>
+                    <li><strong>USD/JPY 140</strong> - Key support, break below = carry unwind risk</li>
+                    <li><strong>EUR/USD 1.00</strong> - Parity level, psychological importance</li>
+                    <li><strong>US-JP Spread 350+ bps</strong> - Strong carry trade incentive</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cross-Asset Impact -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-diagram-3"></i> Dollar Impact on Other Assets
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h6>Commodities</h6>
+                        <p class="text-muted small mb-0">Strong dollar = headwind for oil, gold, copper. Most commodities priced in USD, so a stronger dollar makes them more expensive for foreign buyers.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Emerging Markets</h6>
+                        <p class="text-muted small mb-0">Strong dollar = pressure on EM. Many EM countries have USD-denominated debt, making servicing harder. Capital tends to flow back to US.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>US Multinationals</h6>
+                        <p class="text-muted small mb-0">Strong dollar = earnings headwind. Foreign revenue translates to fewer dollars. ~40% of S&P 500 revenue comes from abroad.</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Rate Differentials</h6>
+                        <p class="text-muted small mb-0">Dollar typically follows rate spreads. Higher US rates vs other countries = dollar strength. Fed hawkish vs other CBs = dollar bid.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+let recessionData = [];
+let dxyChart = null;
+let usdjpyChart = null;
+let eurusdChart = null;
+let spreadsChart = null;
+let comparisonChart = null;
+
+// Full data storage
+let fullDxyData = null;
+let fullUsdjpyData = null;
+let fullEurusdData = null;
+let fullUsJapanSpreadData = null;
+let fullUsGermanySpreadData = null;
+let fullGoldData = null;
+let fullOilData = null;
+
+// Current timeframes for each chart
+let dxyTimeframe = 365;
+let usdjpyTimeframe = 365;
+let eurusdTimeframe = 365;
+let spreadsTimeframe = 365;
+let comparisonTimeframe = 365;
+
+// Fetch recession data on load
+fetch('/api/recessions')
+    .then(response => response.json())
+    .then(data => {
+        recessionData = data;
+        // Re-render charts if data already loaded
+        if (fullDxyData) {
+            buildDxyChart();
+            buildUsdjpyChart();
+            buildComparisonChart();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading recession data:', error);
+    });
+
+// Generate recession annotations for chart
+function getRecessionAnnotations(startDate, endDate) {
+    if (!recessionData || recessionData.length === 0) return {};
+
+    const chartStart = new Date(startDate);
+    const chartEnd = new Date(endDate);
+    const annotations = {};
+
+    recessionData.forEach((recession, idx) => {
+        const recStart = new Date(recession.start_date);
+        const recEnd = new Date(recession.end_date);
+
+        if (recEnd >= chartStart && recStart <= chartEnd) {
+            const displayStart = recStart < chartStart ? chartStart : recStart;
+            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
+
+            annotations[`recession_${idx}`] = {
+                type: 'box',
+                xMin: displayStart.toISOString().split('T')[0],
+                xMax: displayEnd.toISOString().split('T')[0],
+                backgroundColor: 'rgba(128, 128, 128, 0.15)',
+                borderWidth: 0,
+                label: { display: false }
+            };
+        }
+    });
+
+    return annotations;
+}
+
+// Filter data by timeframe
+function filterByTimeframe(dates, values, days) {
+    if (days === 0) return { dates, values }; // All data
+
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    const filteredDates = [];
+    const filteredValues = [];
+
+    dates.forEach((dateStr, idx) => {
+        const date = new Date(dateStr);
+        if (date >= cutoffDate) {
+            filteredDates.push(dateStr);
+            filteredValues.push(values[idx]);
+        }
+    });
+
+    return { dates: filteredDates, values: filteredValues };
+}
+
+// Align datasets by date
+function alignDataByDate(primaryDates, secondaryDates, secondaryValues) {
+    const dateMap = new Map();
+    secondaryDates.forEach((date, i) => {
+        dateMap.set(date, secondaryValues[i]);
+    });
+
+    return primaryDates.map(date => dateMap.has(date) ? dateMap.get(date) : null);
+}
+
+// Determine time unit based on date range
+function getTimeUnit(startDate, endDate) {
+    const dateRange = new Date(endDate) - new Date(startDate);
+    const dayRange = dateRange / (1000 * 60 * 60 * 24);
+    if (dayRange <= 90) return 'day';
+    if (dayRange <= 365) return 'week';
+    if (dayRange <= 1825) return 'month';
+    return 'year';
+}
+
+// Calculate percentage change
+function calcPctChange(values, periods) {
+    if (!values || values.length <= periods) return null;
+    const current = values[values.length - 1];
+    const previous = values[values.length - 1 - periods];
+    if (previous === 0) return null;
+    return ((current / previous) - 1) * 100;
+}
+
+// Calculate percentile
+function calcPercentile(values, current) {
+    if (!values || values.length === 0) return null;
+    const sorted = [...values].sort((a, b) => a - b);
+    const rank = sorted.filter(v => v <= current).length;
+    return (rank / sorted.length) * 100;
+}
+
+// Load all dollar data
+async function loadDollarData() {
+    try {
+        // Load DXY
+        const dxyResponse = await fetch('/api/metrics/dollar_index_price');
+        const dxyData = await dxyResponse.json();
+
+        if (dxyData && dxyData.values && dxyData.values.length > 0) {
+            fullDxyData = dxyData;
+            const current = dxyData.values[dxyData.values.length - 1];
+            document.getElementById('dxy-value').textContent = current.toFixed(2);
+
+            const change5d = calcPctChange(dxyData.values, 5);
+            const change30d = calcPctChange(dxyData.values, 30);
+
+            if (change5d !== null) {
+                document.getElementById('dxy-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (change30d !== null) {
+                document.getElementById('dxy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+
+            // DXY status
+            const statusEl = document.getElementById('dxy-status');
+            if (current > 105) {
+                statusEl.textContent = 'STRONG';
+                statusEl.className = 'badge bg-success';
+            } else if (current > 100) {
+                statusEl.textContent = 'FIRM';
+                statusEl.className = 'badge bg-secondary';
+            } else if (current > 95) {
+                statusEl.textContent = 'NEUTRAL';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'WEAK';
+                statusEl.className = 'badge bg-danger';
+            }
+
+            // Percentile
+            const percentile = calcPercentile(dxyData.values, current);
+            if (percentile !== null) {
+                document.getElementById('dxy-percentile').textContent = percentile.toFixed(1) + '%';
+                const percStatusEl = document.getElementById('dxy-percentile-status');
+                if (percentile > 80) {
+                    percStatusEl.textContent = 'HIGH';
+                    percStatusEl.className = 'badge bg-success';
+                } else if (percentile > 50) {
+                    percStatusEl.textContent = 'ABOVE AVG';
+                    percStatusEl.className = 'badge bg-secondary';
+                } else if (percentile > 20) {
+                    percStatusEl.textContent = 'BELOW AVG';
+                    percStatusEl.className = 'badge bg-warning';
+                } else {
+                    percStatusEl.textContent = 'LOW';
+                    percStatusEl.className = 'badge bg-danger';
+                }
+            }
+
+            // Trend analysis
+            updateDollarTrend(dxyData.values, change5d, change30d);
+        }
+
+        // Load USD/JPY
+        const usdjpyResponse = await fetch('/api/metrics/usdjpy_price');
+        const usdjpyData = await usdjpyResponse.json();
+
+        if (usdjpyData && usdjpyData.values && usdjpyData.values.length > 0) {
+            fullUsdjpyData = usdjpyData;
+            const current = usdjpyData.values[usdjpyData.values.length - 1];
+            document.getElementById('usdjpy-value').textContent = current.toFixed(2);
+
+            const change5d = calcPctChange(usdjpyData.values, 5);
+            const change30d = calcPctChange(usdjpyData.values, 30);
+
+            if (change5d !== null) {
+                document.getElementById('usdjpy-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (change30d !== null) {
+                document.getElementById('usdjpy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+
+            // USD/JPY status
+            const statusEl = document.getElementById('usdjpy-status');
+            if (current > 150) {
+                statusEl.textContent = 'YEN VERY WEAK';
+                statusEl.className = 'badge bg-danger';
+            } else if (current > 145) {
+                statusEl.textContent = 'YEN WEAK';
+                statusEl.className = 'badge bg-warning';
+            } else if (current > 135) {
+                statusEl.textContent = 'NORMAL';
+                statusEl.className = 'badge bg-secondary';
+            } else {
+                statusEl.textContent = 'YEN STRONG';
+                statusEl.className = 'badge bg-success';
+            }
+        }
+
+        // Load EUR/USD
+        const eurusdResponse = await fetch('/api/metrics/eurusd_price');
+        const eurusdData = await eurusdResponse.json();
+
+        if (eurusdData && eurusdData.values && eurusdData.values.length > 0) {
+            fullEurusdData = eurusdData;
+            const current = eurusdData.values[eurusdData.values.length - 1];
+            document.getElementById('eurusd-value').textContent = current.toFixed(4);
+
+            const change5d = calcPctChange(eurusdData.values, 5);
+            const change30d = calcPctChange(eurusdData.values, 30);
+
+            if (change5d !== null) {
+                document.getElementById('eurusd-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (change30d !== null) {
+                document.getElementById('eurusd-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+
+            // EUR/USD status
+            const statusEl = document.getElementById('eurusd-status');
+            if (current > 1.15) {
+                statusEl.textContent = 'EURO STRONG';
+                statusEl.className = 'badge bg-success';
+            } else if (current > 1.05) {
+                statusEl.textContent = 'NORMAL';
+                statusEl.className = 'badge bg-secondary';
+            } else if (current > 1.00) {
+                statusEl.textContent = 'EURO WEAK';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'BELOW PARITY';
+                statusEl.className = 'badge bg-danger';
+            }
+        }
+
+        // Load US-Japan 10Y Spread
+        const usJapanSpreadResponse = await fetch('/api/metrics/us_japan_10y_spread');
+        const usJapanSpreadData = await usJapanSpreadResponse.json();
+
+        if (usJapanSpreadData && usJapanSpreadData.values && usJapanSpreadData.values.length > 0) {
+            fullUsJapanSpreadData = usJapanSpreadData;
+            const current = usJapanSpreadData.values[usJapanSpreadData.values.length - 1];
+            const bps = (current * 100).toFixed(0);
+            document.getElementById('usjp-spread-value').textContent = bps + ' bps';
+
+            // Status based on spread level
+            const statusEl = document.getElementById('usjp-spread-status');
+            if (current > 3.5) {
+                statusEl.textContent = 'WIDE';
+                statusEl.className = 'badge bg-success';
+            } else if (current > 2.5) {
+                statusEl.textContent = 'NORMAL';
+                statusEl.className = 'badge bg-secondary';
+            } else if (current > 1.5) {
+                statusEl.textContent = 'NARROW';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'VERY NARROW';
+                statusEl.className = 'badge bg-danger';
+            }
+        }
+
+        // Load US-Germany 10Y Spread
+        const usGermanySpreadResponse = await fetch('/api/metrics/us_germany_10y_spread');
+        const usGermanySpreadData = await usGermanySpreadResponse.json();
+
+        if (usGermanySpreadData && usGermanySpreadData.values && usGermanySpreadData.values.length > 0) {
+            fullUsGermanySpreadData = usGermanySpreadData;
+            const current = usGermanySpreadData.values[usGermanySpreadData.values.length - 1];
+            const bps = (current * 100).toFixed(0);
+            document.getElementById('usde-spread-value').textContent = bps + ' bps';
+
+            // Status based on spread level
+            const statusEl = document.getElementById('usde-spread-status');
+            if (current > 2.0) {
+                statusEl.textContent = 'WIDE';
+                statusEl.className = 'badge bg-success';
+            } else if (current > 1.0) {
+                statusEl.textContent = 'NORMAL';
+                statusEl.className = 'badge bg-secondary';
+            } else if (current > 0.5) {
+                statusEl.textContent = 'NARROW';
+                statusEl.className = 'badge bg-warning';
+            } else {
+                statusEl.textContent = 'VERY NARROW';
+                statusEl.className = 'badge bg-danger';
+            }
+
+            // Update carry trade indicator based on both spreads
+            updateCarryIndicator(fullUsJapanSpreadData, fullUsGermanySpreadData);
+        }
+
+        // Load Gold for comparison
+        const goldResponse = await fetch('/api/metrics/gold_price');
+        const goldData = await goldResponse.json();
+        if (goldData && goldData.values && goldData.values.length > 0) {
+            fullGoldData = goldData;
+        }
+
+        // Load Oil for comparison
+        const oilResponse = await fetch('/api/metrics/oil_price');
+        const oilData = await oilResponse.json();
+        if (oilData && oilData.values && oilData.values.length > 0) {
+            fullOilData = oilData;
+        }
+
+        // Build charts
+        buildDxyChart();
+        buildUsdjpyChart();
+        buildEurusdChart();
+        buildSpreadsChart();
+        buildComparisonChart();
+
+    } catch (error) {
+        console.error('Error loading dollar data:', error);
+    }
+}
+
+function updateDollarTrend(values, change5d, change30d) {
+    const trendEl = document.getElementById('dollar-trend');
+    const detailEl = document.getElementById('dollar-trend-detail');
+    const badgeEl = document.getElementById('dollar-trend-badge');
+
+    if (change5d === null || change30d === null) return;
+
+    // Determine trend
+    if (change5d > 1 && change30d > 2) {
+        trendEl.textContent = 'Strengthening';
+        detailEl.textContent = 'Dollar gaining on multiple timeframes';
+        badgeEl.textContent = 'BULLISH';
+        badgeEl.className = 'badge bg-success';
+    } else if (change5d < -1 && change30d < -2) {
+        trendEl.textContent = 'Weakening';
+        detailEl.textContent = 'Dollar losing ground';
+        badgeEl.textContent = 'BEARISH';
+        badgeEl.className = 'badge bg-danger';
+    } else if (Math.abs(change5d) < 0.5 && Math.abs(change30d) < 1) {
+        trendEl.textContent = 'Ranging';
+        detailEl.textContent = 'No clear direction';
+        badgeEl.textContent = 'NEUTRAL';
+        badgeEl.className = 'badge bg-secondary';
+    } else if (change5d > 0 !== change30d > 0) {
+        trendEl.textContent = 'Mixed';
+        detailEl.textContent = 'Short vs long-term diverging';
+        badgeEl.textContent = 'WATCH';
+        badgeEl.className = 'badge bg-warning';
+    } else {
+        trendEl.textContent = 'Stable';
+        detailEl.textContent = 'Minor moves only';
+        badgeEl.textContent = 'NEUTRAL';
+        badgeEl.className = 'badge bg-secondary';
+    }
+}
+
+function buildDxyChart() {
+    if (!fullDxyData) return;
+
+    const filtered = filterByTimeframe(fullDxyData.dates, fullDxyData.values, dxyTimeframe);
+    if (filtered.dates.length === 0) return;
+
+    const startDate = filtered.dates[0];
+    const endDate = filtered.dates[filtered.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
+
+    // Add 100 level annotation
+    recessionAnnotations['level100'] = {
+        type: 'line',
+        yMin: 100,
+        yMax: 100,
+        borderColor: 'rgba(128, 128, 128, 0.5)',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        label: {
+            display: true,
+            content: '100 (Pivot)',
+            position: 'end',
+            backgroundColor: 'rgba(128, 128, 128, 0.7)',
+            color: 'white',
+            font: { size: 9 }
+        }
+    };
+
+    if (dxyChart) dxyChart.destroy();
+
+    const ctx = document.getElementById('dxy-chart').getContext('2d');
+    dxyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: filtered.dates,
+            datasets: [{
+                label: 'Dollar Index (DXY)',
+                data: filtered.values,
+                borderColor: 'rgb(25, 135, 84)',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'DXY: ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
+                },
+                y: {
+                    title: { display: true, text: 'Dollar Index' }
+                }
+            }
+        }
+    });
+}
+
+function buildUsdjpyChart() {
+    if (!fullUsdjpyData) return;
+
+    const filtered = filterByTimeframe(fullUsdjpyData.dates, fullUsdjpyData.values, usdjpyTimeframe);
+    if (filtered.dates.length === 0) return;
+
+    const startDate = filtered.dates[0];
+    const endDate = filtered.dates[filtered.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
+
+    // Add intervention warning level
+    recessionAnnotations['level150'] = {
+        type: 'line',
+        yMin: 150,
+        yMax: 150,
+        borderColor: 'rgba(220, 53, 69, 0.5)',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        label: {
+            display: true,
+            content: 'BOJ Watch (150)',
+            position: 'end',
+            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+            color: 'white',
+            font: { size: 9 }
+        }
+    };
+
+    if (usdjpyChart) usdjpyChart.destroy();
+
+    const ctx = document.getElementById('usdjpy-chart').getContext('2d');
+    usdjpyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: filtered.dates,
+            datasets: [{
+                label: 'USD/JPY',
+                data: filtered.values,
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'USD/JPY: ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
+                },
+                y: {
+                    title: { display: true, text: 'USD/JPY' }
+                }
+            }
+        }
+    });
+}
+
+function buildEurusdChart() {
+    if (!fullEurusdData) return;
+
+    const filtered = filterByTimeframe(fullEurusdData.dates, fullEurusdData.values, eurusdTimeframe);
+    if (filtered.dates.length === 0) return;
+
+    const startDate = filtered.dates[0];
+    const endDate = filtered.dates[filtered.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
+
+    // Add parity level annotation
+    recessionAnnotations['parity'] = {
+        type: 'line',
+        yMin: 1.0,
+        yMax: 1.0,
+        borderColor: 'rgba(220, 53, 69, 0.5)',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        label: {
+            display: true,
+            content: 'Parity (1.00)',
+            position: 'end',
+            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+            color: 'white',
+            font: { size: 9 }
+        }
+    };
+
+    if (eurusdChart) eurusdChart.destroy();
+
+    const ctx = document.getElementById('eurusd-chart').getContext('2d');
+    eurusdChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: filtered.dates,
+            datasets: [{
+                label: 'EUR/USD',
+                data: filtered.values,
+                borderColor: 'rgb(13, 110, 253)',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'EUR/USD: ' + context.parsed.y.toFixed(4);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
+                },
+                y: {
+                    title: { display: true, text: 'EUR/USD' }
+                }
+            }
+        }
+    });
+}
+
+function buildSpreadsChart() {
+    if (!fullUsJapanSpreadData && !fullUsGermanySpreadData) return;
+
+    // Use US-Japan spread as primary date series if available
+    const primaryData = fullUsJapanSpreadData || fullUsGermanySpreadData;
+    const filtered = filterByTimeframe(primaryData.dates, primaryData.values, spreadsTimeframe);
+    if (filtered.dates.length === 0) return;
+
+    const startDate = filtered.dates[0];
+    const endDate = filtered.dates[filtered.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
+
+    const datasets = [];
+
+    // US-Japan spread (convert to basis points)
+    if (fullUsJapanSpreadData) {
+        const usJapanFiltered = filterByTimeframe(fullUsJapanSpreadData.dates, fullUsJapanSpreadData.values, spreadsTimeframe);
+        const usJapanBps = usJapanFiltered.values.map(v => v * 100);
+        datasets.push({
+            label: 'US-Japan 10Y Spread (bps)',
+            data: usJapanBps,
+            borderColor: 'rgb(255, 193, 7)',
+            backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+            tension: 0.1,
+            yAxisID: 'y'
+        });
+    }
+
+    // US-Germany spread (convert to basis points)
+    if (fullUsGermanySpreadData) {
+        const usGermanyFiltered = filterByTimeframe(fullUsGermanySpreadData.dates, fullUsGermanySpreadData.values, spreadsTimeframe);
+        const alignedValues = alignDataByDate(filtered.dates, usGermanyFiltered.dates, usGermanyFiltered.values);
+        const usGermanyBps = alignedValues.map(v => v !== null ? v * 100 : null);
+        datasets.push({
+            label: 'US-Germany 10Y Spread (bps)',
+            data: usGermanyBps,
+            borderColor: 'rgb(13, 202, 240)',
+            backgroundColor: 'rgba(13, 202, 240, 0.1)',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+            tension: 0.1,
+            yAxisID: 'y'
+        });
+    }
+
+    if (spreadsChart) spreadsChart.destroy();
+
+    const ctx = document.getElementById('spreads-chart').getContext('2d');
+    spreadsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: filtered.dates,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(0) + ' bps';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
+                },
+                y: {
+                    title: { display: true, text: 'Spread (basis points)' }
+                }
+            }
+        }
+    });
+}
+
+function updateCarryIndicator(usJapanData, usGermanyData) {
+    const indicatorEl = document.getElementById('carry-indicator');
+    const detailEl = document.getElementById('carry-detail');
+    const badgeEl = document.getElementById('carry-badge');
+
+    if (!usJapanData || !usJapanData.values || usJapanData.values.length < 30) {
+        return;
+    }
+
+    const currentSpread = usJapanData.values[usJapanData.values.length - 1];
+    const spread30dAgo = usJapanData.values[usJapanData.values.length - 30] || usJapanData.values[0];
+    const spreadChange = currentSpread - spread30dAgo;
+
+    // Also check Germany spread for EUR strength
+    let usDeSpread = null;
+    let usDeChange = null;
+    if (usGermanyData && usGermanyData.values && usGermanyData.values.length >= 30) {
+        usDeSpread = usGermanyData.values[usGermanyData.values.length - 1];
+        const usDeSpread30dAgo = usGermanyData.values[usGermanyData.values.length - 30] || usGermanyData.values[0];
+        usDeChange = usDeSpread - usDeSpread30dAgo;
+    }
+
+    // Determine carry trade favorability
+    if (currentSpread > 3.5) {
+        indicatorEl.textContent = 'Favorable';
+        detailEl.textContent = 'Wide US-JP spread supports carry';
+        badgeEl.textContent = 'CARRY ON';
+        badgeEl.className = 'badge bg-success';
+    } else if (currentSpread > 2.5 && spreadChange > 0.1) {
+        indicatorEl.textContent = 'Improving';
+        detailEl.textContent = 'Spreads widening, USD positive';
+        badgeEl.textContent = 'BULLISH USD';
+        badgeEl.className = 'badge bg-success';
+    } else if (currentSpread > 2.5) {
+        indicatorEl.textContent = 'Neutral';
+        detailEl.textContent = 'Moderate carry trade environment';
+        badgeEl.textContent = 'STABLE';
+        badgeEl.className = 'badge bg-secondary';
+    } else if (spreadChange < -0.2) {
+        indicatorEl.textContent = 'Deteriorating';
+        detailEl.textContent = 'Spreads narrowing, watch for unwind';
+        badgeEl.textContent = 'RISK OFF';
+        badgeEl.className = 'badge bg-warning';
+    } else if (currentSpread < 2.0) {
+        indicatorEl.textContent = 'Unfavorable';
+        detailEl.textContent = 'Narrow spreads, carry trade fragile';
+        badgeEl.textContent = 'UNWIND RISK';
+        badgeEl.className = 'badge bg-danger';
+    } else {
+        indicatorEl.textContent = 'Mixed';
+        detailEl.textContent = 'No clear signal';
+        badgeEl.textContent = 'NEUTRAL';
+        badgeEl.className = 'badge bg-secondary';
+    }
+}
+
+function buildComparisonChart() {
+    if (!fullDxyData) return;
+
+    const filtered = filterByTimeframe(fullDxyData.dates, fullDxyData.values, comparisonTimeframe);
+    if (filtered.dates.length === 0) return;
+
+    // Normalize DXY to 100
+    const dxyBase = filtered.values[0];
+    const dxyNormalized = filtered.values.map(v => (v / dxyBase) * 100);
+
+    // Align and normalize gold
+    let goldNormalized = null;
+    if (fullGoldData) {
+        const goldAligned = alignDataByDate(filtered.dates, fullGoldData.dates, fullGoldData.values);
+        // Find first non-null value for base
+        let goldBaseIdx = goldAligned.findIndex(v => v !== null);
+        if (goldBaseIdx >= 0) {
+            const goldBase = goldAligned[goldBaseIdx];
+            goldNormalized = goldAligned.map(v => v !== null ? (v / goldBase) * 100 : null);
+        }
+    }
+
+    // Align and normalize oil
+    let oilNormalized = null;
+    if (fullOilData) {
+        const oilAligned = alignDataByDate(filtered.dates, fullOilData.dates, fullOilData.values);
+        let oilBaseIdx = oilAligned.findIndex(v => v !== null);
+        if (oilBaseIdx >= 0) {
+            const oilBase = oilAligned[oilBaseIdx];
+            oilNormalized = oilAligned.map(v => v !== null ? (v / oilBase) * 100 : null);
+        }
+    }
+
+    const startDate = filtered.dates[0];
+    const endDate = filtered.dates[filtered.dates.length - 1];
+    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
+
+    if (comparisonChart) comparisonChart.destroy();
+
+    const datasets = [{
+        label: 'Dollar Index',
+        data: dxyNormalized,
+        borderColor: 'rgb(25, 135, 84)',
+        borderWidth: 2,
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
+    }];
+
+    if (goldNormalized) {
+        datasets.push({
+            label: 'Gold',
+            data: goldNormalized,
+            borderColor: 'rgb(255, 193, 7)',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+            tension: 0.1
+        });
+    }
+
+    if (oilNormalized) {
+        datasets.push({
+            label: 'Oil (WTI)',
+            data: oilNormalized,
+            borderColor: 'rgb(13, 110, 253)',
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0,
+            tension: 0.1
+        });
+    }
+
+    const ctx = document.getElementById('comparison-chart').getContext('2d');
+    comparisonChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: filtered.dates,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
+                },
+                y: {
+                    title: { display: true, text: 'Normalized (100 = Start)' }
+                }
+            }
+        }
+    });
+}
+
+// Load AI-generated dollar summary
+async function loadDollarSummary() {
+    try {
+        const response = await fetch('/api/dollar-summary');
+        const data = await response.json();
+
+        const contentDiv = document.getElementById('dollar-summary-content');
+        const errorDiv = document.getElementById('dollar-summary-error');
+        const timestampSpan = document.getElementById('dollar-summary-timestamp');
+
+        if (data.error) {
+            contentDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        // Use marked library for markdown rendering if available
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true, gfm: true, sanitize: false });
+            contentDiv.innerHTML = marked.parse(data.summary);
+        } else {
+            contentDiv.innerHTML = data.summary
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        if (data.generated_at) {
+            const genDate = new Date(data.generated_at);
+            const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            timestampSpan.textContent = `${dateStr} at ${timeStr}`;
+        }
+
+    } catch (error) {
+        console.error('Error loading dollar summary:', error);
+        document.getElementById('dollar-summary-content').classList.add('d-none');
+        document.getElementById('dollar-summary-error').classList.remove('d-none');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDollarSummary();
+    loadDollarData();
+
+    // DXY chart timeframe buttons
+    document.querySelectorAll('#dxy-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#dxy-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            dxyTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildDxyChart();
+        });
+    });
+
+    // USD/JPY chart timeframe buttons
+    document.querySelectorAll('#usdjpy-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#usdjpy-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            usdjpyTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildUsdjpyChart();
+        });
+    });
+
+    // Comparison chart timeframe buttons
+    document.querySelectorAll('#comparison-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#comparison-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            comparisonTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildComparisonChart();
+        });
+    });
+
+    // EUR/USD chart timeframe buttons
+    document.querySelectorAll('#eurusd-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#eurusd-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            eurusdTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildEurusdChart();
+        });
+    });
+
+    // Rate spreads chart timeframe buttons
+    document.querySelectorAll('#spreads-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#spreads-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            spreadsTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildSpreadsChart();
+        });
+    });
+});
+</script>
+{% endblock %}

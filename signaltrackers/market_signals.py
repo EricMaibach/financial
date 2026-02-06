@@ -63,8 +63,9 @@ class MarketSignalsTracker:
             'high_yield_spread': 'BAMLH0A0HYM2',
             'investment_grade_spread': 'BAMLC0A0CM',
             'ccc_spread': 'BAMLH0A3HYC',
-            # Japan 10-Year Government Bond Yield (for yen carry trade monitoring)
-            'japan_10y_yield': 'IRLTLT01JPM156N',
+            # International Government Bond Yields (for carry trade and rate differential monitoring)
+            'japan_10y_yield': 'IRLTLT01JPM156N',      # Japan 10-Year
+            'germany_10y_yield': 'IRLTLT01DEM156N',    # Germany 10-Year (Bund)
             # Yield Curve (Recession Indicators)
             'yield_curve_10y2y': 'T10Y2Y',  # 10-Year Treasury Constant Maturity Minus 2-Year
             'yield_curve_10y3m': 'T10Y3M',  # 10-Year Treasury Constant Maturity Minus 3-Month
@@ -128,6 +129,7 @@ class MarketSignalsTracker:
             # Currency
             'dollar_index': 'UUP',
             'usdjpy': 'JPY=X',            # USD/JPY exchange rate (yen carry trade)
+            'eurusd': 'EURUSD=X',         # EUR/USD exchange rate
 
             # Commodities
             'commodities': 'DBC',
@@ -583,6 +585,41 @@ class MarketSignalsTracker:
             ratio_df = merged[['date', 'gdx_gld_ratio']]
             self.append_to_csv(ratio_df, self.data_dir / "gdx_gld_ratio.csv")
             print("GDX/GLD ratio (gold miners vs gold) calculated")
+
+        # Rate Differentials (Currency/FX Drivers)
+        print("\nCalculating rate differentials...")
+
+        us_10y_file = self.data_dir / "treasury_10y.csv"
+        japan_10y_file = self.data_dir / "japan_10y_yield.csv"
+        germany_10y_file = self.data_dir / "germany_10y_yield.csv"
+
+        # US-Japan 10Y Spread (carry trade driver)
+        if us_10y_file.exists() and japan_10y_file.exists():
+            us_df = pd.read_csv(us_10y_file)
+            jp_df = pd.read_csv(japan_10y_file)
+            us_df.columns = ['date', 'us_10y']
+            jp_df.columns = ['date', 'jp_10y']
+
+            merged = pd.merge(us_df, jp_df, on='date')
+            merged['us_japan_10y_spread'] = merged['us_10y'] - merged['jp_10y']
+
+            spread_df = merged[['date', 'us_japan_10y_spread']]
+            self.append_to_csv(spread_df, self.data_dir / "us_japan_10y_spread.csv")
+            print("US-Japan 10Y spread (carry trade driver) calculated")
+
+        # US-Germany 10Y Spread (EUR/USD driver)
+        if us_10y_file.exists() and germany_10y_file.exists():
+            us_df = pd.read_csv(us_10y_file)
+            de_df = pd.read_csv(germany_10y_file)
+            us_df.columns = ['date', 'us_10y']
+            de_df.columns = ['date', 'de_10y']
+
+            merged = pd.merge(us_df, de_df, on='date')
+            merged['us_germany_10y_spread'] = merged['us_10y'] - merged['de_10y']
+
+            spread_df = merged[['date', 'us_germany_10y_spread']]
+            self.append_to_csv(spread_df, self.data_dir / "us_germany_10y_spread.csv")
+            print("US-Germany 10Y spread (EUR/USD driver) calculated")
 
     def run_daily_collection(self, lookback_days=12775):
         """Run the daily data collection process.

@@ -505,19 +505,19 @@ def generate_crypto_summary(crypto_data_summary):
 Your style matches the main market briefing: conversational but substantive, connecting dots between Bitcoin and macro liquidity conditions.
 
 CRITICAL RULES:
-- Write EXACTLY 2 paragraphs (150-200 words total)
-- First paragraph: The Bitcoin/crypto story TODAY - price action, sentiment, and what's driving it
-- Second paragraph: The macro liquidity context - how Fed policy, financial conditions, and liquidity metrics relate to Bitcoin's setup
+- Write EXACTLY 3 paragraphs (250-350 words total)
+- First paragraph: The Bitcoin/crypto story TODAY - price action, sentiment shifts, and what's driving it. Include specific price levels and percentage moves.
+- Second paragraph: The macro liquidity context - how Fed policy, financial conditions (NFCI), money supply (M2), and dollar strength relate to Bitcoin's current setup. Explain the connection clearly.
+- Third paragraph: The actionable takeaway - key support/resistance levels to watch, what would change the thesis, and how to think about positioning given current sentiment extremes.
 - Reference specific numbers (Fear & Greed level, Fed balance sheet trend, BTC price levels) meaningfully
-- Include KEY LEVELS to watch (support, resistance, or sentiment thresholds)
-- If Fear & Greed is extreme (<25 or >75), highlight the contrarian implications
-- Connect Bitcoin to liquidity trends (Fed balance sheet expanding/contracting, NFCI loosening/tightening)
+- If Fear & Greed is extreme (<25 or >75), explain the historical contrarian implications in detail
+- Connect Bitcoin to liquidity trends with clear cause-and-effect reasoning
 - DO NOT repeat themes from previous summaries
-- End with something actionable or forward-looking
+- Be specific about what price levels matter and why
 
 You have access to a web search tool if you need to look up additional context about specific crypto events, regulatory news, or macro developments. Use it when helpful to provide better context.
 
-Remember: Bitcoin is a liquidity-sensitive asset. Your job is to explain HOW the macro setup affects BTC and what levels matter."""
+Remember: Bitcoin is a liquidity-sensitive asset. Your job is to explain HOW the macro setup affects BTC, what levels matter, and give readers a clear framework for thinking about it."""
 
         user_prompt = f"""Today is {today}. Generate today's crypto/Bitcoin briefing.
 
@@ -525,7 +525,7 @@ Remember: Bitcoin is a liquidity-sensitive asset. Your job is to explain HOW the
 {news_section}
 {previous_context}
 
-Remember: 2 paragraphs, connect BTC to liquidity conditions, mention key levels, make it actionable."""
+Remember: 3 paragraphs, connect BTC to liquidity conditions, be specific about key levels, make it actionable."""
 
         # Make the API call with web search tool support
         print(f"[Crypto Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
@@ -533,7 +533,7 @@ Remember: 2 paragraphs, connect BTC to liquidity conditions, mention key levels,
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            max_tokens=600,
+            max_tokens=900,
             log_prefix="[Crypto Summary]"
         )
 
@@ -722,19 +722,19 @@ def generate_equity_summary(equity_data_summary):
 Your style matches the main market briefing: conversational but substantive, connecting dots between indices, sectors, and market structure.
 
 CRITICAL RULES:
-- Write EXACTLY 2 paragraphs (150-200 words total)
-- First paragraph: The equity market story TODAY - what's leading, what's lagging, and why it matters
-- Second paragraph: The structural picture - breadth, concentration, rotation signals, and what to watch
+- Write EXACTLY 3 paragraphs (250-350 words total)
+- First paragraph: The equity market story TODAY - what's leading (sectors, styles), what's lagging, and what the price action tells us. Include specific index levels and percentage moves.
+- Second paragraph: The structural picture - market breadth, concentration risk, and what the ratios are saying. Explain WHY narrow breadth or extreme concentration matters in plain terms.
+- Third paragraph: Style and size rotation signals - growth vs value, small vs large cap dynamics. What are these telling us about economic expectations and risk appetite? End with specific things to watch.
 - Reference specific numbers (index levels, percentile rankings, ratio changes) meaningfully
-- Highlight any EXTREME readings (>95th or <5th percentile) - these are historically unusual
-- Connect small cap vs large cap performance to economic expectations
-- If growth/value rotation is notable, explain what it signals
+- Highlight any EXTREME readings (>95th or <5th percentile) and explain the historical context
+- Connect small cap vs large cap performance to economic expectations with clear reasoning
+- If growth/value rotation is notable, explain what it signals for the broader market
 - DO NOT repeat themes from previous summaries
-- End with something actionable or forward-looking
 
 You have access to a web search tool if you need to look up additional context about specific companies, earnings, sector news, or market events. Use it when helpful to provide better context.
 
-Remember: Your job is to help investors understand WHAT is happening under the surface of the market, not just whether it's up or down."""
+Remember: Your job is to help investors understand WHAT is happening under the surface of the market, not just whether it's up or down. Give them a mental model for thinking about market structure."""
 
         user_prompt = f"""Today is {today}. Generate today's equity markets briefing.
 
@@ -742,7 +742,7 @@ Remember: Your job is to help investors understand WHAT is happening under the s
 {news_section}
 {previous_context}
 
-Remember: 2 paragraphs, tell the story of market structure and rotation, highlight extremes, make it actionable."""
+Remember: 3 paragraphs, tell the story of market structure and rotation, explain why extremes matter, make it actionable."""
 
         # Make the API call with web search tool support
         print(f"[Equity Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
@@ -750,7 +750,7 @@ Remember: 2 paragraphs, tell the story of market structure and rotation, highlig
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            max_tokens=600,
+            max_tokens=900,
             log_prefix="[Equity Summary]"
         )
 
@@ -793,6 +793,444 @@ def get_equity_summary_for_display():
     Returns dict with summary info or None if not available.
     """
     summary = get_latest_equity_summary()
+    if summary:
+        return {
+            'date': summary['date'],
+            'generated_at': summary['generated_at'],
+            'summary': summary['summary'],
+            'web_search_used': summary.get('web_search_used', False)
+        }
+    return None
+
+
+# ============================================================================
+# RATES SUMMARY FUNCTIONS
+# ============================================================================
+
+RATES_SUMMARIES_FILE = DATA_DIR / "rates_summaries.json"
+
+
+def load_rates_summaries():
+    """Load all stored rates AI summaries."""
+    if RATES_SUMMARIES_FILE.exists():
+        try:
+            with open(RATES_SUMMARIES_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"summaries": []}
+    return {"summaries": []}
+
+
+def save_rates_summary(date_str, summary_text, web_search_used=False, news_context=None):
+    """Save a rates AI summary to storage."""
+    data = load_rates_summaries()
+
+    # Update existing or add new
+    existing_idx = None
+    for idx, s in enumerate(data["summaries"]):
+        if s["date"] == date_str:
+            existing_idx = idx
+            break
+
+    summary_entry = {
+        "date": date_str,
+        "generated_at": datetime.now().isoformat(),
+        "summary": summary_text,
+        "web_search_used": web_search_used,
+        "news_context": news_context[:500] if news_context else None
+    }
+
+    if existing_idx is not None:
+        data["summaries"][existing_idx] = summary_entry
+    else:
+        data["summaries"].append(summary_entry)
+
+    # Keep only the last 30 summaries
+    data["summaries"] = sorted(data["summaries"], key=lambda x: x["date"])[-30:]
+
+    # Ensure data directory exists
+    DATA_DIR.mkdir(exist_ok=True)
+
+    with open(RATES_SUMMARIES_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def get_latest_rates_summary():
+    """Get the most recent rates AI summary."""
+    data = load_rates_summaries()
+    if data["summaries"]:
+        return sorted(data["summaries"], key=lambda x: x["date"])[-1]
+    return None
+
+
+def get_recent_rates_summaries(days=3):
+    """Get recent rates summaries for context."""
+    data = load_rates_summaries()
+    if not data["summaries"]:
+        return []
+
+    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
+    return sorted_summaries[:days]
+
+
+def fetch_rates_news():
+    """Fetch current rates/bond market news using web search."""
+    if not is_tavily_configured():
+        return None
+
+    news_parts = []
+
+    # Treasury/bond market news
+    rates_news = search_financial_news("Treasury yields bond market Fed interest rates news today", max_results=5)
+    if rates_news.get('results'):
+        news_parts.append("## Today's Rates & Bond Market News")
+        if rates_news.get('answer'):
+            news_parts.append(rates_news['answer'])
+        for r in rates_news['results'][:3]:
+            news_parts.append(f"- {r['title']}: {r['content'][:200]}...")
+
+    # Fed/monetary policy news
+    fed_news = search_web("Federal Reserve monetary policy interest rate decision", max_results=3)
+    if fed_news.get('results'):
+        news_parts.append("\n## Fed & Monetary Policy")
+        for r in fed_news['results'][:2]:
+            news_parts.append(f"- {r['title']}: {r['content'][:150]}...")
+
+    return "\n".join(news_parts) if news_parts else None
+
+
+def generate_rates_summary(rates_data_summary):
+    """
+    Generate the daily Rates & Yield Curve AI summary.
+
+    Args:
+        rates_data_summary: String with rates data from generate_rates_market_summary()
+
+    Returns:
+        dict with 'success', 'summary', and 'error' keys
+    """
+    if not os.environ.get('OPENAI_API_KEY'):
+        return {
+            'success': False,
+            'summary': None,
+            'error': 'OpenAI API key not configured'
+        }
+
+    try:
+        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        today = datetime.now().strftime('%Y-%m-%d')
+
+        # Get previous rates summaries for context
+        recent_summaries = get_recent_rates_summaries(days=3)
+        previous_context = ""
+        if recent_summaries:
+            previous_context = "\n\n## YOUR PREVIOUS RATES SUMMARIES (for continuity - don't repeat these):\n"
+            for s in recent_summaries:
+                if s["date"] != today:
+                    previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
+
+        # Fetch current rates news
+        news_context = fetch_rates_news()
+        news_section = ""
+        if news_context:
+            news_section = f"\n\n## TODAY'S RATES NEWS:\n{news_context}"
+
+        # Rates-specific system prompt
+        system_prompt = """You are a fixed income analyst providing daily briefings for the Rates & Yield Curve page of a financial dashboard. Your audience understands markets and wants actionable insight on interest rates, the yield curve, and their implications.
+
+Your style matches the main market briefing: conversational but substantive, connecting dots between rates, the curve, inflation expectations, and what they mean for other assets.
+
+CRITICAL RULES:
+- Write EXACTLY 3 paragraphs (250-350 words total)
+- First paragraph: The rates story TODAY - what's moving in yields and spreads, why (economic data, Fed expectations, supply/demand), and what it signals. Include specific yield levels and basis point changes.
+- Second paragraph: The yield curve and inflation picture - explain the curve shape (inverted/flat/steep) and what it historically signals. Connect real yields to Fed policy stance and breakeven inflation to market inflation expectations. Use plain language to explain the implications.
+- Third paragraph: The "so what" for investors - how do current rates affect equity valuations, credit, and duration positioning? What specific levels would change the outlook? End with actionable guidance.
+- Reference specific numbers (yields, spreads in basis points, percentile rankings) meaningfully
+- Highlight any EXTREME readings (>95th or <5th percentile) or key threshold crossings with historical context
+- If the yield curve is inverted or recently un-inverted, explain the recession implications clearly
+- Connect real yields to Fed policy stance (restrictive/accommodative) with clear reasoning
+- DO NOT repeat themes from previous summaries
+
+You have access to a web search tool if you need to look up additional context about Fed policy, economic data releases, or bond market developments. Use it when helpful to provide better context.
+
+Remember: Your job is to help investors understand what rates are telling us about the economy and what it means for their portfolios. Make the fixed income world accessible."""
+
+        user_prompt = f"""Today is {today}. Generate today's rates & yield curve briefing.
+
+{rates_data_summary}
+{news_section}
+{previous_context}
+
+Remember: 3 paragraphs, tell the rates story clearly, explain curve signals, make it actionable for investors."""
+
+        # Make the API call with web search tool support
+        print(f"[Rates Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
+        result = call_openai_with_tools(
+            client=client,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=900,
+            log_prefix="[Rates Summary]"
+        )
+
+        if not result['success']:
+            return {
+                'success': False,
+                'summary': None,
+                'error': result['error']
+            }
+
+        summary = result['content']
+
+        # Save the summary
+        save_rates_summary(
+            date_str=today,
+            summary_text=summary,
+            web_search_used=bool(news_context),
+            news_context=news_context
+        )
+
+        print(f"[Rates Summary] Generated rates summary for {today}")
+        return {
+            'success': True,
+            'summary': summary,
+            'error': None
+        }
+
+    except Exception as e:
+        print(f"[Rates Summary] Error generating summary: {e}")
+        return {
+            'success': False,
+            'summary': None,
+            'error': str(e)
+        }
+
+
+def get_rates_summary_for_display():
+    """
+    Get the current rates summary formatted for display.
+    Returns dict with summary info or None if not available.
+    """
+    summary = get_latest_rates_summary()
+    if summary:
+        return {
+            'date': summary['date'],
+            'generated_at': summary['generated_at'],
+            'summary': summary['summary'],
+            'web_search_used': summary.get('web_search_used', False)
+        }
+    return None
+
+
+# ============================================================================
+# DOLLAR SUMMARY FUNCTIONS
+# ============================================================================
+
+DOLLAR_SUMMARIES_FILE = DATA_DIR / "dollar_summaries.json"
+
+
+def load_dollar_summaries():
+    """Load all stored dollar AI summaries."""
+    if DOLLAR_SUMMARIES_FILE.exists():
+        try:
+            with open(DOLLAR_SUMMARIES_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"summaries": []}
+    return {"summaries": []}
+
+
+def save_dollar_summary(date_str, summary_text, web_search_used=False, news_context=None):
+    """Save a dollar AI summary to storage."""
+    data = load_dollar_summaries()
+
+    # Update existing or add new
+    existing_idx = None
+    for idx, s in enumerate(data["summaries"]):
+        if s["date"] == date_str:
+            existing_idx = idx
+            break
+
+    summary_entry = {
+        "date": date_str,
+        "generated_at": datetime.now().isoformat(),
+        "summary": summary_text,
+        "web_search_used": web_search_used,
+        "news_context": news_context[:500] if news_context else None
+    }
+
+    if existing_idx is not None:
+        data["summaries"][existing_idx] = summary_entry
+    else:
+        data["summaries"].append(summary_entry)
+
+    # Keep only the last 30 summaries
+    data["summaries"] = sorted(data["summaries"], key=lambda x: x["date"])[-30:]
+
+    # Ensure data directory exists
+    DATA_DIR.mkdir(exist_ok=True)
+
+    with open(DOLLAR_SUMMARIES_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def get_latest_dollar_summary():
+    """Get the most recent dollar AI summary."""
+    data = load_dollar_summaries()
+    if data["summaries"]:
+        return sorted(data["summaries"], key=lambda x: x["date"])[-1]
+    return None
+
+
+def get_recent_dollar_summaries(days=3):
+    """Get recent dollar summaries for context."""
+    data = load_dollar_summaries()
+    if not data["summaries"]:
+        return []
+
+    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
+    return sorted_summaries[:days]
+
+
+def fetch_dollar_news():
+    """Fetch current dollar/currency market news using web search."""
+    if not is_tavily_configured():
+        return None
+
+    news_parts = []
+
+    # Dollar/currency news
+    dollar_news = search_financial_news("US dollar DXY currency forex Fed policy news today", max_results=5)
+    if dollar_news.get('results'):
+        news_parts.append("## Today's Dollar & Currency News")
+        if dollar_news.get('answer'):
+            news_parts.append(dollar_news['answer'])
+        for r in dollar_news['results'][:3]:
+            news_parts.append(f"- {r['title']}: {r['content'][:200]}...")
+
+    # Central bank/forex news
+    cb_news = search_web("central bank policy Bank of Japan ECB interest rate", max_results=3)
+    if cb_news.get('results'):
+        news_parts.append("\n## Central Bank & Policy")
+        for r in cb_news['results'][:2]:
+            news_parts.append(f"- {r['title']}: {r['content'][:150]}...")
+
+    return "\n".join(news_parts) if news_parts else None
+
+
+def generate_dollar_summary(dollar_data_summary):
+    """
+    Generate the daily Dollar & Currency AI summary.
+
+    Args:
+        dollar_data_summary: String with dollar data from generate_dollar_market_summary()
+
+    Returns:
+        dict with 'success', 'summary', and 'error' keys
+    """
+    if not os.environ.get('OPENAI_API_KEY'):
+        return {
+            'success': False,
+            'summary': None,
+            'error': 'OpenAI API key not configured'
+        }
+
+    try:
+        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+        today = datetime.now().strftime('%Y-%m-%d')
+
+        # Get previous dollar summaries for context
+        recent_summaries = get_recent_dollar_summaries(days=3)
+        previous_context = ""
+        if recent_summaries:
+            previous_context = "\n\n## YOUR PREVIOUS DOLLAR SUMMARIES (for continuity - don't repeat these):\n"
+            for s in recent_summaries:
+                if s["date"] != today:
+                    previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
+
+        # Fetch current dollar news
+        news_context = fetch_dollar_news()
+        news_section = ""
+        if news_context:
+            news_section = f"\n\n## TODAY'S DOLLAR NEWS:\n{news_context}"
+
+        # Dollar-specific system prompt
+        system_prompt = """You are a currency analyst providing daily briefings for the Dollar & Currency page of a financial dashboard. Your audience understands markets and wants actionable insight on the US dollar, currency dynamics, and their cross-asset implications.
+
+Your style matches the main market briefing: conversational but substantive, connecting dots between the dollar, Fed policy, global central bank divergence, and implications for other assets.
+
+CRITICAL RULES:
+- Write EXACTLY 3 paragraphs (250-350 words total)
+- First paragraph: The dollar story TODAY - what's moving DXY and key pairs (especially USD/JPY), why (Fed expectations, economic data, central bank divergence), and what it signals. Include specific levels and percentage moves.
+- Second paragraph: The macro context - explain where we are in the "Dollar Smile" (risk-off strength vs growth/yield strength vs weak middle), what carry trade dynamics are telling us, and how central bank policy divergence is driving flows. Connect to rate differentials clearly.
+- Third paragraph: The cross-asset implications - how does dollar strength/weakness affect emerging markets, commodities, multinational earnings, and positioning? What specific DXY levels would change the outlook? End with actionable guidance.
+- Reference specific numbers (DXY level, USD/JPY, percentile rankings) meaningfully
+- Highlight any EXTREME readings (>95th or <5th percentile) or key threshold crossings with historical context
+- If USD/JPY is at notable levels, explain the carry trade implications and BOJ policy dynamics
+- Connect dollar moves to Fed policy expectations clearly
+- DO NOT repeat themes from previous summaries
+
+You have access to a web search tool if you need to look up additional context about Fed policy, central bank decisions, or currency market developments. Use it when helpful to provide better context.
+
+Remember: Your job is to help investors understand what the dollar is telling us about global risk appetite and policy divergence, and what it means for their portfolios."""
+
+        user_prompt = f"""Today is {today}. Generate today's dollar & currency briefing.
+
+{dollar_data_summary}
+{news_section}
+{previous_context}
+
+Remember: 3 paragraphs, tell the dollar story clearly, explain the Dollar Smile and carry dynamics, make it actionable for investors."""
+
+        # Make the API call with web search tool support
+        print(f"[Dollar Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
+        result = call_openai_with_tools(
+            client=client,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=900,
+            log_prefix="[Dollar Summary]"
+        )
+
+        if not result['success']:
+            return {
+                'success': False,
+                'summary': None,
+                'error': result['error']
+            }
+
+        summary = result['content']
+
+        # Save the summary
+        save_dollar_summary(
+            date_str=today,
+            summary_text=summary,
+            web_search_used=bool(news_context),
+            news_context=news_context
+        )
+
+        print(f"[Dollar Summary] Generated dollar summary for {today}")
+        return {
+            'success': True,
+            'summary': summary,
+            'error': None
+        }
+
+    except Exception as e:
+        print(f"[Dollar Summary] Error generating summary: {e}")
+        return {
+            'success': False,
+            'summary': None,
+            'error': str(e)
+        }
+
+
+def get_dollar_summary_for_display():
+    """
+    Get the current dollar summary formatted for display.
+    Returns dict with summary info or None if not available.
+    """
+    summary = get_latest_dollar_summary()
     if summary:
         return {
             'date': summary['date'],

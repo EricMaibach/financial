@@ -4,7 +4,7 @@ Market Divergence Dashboard
 A comprehensive web dashboard for tracking the historic market divergence.
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -19,7 +19,9 @@ from web_search import SEARCH_FUNCTION_DEFINITION, execute_search_function, is_t
 from ai_summary import (
     generate_daily_summary, get_summary_for_display, get_latest_summary,
     generate_crypto_summary, get_crypto_summary_for_display,
-    generate_equity_summary, get_equity_summary_for_display
+    generate_equity_summary, get_equity_summary_for_display,
+    generate_rates_summary, get_rates_summary_for_display,
+    generate_dollar_summary, get_dollar_summary_for_display
 )
 from metric_tools import (
     LIST_METRICS_FUNCTION,
@@ -297,6 +299,26 @@ METRIC_DESCRIPTIONS = {
         'what': '10-Year Treasury Constant Maturity Rate (DGS10). The nominal yield on 10-year US government bonds.',
         'why': 'Benchmark risk-free rate for the US. Nominal yield = Real yield + Breakeven inflation. Key reference for all financial assets.',
         'watch': 'Rising yields can pressure gold and growth stocks. Compare to real yields to understand inflation expectations.'
+    },
+    'eurusd_price': {
+        'what': 'EUR/USD exchange rate - how many US Dollars per 1 Euro. The most traded currency pair in the world.',
+        'why': 'Primary gauge of dollar strength vs Europe. Driven by Fed/ECB policy divergence, growth differentials, and risk appetite. EUR is ~57% of DXY.',
+        'watch': 'Rising EUR/USD = dollar weakening vs euro. Above 1.10 = euro strength. Below 1.05 = dollar strength. Rate differentials (US-Germany 10Y) are key driver.'
+    },
+    'germany_10y_yield': {
+        'what': 'Germany 10-Year Government Bond (Bund) yield. The benchmark risk-free rate for the Eurozone.',
+        'why': 'ECB policy gauge. Germany/US rate differential drives EUR/USD. Rising Bund yields = ECB tightening, supports euro. Falling = ECB dovish, weakens euro.',
+        'watch': 'Negative yields (pre-2022) = extreme monetary accommodation. Positive and rising = policy normalization. Compare to US 10Y for rate differential.'
+    },
+    'us_japan_10y_spread': {
+        'what': 'US 10-Year Treasury yield minus Japan 10-Year Government Bond yield. The rate differential that drives the yen carry trade.',
+        'why': 'The carry trade: borrow cheap in yen, invest in higher-yielding USD assets. Wider spread = more incentive for carry trade = yen weakness, supports USD/JPY.',
+        'watch': 'Spread >3% = strong carry trade incentive. Spread narrowing (Japan yields rising or US falling) = carry unwind risk, supports yen. BOJ policy is key.'
+    },
+    'us_germany_10y_spread': {
+        'what': 'US 10-Year Treasury yield minus Germany 10-Year Bund yield. The rate differential that drives EUR/USD flows.',
+        'why': 'Wider spread = US yields more attractive = capital flows to USD = EUR/USD falls. Narrowing spread = euro support as European yields become more competitive.',
+        'watch': 'Spread >1.5% typically supports dollar. Spread narrowing often coincides with EUR/USD strength. Watch Fed vs ECB policy trajectory.'
     }
 }
 
@@ -880,8 +902,8 @@ def index():
 
 @app.route('/credit')
 def credit():
-    """Credit markets page."""
-    return render_template('credit.html')
+    """Credit markets page - redirects to rates (credit merged into rates)."""
+    return redirect('/rates')
 
 
 @app.route('/equity')
@@ -906,6 +928,18 @@ def divergence():
 def crypto():
     """Crypto/Bitcoin analysis page."""
     return render_template('crypto.html')
+
+
+@app.route('/rates')
+def rates():
+    """Rates & Yield Curve page."""
+    return render_template('rates.html')
+
+
+@app.route('/dollar')
+def dollar():
+    """Dollar & Currency page."""
+    return render_template('dollar.html')
 
 
 @app.route('/api/dashboard')
@@ -1260,6 +1294,18 @@ def run_data_collection():
         except Exception as equity_summary_error:
             print(f"Equity AI summary error (non-fatal): {equity_summary_error}")
 
+        # Generate Rates AI summary
+        print("Generating Rates & Yield Curve AI summary...")
+        try:
+            rates_summary_data = generate_rates_market_summary()
+            rates_result = generate_rates_summary(rates_summary_data)
+            if rates_result['success']:
+                print("Rates AI summary generated successfully!")
+            else:
+                print(f"Rates AI summary generation failed: {rates_result['error']}")
+        except Exception as rates_summary_error:
+            print(f"Rates AI summary error (non-fatal): {rates_summary_error}")
+
     except Exception as e:
         reload_status['error'] = str(e)
         print(f"Data reload error: {e}")
@@ -1402,6 +1448,78 @@ def api_generate_equity_summary():
     try:
         equity_summary_data = generate_equity_market_summary()
         result = generate_equity_summary(equity_summary_data)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/rates-summary')
+def api_rates_summary():
+    """Get the current AI-generated rates & yield curve summary."""
+    summary = get_rates_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No rates summary available',
+        'message': 'Run a data reload to generate a summary'
+    }), 404
+
+
+@app.route('/api/rates-summary/generate', methods=['POST'])
+def api_generate_rates_summary():
+    """Manually trigger rates AI summary generation."""
+    try:
+        rates_summary_data = generate_rates_market_summary()
+        result = generate_rates_summary(rates_summary_data)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/dollar-summary')
+def api_dollar_summary():
+    """Get the current dollar AI summary."""
+    summary = get_dollar_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No dollar summary available',
+        'message': 'Run a data reload to generate a summary'
+    }), 404
+
+
+@app.route('/api/dollar-summary/generate', methods=['POST'])
+def api_generate_dollar_summary():
+    """Manually trigger dollar AI summary generation."""
+    try:
+        dollar_summary_data = generate_dollar_market_summary()
+        result = generate_dollar_summary(dollar_summary_data)
 
         if result['success']:
             return jsonify({
@@ -2037,6 +2155,407 @@ def generate_equity_market_summary():
     except Exception as e:
         print(f"Error generating equity market summary: {e}")
         return "Equity market data summary unavailable."
+
+
+def generate_rates_market_summary():
+    """Generate a rates-focused market data summary for the Rates AI briefing."""
+    try:
+        summary_parts = []
+        summary_parts.append("# RATES & YIELD CURVE DATA SUMMARY")
+        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append("")
+
+        def get_stats(df):
+            if df is None or len(df) < 2:
+                return None
+            col = [c for c in df.columns if c != 'date'][0]
+            current = df.iloc[-1][col]
+            values = df[col].dropna().tolist()
+            percentile = sum(1 for v in values if v <= current) / len(values) * 100
+
+            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
+            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
+            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
+
+            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
+            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
+
+            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
+            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
+
+            return {
+                'current': current,
+                'percentile': percentile,
+                'change_1d': change_1d,
+                'change_5d': change_5d,
+                'change_30d': change_30d,
+                'pct_change_5d': pct_change_5d,
+                'pct_change_30d': pct_change_30d,
+                'high_52w': high_52w,
+                'low_52w': low_52w
+            }
+
+        # Load rates-relevant metrics
+        treasury_10y_df = load_csv_data('treasury_10y.csv')
+        yield_curve_10y2y_df = load_csv_data('yield_curve_10y2y.csv')
+        yield_curve_10y3m_df = load_csv_data('yield_curve_10y3m.csv')
+        real_yield_df = load_csv_data('real_yield_10y.csv')
+        breakeven_df = load_csv_data('breakeven_inflation_10y.csv')
+        cpi_df = load_csv_data('cpi_yoy.csv')
+        fed_funds_df = load_csv_data('fed_funds_rate.csv')
+        sp500_df = load_csv_data('sp500_price.csv')
+        gold_df = load_csv_data('gold_price.csv')
+
+        # Treasury Yields Section
+        summary_parts.append("## TREASURY YIELDS")
+        if treasury_10y_df is not None:
+            stats = get_stats(treasury_10y_df)
+            if stats:
+                if stats['current'] > 4.5:
+                    level = "ELEVATED (restrictive)"
+                elif stats['current'] > 3.5:
+                    level = "Normal"
+                else:
+                    level = "LOW (accommodative)"
+                summary_parts.append(f"10-Year Treasury: {stats['current']:.2f}% [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append(f"  52-week range: {stats['low_52w']:.2f}% - {stats['high_52w']:.2f}%")
+                summary_parts.append("  KEY LEVELS: 4.0% (psychological), 5.0% (restrictive)")
+        summary_parts.append("")
+
+        # Yield Curve Section
+        summary_parts.append("## YIELD CURVE (Recession Indicator)")
+        if yield_curve_10y2y_df is not None:
+            stats = get_stats(yield_curve_10y2y_df)
+            if stats:
+                spread_bps = stats['current'] * 100
+                if stats['current'] < 0:
+                    status = "INVERTED (recession warning)"
+                elif stats['current'] < 0.25:
+                    status = "Flat"
+                else:
+                    status = "Normal (positive slope)"
+                summary_parts.append(f"10Y-2Y Spread: {spread_bps:.0f} bps [{status}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
+
+        if yield_curve_10y3m_df is not None:
+            stats = get_stats(yield_curve_10y3m_df)
+            if stats:
+                spread_bps = stats['current'] * 100
+                if stats['current'] < 0:
+                    status = "INVERTED"
+                elif stats['current'] < 0.25:
+                    status = "Flat"
+                else:
+                    status = "Normal"
+                summary_parts.append(f"10Y-3M Spread (Fed's preferred): {spread_bps:.0f} bps [{status}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
+        summary_parts.append("  CONTEXT: Inversion has preceded every US recession since 1970 (6-18 month lead)")
+        summary_parts.append("")
+
+        # Real Yields Section
+        summary_parts.append("## REAL YIELDS & INFLATION")
+        if real_yield_df is not None:
+            stats = get_stats(real_yield_df)
+            if stats:
+                if stats['current'] > 2:
+                    policy = "RESTRICTIVE"
+                elif stats['current'] > 0.5:
+                    policy = "Tight"
+                elif stats['current'] > 0:
+                    policy = "Neutral"
+                else:
+                    policy = "ACCOMMODATIVE"
+                summary_parts.append(f"10Y Real Yield (TIPS): {stats['current']:.2f}% [{policy}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Real yield = nominal yield minus inflation expectations)")
+
+        if breakeven_df is not None:
+            stats = get_stats(breakeven_df)
+            if stats:
+                if stats['current'] > 2.5:
+                    expectation = "Above target (inflation concerns)"
+                elif stats['current'] >= 2.0:
+                    expectation = "At Fed target"
+                else:
+                    expectation = "Below target"
+                summary_parts.append(f"10Y Breakeven Inflation: {stats['current']:.2f}% [{expectation}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Market's 10-year inflation forecast)")
+
+        if cpi_df is not None:
+            stats = get_stats(cpi_df)
+            if stats:
+                summary_parts.append(f"CPI (YoY): {stats['current']:.1f}%")
+        summary_parts.append("")
+
+        # Fed Policy Section
+        summary_parts.append("## FED POLICY")
+        if fed_funds_df is not None:
+            stats = get_stats(fed_funds_df)
+            if stats:
+                summary_parts.append(f"Fed Funds Rate: {stats['current']:.2f}%")
+                if treasury_10y_df is not None:
+                    t10y_stats = get_stats(treasury_10y_df)
+                    if t10y_stats:
+                        term_premium = t10y_stats['current'] - stats['current']
+                        summary_parts.append(f"  Term Premium (10Y - Fed Funds): {term_premium:.2f}%")
+        summary_parts.append("")
+
+        # Cross-Asset Context
+        summary_parts.append("## RATES IMPACT ON OTHER ASSETS")
+        if sp500_df is not None and treasury_10y_df is not None:
+            sp_stats = get_stats(sp500_df)
+            t10y_stats = get_stats(treasury_10y_df)
+            if sp_stats and t10y_stats:
+                # Equity risk premium approximation (rough)
+                earnings_yield = 100 / 20  # Assume ~20x P/E
+                erp = earnings_yield - t10y_stats['current']
+                summary_parts.append(f"S&P 500 Equity Risk Premium (est): {erp:.1f}%")
+                summary_parts.append("  (Higher rates compress equity valuations)")
+
+        if gold_df is not None and real_yield_df is not None:
+            gold_stats = get_stats(gold_df)
+            ry_stats = get_stats(real_yield_df)
+            if gold_stats and ry_stats:
+                summary_parts.append(f"Gold vs Real Yields: Gold {gold_stats['pct_change_30d']:+.1f}% (30d) | Real yield {ry_stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Gold typically inversely correlated with real yields)")
+        summary_parts.append("")
+
+        # Credit Spreads Section
+        summary_parts.append("## CREDIT SPREADS (Risk Appetite)")
+        hy_spread_df = load_csv_data('hy_spread.csv')
+        ig_spread_df = load_csv_data('ig_spread.csv')
+        ccc_spread_df = load_csv_data('ccc_spread.csv')
+
+        if hy_spread_df is not None:
+            stats = get_stats(hy_spread_df)
+            if stats:
+                if stats['current'] > 500:
+                    status = "STRESS (significant risk aversion)"
+                elif stats['current'] > 350:
+                    status = "Elevated"
+                elif stats['current'] > 300:
+                    status = "Normal"
+                else:
+                    status = "TIGHT (complacency)"
+                summary_parts.append(f"High-Yield Spread: {stats['current']:.0f} bp [{status}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']:+.0f} bp")
+                summary_parts.append("  KEY LEVELS: 300bp (first warning), 500bp (stress), 800bp (crisis)")
+
+        if ig_spread_df is not None:
+            stats = get_stats(ig_spread_df)
+            if stats:
+                if stats['current'] > 150:
+                    status = "STRESS"
+                elif stats['current'] > 120:
+                    status = "Elevated"
+                elif stats['current'] > 100:
+                    status = "Normal"
+                else:
+                    status = "Tight"
+                summary_parts.append(f"Investment Grade Spread: {stats['current']:.0f} bp [{status}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  30-day change: {stats['change_30d']:+.0f} bp")
+
+        if ccc_spread_df is not None and hy_spread_df is not None:
+            ccc_stats = get_stats(ccc_spread_df)
+            hy_stats = get_stats(hy_spread_df)
+            if ccc_stats and hy_stats and hy_stats['current'] > 0:
+                ccc_hy_ratio = ccc_stats['current'] / hy_stats['current']
+                if ccc_hy_ratio > 3.5:
+                    ratio_status = "DISTRESSED (quality bifurcation)"
+                elif ccc_hy_ratio > 3.0:
+                    ratio_status = "Elevated"
+                else:
+                    ratio_status = "Normal"
+                summary_parts.append(f"CCC/HY Ratio: {ccc_hy_ratio:.2f}x [{ratio_status}]")
+                summary_parts.append("  (Higher ratio = market discriminating against lowest quality)")
+        summary_parts.append("  CONTEXT: Tight spreads = complacency, historically precedes sharp widening")
+        summary_parts.append("")
+
+        # Key Insights
+        summary_parts.append("## KEY RELATIONSHIPS TO MONITOR")
+        summary_parts.append("- Inverted curve + steepening = recession typically imminent")
+        summary_parts.append("- Rising real yields = headwind for growth stocks and gold")
+        summary_parts.append("- Breakevens > 2.5% = inflation expectations unanchored")
+        summary_parts.append("- 10Y above 5% = significant equity valuation pressure")
+        summary_parts.append("- Credit spreads widening while equities rise = divergence warning")
+        summary_parts.append("- HY spreads at extremes (<300bp or >500bp) often precede regime change")
+        summary_parts.append("")
+
+        return "\n".join(summary_parts)
+
+    except Exception as e:
+        print(f"Error generating rates market summary: {e}")
+        return "Rates market data summary unavailable."
+
+
+def generate_dollar_market_summary():
+    """Generate a dollar-focused market data summary for the Dollar AI briefing."""
+    try:
+        summary_parts = []
+        summary_parts.append("# DOLLAR & CURRENCY DATA SUMMARY")
+        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append("")
+
+        def get_stats(df):
+            if df is None or len(df) < 2:
+                return None
+            col = [c for c in df.columns if c != 'date'][0]
+            current = df.iloc[-1][col]
+            values = df[col].dropna().tolist()
+            percentile = sum(1 for v in values if v <= current) / len(values) * 100
+
+            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
+            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
+            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
+
+            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
+            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
+
+            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
+            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
+
+            return {
+                'current': current,
+                'percentile': percentile,
+                'change_1d': change_1d,
+                'change_5d': change_5d,
+                'change_30d': change_30d,
+                'pct_change_5d': pct_change_5d,
+                'pct_change_30d': pct_change_30d,
+                'high_52w': high_52w,
+                'low_52w': low_52w
+            }
+
+        # Load dollar-relevant metrics
+        dxy_df = load_csv_data('dollar_index_price.csv')
+        usdjpy_df = load_csv_data('usdjpy_price.csv')
+        treasury_10y_df = load_csv_data('treasury_10y.csv')
+        fed_funds_df = load_csv_data('fed_funds_rate.csv')
+        gold_df = load_csv_data('gold_price.csv')
+        sp500_df = load_csv_data('sp500_price.csv')
+        bitcoin_df = load_csv_data('bitcoin_price.csv')
+        vix_df = load_csv_data('vix_price.csv')
+
+        # Dollar Index Section
+        summary_parts.append("## US DOLLAR INDEX (DXY)")
+        if dxy_df is not None:
+            stats = get_stats(dxy_df)
+            if stats:
+                # Dollar Smile framework interpretation
+                if stats['current'] > 105:
+                    level = "STRONG (risk-off or yield advantage)"
+                elif stats['current'] > 100:
+                    level = "Firm"
+                elif stats['current'] > 95:
+                    level = "Neutral"
+                else:
+                    level = "WEAK (risk-on or policy concerns)"
+                summary_parts.append(f"DXY: {stats['current']:.2f} [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day change: {stats['pct_change_5d']:+.2f}%")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.2f}%")
+                summary_parts.append(f"  52-week range: {stats['low_52w']:.2f} - {stats['high_52w']:.2f}")
+                summary_parts.append("  KEY LEVELS: 100 (psychological), 105 (strong dollar), 95 (weak dollar)")
+        summary_parts.append("")
+
+        # USD/JPY Section (Carry Trade Indicator)
+        summary_parts.append("## USD/JPY (Carry Trade Barometer)")
+        if usdjpy_df is not None:
+            stats = get_stats(usdjpy_df)
+            if stats:
+                # Carry trade dynamics
+                if stats['current'] > 150:
+                    status = "EXTENDED (carry trade stress risk)"
+                elif stats['current'] > 145:
+                    status = "Elevated (BOJ intervention zone)"
+                elif stats['current'] > 140:
+                    status = "Normal carry trade range"
+                else:
+                    status = "Yen strength (carry unwind risk)"
+                summary_parts.append(f"USD/JPY: {stats['current']:.2f} [{status}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day change: {stats['pct_change_5d']:+.2f}%")
+                summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.2f}%")
+                summary_parts.append(f"  52-week range: {stats['low_52w']:.2f} - {stats['high_52w']:.2f}")
+                summary_parts.append("  CONTEXT: Japan's ultra-low rates make JPY funding currency for global carry trades")
+                summary_parts.append("  KEY LEVELS: 150 (BOJ red line), 145 (intervention risk), 140 (support)")
+        summary_parts.append("")
+
+        # Dollar Smile Framework
+        summary_parts.append("## DOLLAR SMILE FRAMEWORK")
+        summary_parts.append("The 'Dollar Smile' describes three regimes where USD strengthens:")
+        summary_parts.append("  LEFT SIDE: Risk-off panic (flight to safety → USD bid)")
+        summary_parts.append("  MIDDLE: Weak dollar (calm markets, relative growth elsewhere)")
+        summary_parts.append("  RIGHT SIDE: US growth/yield advantage (risk-on but US outperforms)")
+        summary_parts.append("")
+
+        # Rate Differentials
+        summary_parts.append("## RATE DIFFERENTIALS (Dollar Driver)")
+        if treasury_10y_df is not None:
+            stats = get_stats(treasury_10y_df)
+            if stats:
+                summary_parts.append(f"US 10Y Treasury: {stats['current']:.2f}%")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Higher US rates typically support USD)")
+
+        if fed_funds_df is not None:
+            stats = get_stats(fed_funds_df)
+            if stats:
+                summary_parts.append(f"Fed Funds Rate: {stats['current']:.2f}%")
+                summary_parts.append("  CONTEXT: Rate differential vs ECB/BOJ drives FX flows")
+        summary_parts.append("")
+
+        # Cross-Asset Context
+        summary_parts.append("## DOLLAR IMPACT ON OTHER ASSETS")
+        if gold_df is not None and dxy_df is not None:
+            gold_stats = get_stats(gold_df)
+            dxy_stats = get_stats(dxy_df)
+            if gold_stats and dxy_stats:
+                summary_parts.append(f"Gold: ${gold_stats['current']:.2f} ({gold_stats['pct_change_30d']:+.1f}% 30d) vs DXY {dxy_stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Gold typically inversely correlated with USD)")
+
+        if sp500_df is not None:
+            stats = get_stats(sp500_df)
+            if stats:
+                summary_parts.append(f"S&P 500: {stats['current']:.2f} ({stats['pct_change_30d']:+.1f}% 30d)")
+                summary_parts.append("  (Strong dollar headwind for multinational earnings)")
+
+        if bitcoin_df is not None:
+            stats = get_stats(bitcoin_df)
+            if stats:
+                summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['pct_change_30d']:+.1f}% 30d)")
+                summary_parts.append("  (Crypto sensitive to dollar liquidity conditions)")
+        summary_parts.append("")
+
+        # Risk Sentiment
+        summary_parts.append("## RISK SENTIMENT CONTEXT")
+        if vix_df is not None:
+            stats = get_stats(vix_df)
+            if stats:
+                if stats['current'] > 25:
+                    regime = "RISK-OFF (supports USD safe-haven bid)"
+                elif stats['current'] > 18:
+                    regime = "Elevated uncertainty"
+                else:
+                    regime = "Risk-on (may weaken USD)"
+                summary_parts.append(f"VIX: {stats['current']:.2f} [{regime}]")
+        summary_parts.append("")
+
+        # Key Insights
+        summary_parts.append("## KEY RELATIONSHIPS TO MONITOR")
+        summary_parts.append("- DXY > 105 with VIX > 25 = risk-off dollar strength (left side of smile)")
+        summary_parts.append("- DXY > 105 with VIX < 18 = yield/growth advantage (right side of smile)")
+        summary_parts.append("- USD/JPY > 150 = BOJ intervention risk, carry trade stress")
+        summary_parts.append("- DXY falling while VIX low = middle of smile (dollar weakness)")
+        summary_parts.append("- Sharp yen strength = carry trade unwind, risk-off signal")
+        summary_parts.append("- Dollar strength headwind for EM assets, commodities, multinational earnings")
+        summary_parts.append("")
+
+        return "\n".join(summary_parts)
+
+    except Exception as e:
+        print(f"Error generating dollar market summary: {e}")
+        return "Dollar market data summary unavailable."
 
 
 @app.route('/api/chat', methods=['POST'])
