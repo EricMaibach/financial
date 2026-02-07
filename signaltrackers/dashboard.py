@@ -28,6 +28,11 @@ from metric_tools import (
     GET_METRIC_FUNCTION,
     execute_metric_function
 )
+from portfolio import (
+    load_portfolio, save_portfolio, add_allocation, update_allocation,
+    delete_allocation, validate_allocation_total, validate_symbol,
+    get_portfolio_with_prices, get_portfolio_summary_for_ai
+)
 
 app = Flask(__name__)
 
@@ -361,17 +366,17 @@ def calculate_top_movers(num_movers=5):
     # Also define friendly names and explorer links
     metric_config = {
         # Spreads - use absolute bp change
-        'high_yield_spread': {'display': 'abs', 'unit': 'bp', 'name': 'HY Spread', 'link': '/metric/hy_spread', 'multiplier': 100},
+        'high_yield_spread': {'display': 'abs', 'unit': 'bp', 'name': 'HY Spread', 'link': '/explorer?metric=high_yield_spread', 'multiplier': 100},
         'investment_grade_spread': {'display': 'abs', 'unit': 'bp', 'name': 'IG Spread', 'link': '/explorer?metric=investment_grade_spread', 'multiplier': 100},
         'ccc_spread': {'display': 'abs', 'unit': 'bp', 'name': 'CCC Spread', 'link': '/explorer?metric=ccc_spread', 'multiplier': 100},
 
         # Prices - use % change
-        'gold_price': {'display': 'pct', 'unit': '%', 'name': 'Gold', 'link': '/metric/gold_price'},
+        'gold_price': {'display': 'pct', 'unit': '%', 'name': 'Gold', 'link': '/explorer?metric=gold_price'},
         'silver_price': {'display': 'pct', 'unit': '%', 'name': 'Silver', 'link': '/explorer?metric=silver_price'},
-        'bitcoin_price': {'display': 'pct', 'unit': '%', 'name': 'Bitcoin', 'link': '/metric/bitcoin_price'},
-        'sp500_price': {'display': 'pct', 'unit': '%', 'name': 'S&P 500', 'link': '/metric/sp500'},
+        'bitcoin_price': {'display': 'pct', 'unit': '%', 'name': 'Bitcoin', 'link': '/explorer?metric=bitcoin_price'},
+        'sp500_price': {'display': 'pct', 'unit': '%', 'name': 'S&P 500', 'link': '/explorer?metric=sp500_price'},
         'nasdaq_price': {'display': 'pct', 'unit': '%', 'name': 'Nasdaq', 'link': '/explorer?metric=nasdaq_price'},
-        'vix_price': {'display': 'pct', 'unit': '%', 'name': 'VIX', 'link': '/metric/vix'},
+        'vix_price': {'display': 'pct', 'unit': '%', 'name': 'VIX', 'link': '/explorer?metric=vix_price'},
         'oil_price': {'display': 'pct', 'unit': '%', 'name': 'Oil', 'link': '/explorer?metric=oil_price'},
         'commodities_price': {'display': 'pct', 'unit': '%', 'name': 'Commodities', 'link': '/explorer?metric=commodities_price'},
         'gold_miners_price': {'display': 'pct', 'unit': '%', 'name': 'Gold Miners', 'link': '/explorer?metric=gold_miners_price'},
@@ -509,7 +514,7 @@ def calculate_top_movers(num_movers=5):
                 movers.append({
                     'metric': 'divergence_gap',
                     'name': 'Divergence Gap',
-                    'link': '/metric/divergence_gap',
+                    'link': '/explorer?metric=divergence_gap',
                     'change_5d': round(current_change, 0),
                     'z_score': round(z_score, 2),
                     'unit': 'bp',
@@ -942,6 +947,12 @@ def dollar():
     return render_template('dollar.html')
 
 
+@app.route('/portfolio')
+def portfolio():
+    """Personal portfolio tracking page."""
+    return render_template('portfolio.html')
+
+
 @app.route('/api/dashboard')
 def api_dashboard():
     """API endpoint for dashboard data."""
@@ -1051,29 +1062,23 @@ def api_chart(chart_type):
 
 @app.route('/metric/<metric_name>')
 def metric_detail(metric_name):
-    """Individual metric detail page."""
-    # Map friendly names to CSV filenames
+    """Redirect old metric detail URLs to the explorer page."""
+    # Map old friendly names to the actual metric names used by explorer
     metric_map = {
-        'divergence_gap': {'file': 'divergence_gap', 'title': 'Divergence Gap', 'unit': 'bp'},
-        'hy_spread': {'file': 'high_yield_spread', 'title': 'High Yield Credit Spread', 'unit': 'bp'},
-        'ig_spread': {'file': 'investment_grade_spread', 'title': 'Investment Grade Spread', 'unit': 'bp'},
-        'ccc_spread': {'file': 'ccc_spread', 'title': 'CCC-Rated Spread', 'unit': 'bp'},
-        'gold_price': {'file': 'gold_price', 'title': 'Gold Price', 'unit': '$'},
-        'bitcoin_price': {'file': 'bitcoin_price', 'title': 'Bitcoin Price', 'unit': '$'},
-        'vix': {'file': 'vix_price', 'title': 'VIX (Volatility Index)', 'unit': ''},
-        'sp500': {'file': 'sp500_price', 'title': 'S&P 500', 'unit': '$'},
-        'market_breadth': {'file': 'market_breadth_ratio', 'title': 'Market Breadth (RSP/SPY)', 'unit': ''}
+        'divergence_gap': 'divergence_gap',
+        'hy_spread': 'high_yield_spread',
+        'ig_spread': 'investment_grade_spread',
+        'ccc_spread': 'ccc_spread',
+        'gold_price': 'gold_price',
+        'bitcoin_price': 'bitcoin_price',
+        'vix': 'vix_price',
+        'sp500': 'sp500_price',
+        'market_breadth': 'market_breadth_ratio'
     }
 
-    if metric_name in metric_map:
-        metric_info = metric_map[metric_name]
-        return render_template('metric_detail.html',
-                             metric_name=metric_name,
-                             metric_file=metric_info['file'],
-                             metric_title=metric_info['title'],
-                             metric_unit=metric_info['unit'])
-    else:
-        return "Metric not found", 404
+    # Get the actual metric name for explorer
+    explorer_metric = metric_map.get(metric_name, metric_name)
+    return redirect(f'/explorer?metric={explorer_metric}')
 
 
 @app.route('/explorer')
@@ -1096,6 +1101,14 @@ def api_metrics_list():
     import os
 
     metrics = []
+
+    # Add calculated metrics first (not stored as CSV files)
+    calculated_metrics = [
+        {'value': 'divergence_gap', 'label': 'Divergence Gap', 'filename': None, 'calculated': True},
+    ]
+    metrics.extend(calculated_metrics)
+
+    # Add CSV-based metrics
     csv_files = sorted([f for f in os.listdir(DATA_DIR) if f.endswith('.csv')])
 
     for filename in csv_files:
@@ -1536,6 +1549,261 @@ def api_generate_dollar_summary():
             'status': 'error',
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# Portfolio API Endpoints
+# ============================================================================
+
+@app.route('/api/portfolio')
+def api_portfolio_get():
+    """Get all portfolio allocations with current prices."""
+    try:
+        portfolio_data = get_portfolio_with_prices()
+        return jsonify(portfolio_data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/portfolio', methods=['POST'])
+def api_portfolio_add():
+    """Add a new allocation to the portfolio."""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        asset_type = data.get('asset_type')
+        symbol = data.get('symbol')
+        name = data.get('name')
+        percentage = data.get('percentage')
+
+        if not asset_type or not name or percentage is None:
+            return jsonify({'error': 'Missing required fields: asset_type, name, percentage'}), 400
+
+        try:
+            percentage = float(percentage)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Percentage must be a number'}), 400
+
+        result = add_allocation(asset_type, symbol, name, percentage)
+
+        if 'error' in result:
+            return jsonify(result), 400
+
+        return jsonify(result), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/portfolio/<allocation_id>', methods=['PUT'])
+def api_portfolio_update(allocation_id):
+    """Update an existing allocation."""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        percentage = data.get('percentage')
+        name = data.get('name')
+        symbol = data.get('symbol')
+
+        if percentage is not None:
+            try:
+                percentage = float(percentage)
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Percentage must be a number'}), 400
+
+        result = update_allocation(allocation_id, percentage=percentage, name=name, symbol=symbol)
+
+        if 'error' in result:
+            return jsonify(result), 404
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/portfolio/<allocation_id>', methods=['DELETE'])
+def api_portfolio_delete(allocation_id):
+    """Delete an allocation from the portfolio."""
+    try:
+        result = delete_allocation(allocation_id)
+
+        if 'error' in result:
+            return jsonify(result), 404
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/portfolio/validate')
+def api_portfolio_validate():
+    """Validate portfolio allocation total."""
+    try:
+        result = validate_allocation_total()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/portfolio/validate-symbol/<symbol>')
+def api_portfolio_validate_symbol(symbol):
+    """Validate a ticker symbol and get info."""
+    try:
+        result = validate_symbol(symbol)
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/portfolio/summary')
+def api_portfolio_summary():
+    """Get the current portfolio AI summary."""
+    from ai_summary import get_portfolio_summary_for_display
+    summary = get_portfolio_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No portfolio summary available',
+        'message': 'Click refresh to generate an AI analysis'
+    }), 404
+
+
+@app.route('/api/portfolio/summary/generate', methods=['POST'])
+def api_generate_portfolio_summary():
+    """Manually trigger portfolio AI summary generation."""
+    from ai_summary import generate_portfolio_summary
+    try:
+        # Get portfolio data for AI
+        portfolio_data = get_portfolio_summary_for_ai()
+
+        if not portfolio_data.get('holdings'):
+            return jsonify({
+                'status': 'error',
+                'error': 'No holdings in portfolio. Add some allocations first.'
+            }), 400
+
+        # Generate market summary for context
+        market_summary = generate_portfolio_market_context()
+
+        # Generate AI summary
+        result = generate_portfolio_summary(portfolio_data, market_summary)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+def generate_portfolio_market_context():
+    """Generate market context for portfolio AI analysis."""
+    from ai_summary import (
+        get_latest_summary, get_latest_crypto_summary,
+        get_latest_equity_summary, get_latest_rates_summary,
+        get_latest_dollar_summary
+    )
+
+    context_parts = []
+
+    # Get all AI briefings from today
+    briefings = []
+
+    general = get_latest_summary()
+    if general:
+        briefings.append(f"**General Market Briefing:**\n{general.get('summary', 'N/A')}")
+
+    crypto = get_latest_crypto_summary()
+    if crypto:
+        briefings.append(f"**Crypto Briefing:**\n{crypto.get('summary', 'N/A')}")
+
+    equity = get_latest_equity_summary()
+    if equity:
+        briefings.append(f"**Equity Briefing:**\n{equity.get('summary', 'N/A')}")
+
+    rates = get_latest_rates_summary()
+    if rates:
+        briefings.append(f"**Rates Briefing:**\n{rates.get('summary', 'N/A')}")
+
+    dollar = get_latest_dollar_summary()
+    if dollar:
+        briefings.append(f"**Dollar Briefing:**\n{dollar.get('summary', 'N/A')}")
+
+    if briefings:
+        context_parts.append("## Today's AI Briefings\n" + "\n\n".join(briefings))
+
+    # Get key market metrics
+    try:
+        metrics_summary = []
+
+        # Credit spreads
+        hy_df = load_csv_data('high_yield_spread.csv')
+        if hy_df is not None and not hy_df.empty:
+            hy_val = hy_df.iloc[-1][hy_df.columns[1]]
+            metrics_summary.append(f"- HY Spread: {hy_val:.0f} bp")
+
+        ig_df = load_csv_data('investment_grade_spread.csv')
+        if ig_df is not None and not ig_df.empty:
+            ig_val = ig_df.iloc[-1][ig_df.columns[1]]
+            metrics_summary.append(f"- IG Spread: {ig_val:.0f} bp")
+
+        # VIX
+        vix_df = load_csv_data('vix_price.csv')
+        if vix_df is not None and not vix_df.empty:
+            vix_val = vix_df.iloc[-1][vix_df.columns[1]]
+            metrics_summary.append(f"- VIX: {vix_val:.1f}")
+
+        # Gold
+        gold_df = load_csv_data('gold_price.csv')
+        if gold_df is not None and not gold_df.empty:
+            gold_val = gold_df.iloc[-1][gold_df.columns[1]] * 10
+            metrics_summary.append(f"- Gold: ${gold_val:.0f}")
+
+        # Bitcoin
+        btc_df = load_csv_data('bitcoin_price.csv')
+        if btc_df is not None and not btc_df.empty:
+            btc_val = btc_df.iloc[-1][btc_df.columns[1]]
+            metrics_summary.append(f"- Bitcoin: ${btc_val:,.0f}")
+
+        # S&P 500
+        spy_df = load_csv_data('sp500_price.csv')
+        if spy_df is not None and not spy_df.empty:
+            spy_val = spy_df.iloc[-1][spy_df.columns[1]]
+            metrics_summary.append(f"- S&P 500 (SPY): ${spy_val:.2f}")
+
+        # Yield curve
+        yc_df = load_csv_data('yield_curve_10y2y.csv')
+        if yc_df is not None and not yc_df.empty:
+            yc_val = yc_df.iloc[-1][yc_df.columns[1]]
+            metrics_summary.append(f"- 10Y-2Y Yield Curve: {yc_val:.2f}%")
+
+        # DXY
+        dxy_df = load_csv_data('dxy.csv')
+        if dxy_df is not None and not dxy_df.empty:
+            dxy_val = dxy_df.iloc[-1][dxy_df.columns[1]]
+            metrics_summary.append(f"- DXY: {dxy_val:.1f}")
+
+        if metrics_summary:
+            context_parts.append("## Current Key Metrics\n" + "\n".join(metrics_summary))
+
+    except Exception as e:
+        print(f"Error generating market metrics context: {e}")
+
+    return "\n\n".join(context_parts)
 
 
 @app.route('/api/debug/web-search-status')

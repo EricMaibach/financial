@@ -2,7 +2,8 @@
 """
 AI Daily Summary Generator
 
-Generates insightful daily market summaries using GPT-4 with web search capability.
+Generates insightful daily market summaries using AI with web search capability.
+Supports both OpenAI and Anthropic APIs, configurable via environment variables.
 Summaries are stored historically and provide context for continuity.
 """
 
@@ -10,32 +11,123 @@ import os
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-from openai import OpenAI
+
+# AI Provider imports - both optional
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+    OpenAI = None
+
+try:
+    import anthropic
+    ANTHROPIC_AVAILABLE = True
+except ImportError:
+    ANTHROPIC_AVAILABLE = False
+    anthropic = None
 
 from web_search import (
     search_web, search_financial_news, is_tavily_configured,
     SEARCH_FUNCTION_DEFINITION, execute_search_function
 )
 
+# =============================================================================
+# AI Provider Configuration
+# =============================================================================
+# Set AI_PROVIDER environment variable to "openai" or "anthropic"
+# Default: "openai" for backward compatibility
+#
+# Environment variables:
+#   AI_PROVIDER: "openai" or "anthropic"
+#   OPENAI_API_KEY: Required if using OpenAI
+#   ANTHROPIC_API_KEY: Required if using Anthropic
+#
+# Models used:
+#   OpenAI: gpt-5.2
+#   Anthropic: claude-opus-4-6 (Claude Opus 4.6 with 1M context)
+# =============================================================================
+
+AI_PROVIDER = os.environ.get('AI_PROVIDER', 'openai').lower()
+OPENAI_MODEL = "gpt-5.2"
+ANTHROPIC_MODEL = "claude-opus-4-6"
+
+# Anthropic effort levels: low, medium, high, max
+# Higher effort = more reasoning depth, slower, more expensive
+ANTHROPIC_EFFORT = os.environ.get('ANTHROPIC_EFFORT', 'medium').lower()
+
+
+def get_ai_provider():
+    """Get the configured AI provider."""
+    return AI_PROVIDER
+
+
+def get_ai_client():
+    """
+    Get an AI client based on the configured provider.
+
+    Returns:
+        tuple: (client, provider_name) or (None, error_message)
+    """
+    provider = get_ai_provider()
+
+    if provider == 'anthropic':
+        if not ANTHROPIC_AVAILABLE:
+            return None, "Anthropic package not installed. Run: pip install anthropic"
+        api_key = os.environ.get('ANTHROPIC_API_KEY')
+        if not api_key:
+            return None, "ANTHROPIC_API_KEY environment variable not set"
+        return anthropic.Anthropic(api_key=api_key), 'anthropic'
+
+    else:  # Default to OpenAI
+        if not OPENAI_AVAILABLE:
+            return None, "OpenAI package not installed. Run: pip install openai"
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            return None, "OPENAI_API_KEY environment variable not set"
+        return OpenAI(api_key=api_key), 'openai'
+
+
+def is_ai_configured():
+    """Check if AI is properly configured."""
+    client, result = get_ai_client()
+    return client is not None
+
 # Storage location
 DATA_DIR = Path("data")
 SUMMARIES_FILE = DATA_DIR / "ai_summaries.json"
 
 
-def call_openai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_prefix="[AI]"):
+def call_ai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_prefix="[AI]", provider=None):
     """
-    Make an OpenAI API call with web search tool support.
+    Make an AI API call with web search tool support.
+    Supports both OpenAI and Anthropic APIs.
 
     Args:
-        client: OpenAI client instance
+        client: AI client instance (OpenAI or Anthropic)
         system_prompt: System prompt for the model
         user_prompt: User prompt with data/context
         max_tokens: Maximum tokens for completion
         log_prefix: Prefix for log messages (e.g., "[Crypto Summary]")
+        provider: 'openai' or 'anthropic' (auto-detected if None)
 
     Returns:
         dict with 'success', 'content', and 'error' keys
     """
+    # Auto-detect provider if not specified
+    if provider is None:
+        provider = get_ai_provider()
+
+    print(f"{log_prefix} Using provider: {provider}")
+
+    if provider == 'anthropic':
+        return _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix)
+    else:
+        return _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix)
+
+
+def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix):
+    """OpenAI-specific implementation of AI call with tools."""
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
@@ -62,7 +154,7 @@ def call_openai_with_tools(client, system_prompt, user_prompt, max_tokens=600, l
         print(f"{log_prefix} API call iteration {iteration}/{max_iterations}")
 
         api_params = {
-            "model": "gpt-5.2",
+            "model": OPENAI_MODEL,
             "messages": messages,
             "temperature": 0.7,
             "max_completion_tokens": max_tokens
@@ -131,6 +223,151 @@ def call_openai_with_tools(client, system_prompt, user_prompt, max_tokens=600, l
         'content': None,
         'error': 'Exceeded maximum tool call iterations'
     }
+
+
+def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix):
+    """Anthropic-specific implementation of AI call with tools."""
+    messages = [
+        {"role": "user", "content": user_prompt}
+    ]
+
+    # Set up tools if Tavily is available
+    tools = None
+    web_search_available = is_tavily_configured()
+
+    if web_search_available:
+        # Anthropic tool format
+        tools = [{
+            "name": SEARCH_FUNCTION_DEFINITION["name"],
+            "description": SEARCH_FUNCTION_DEFINITION["description"],
+            "input_schema": SEARCH_FUNCTION_DEFINITION["parameters"]
+        }]
+        print(f"{log_prefix} Web search tool available")
+    else:
+        print(f"{log_prefix} Web search tool not available (Tavily not configured)")
+
+    # Map effort level to thinking budget
+    effort_budgets = {
+        'low': 1024,
+        'medium': 4096,
+        'high': 10000,
+        'max': 32000
+    }
+    thinking_budget = effort_budgets.get(ANTHROPIC_EFFORT, 4096)
+
+    # Tool calling loop
+    max_iterations = 3
+    iteration = 0
+
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"{log_prefix} API call iteration {iteration}/{max_iterations}")
+
+        api_params = {
+            "model": ANTHROPIC_MODEL,
+            "max_tokens": max_tokens + thinking_budget,  # Include budget for thinking
+            "system": system_prompt,
+            "messages": messages,
+            "thinking": {
+                "type": "enabled",
+                "budget_tokens": thinking_budget
+            }
+        }
+
+        if tools:
+            api_params["tools"] = tools
+
+        try:
+            response = client.messages.create(**api_params)
+        except Exception as e:
+            # If thinking mode fails, try without it
+            print(f"{log_prefix} Thinking mode failed, retrying without: {e}")
+            del api_params["thinking"]
+            api_params["max_tokens"] = max_tokens
+            response = client.messages.create(**api_params)
+
+        print(f"{log_prefix} Response stop_reason: {response.stop_reason}")
+
+        # Check for tool use
+        tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
+
+        if tool_use_blocks:
+            print(f"{log_prefix} Tool calls requested: {[tb.name for tb in tool_use_blocks]}")
+
+            # Add assistant message with tool use
+            messages.append({
+                "role": "assistant",
+                "content": response.content
+            })
+
+            # Process each tool call
+            tool_results = []
+            for tool_use in tool_use_blocks:
+                function_name = tool_use.name
+                function_args = tool_use.input if hasattr(tool_use, 'input') else {}
+                print(f"{log_prefix} Executing {function_name} with args: {function_args}")
+
+                if function_name == "search_web":
+                    result = execute_search_function(function_args)
+                else:
+                    result = json.dumps({"error": f"Unknown function: {function_name}"})
+
+                print(f"{log_prefix} {function_name} returned {len(result)} chars")
+
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tool_use.id,
+                    "content": result
+                })
+
+            # Add tool results as user message
+            messages.append({
+                "role": "user",
+                "content": tool_results
+            })
+
+            # Continue loop to get model's response after tool results
+            continue
+
+        # No tool calls - extract text response
+        text_blocks = [block for block in response.content if block.type == "text"]
+        content = " ".join(block.text for block in text_blocks) if text_blocks else None
+
+        print(f"{log_prefix} Response content length: {len(content) if content else 0}")
+
+        if content:
+            print(f"{log_prefix} Response content preview: {content[:200]}...")
+
+        if not content or not content.strip():
+            print(f"{log_prefix} API returned empty content")
+            return {
+                'success': False,
+                'content': None,
+                'error': 'API returned empty response'
+            }
+
+        return {
+            'success': True,
+            'content': content.strip(),
+            'error': None
+        }
+
+    # Exceeded max iterations
+    print(f"{log_prefix} Exceeded max iterations")
+    return {
+        'success': False,
+        'content': None,
+        'error': 'Exceeded maximum tool call iterations'
+    }
+
+
+# Backward compatibility alias
+def call_openai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_prefix="[AI]"):
+    """
+    Legacy wrapper - calls the unified AI function with OpenAI provider.
+    Deprecated: Use call_ai_with_tools() instead.
+    """
+    return call_ai_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix, provider='openai')
 
 
 def load_summaries():
@@ -241,15 +478,15 @@ def generate_daily_summary(market_data_summary, top_movers):
     Returns:
         dict with 'success', 'summary', and 'error' keys
     """
-    if not os.environ.get('OPENAI_API_KEY'):
+    client, error = get_ai_client()
+    if client is None:
         return {
             'success': False,
             'summary': None,
-            'error': 'OpenAI API key not configured'
+            'error': error
         }
 
     try:
-        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         today = datetime.now().strftime('%Y-%m-%d')
 
         # Get previous summaries for context
@@ -312,7 +549,7 @@ You're writing the one thing someone reads about markets today. Make it count.""
 Remember: 2 paragraphs, tell the story, don't repeat previous themes, make it the most valuable 30 seconds of their day."""
 
         # Make the API call with web search tool support
-        result = call_openai_with_tools(
+        result = call_ai_with_tools(
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -473,15 +710,15 @@ def generate_crypto_summary(crypto_data_summary):
     Returns:
         dict with 'success', 'summary', and 'error' keys
     """
-    if not os.environ.get('OPENAI_API_KEY'):
+    client, error = get_ai_client()
+    if client is None:
         return {
             'success': False,
             'summary': None,
-            'error': 'OpenAI API key not configured'
+            'error': error
         }
 
     try:
-        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         today = datetime.now().strftime('%Y-%m-%d')
 
         # Get previous crypto summaries for context
@@ -529,7 +766,7 @@ Remember: 3 paragraphs, connect BTC to liquidity conditions, be specific about k
 
         # Make the API call with web search tool support
         print(f"[Crypto Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
-        result = call_openai_with_tools(
+        result = call_ai_with_tools(
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -690,15 +927,15 @@ def generate_equity_summary(equity_data_summary):
     Returns:
         dict with 'success', 'summary', and 'error' keys
     """
-    if not os.environ.get('OPENAI_API_KEY'):
+    client, error = get_ai_client()
+    if client is None:
         return {
             'success': False,
             'summary': None,
-            'error': 'OpenAI API key not configured'
+            'error': error
         }
 
     try:
-        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         today = datetime.now().strftime('%Y-%m-%d')
 
         # Get previous equity summaries for context
@@ -746,7 +983,7 @@ Remember: 3 paragraphs, tell the story of market structure and rotation, explain
 
         # Make the API call with web search tool support
         print(f"[Equity Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
-        result = call_openai_with_tools(
+        result = call_ai_with_tools(
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -909,15 +1146,15 @@ def generate_rates_summary(rates_data_summary):
     Returns:
         dict with 'success', 'summary', and 'error' keys
     """
-    if not os.environ.get('OPENAI_API_KEY'):
+    client, error = get_ai_client()
+    if client is None:
         return {
             'success': False,
             'summary': None,
-            'error': 'OpenAI API key not configured'
+            'error': error
         }
 
     try:
-        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         today = datetime.now().strftime('%Y-%m-%d')
 
         # Get previous rates summaries for context
@@ -965,7 +1202,7 @@ Remember: 3 paragraphs, tell the rates story clearly, explain curve signals, mak
 
         # Make the API call with web search tool support
         print(f"[Rates Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
-        result = call_openai_with_tools(
+        result = call_ai_with_tools(
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -1128,15 +1365,15 @@ def generate_dollar_summary(dollar_data_summary):
     Returns:
         dict with 'success', 'summary', and 'error' keys
     """
-    if not os.environ.get('OPENAI_API_KEY'):
+    client, error = get_ai_client()
+    if client is None:
         return {
             'success': False,
             'summary': None,
-            'error': 'OpenAI API key not configured'
+            'error': error
         }
 
     try:
-        client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         today = datetime.now().strftime('%Y-%m-%d')
 
         # Get previous dollar summaries for context
@@ -1184,7 +1421,7 @@ Remember: 3 paragraphs, tell the dollar story clearly, explain the Dollar Smile 
 
         # Make the API call with web search tool support
         print(f"[Dollar Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
-        result = call_openai_with_tools(
+        result = call_ai_with_tools(
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -1237,5 +1474,247 @@ def get_dollar_summary_for_display():
             'generated_at': summary['generated_at'],
             'summary': summary['summary'],
             'web_search_used': summary.get('web_search_used', False)
+        }
+    return None
+
+
+# ============================================================================
+# Portfolio Summary Functions
+# ============================================================================
+
+PORTFOLIO_SUMMARIES_FILE = DATA_DIR / "portfolio_summaries.json"
+
+
+def load_portfolio_summaries():
+    """Load all stored portfolio AI summaries."""
+    if PORTFOLIO_SUMMARIES_FILE.exists():
+        try:
+            with open(PORTFOLIO_SUMMARIES_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"summaries": []}
+    return {"summaries": []}
+
+
+def save_portfolio_summary_entry(date_str, summary_text, portfolio_context=None):
+    """Save a portfolio AI summary to storage."""
+    data = load_portfolio_summaries()
+
+    # Update existing or add new
+    existing_idx = None
+    for idx, s in enumerate(data["summaries"]):
+        if s["date"] == date_str:
+            existing_idx = idx
+            break
+
+    summary_entry = {
+        "date": date_str,
+        "generated_at": datetime.now().isoformat(),
+        "summary": summary_text,
+        "portfolio_context": portfolio_context[:1000] if portfolio_context else None
+    }
+
+    if existing_idx is not None:
+        data["summaries"][existing_idx] = summary_entry
+    else:
+        data["summaries"].append(summary_entry)
+
+    # Keep only the last 30 summaries
+    data["summaries"] = sorted(data["summaries"], key=lambda x: x["date"])[-30:]
+
+    # Ensure data directory exists
+    DATA_DIR.mkdir(exist_ok=True)
+
+    with open(PORTFOLIO_SUMMARIES_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def get_latest_portfolio_summary():
+    """Get the most recent portfolio AI summary."""
+    data = load_portfolio_summaries()
+    if data["summaries"]:
+        return sorted(data["summaries"], key=lambda x: x["date"])[-1]
+    return None
+
+
+def get_recent_portfolio_summaries(days=3):
+    """Get recent portfolio summaries for context."""
+    data = load_portfolio_summaries()
+    if not data["summaries"]:
+        return []
+
+    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
+    return sorted_summaries[:days]
+
+
+def generate_portfolio_summary(portfolio_data, market_context):
+    """
+    Generate an AI portfolio analysis summary.
+
+    Args:
+        portfolio_data: Dict with portfolio holdings and allocations from get_portfolio_summary_for_ai()
+        market_context: String with market data and other AI briefings
+
+    Returns:
+        dict with 'success', 'summary', and 'error' keys
+    """
+    client, error = get_ai_client()
+    if client is None:
+        return {
+            'success': False,
+            'summary': None,
+            'error': error
+        }
+
+    try:
+        today = datetime.now().strftime('%Y-%m-%d')
+
+        # Get previous portfolio summaries for context
+        recent_summaries = get_recent_portfolio_summaries(days=3)
+        previous_context = ""
+        if recent_summaries:
+            previous_context = "\n\n## YOUR PREVIOUS PORTFOLIO ANALYSES (for continuity):\n"
+            for s in recent_summaries:
+                if s["date"] != today:
+                    previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
+
+        # Format portfolio data
+        portfolio_section = format_portfolio_for_ai(portfolio_data)
+
+        # Portfolio-specific system prompt
+        system_prompt = """You are a portfolio analyst providing personalized briefings based on a user's investment allocations and current market conditions. Your audience is an individual investor who wants actionable insight on how their portfolio is positioned relative to current market dynamics.
+
+Your style is conversational but substantive - you connect the dots between the user's holdings, current market conditions, and the insights from the day's other market briefings.
+
+CRITICAL RULES:
+- Write EXACTLY 3-4 paragraphs (300-400 words total)
+- First paragraph: Portfolio Overview - summarize the current allocation, highlight any concentration risk (>30% in single holding), and assess overall diversification across asset classes. Be specific about percentages.
+- Second paragraph: Market Alignment - based on today's market conditions and briefings, evaluate whether the portfolio positioning makes sense. Are they heavy in equities when credit spreads are tight and VIX is low (potentially complacent)? Are they light on gold when safe havens are elevated? Connect their allocation to the current market story.
+- Third paragraph: Specific Observations - analyze individual holdings where you have price data. Note any significant daily moves. If they hold tech-heavy ETFs and the equity briefing notes concentration risk, mention that. If they hold gold and it's at extreme percentiles, discuss implications.
+- Final paragraph: Adjustments & Considerations - If the analysis reveals clear issues (concentration risk, poor market alignment, missing asset classes during favorable conditions), provide SPECIFIC adjustment recommendations. Be direct: "Consider reducing X from 40% to 25%" or "Adding 5-10% gold exposure would improve diversification." If the portfolio is well-positioned, say so and offer minor optimizations or simply affirm the current approach. Don't hedge excessively - give your honest assessment.
+
+IMPORTANT:
+- You are analyzing PERCENTAGES only - you don't know dollar amounts, so focus on relative weights
+- Reference the day's AI briefings when relevant to their holdings
+- Highlight both risks AND opportunities based on current conditions
+- Don't make up price data - only reference prices if they were provided
+- Be balanced - acknowledge both positives and areas for attention
+- When adjustments are warranted, be SPECIFIC about what to change and by how much. General platitudes are not helpful. If you see a problem, name the solution directly.
+
+You have access to a web search tool if you need to look up additional context about specific holdings or market conditions. Use it sparingly and only when truly helpful."""
+
+        user_prompt = f"""Today is {today}. Generate a portfolio analysis for this allocation:
+
+{portfolio_section}
+
+## CURRENT MARKET CONTEXT:
+{market_context}
+{previous_context}
+
+Remember: Analyze their allocation against current market conditions, be specific about percentages and risks, and provide SPECIFIC adjustment recommendations when warranted (not vague considerations)."""
+
+        # Make the API call with web search tool support
+        print(f"[Portfolio Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
+        result = call_ai_with_tools(
+            client=client,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=1000,
+            log_prefix="[Portfolio Summary]"
+        )
+
+        if not result['success']:
+            return {
+                'success': False,
+                'summary': None,
+                'error': result['error']
+            }
+
+        summary = result['content']
+
+        # Save the summary
+        portfolio_context_str = f"Holdings: {len(portfolio_data.get('holdings', []))}, Total: {portfolio_data.get('total_allocation_pct', 0)}%"
+        save_portfolio_summary_entry(
+            date_str=today,
+            summary_text=summary,
+            portfolio_context=portfolio_context_str
+        )
+
+        print(f"[Portfolio Summary] Generated portfolio summary for {today}")
+        return {
+            'success': True,
+            'summary': summary,
+            'error': None
+        }
+
+    except Exception as e:
+        print(f"[Portfolio Summary] Error generating summary: {e}")
+        return {
+            'success': False,
+            'summary': None,
+            'error': str(e)
+        }
+
+
+def format_portfolio_for_ai(portfolio_data):
+    """Format portfolio data as a readable string for AI analysis."""
+    parts = []
+
+    # Overall summary
+    parts.append("## PORTFOLIO ALLOCATIONS")
+    parts.append(f"Total Holdings: {portfolio_data.get('total_holdings', 0)}")
+    parts.append(f"Total Allocation: {portfolio_data.get('total_allocation_pct', 0)}%")
+    parts.append(f"Allocation Valid: {'Yes' if portfolio_data.get('allocation_valid') else 'No (should be ~100%)'}")
+    parts.append("")
+
+    # Asset class breakdown
+    breakdown = portfolio_data.get('asset_class_breakdown', {})
+    if breakdown:
+        parts.append("### Asset Class Breakdown:")
+        parts.append(f"- Equities (stocks/ETFs/mutual funds): {breakdown.get('equities', 0)}%")
+        parts.append(f"- Alternatives (crypto/gold): {breakdown.get('alternatives', 0)}%")
+        parts.append(f"- Cash & Savings: {breakdown.get('cash', 0)}%")
+        parts.append(f"- Other: {breakdown.get('other', 0)}%")
+        parts.append("")
+
+    # Individual holdings
+    holdings = portfolio_data.get('holdings', [])
+    if holdings:
+        parts.append("### Individual Holdings:")
+        for h in holdings:
+            line = f"- {h['name']} ({h['type']}): {h['percentage']}%"
+            if h.get('symbol'):
+                line = f"- {h['name']} [{h['symbol']}] ({h['type']}): {h['percentage']}%"
+            if h.get('current_price'):
+                line += f" | Price: ${h['current_price']:,.2f}"
+                if h.get('daily_change_pct') is not None:
+                    change = h['daily_change_pct']
+                    direction = "+" if change >= 0 else ""
+                    line += f" ({direction}{change:.1f}% today)"
+            parts.append(line)
+        parts.append("")
+
+    # Concentration warnings
+    warnings = portfolio_data.get('concentration_warnings', [])
+    if warnings:
+        parts.append("### ⚠️ Concentration Warnings:")
+        for w in warnings:
+            parts.append(f"- {w['name']}: {w['percentage']}% - {w['warning']}")
+        parts.append("")
+
+    return "\n".join(parts)
+
+
+def get_portfolio_summary_for_display():
+    """
+    Get the current portfolio summary formatted for display.
+    Returns dict with summary info or None if not available.
+    """
+    summary = get_latest_portfolio_summary()
+    if summary:
+        return {
+            'date': summary['date'],
+            'generated_at': summary['generated_at'],
+            'summary': summary['summary']
         }
     return None

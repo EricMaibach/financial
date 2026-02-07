@@ -1,0 +1,777 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio - Financial Markets{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-pie-chart text-primary"></i>
+            Personal Portfolio Tracker
+        </h1>
+        <p class="lead">Track your investment allocations and get AI-powered analysis</p>
+    </div>
+</div>
+
+<!-- Educational Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-lightbulb-fill"></i> About Portfolio Tracking
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-shield-check text-success"></i> Privacy First</h6>
+                        <p class="small mb-0">Only allocation percentages are stored locally - never dollar amounts. Your financial data stays private on your machine.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-graph-up text-primary"></i> Market Context</h6>
+                        <p class="small mb-0">The AI analysis considers current market conditions, credit spreads, safe haven signals, and today's briefings to evaluate your allocation.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="bi bi-exclamation-triangle text-warning"></i> Not Financial Advice</h6>
+                        <p class="small mb-0">The analysis provides considerations and observations, not recommendations. Always consult a financial advisor for personalized advice.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Portfolio Briefing -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-square-text-fill"></i> AI Portfolio Analysis
+                </h5>
+                <div>
+                    <small id="portfolio-summary-timestamp" class="me-3 opacity-75"></small>
+                    <button class="btn btn-sm btn-light" onclick="refreshPortfolioSummary()" id="refresh-summary-btn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh Analysis
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="portfolio-summary-content" class="summary-text">
+                    <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading analysis...</p>
+                </div>
+                <div id="portfolio-summary-error" class="text-muted d-none">
+                    <p class="mb-0"><i class="bi bi-info-circle"></i> No analysis available yet. Add some holdings and click "Refresh Analysis" to generate one.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Portfolio Summary Row -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card border-primary">
+            <div class="card-body">
+                <h6 class="text-muted">TOTAL ALLOCATION</h6>
+                <h2 class="mb-0" id="total-allocation">0%</h2>
+                <small class="text-muted" id="allocation-status">Add holdings below</small>
+                <div class="mt-2">
+                    <span class="badge" id="allocation-badge">Empty</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">HOLDINGS COUNT</h6>
+                <h2 class="mb-0" id="holdings-count">0</h2>
+                <small class="text-muted">Individual positions</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">EQUITIES</h6>
+                <h2 class="mb-0" id="equities-pct">0%</h2>
+                <small class="text-muted">Stocks, ETFs, Mutual Funds</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">ALTERNATIVES</h6>
+                <h2 class="mb-0" id="alternatives-pct">0%</h2>
+                <small class="text-muted">Gold, Crypto</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Allocation Charts -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Asset Class Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="asset-class-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-pie-chart-fill"></i> Individual Holdings</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="position: relative; height: 300px;">
+                    <canvas id="holdings-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Holdings Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-table"></i> Portfolio Holdings</h5>
+                <button class="btn btn-primary" onclick="showAddModal()">
+                    <i class="bi bi-plus-circle"></i> Add Holding
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="holdings-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Symbol</th>
+                                <th>Allocation</th>
+                                <th>Price</th>
+                                <th>Change</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="holdings-tbody">
+                            <tr id="no-holdings-row">
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox"></i> No holdings yet. Click "Add Holding" to get started.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="holdingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="holdingModalTitle">Add Holding</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="holding-form">
+                    <input type="hidden" id="holding-id">
+                    <div class="mb-3">
+                        <label for="asset-type" class="form-label">Asset Type</label>
+                        <select class="form-select" id="asset-type" required>
+                            <option value="">Select type...</option>
+                            <option value="stock">Stock</option>
+                            <option value="etf">ETF</option>
+                            <option value="mutual_fund">Mutual Fund</option>
+                            <option value="crypto">Crypto (Bitcoin)</option>
+                            <option value="gold">Gold</option>
+                            <option value="cash">Cash</option>
+                            <option value="savings">Savings Account</option>
+                            <option value="money_market">Money Market</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="symbol-group">
+                        <label for="holding-symbol" class="form-label">Symbol</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="holding-symbol" placeholder="e.g., AAPL, SPY">
+                            <button class="btn btn-outline-secondary" type="button" onclick="lookupSymbol()">
+                                <i class="bi bi-search"></i> Lookup
+                            </button>
+                        </div>
+                        <div id="symbol-feedback" class="form-text"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="holding-name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="holding-name" placeholder="e.g., Apple Inc" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="holding-percentage" class="form-label">Allocation Percentage</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="holding-percentage" min="0.01" max="100" step="0.01" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div id="percentage-feedback" class="form-text"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveHolding()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-holding-name"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+// Global state
+let portfolioData = null;
+let assetClassChart = null;
+let holdingsChart = null;
+let holdingModal = null;
+let deleteModal = null;
+let deleteId = null;
+
+// Asset types that require symbols
+const SYMBOL_REQUIRED = ['stock', 'etf', 'mutual_fund'];
+
+// Chart colors
+const CHART_COLORS = [
+    '#0d6efd', '#198754', '#ffc107', '#dc3545', '#6c757d',
+    '#0dcaf0', '#6610f2', '#d63384', '#fd7e14', '#20c997'
+];
+
+document.addEventListener('DOMContentLoaded', function() {
+    holdingModal = new bootstrap.Modal(document.getElementById('holdingModal'));
+    deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+    // Asset type change handler
+    document.getElementById('asset-type').addEventListener('change', function() {
+        const symbolGroup = document.getElementById('symbol-group');
+        const symbolInput = document.getElementById('holding-symbol');
+        const nameInput = document.getElementById('holding-name');
+
+        if (SYMBOL_REQUIRED.includes(this.value)) {
+            symbolGroup.style.display = 'block';
+            symbolInput.required = true;
+        } else {
+            symbolGroup.style.display = 'none';
+            symbolInput.required = false;
+            symbolInput.value = '';
+
+            // Pre-fill name for known types
+            if (this.value === 'crypto') {
+                nameInput.value = 'Bitcoin';
+            } else if (this.value === 'gold') {
+                nameInput.value = 'Gold';
+            } else if (this.value === 'cash') {
+                nameInput.value = 'Cash';
+            } else if (this.value === 'savings') {
+                nameInput.value = 'Savings Account';
+            } else {
+                nameInput.value = '';
+            }
+        }
+    });
+
+    loadPortfolioData();
+    loadPortfolioSummary();
+});
+
+// Load portfolio data
+async function loadPortfolioData() {
+    try {
+        const response = await fetch('/api/portfolio');
+        const data = await response.json();
+        portfolioData = data;
+        updateUI();
+    } catch (error) {
+        console.error('Error loading portfolio:', error);
+    }
+}
+
+// Update UI with portfolio data
+function updateUI() {
+    if (!portfolioData) return;
+
+    // Update summary cards
+    document.getElementById('total-allocation').textContent = portfolioData.total_percentage + '%';
+    document.getElementById('holdings-count').textContent = portfolioData.allocations.length;
+
+    // Update allocation status
+    const statusEl = document.getElementById('allocation-status');
+    const badgeEl = document.getElementById('allocation-badge');
+
+    if (portfolioData.allocations.length === 0) {
+        statusEl.textContent = 'Add holdings below';
+        badgeEl.textContent = 'Empty';
+        badgeEl.className = 'badge bg-secondary';
+    } else if (portfolioData.is_valid) {
+        statusEl.textContent = 'Allocation complete';
+        badgeEl.textContent = 'Valid';
+        badgeEl.className = 'badge bg-success';
+    } else if (portfolioData.total_percentage < 95) {
+        statusEl.textContent = `${(100 - portfolioData.total_percentage).toFixed(1)}% unallocated`;
+        badgeEl.textContent = 'Incomplete';
+        badgeEl.className = 'badge bg-warning text-dark';
+    } else {
+        statusEl.textContent = 'Over-allocated';
+        badgeEl.textContent = 'Over 100%';
+        badgeEl.className = 'badge bg-danger';
+    }
+
+    // Update asset class breakdown
+    const breakdown = portfolioData.type_breakdown || {};
+    const equitiesPct = (breakdown.stock || 0) + (breakdown.etf || 0) + (breakdown.mutual_fund || 0);
+    const alternativesPct = (breakdown.crypto || 0) + (breakdown.gold || 0);
+
+    document.getElementById('equities-pct').textContent = equitiesPct.toFixed(1) + '%';
+    document.getElementById('alternatives-pct').textContent = alternativesPct.toFixed(1) + '%';
+
+    // Update table
+    updateHoldingsTable();
+
+    // Update charts
+    updateCharts();
+}
+
+// Update holdings table
+function updateHoldingsTable() {
+    const tbody = document.getElementById('holdings-tbody');
+    const noHoldingsRow = document.getElementById('no-holdings-row');
+
+    // Clear existing rows except no-holdings row
+    Array.from(tbody.querySelectorAll('tr:not(#no-holdings-row)')).forEach(row => row.remove());
+
+    if (!portfolioData || portfolioData.allocations.length === 0) {
+        noHoldingsRow.style.display = '';
+        return;
+    }
+
+    noHoldingsRow.style.display = 'none';
+
+    portfolioData.allocations.forEach(allocation => {
+        const row = document.createElement('tr');
+
+        const priceInfo = allocation.price_info || {};
+        const price = priceInfo.price ? `$${priceInfo.price.toLocaleString()}` : '-';
+        const change = priceInfo.change_pct !== null && priceInfo.change_pct !== undefined
+            ? `${priceInfo.change_pct >= 0 ? '+' : ''}${priceInfo.change_pct.toFixed(2)}%`
+            : '-';
+        const changeClass = priceInfo.change_pct > 0 ? 'text-success' : (priceInfo.change_pct < 0 ? 'text-danger' : '');
+
+        row.innerHTML = `
+            <td><strong>${allocation.name}</strong></td>
+            <td><span class="badge bg-secondary">${formatAssetType(allocation.asset_type)}</span></td>
+            <td>${allocation.symbol || '-'}</td>
+            <td><strong>${allocation.percentage}%</strong></td>
+            <td>${price}</td>
+            <td class="${changeClass}">${change}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="editHolding('${allocation.id}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal('${allocation.id}', '${allocation.name}')">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+// Format asset type for display
+function formatAssetType(type) {
+    const labels = {
+        'stock': 'Stock',
+        'etf': 'ETF',
+        'mutual_fund': 'Mutual Fund',
+        'crypto': 'Crypto',
+        'gold': 'Gold',
+        'cash': 'Cash',
+        'savings': 'Savings',
+        'money_market': 'Money Market',
+        'other': 'Other'
+    };
+    return labels[type] || type;
+}
+
+// Update charts
+function updateCharts() {
+    updateAssetClassChart();
+    updateHoldingsChart();
+}
+
+// Asset class chart
+function updateAssetClassChart() {
+    const ctx = document.getElementById('asset-class-chart').getContext('2d');
+
+    if (assetClassChart) {
+        assetClassChart.destroy();
+    }
+
+    if (!portfolioData || portfolioData.allocations.length === 0) {
+        return;
+    }
+
+    const breakdown = portfolioData.type_breakdown || {};
+    const labels = [];
+    const data = [];
+    const colors = [];
+
+    const typeColors = {
+        'stock': '#0d6efd',
+        'etf': '#198754',
+        'mutual_fund': '#20c997',
+        'crypto': '#ffc107',
+        'gold': '#fd7e14',
+        'cash': '#6c757d',
+        'savings': '#0dcaf0',
+        'money_market': '#17a2b8',
+        'other': '#6610f2'
+    };
+
+    Object.entries(breakdown).forEach(([type, pct]) => {
+        if (pct > 0) {
+            labels.push(formatAssetType(type));
+            data.push(pct);
+            colors.push(typeColors[type] || '#6c757d');
+        }
+    });
+
+    assetClassChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#1a1a2e'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#e0e0e0' }
+                }
+            }
+        }
+    });
+}
+
+// Holdings chart
+function updateHoldingsChart() {
+    const ctx = document.getElementById('holdings-chart').getContext('2d');
+
+    if (holdingsChart) {
+        holdingsChart.destroy();
+    }
+
+    if (!portfolioData || portfolioData.allocations.length === 0) {
+        return;
+    }
+
+    const labels = portfolioData.allocations.map(a => a.name);
+    const data = portfolioData.allocations.map(a => a.percentage);
+    const colors = portfolioData.allocations.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
+
+    holdingsChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#1a1a2e'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#e0e0e0' }
+                }
+            }
+        }
+    });
+}
+
+// Show add modal
+function showAddModal() {
+    document.getElementById('holdingModalTitle').textContent = 'Add Holding';
+    document.getElementById('holding-form').reset();
+    document.getElementById('holding-id').value = '';
+    document.getElementById('symbol-group').style.display = 'none';
+    document.getElementById('symbol-feedback').textContent = '';
+    document.getElementById('percentage-feedback').textContent = '';
+    holdingModal.show();
+}
+
+// Edit holding
+function editHolding(id) {
+    const allocation = portfolioData.allocations.find(a => a.id === id);
+    if (!allocation) return;
+
+    document.getElementById('holdingModalTitle').textContent = 'Edit Holding';
+    document.getElementById('holding-id').value = allocation.id;
+    document.getElementById('asset-type').value = allocation.asset_type;
+    document.getElementById('holding-symbol').value = allocation.symbol || '';
+    document.getElementById('holding-name').value = allocation.name;
+    document.getElementById('holding-percentage').value = allocation.percentage;
+
+    // Show/hide symbol field
+    const symbolGroup = document.getElementById('symbol-group');
+    if (SYMBOL_REQUIRED.includes(allocation.asset_type)) {
+        symbolGroup.style.display = 'block';
+    } else {
+        symbolGroup.style.display = 'none';
+    }
+
+    holdingModal.show();
+}
+
+// Symbol lookup
+async function lookupSymbol() {
+    const symbol = document.getElementById('holding-symbol').value.trim().toUpperCase();
+    const feedbackEl = document.getElementById('symbol-feedback');
+    const nameInput = document.getElementById('holding-name');
+
+    if (!symbol) {
+        feedbackEl.textContent = 'Enter a symbol to lookup';
+        feedbackEl.className = 'form-text text-warning';
+        return;
+    }
+
+    feedbackEl.textContent = 'Looking up...';
+    feedbackEl.className = 'form-text text-muted';
+
+    try {
+        const response = await fetch(`/api/portfolio/validate-symbol/${symbol}`);
+        const data = await response.json();
+
+        if (data.error) {
+            feedbackEl.textContent = data.error;
+            feedbackEl.className = 'form-text text-danger';
+        } else {
+            feedbackEl.textContent = `Found: ${data.name} (${data.type})`;
+            feedbackEl.className = 'form-text text-success';
+            nameInput.value = data.name;
+        }
+    } catch (error) {
+        feedbackEl.textContent = 'Lookup failed';
+        feedbackEl.className = 'form-text text-danger';
+    }
+}
+
+// Save holding
+async function saveHolding() {
+    const id = document.getElementById('holding-id').value;
+    const assetType = document.getElementById('asset-type').value;
+    const symbol = document.getElementById('holding-symbol').value.trim();
+    const name = document.getElementById('holding-name').value.trim();
+    const percentage = parseFloat(document.getElementById('holding-percentage').value);
+
+    // Validation
+    if (!assetType || !name || isNaN(percentage)) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    if (SYMBOL_REQUIRED.includes(assetType) && !symbol) {
+        alert('Symbol is required for this asset type');
+        return;
+    }
+
+    const payload = {
+        asset_type: assetType,
+        symbol: symbol || null,
+        name: name,
+        percentage: percentage
+    };
+
+    try {
+        let response;
+        if (id) {
+            // Update existing
+            response = await fetch(`/api/portfolio/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } else {
+            // Add new
+            response = await fetch('/api/portfolio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        holdingModal.hide();
+        loadPortfolioData();
+    } catch (error) {
+        console.error('Error saving holding:', error);
+        alert('Failed to save holding');
+    }
+}
+
+// Show delete modal
+function showDeleteModal(id, name) {
+    deleteId = id;
+    document.getElementById('delete-holding-name').textContent = name;
+    deleteModal.show();
+}
+
+// Confirm delete
+async function confirmDelete() {
+    if (!deleteId) return;
+
+    try {
+        const response = await fetch(`/api/portfolio/${deleteId}`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+
+        deleteModal.hide();
+        deleteId = null;
+        loadPortfolioData();
+    } catch (error) {
+        console.error('Error deleting holding:', error);
+        alert('Failed to delete holding');
+    }
+}
+
+// Load portfolio AI summary
+async function loadPortfolioSummary() {
+    try {
+        const response = await fetch('/api/portfolio/summary');
+        const data = await response.json();
+
+        const contentDiv = document.getElementById('portfolio-summary-content');
+        const errorDiv = document.getElementById('portfolio-summary-error');
+        const timestampSpan = document.getElementById('portfolio-summary-timestamp');
+
+        if (data.error) {
+            contentDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        // Use marked library for markdown rendering
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({
+                breaks: true,
+                gfm: true
+            });
+            contentDiv.innerHTML = marked.parse(data.summary);
+        } else {
+            contentDiv.innerHTML = `<p>${data.summary.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>')}</p>`;
+        }
+
+        contentDiv.classList.remove('d-none');
+        errorDiv.classList.add('d-none');
+
+        // Update timestamp
+        if (data.generated_at) {
+            const date = new Date(data.generated_at);
+            timestampSpan.textContent = `Generated: ${date.toLocaleString()}`;
+        }
+    } catch (error) {
+        console.error('Error loading portfolio summary:', error);
+        document.getElementById('portfolio-summary-content').classList.add('d-none');
+        document.getElementById('portfolio-summary-error').classList.remove('d-none');
+    }
+}
+
+// Refresh portfolio AI summary
+async function refreshPortfolioSummary() {
+    const btn = document.getElementById('refresh-summary-btn');
+    const contentDiv = document.getElementById('portfolio-summary-content');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Generating...';
+    contentDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Generating analysis... This may take a moment.</p>';
+    contentDiv.classList.remove('d-none');
+    document.getElementById('portfolio-summary-error').classList.add('d-none');
+
+    try {
+        const response = await fetch('/api/portfolio/summary/generate', {
+            method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            contentDiv.innerHTML = `<p class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.error}</p>`;
+        } else {
+            // Reload the summary to get proper formatting
+            await loadPortfolioSummary();
+        }
+    } catch (error) {
+        console.error('Error generating summary:', error);
+        contentDiv.innerHTML = '<p class="text-danger"><i class="bi bi-exclamation-circle"></i> Failed to generate analysis</p>';
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Analysis';
+    }
+}
+</script>
+{% endblock extra_js %}
