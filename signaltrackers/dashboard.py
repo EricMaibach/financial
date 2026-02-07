@@ -1146,6 +1146,19 @@ def api_recessions():
 def api_metric_data(metric_name):
     """API endpoint to get data for a specific metric."""
 
+    # Metric name aliases - map common/short names to actual CSV file names
+    metric_aliases = {
+        'cpi_yoy': 'cpi',
+        'hy_spread': 'high_yield_spread',
+        'ig_spread': 'investment_grade_spread',
+        'vix': 'vix_price',
+        'sp500': 'sp500_price',
+        'market_breadth': 'market_breadth_ratio',
+    }
+
+    # Apply alias if one exists
+    metric_name = metric_aliases.get(metric_name, metric_name)
+
     # Special handling for divergence_gap (calculated metric)
     if metric_name == 'divergence_gap':
         gold_df = load_csv_data('gold_price.csv')

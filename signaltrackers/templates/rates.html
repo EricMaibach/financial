@@ -794,22 +794,23 @@ async function loadCreditSpreads() {
 
         if (hyData && hyData.values && hyData.values.length > 0) {
             fullHYSpreadData = hyData;
-            const current = hyData.values[hyData.values.length - 1];
-            document.getElementById('hy-spread-value').textContent = `${current.toFixed(0)} bp`;
+            // FRED data is in percentage form (e.g., 3.5 = 350bp), convert to basis points
+            const currentBps = hyData.values[hyData.values.length - 1] * 100;
+            document.getElementById('hy-spread-value').textContent = `${currentBps.toFixed(0)} bp`;
 
             if (hyData.values.length > 30) {
-                const change30d = current - hyData.values[hyData.values.length - 31];
+                const change30d = (hyData.values[hyData.values.length - 1] - hyData.values[hyData.values.length - 31]) * 100;
                 document.getElementById('hy-spread-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
             }
 
             const statusEl = document.getElementById('hy-spread-status');
-            if (current > 500) {
+            if (currentBps > 500) {
                 statusEl.textContent = 'STRESS';
                 statusEl.className = 'badge bg-danger';
-            } else if (current > 350) {
+            } else if (currentBps > 350) {
                 statusEl.textContent = 'ELEVATED';
                 statusEl.className = 'badge bg-warning';
-            } else if (current > 300) {
+            } else if (currentBps > 300) {
                 statusEl.textContent = 'NORMAL';
                 statusEl.className = 'badge bg-secondary';
             } else {
@@ -824,22 +825,23 @@ async function loadCreditSpreads() {
 
         if (igData && igData.values && igData.values.length > 0) {
             fullIGSpreadData = igData;
-            const current = igData.values[igData.values.length - 1];
-            document.getElementById('ig-spread-value').textContent = `${current.toFixed(0)} bp`;
+            // FRED data is in percentage form (e.g., 1.2 = 120bp), convert to basis points
+            const currentBps = igData.values[igData.values.length - 1] * 100;
+            document.getElementById('ig-spread-value').textContent = `${currentBps.toFixed(0)} bp`;
 
             if (igData.values.length > 30) {
-                const change30d = current - igData.values[igData.values.length - 31];
+                const change30d = (igData.values[igData.values.length - 1] - igData.values[igData.values.length - 31]) * 100;
                 document.getElementById('ig-spread-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
             }
 
             const statusEl = document.getElementById('ig-spread-status');
-            if (current > 150) {
+            if (currentBps > 150) {
                 statusEl.textContent = 'STRESS';
                 statusEl.className = 'badge bg-danger';
-            } else if (current > 120) {
+            } else if (currentBps > 120) {
                 statusEl.textContent = 'ELEVATED';
                 statusEl.className = 'badge bg-warning';
-            } else if (current > 100) {
+            } else if (currentBps > 100) {
                 statusEl.textContent = 'NORMAL';
                 statusEl.className = 'badge bg-secondary';
             } else {
@@ -1235,14 +1237,19 @@ function buildCreditSpreadsChart() {
     const filteredHY = filterByTimeframe(fullHYSpreadData.dates, fullHYSpreadData.values, creditTimeframe);
     if (filteredHY.dates.length === 0) return;
 
-    // Align IG and CCC data to HY dates
-    let alignedIG = null;
-    let alignedCCC = null;
+    // Convert HY values from percentage to basis points
+    const hyBps = filteredHY.values.map(v => v * 100);
+
+    // Align IG and CCC data to HY dates and convert to basis points
+    let alignedIGBps = null;
+    let alignedCCCBps = null;
     if (fullIGSpreadData) {
-        alignedIG = alignDataByDate(filteredHY.dates, fullIGSpreadData.dates, fullIGSpreadData.values);
+        const alignedIG = alignDataByDate(filteredHY.dates, fullIGSpreadData.dates, fullIGSpreadData.values);
+        alignedIGBps = alignedIG.map(v => v !== null ? v * 100 : null);
     }
     if (fullCCCSpreadData) {
-        alignedCCC = alignDataByDate(filteredHY.dates, fullCCCSpreadData.dates, fullCCCSpreadData.values);
+        const alignedCCC = alignDataByDate(filteredHY.dates, fullCCCSpreadData.dates, fullCCCSpreadData.values);
+        alignedCCCBps = alignedCCC.map(v => v !== null ? v * 100 : null);
     }
 
     const startDate = filteredHY.dates[0];
@@ -1288,7 +1295,7 @@ function buildCreditSpreadsChart() {
 
     const datasets = [{
         label: 'High Yield',
-        data: filteredHY.values,
+        data: hyBps,
         borderColor: 'rgb(220, 53, 69)',
         backgroundColor: 'rgba(220, 53, 69, 0.1)',
         borderWidth: 2,
@@ -1297,10 +1304,10 @@ function buildCreditSpreadsChart() {
         tension: 0.1
     }];
 
-    if (alignedIG) {
+    if (alignedIGBps) {
         datasets.push({
             label: 'Investment Grade',
-            data: alignedIG,
+            data: alignedIGBps,
             borderColor: 'rgb(13, 110, 253)',
             borderWidth: 2,
             fill: false,
@@ -1309,10 +1316,10 @@ function buildCreditSpreadsChart() {
         });
     }
 
-    if (alignedCCC) {
+    if (alignedCCCBps) {
         datasets.push({
             label: 'CCC-Rated',
-            data: alignedCCC,
+            data: alignedCCCBps,
             borderColor: 'rgb(255, 193, 7)',
             borderWidth: 2,
             fill: false,

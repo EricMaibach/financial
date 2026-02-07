@@ -83,7 +83,9 @@ class MarketSignalsTracker:
             # Real Yields & Inflation Expectations (Gold Drivers)
             'real_yield_10y': 'DFII10',  # 10-Year Real Interest Rate (TIPS yield)
             'breakeven_inflation_10y': 'T10YIE',  # 10-Year Breakeven Inflation Rate
-            'treasury_10y': 'DGS10'  # 10-Year Treasury Constant Maturity Rate (nominal yield)
+            'treasury_10y': 'DGS10',  # 10-Year Treasury Constant Maturity Rate (nominal yield)
+            # Federal Reserve Policy Rate
+            'fed_funds_rate': 'FEDFUNDS'  # Effective Federal Funds Rate (Monthly)
         }
 
         # ETF tickers organized by category

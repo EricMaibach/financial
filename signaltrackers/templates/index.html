@@ -902,8 +902,8 @@ function renderMoversChart(days) {
     const useAllData = days === 'all' || isNaN(days);
     const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-    // Find the common date range across all metrics
-    let commonDates = null;
+    // Collect all dates (union) and build date maps for each metric
+    const allDates = new Set();
 
     const filteredData = moversTimeSeriesCache.map(metric => {
         // Create date-value map
@@ -912,22 +912,9 @@ function renderMoversChart(days) {
             const d = new Date(date);
             if (d >= cutoffDate) {
                 dateMap.set(date, metric.values[idx]);
+                allDates.add(date);
             }
         });
-
-        // Get filtered dates
-        const filteredDates = metric.dates.filter(date => new Date(date) >= cutoffDate);
-
-        if (!commonDates) {
-            commonDates = new Set(filteredDates);
-        } else {
-            // Find intersection of dates
-            const newCommon = new Set();
-            filteredDates.forEach(d => {
-                if (commonDates.has(d)) newCommon.add(d);
-            });
-            commonDates = newCommon;
-        }
 
         return {
             ...metric,
@@ -935,11 +922,11 @@ function renderMoversChart(days) {
         };
     });
 
-    // Convert to sorted array
-    const sortedDates = Array.from(commonDates).sort();
+    // Convert to sorted array (using union of all dates)
+    const sortedDates = Array.from(allDates).sort();
 
     if (sortedDates.length === 0) {
-        console.warn('No common dates found for movers chart');
+        console.warn('No dates found for movers chart');
         return;
     }
 
@@ -974,6 +961,7 @@ function renderMoversChart(days) {
             fill: false,
             pointRadius: 0,
             pointHoverRadius: 4,
+            spanGaps: true,  // Connect lines across null/missing values
             // Store original values for tooltip
             originalValues: alignedValues
         };

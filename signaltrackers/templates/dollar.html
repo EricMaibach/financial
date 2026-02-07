@@ -573,24 +573,28 @@ async function loadDollarData() {
                 document.getElementById('dxy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
             }
 
-            // DXY status
+            // Percentile calculation (used for both status badges)
+            const percentile = calcPercentile(dxyData.values, current);
+
+            // DXY status - based on percentile since we're using UUP ETF data, not actual DXY
             const statusEl = document.getElementById('dxy-status');
-            if (current > 105) {
-                statusEl.textContent = 'STRONG';
-                statusEl.className = 'badge bg-success';
-            } else if (current > 100) {
-                statusEl.textContent = 'FIRM';
-                statusEl.className = 'badge bg-secondary';
-            } else if (current > 95) {
-                statusEl.textContent = 'NEUTRAL';
-                statusEl.className = 'badge bg-warning';
-            } else {
-                statusEl.textContent = 'WEAK';
-                statusEl.className = 'badge bg-danger';
+            if (percentile !== null) {
+                if (percentile > 80) {
+                    statusEl.textContent = 'STRONG';
+                    statusEl.className = 'badge bg-success';
+                } else if (percentile > 50) {
+                    statusEl.textContent = 'FIRM';
+                    statusEl.className = 'badge bg-secondary';
+                } else if (percentile > 20) {
+                    statusEl.textContent = 'NEUTRAL';
+                    statusEl.className = 'badge bg-warning';
+                } else {
+                    statusEl.textContent = 'WEAK';
+                    statusEl.className = 'badge bg-danger';
+                }
             }
 
-            // Percentile
-            const percentile = calcPercentile(dxyData.values, current);
+            // Percentile display
             if (percentile !== null) {
                 document.getElementById('dxy-percentile').textContent = percentile.toFixed(1) + '%';
                 const percStatusEl = document.getElementById('dxy-percentile-status');
@@ -815,23 +819,8 @@ function buildDxyChart() {
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Add 100 level annotation
-    recessionAnnotations['level100'] = {
-        type: 'line',
-        yMin: 100,
-        yMax: 100,
-        borderColor: 'rgba(128, 128, 128, 0.5)',
-        borderWidth: 1,
-        borderDash: [5, 5],
-        label: {
-            display: true,
-            content: '100 (Pivot)',
-            position: 'end',
-            backgroundColor: 'rgba(128, 128, 128, 0.7)',
-            color: 'white',
-            font: { size: 9 }
-        }
-    };
+    // Note: Using UUP ETF data (trades around $25-28), not the actual DXY index (trades around 100)
+    // No annotation line needed since UUP and DXY have different scales
 
     if (dxyChart) dxyChart.destroy();
 
