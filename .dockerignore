@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+.eggs
+*.egg
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# Virtual environments
+venv
+.venv
+env
+.env
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Documentation
+*.md
+!README.md
+
+# Claude/AI artifacts
+.claude
+
+# Logs (will be created fresh in container)
+signaltrackers/logs/*.log
+
+# Local development files
+*.local
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+tests/
+*_test.py
+test_*.py

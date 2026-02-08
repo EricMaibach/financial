@@ -40,8 +40,9 @@ from portfolio import (
 
 app = Flask(__name__)
 
-# Initialize OpenAI client
-openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+# Initialize OpenAI client (only if API key is available)
+openai_api_key = os.environ.get('OPENAI_API_KEY')
+openai_client = OpenAI(api_key=openai_api_key) if openai_api_key else None
 
 # Track data reload status
 reload_status = {
