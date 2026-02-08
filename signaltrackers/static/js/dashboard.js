@@ -90,74 +90,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateLastUpdatedTime();
 });
 
-// Reload data functionality
-async function reloadData() {
-    const button = document.getElementById('reload-data-btn');
-    const originalContent = button.innerHTML;
-
-    try {
-        // Disable button and show loading state
-        button.disabled = true;
-        button.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Reloading...';
-
-        // Trigger reload
-        const response = await fetch('/api/reload-data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const result = await response.json();
-
-        if (response.status === 409) {
-            alert('Data reload is already in progress. Please wait...');
-            button.disabled = false;
-            button.innerHTML = originalContent;
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(result.message || 'Failed to start reload');
-        }
-
-        // Poll for completion
-        const pollInterval = setInterval(async () => {
-            try {
-                const statusResponse = await fetch('/api/reload-status');
-                const status = await statusResponse.json();
-
-                if (!status.in_progress) {
-                    clearInterval(pollInterval);
-
-                    if (status.error) {
-                        alert(`Reload failed: ${status.error}`);
-                        button.disabled = false;
-                        button.innerHTML = originalContent;
-                    } else {
-                        // Success - refresh the page
-                        button.innerHTML = '<i class="bi bi-check-circle"></i> Reload Complete!';
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    }
-                }
-            } catch (error) {
-                clearInterval(pollInterval);
-                console.error('Error checking reload status:', error);
-                button.disabled = false;
-                button.innerHTML = originalContent;
-            }
-        }, 2000); // Poll every 2 seconds
-
-    } catch (error) {
-        console.error('Error reloading data:', error);
-        alert(`Failed to reload data: ${error.message}`);
-        button.disabled = false;
-        button.innerHTML = originalContent;
-    }
-}
-
 // Update last updated time
 async function updateLastUpdatedTime() {
     try {
@@ -183,9 +115,6 @@ window.DashboardUtils = {
     loadChart,
     commonChartOptions
 };
-
-// Export reload function globally so it can be called from inline onclick
-window.reloadData = reloadData;
 
 // AI Chat Functionality
 const AIChatModule = {
