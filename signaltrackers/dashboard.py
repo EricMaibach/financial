@@ -13,7 +13,11 @@ import json
 import subprocess
 import threading
 import os
+import atexit
 from openai import OpenAI
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import pytz
 from kalshi_data import fetch_all_prediction_markets
 from web_search import SEARCH_FUNCTION_DEFINITION, execute_search_function, is_tavily_configured
 from ai_summary import (
@@ -47,6 +51,70 @@ reload_status = {
 }
 
 DATA_DIR = Path("data")
+
+# Background scheduler for automatic data refresh
+scheduler = None
+
+
+def init_scheduler():
+    """Initialize background scheduler for automatic data refresh."""
+    global scheduler
+
+    scheduler = BackgroundScheduler()
+
+    # Daily refresh at 5:30 PM Eastern, Monday-Friday
+    eastern = pytz.timezone('US/Eastern')
+    scheduler.add_job(
+        scheduled_data_refresh,
+        CronTrigger(hour=17, minute=30, day_of_week='mon-fri', timezone=eastern),
+        id='daily_refresh',
+        replace_existing=True,
+        name='Daily Data Refresh'
+    )
+
+    scheduler.start()
+    print(f"Scheduler started. Next refresh: {scheduler.get_job('daily_refresh').next_run_time}")
+
+    # Ensure scheduler shuts down on exit
+    atexit.register(lambda: scheduler.shutdown() if scheduler else None)
+
+    return scheduler
+
+
+def scheduled_data_refresh():
+    """Background job to refresh all data and AI briefings."""
+    print(f"[{datetime.now()}] Starting scheduled data refresh...")
+
+    # Use the existing run_data_collection function
+    # which handles all data collection and AI summary generation
+    run_data_collection()
+
+    print(f"[{datetime.now()}] Scheduled data refresh completed.")
+
+
+def get_scheduler_status():
+    """Get current scheduler status for API endpoint."""
+    if scheduler is None:
+        return {
+            'enabled': False,
+            'message': 'Scheduler not initialized'
+        }
+
+    job = scheduler.get_job('daily_refresh')
+    if job:
+        return {
+            'enabled': True,
+            'next_run': job.next_run_time.isoformat() if job.next_run_time else None,
+            'job_name': job.name,
+            'schedule': 'Daily at 5:30 PM Eastern (Mon-Fri)'
+        }
+
+    return {
+        'enabled': True,
+        'next_run': None,
+        'message': 'No scheduled job found'
+    }
+
 
 # Metric descriptions for educational purposes
 METRIC_DESCRIPTIONS = {
@@ -1370,6 +1438,14 @@ def api_reload_status():
         'last_reload': reload_status['last_reload'],
         'error': reload_status['error']
     })
+
+
+@app.route('/api/scheduler-status')
+def api_scheduler_status():
+    """Get current scheduler status including next refresh time."""
+    status = get_scheduler_status()
+    status['last_reload'] = reload_status['last_reload']
+    return jsonify(status)
 
 
 @app.route('/api/prediction-markets')
@@ -3051,4 +3127,10 @@ IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools
 
 
 if __name__ == '__main__':
+    # Initialize the scheduler for automatic daily refresh
+    init_scheduler()
+
+    # Run Flask app
+    # Note: For production, use Gunicorn with --preload flag:
+    # gunicorn -w 1 --preload dashboard:app
     app.run(debug=True, host='0.0.0.0', port=5000)
