@@ -1941,9 +1941,9 @@ def api_portfolio_validate_symbol(symbol):
 @app.route('/api/portfolio/summary')
 @login_required
 def api_portfolio_summary():
-    """Get the current portfolio AI summary."""
-    from ai_summary import get_portfolio_summary_for_display
-    summary = get_portfolio_summary_for_display()
+    """Get the current user's portfolio AI summary."""
+    from ai_summary import db_get_portfolio_summary_for_display
+    summary = db_get_portfolio_summary_for_display(current_user.id)
     if summary:
         return jsonify(summary)
     return jsonify({
@@ -1988,8 +1988,13 @@ def api_generate_portfolio_summary():
         # Generate market summary for context
         market_summary = generate_portfolio_market_context()
 
-        # Generate AI summary using user's API key
-        result = generate_portfolio_summary(portfolio_data, market_summary, user_client=user_client)
+        # Generate AI summary using user's API key and save to user's account
+        result = generate_portfolio_summary(
+            portfolio_data,
+            market_summary,
+            user_client=user_client,
+            user_id=current_user.id
+        )
 
         if result['success']:
             return jsonify({

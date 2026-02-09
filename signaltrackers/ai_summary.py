@@ -1547,7 +1547,123 @@ def get_recent_portfolio_summaries(days=3):
     return sorted_summaries[:days]
 
 
-def generate_portfolio_summary(portfolio_data, market_context, user_client=None):
+# =============================================================================
+# Database-Backed Portfolio Summary Functions (Multi-User Mode)
+# =============================================================================
+
+# Database imports (optional - only available when Flask app is running)
+try:
+    from extensions import db
+    from models.portfolio_summary import PortfolioSummary
+    DB_AVAILABLE = True
+except ImportError:
+    DB_AVAILABLE = False
+    db = None
+    PortfolioSummary = None
+
+
+def db_save_portfolio_summary(user_id, date_str, summary_text, portfolio_context=None):
+    """
+    Save a portfolio AI summary to database for a specific user.
+
+    Args:
+        user_id: UUID of the user
+        date_str: Date string in YYYY-MM-DD format
+        summary_text: The AI-generated summary
+        portfolio_context: Optional snapshot of portfolio data
+    """
+    if not DB_AVAILABLE:
+        return
+
+    # Check if entry exists for this user and date
+    existing = PortfolioSummary.query.filter_by(
+        user_id=user_id,
+        date=date_str
+    ).first()
+
+    if existing:
+        # Update existing
+        existing.summary = summary_text
+        existing.portfolio_context = portfolio_context[:1000] if portfolio_context else None
+        existing.generated_at = datetime.now()
+    else:
+        # Create new
+        summary = PortfolioSummary(
+            user_id=user_id,
+            date=date_str,
+            summary=summary_text,
+            portfolio_context=portfolio_context[:1000] if portfolio_context else None
+        )
+        db.session.add(summary)
+
+    db.session.commit()
+
+
+def db_get_latest_portfolio_summary(user_id):
+    """
+    Get the most recent portfolio AI summary for a user.
+
+    Args:
+        user_id: UUID of the user
+
+    Returns:
+        Dict with summary data or None
+    """
+    if not DB_AVAILABLE:
+        return None
+
+    summary = PortfolioSummary.query.filter_by(user_id=user_id)\
+        .order_by(PortfolioSummary.date.desc())\
+        .first()
+
+    if summary:
+        return summary.to_dict()
+    return None
+
+
+def db_get_recent_portfolio_summaries(user_id, days=3):
+    """
+    Get recent portfolio summaries for a user for context.
+
+    Args:
+        user_id: UUID of the user
+        days: Number of recent summaries to return
+
+    Returns:
+        List of summary dicts
+    """
+    if not DB_AVAILABLE:
+        return []
+
+    summaries = PortfolioSummary.query.filter_by(user_id=user_id)\
+        .order_by(PortfolioSummary.date.desc())\
+        .limit(days)\
+        .all()
+
+    return [s.to_dict() for s in summaries]
+
+
+def db_get_portfolio_summary_for_display(user_id):
+    """
+    Get the latest portfolio summary formatted for display.
+
+    Args:
+        user_id: UUID of the user
+
+    Returns:
+        Dict with summary data or None
+    """
+    summary = db_get_latest_portfolio_summary(user_id)
+    if summary:
+        return {
+            'date': summary['date'],
+            'generated_at': summary['generated_at'],
+            'summary': summary['summary']
+        }
+    return None
+
+
+def generate_portfolio_summary(portfolio_data, market_context, user_client=None, user_id=None):
     """
     Generate an AI portfolio analysis summary.
 
@@ -1556,6 +1672,8 @@ def generate_portfolio_summary(portfolio_data, market_context, user_client=None)
         market_context: String with market data and other AI briefings
         user_client: Optional AI client to use (for user-initiated requests).
                      If None, uses system AI client.
+        user_id: UUID of the user (for per-user summary storage and context).
+                 If None, uses shared file storage (legacy mode).
 
     Returns:
         dict with 'success', 'summary', and 'error' keys
@@ -1577,8 +1695,12 @@ def generate_portfolio_summary(portfolio_data, market_context, user_client=None)
     try:
         today = datetime.now().strftime('%Y-%m-%d')
 
-        # Get previous portfolio summaries for context
-        recent_summaries = get_recent_portfolio_summaries(days=3)
+        # Get previous portfolio summaries for context (user-specific if user_id provided)
+        if user_id and DB_AVAILABLE:
+            recent_summaries = db_get_recent_portfolio_summaries(user_id, days=3)
+        else:
+            recent_summaries = get_recent_portfolio_summaries(days=3)
+
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS PORTFOLIO ANALYSES (for continuity):\n"
@@ -1640,13 +1762,23 @@ Remember: Analyze their allocation against current market conditions, be specifi
 
         summary = result['content']
 
-        # Save the summary
+        # Save the summary (user-specific if user_id provided)
         portfolio_context_str = f"Holdings: {len(portfolio_data.get('holdings', []))}, Total: {portfolio_data.get('total_allocation_pct', 0)}%"
-        save_portfolio_summary_entry(
-            date_str=today,
-            summary_text=summary,
-            portfolio_context=portfolio_context_str
-        )
+
+        if user_id and DB_AVAILABLE:
+            db_save_portfolio_summary(
+                user_id=user_id,
+                date_str=today,
+                summary_text=summary,
+                portfolio_context=portfolio_context_str
+            )
+        else:
+            # Legacy: save to shared file
+            save_portfolio_summary_entry(
+                date_str=today,
+                summary_text=summary,
+                portfolio_context=portfolio_context_str
+            )
 
         print(f"[Portfolio Summary] Generated portfolio summary for {today}")
         return {
