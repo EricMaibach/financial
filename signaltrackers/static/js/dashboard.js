@@ -246,7 +246,7 @@ const AIChatModule = {
         } catch (error) {
             console.error('Chat error:', error);
             this.removeLoadingIndicator(loadingId);
-            this.addMessage('ai', `Sorry, I encountered an error: ${error.message}. Please make sure the OPENAI_API_KEY environment variable is set.`);
+            this.addMessage('ai', `Sorry, I encountered an error: ${error.message}. Please check your API key configuration in Settings.`);
             // Remove the failed user message from history
             this.conversationHistory.pop();
         } finally {

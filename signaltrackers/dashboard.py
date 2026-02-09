@@ -3134,8 +3134,11 @@ def generate_dollar_market_summary():
 @limiter.limit("10 per minute")
 @login_required
 def api_chat():
-    """Handle chat messages with user's API key, with web search capability."""
-    from services.ai_service import get_user_ai_client, AIServiceError
+    """Handle chat messages with user's API key, with web search capability.
+
+    Supports both OpenAI and Anthropic APIs with tool calling.
+    """
+    from services.ai_service import get_user_ai_client, AIServiceError, OPENAI_MODEL, ANTHROPIC_MODEL
 
     try:
         data = request.json
@@ -3151,15 +3154,9 @@ def api_chat():
         except AIServiceError as e:
             return jsonify({'error': str(e)}), 400
 
-        # Currently chatbot only supports OpenAI due to tool calling
-        if provider != 'openai':
-            return jsonify({
-                'error': 'Chatbot currently requires OpenAI. Please configure an OpenAI API key in Settings.'
-            }), 400
-
         # Check if web search is available
         web_search_available = is_tavily_configured()
-        print(f"[CHAT] Web search available: {web_search_available}")
+        print(f"[CHAT] Provider: {provider}, Web search available: {web_search_available}")
 
         # Build system message - now tool-based, not data-dump
         system_message = """You are a financial markets expert assistant with access to real-time market data through tools.
@@ -3192,153 +3189,17 @@ YOUR ROLE:
 
 IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools to get current data. Don't rely on potentially stale information."""
 
-        # Build messages array: system message + conversation history + current message
-        messages = [{"role": "system", "content": system_message}]
-
-        # Add conversation history (excluding the current message which is already in history)
-        # The history includes the current user message, so we add all but the last one
-        for msg in conversation_history[:-1] if conversation_history else []:
-            if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
-                messages.append({"role": msg['role'], "content": msg['content']})
-
-        # Add current user message
-        messages.append({"role": "user", "content": user_message})
-
-        # Build API call parameters
-        api_params = {
-            "model": "gpt-5.2",
-            "messages": messages,
-            "temperature": 0.7,
-            "max_completion_tokens": 800
-        }
-
-        # Add function calling tools - metric tools always available, web search if configured
-        tools = [
-            {"type": "function", "function": LIST_METRICS_FUNCTION},
-            {"type": "function", "function": GET_METRIC_FUNCTION}
-        ]
-        if web_search_available:
-            tools.append({"type": "function", "function": SEARCH_FUNCTION_DEFINITION})
-
-        api_params["tools"] = tools
-        api_params["tool_choice"] = "auto"
-
-        # API call with tool calling loop (handles multiple rounds of tool calls)
-        max_iterations = 5  # Prevent infinite loops
-        iteration = 0
-        ai_message = None
-
-        print(f"[CHAT] Starting chat request for message: {user_message[:100]}...")
-        print(f"[CHAT] Using model: {api_params['model']}")
-        print(f"[CHAT] Web search enabled: {web_search_available}")
-        print(f"[CHAT] Conversation history length: {len(conversation_history)}")
-
-        while iteration < max_iterations:
-            iteration += 1
-            print(f"[CHAT] API call iteration {iteration}/{max_iterations}")
-
-            response = user_client.chat.completions.create(**api_params)
-            response_message = response.choices[0].message
-
-            # Log full response details
-            print(f"[CHAT] Response finish_reason: {response.choices[0].finish_reason}")
-            print(f"[CHAT] Response message role: {response_message.role}")
-            print(f"[CHAT] Response message content type: {type(response_message.content)}")
-            print(f"[CHAT] Response message content: {repr(response_message.content)[:200] if response_message.content else 'None'}")
-            print(f"[CHAT] Response has tool_calls: {bool(response_message.tool_calls)}")
-
-            # Check for refusal (some models have this)
-            if hasattr(response_message, 'refusal') and response_message.refusal:
-                print(f"[CHAT] Model refused: {response_message.refusal}")
-
-            if response_message.tool_calls:
-                print(f"[CHAT] Tool calls requested: {[tc.function.name for tc in response_message.tool_calls]}")
-                # Process each tool call
-                messages.append(response_message)
-
-                for tool_call in response_message.tool_calls:
-                    function_name = tool_call.function.name
-                    function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
-                    print(f"[CHAT] Executing {function_name} with args: {function_args}")
-
-                    # Route to appropriate function handler
-                    if function_name == "search_web":
-                        result = execute_search_function(function_args)
-                    elif function_name in ["list_available_metrics", "get_metric_data"]:
-                        result = execute_metric_function(function_name, function_args)
-                    else:
-                        result = json.dumps({"error": f"Unknown function: {function_name}"})
-
-                    print(f"[CHAT] {function_name} returned {len(result)} chars")
-
-                    # Add function result to messages
-                    messages.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "name": function_name,
-                        "content": result
-                    })
-
-                # Update api_params messages for next iteration
-                api_params["messages"] = messages
-                api_params["max_completion_tokens"] = 1000  # Allow longer response with tool results
-            else:
-                # No more tool calls - we have the final response
-                ai_message = response_message.content
-                print(f"[CHAT] Final response - content is {'present' if ai_message else 'EMPTY/NONE'}")
-                if ai_message:
-                    print(f"[CHAT] Response preview: {ai_message[:200]}...")
-                break
-
-        print(f"[CHAT] Loop completed after {iteration} iterations")
-
-        # Handle case where we exhausted iterations or got None content
-        if ai_message is None or ai_message.strip() == "":
-            print(f"[CHAT] ERROR: Model returned empty content after {iteration} iterations")
-            print(f"[CHAT] Attempting retry without tools...")
-
-            # Retry without tools - simpler request
-            try:
-                retry_params = {
-                    "model": "gpt-5.2",
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful financial markets assistant. Answer the user's question concisely."},
-                        {"role": "user", "content": user_message}
-                    ],
-                    "temperature": 0.7,
-                    "max_completion_tokens": 500
-                }
-                retry_response = user_client.chat.completions.create(**retry_params)
-                retry_content = retry_response.choices[0].message.content
-                print(f"[CHAT] Retry finish_reason: {retry_response.choices[0].finish_reason}")
-                print(f"[CHAT] Retry content: {repr(retry_content)[:200] if retry_content else 'None'}")
-
-                if retry_content and retry_content.strip():
-                    ai_message = retry_content
-                    print(f"[CHAT] Retry successful!")
-                else:
-                    print(f"[CHAT] Retry also returned empty content!")
-                    ai_message = "I apologize, but the AI service is returning empty responses. This appears to be a temporary issue with the GPT-5.2 model. Please try again in a moment."
-            except Exception as retry_error:
-                print(f"[CHAT] Retry failed with error: {retry_error}")
-                ai_message = f"I apologize, but I wasn't able to generate a response. Error details: Model returned empty content."
+        # Route to appropriate provider handler
+        if provider == 'anthropic':
+            ai_message = _chat_with_anthropic(
+                user_client, system_message, user_message,
+                conversation_history, web_search_available, ANTHROPIC_MODEL
+            )
         else:
-            # Filter out any reasoning artifacts that might leak through
-            import re
-            lines = ai_message.split('\n')
-            filtered_lines = []
-            for line in lines:
-                # Skip lines that look like internal reasoning
-                if re.match(r'^(Need |Oops |Let me |I should |Thinking:|<think>|</think>)', line.strip()):
-                    print(f"[CHAT] Filtering out reasoning artifact: {line[:50]}")
-                    continue
-                filtered_lines.append(line)
-            ai_message = '\n'.join(filtered_lines).strip()
-
-            # If filtering removed everything, use fallback
-            if not ai_message:
-                print(f"[CHAT] WARNING: All content was filtered as reasoning artifacts")
-                ai_message = "I apologize, but I wasn't able to generate a response. Please try asking your question again."
+            ai_message = _chat_with_openai(
+                user_client, system_message, user_message,
+                conversation_history, web_search_available, OPENAI_MODEL
+            )
 
         return jsonify({
             'message': ai_message,
@@ -3348,7 +3209,198 @@ IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools
 
     except Exception as e:
         print(f"Chat error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+
+def _chat_with_openai(client, system_message, user_message, conversation_history, web_search_available, model):
+    """Handle chat with OpenAI API."""
+    # Build messages array
+    messages = [{"role": "system", "content": system_message}]
+
+    # Add conversation history
+    for msg in conversation_history[:-1] if conversation_history else []:
+        if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
+            messages.append({"role": msg['role'], "content": msg['content']})
+
+    messages.append({"role": "user", "content": user_message})
+
+    # Build tools in OpenAI format
+    tools = [
+        {"type": "function", "function": LIST_METRICS_FUNCTION},
+        {"type": "function", "function": GET_METRIC_FUNCTION}
+    ]
+    if web_search_available:
+        tools.append({"type": "function", "function": SEARCH_FUNCTION_DEFINITION})
+
+    api_params = {
+        "model": model,
+        "messages": messages,
+        "temperature": 0.7,
+        "max_completion_tokens": 800,
+        "tools": tools,
+        "tool_choice": "auto"
+    }
+
+    print(f"[CHAT-OPENAI] Starting request, model: {model}")
+
+    max_iterations = 5
+    iteration = 0
+    ai_message = None
+
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"[CHAT-OPENAI] Iteration {iteration}/{max_iterations}")
+
+        response = client.chat.completions.create(**api_params)
+        response_message = response.choices[0].message
+
+        print(f"[CHAT-OPENAI] finish_reason: {response.choices[0].finish_reason}")
+
+        if response_message.tool_calls:
+            print(f"[CHAT-OPENAI] Tool calls: {[tc.function.name for tc in response_message.tool_calls]}")
+            messages.append(response_message)
+
+            for tool_call in response_message.tool_calls:
+                function_name = tool_call.function.name
+                function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+
+                result = _execute_tool(function_name, function_args)
+                print(f"[CHAT-OPENAI] {function_name} returned {len(result)} chars")
+
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "name": function_name,
+                    "content": result
+                })
+
+            api_params["messages"] = messages
+            api_params["max_completion_tokens"] = 1000
+        else:
+            ai_message = response_message.content
+            break
+
+    if not ai_message or not ai_message.strip():
+        ai_message = "I apologize, but I wasn't able to generate a response. Please try again."
+
+    return _filter_reasoning_artifacts(ai_message)
+
+
+def _chat_with_anthropic(client, system_message, user_message, conversation_history, web_search_available, model):
+    """Handle chat with Anthropic API."""
+    # Build messages array (Anthropic doesn't have system role in messages)
+    messages = []
+
+    # Add conversation history
+    for msg in conversation_history[:-1] if conversation_history else []:
+        if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
+            messages.append({"role": msg['role'], "content": msg['content']})
+
+    messages.append({"role": "user", "content": user_message})
+
+    # Build tools in Anthropic format
+    tools = [
+        {
+            "name": LIST_METRICS_FUNCTION["name"],
+            "description": LIST_METRICS_FUNCTION["description"],
+            "input_schema": LIST_METRICS_FUNCTION.get("parameters", {"type": "object", "properties": {}})
+        },
+        {
+            "name": GET_METRIC_FUNCTION["name"],
+            "description": GET_METRIC_FUNCTION["description"],
+            "input_schema": GET_METRIC_FUNCTION.get("parameters", {"type": "object", "properties": {}})
+        }
+    ]
+    if web_search_available:
+        tools.append({
+            "name": SEARCH_FUNCTION_DEFINITION["name"],
+            "description": SEARCH_FUNCTION_DEFINITION["description"],
+            "input_schema": SEARCH_FUNCTION_DEFINITION.get("parameters", {"type": "object", "properties": {}})
+        })
+
+    print(f"[CHAT-ANTHROPIC] Starting request, model: {model}")
+
+    max_iterations = 5
+    iteration = 0
+    ai_message = None
+
+    while iteration < max_iterations:
+        iteration += 1
+        print(f"[CHAT-ANTHROPIC] Iteration {iteration}/{max_iterations}")
+
+        response = client.messages.create(
+            model=model,
+            max_tokens=1000,
+            system=system_message,
+            messages=messages,
+            tools=tools
+        )
+
+        print(f"[CHAT-ANTHROPIC] stop_reason: {response.stop_reason}")
+
+        # Check for tool use in response
+        tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
+        text_blocks = [block for block in response.content if block.type == "text"]
+
+        if tool_use_blocks:
+            print(f"[CHAT-ANTHROPIC] Tool uses: {[t.name for t in tool_use_blocks]}")
+
+            # Add assistant response to messages
+            messages.append({"role": "assistant", "content": response.content})
+
+            # Process each tool use and collect results
+            tool_results = []
+            for tool_use in tool_use_blocks:
+                result = _execute_tool(tool_use.name, tool_use.input or {})
+                print(f"[CHAT-ANTHROPIC] {tool_use.name} returned {len(result)} chars")
+
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tool_use.id,
+                    "content": result
+                })
+
+            # Add tool results as user message
+            messages.append({"role": "user", "content": tool_results})
+        else:
+            # No more tool use - extract text response
+            if text_blocks:
+                ai_message = "\n".join(block.text for block in text_blocks)
+            break
+
+    if not ai_message or not ai_message.strip():
+        ai_message = "I apologize, but I wasn't able to generate a response. Please try again."
+
+    return _filter_reasoning_artifacts(ai_message)
+
+
+def _execute_tool(function_name, function_args):
+    """Execute a tool function and return the result."""
+    if function_name == "search_web":
+        return execute_search_function(function_args)
+    elif function_name in ["list_available_metrics", "get_metric_data"]:
+        return execute_metric_function(function_name, function_args)
+    else:
+        return json.dumps({"error": f"Unknown function: {function_name}"})
+
+
+def _filter_reasoning_artifacts(message):
+    """Filter out any reasoning artifacts that might leak through."""
+    import re
+    lines = message.split('\n')
+    filtered_lines = []
+    for line in lines:
+        if re.match(r'^(Need |Oops |Let me |I should |Thinking:|<think>|</think>)', line.strip()):
+            print(f"[CHAT] Filtering out reasoning artifact: {line[:50]}")
+            continue
+        filtered_lines.append(line)
+    result = '\n'.join(filtered_lines).strip()
+
+    if not result:
+        return "I apologize, but I wasn't able to generate a response. Please try asking your question again."
+    return result
 
 
 if __name__ == '__main__':
