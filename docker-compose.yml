@@ -21,10 +21,14 @@ services:
     ports:
       - "5000:5000"
     environment:
-      # AI Provider: 'openai' or 'anthropic'
+      # Application Security (Required for Multi-User Mode)
+      - SECRET_KEY=${SECRET_KEY:-dev-key-change-in-production}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
+
+      # AI Provider: 'openai' or 'anthropic' (for scheduled briefings)
       - AI_PROVIDER=${AI_PROVIDER:-anthropic}
 
-      # API Keys (set in .env file or export before running)
+      # System API Keys (for scheduled briefings - set in .env file)
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - FRED_API_KEY=${FRED_API_KEY:-}

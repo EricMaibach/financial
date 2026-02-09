@@ -53,6 +53,7 @@ EXPOSE 5000
 # Environment variables (can be overridden at runtime)
 ENV PYTHONUNBUFFERED=1
 ENV AI_PROVIDER=anthropic
+# SECRET_KEY and ENCRYPTION_KEY should be set at runtime for production
 
 # Health check - verify the app is responding
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Financial Markets Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="bi bi-gear"></i> Settings</h1>
+        <p class="text-muted">Configure your account and AI preferences.</p>
+    </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Account Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person"></i> Account Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Username</dt>
+                    <dd class="col-sm-9">{{ current_user.username }}</dd>
+
+                    <dt class="col-sm-3">Email</dt>
+                    <dd class="col-sm-9">{{ current_user.email }}</dd>
+
+                    <dt class="col-sm-3">Member since</dt>
+                    <dd class="col-sm-9">{{ current_user.created_at.strftime('%B %d, %Y') if current_user.created_at else 'Unknown' }}</dd>
+
+                    <dt class="col-sm-3">Last login</dt>
+                    <dd class="col-sm-9">{{ current_user.last_login.strftime('%B %d, %Y at %I:%M %p') if current_user.last_login else 'Never' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- AI API Keys -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-key"></i> AI API Keys</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Your API keys are encrypted</strong> and stored securely.
+                    They are used for the chatbot and portfolio analysis features.
+                </div>
+
+                <form method="POST" action="{{ url_for('settings_update_api_keys') }}" id="api-keys-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Preferred AI Provider</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider" id="provider-openai"
+                                   value="openai" {% if not current_user.settings or current_user.settings.ai_provider == 'openai' %}checked{% endif %}>
+                            <label class="form-check-label" for="provider-openai">
+                                OpenAI (GPT-5.2)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider" id="provider-anthropic"
+                                   value="anthropic" {% if current_user.settings and current_user.settings.ai_provider == 'anthropic' %}checked{% endif %}>
+                            <label class="form-check-label" for="provider-anthropic">
+                                Anthropic (Claude Opus 4.6)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="openai-key" class="form-label">
+                            OpenAI API Key
+                            {% if current_user.settings and current_user.settings.has_openai_key %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Configured</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not configured</span>
+                            {% endif %}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-key"></i></span>
+                            <input type="password" class="form-control" id="openai-key" name="openai_key"
+                                   placeholder="{% if current_user.settings and current_user.settings.has_openai_key %}Leave blank to keep current key{% else %}sk-proj-...{% endif %}">
+                        </div>
+                        <div class="form-text">
+                            Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI Platform</a>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="anthropic-key" class="form-label">
+                            Anthropic API Key
+                            {% if current_user.settings and current_user.settings.has_anthropic_key %}
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Configured</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Not configured</span>
+                            {% endif %}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-key"></i></span>
+                            <input type="password" class="form-control" id="anthropic-key" name="anthropic_key"
+                                   placeholder="{% if current_user.settings and current_user.settings.has_anthropic_key %}Leave blank to keep current key{% else %}sk-ant-...{% endif %}">
+                        </div>
+                        <div class="form-text">
+                            Get your key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener">Anthropic Console</a>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- AI Status -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-robot"></i> AI Status</h5>
+            </div>
+            <div class="card-body">
+                {% set ai_status = check_user_ai_configured() %}
+                {% if ai_status.configured %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <strong>Ready!</strong><br>
+                        Using {{ ai_status.provider|title }} for chatbot and portfolio analysis.
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>Not configured</strong><br>
+                        {{ ai_status.message }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Usage Info -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> About API Keys</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">
+                    <strong>Why do I need an API key?</strong><br>
+                    The chatbot and portfolio analysis features use AI to provide personalized insights.
+                    You provide your own API key so you have full control over usage and costs.
+                </p>
+                <p class="small text-muted mb-2">
+                    <strong>Is my key secure?</strong><br>
+                    Yes. Your API key is encrypted before storage and never shared.
+                </p>
+                <p class="small text-muted mb-0">
+                    <strong>Which provider should I use?</strong><br>
+                    Both work well. OpenAI tends to be faster, Anthropic may provide more detailed analysis.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

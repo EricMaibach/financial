@@ -1547,23 +1547,31 @@ def get_recent_portfolio_summaries(days=3):
     return sorted_summaries[:days]
 
 
-def generate_portfolio_summary(portfolio_data, market_context):
+def generate_portfolio_summary(portfolio_data, market_context, user_client=None):
     """
     Generate an AI portfolio analysis summary.
 
     Args:
         portfolio_data: Dict with portfolio holdings and allocations from get_portfolio_summary_for_ai()
         market_context: String with market data and other AI briefings
+        user_client: Optional AI client to use (for user-initiated requests).
+                     If None, uses system AI client.
 
     Returns:
         dict with 'success', 'summary', and 'error' keys
     """
-    client, error = get_ai_client()
+    # Use provided user client if available, otherwise use system client
+    if user_client is not None:
+        client = user_client
+        error = None
+    else:
+        client, error = get_ai_client()
+
     if client is None:
         return {
             'success': False,
             'summary': None,
-            'error': error
+            'error': error or 'No AI client available'
         }
 
     try:

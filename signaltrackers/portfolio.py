@@ -4,6 +4,10 @@ Portfolio Management Module
 
 Handles storage and retrieval of user portfolio allocations,
 price fetching for various asset types, and portfolio analysis.
+
+This module supports both:
+- Database-backed storage (for multi-user mode via db_* functions)
+- JSON file storage (legacy, for backward compatibility)
 """
 
 import json
@@ -23,6 +27,16 @@ except ImportError:
 # Data directory setup
 DATA_DIR = Path(__file__).parent / "data"
 PORTFOLIO_FILE = DATA_DIR / "portfolio.json"
+
+# Database imports (optional - only available when Flask app is running)
+try:
+    from extensions import db
+    from models.portfolio import PortfolioAllocation
+    DB_AVAILABLE = True
+except ImportError:
+    DB_AVAILABLE = False
+    db = None
+    PortfolioAllocation = None
 
 # Asset type categories
 ASSET_TYPES = {
@@ -401,6 +415,302 @@ def get_portfolio_summary_for_ai() -> Dict[str, Any]:
         Dict with portfolio summary suitable for AI briefing generation
     """
     portfolio_data = get_portfolio_with_prices()
+
+    # Build summary sections
+    holdings_summary = []
+    for alloc in portfolio_data["allocations"]:
+        holding = {
+            "name": alloc["name"],
+            "type": alloc["asset_type"],
+            "percentage": alloc["percentage"],
+        }
+
+        # Add price info if available
+        price_info = alloc.get("price_info", {})
+        if price_info.get("price"):
+            holding["current_price"] = price_info["price"]
+            if price_info.get("change_pct") is not None:
+                holding["daily_change_pct"] = price_info["change_pct"]
+
+        if alloc.get("symbol"):
+            holding["symbol"] = alloc["symbol"]
+
+        holdings_summary.append(holding)
+
+    # Calculate risk metrics
+    concentration_risk = []
+    for alloc in portfolio_data["allocations"]:
+        if alloc["percentage"] > 30:
+            concentration_risk.append({
+                "name": alloc["name"],
+                "percentage": alloc["percentage"],
+                "warning": "High concentration (>30%)"
+            })
+
+    # Asset class groupings for diversification analysis
+    equity_pct = sum(
+        a["percentage"] for a in portfolio_data["allocations"]
+        if a["asset_type"] in ['stock', 'etf', 'mutual_fund']
+    )
+    alternatives_pct = sum(
+        a["percentage"] for a in portfolio_data["allocations"]
+        if a["asset_type"] in ['crypto', 'gold']
+    )
+    cash_pct = sum(
+        a["percentage"] for a in portfolio_data["allocations"]
+        if a["asset_type"] in ['cash', 'savings', 'money_market']
+    )
+    other_pct = sum(
+        a["percentage"] for a in portfolio_data["allocations"]
+        if a["asset_type"] == 'other'
+    )
+
+    return {
+        "holdings": holdings_summary,
+        "total_holdings": len(holdings_summary),
+        "total_allocation_pct": portfolio_data["total_percentage"],
+        "allocation_valid": portfolio_data["is_valid"],
+        "type_breakdown": portfolio_data["type_breakdown"],
+        "asset_class_breakdown": {
+            "equities": round(equity_pct, 2),
+            "alternatives": round(alternatives_pct, 2),
+            "cash": round(cash_pct, 2),
+            "other": round(other_pct, 2)
+        },
+        "concentration_warnings": concentration_risk,
+        "last_modified": portfolio_data["last_modified"]
+    }
+
+
+# =============================================================================
+# Database-Backed Portfolio Functions (Multi-User Mode)
+# =============================================================================
+
+def db_load_portfolio(user_id: str) -> Dict[str, Any]:
+    """
+    Load portfolio allocations from database for a specific user.
+
+    Args:
+        user_id: UUID of the user
+
+    Returns:
+        Portfolio data dict with allocations list
+    """
+    if not DB_AVAILABLE:
+        return {"allocations": [], "last_modified": None, "error": "Database not available"}
+
+    allocations = PortfolioAllocation.query.filter_by(user_id=user_id).all()
+
+    alloc_list = [a.to_dict() for a in allocations]
+    last_modified = max((a.updated_at for a in allocations), default=None)
+
+    return {
+        "allocations": alloc_list,
+        "last_modified": last_modified.isoformat() if last_modified else None
+    }
+
+
+def db_add_allocation(user_id: str, asset_type: str, symbol: Optional[str],
+                      name: str, percentage: float) -> Dict[str, Any]:
+    """
+    Add a new allocation to user's portfolio in database.
+
+    Args:
+        user_id: UUID of the user
+        asset_type: Type of asset
+        symbol: Ticker symbol (optional)
+        name: Display name
+        percentage: Allocation percentage
+
+    Returns:
+        The newly created allocation dict, or error dict
+    """
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+
+    # Validate asset type
+    if asset_type not in ASSET_TYPES:
+        return {"error": f"Invalid asset type: {asset_type}"}
+
+    # Validate symbol requirement
+    if ASSET_TYPES[asset_type]['symbol_required'] and not symbol:
+        return {"error": f"Symbol is required for {asset_type}"}
+
+    # Validate percentage
+    if percentage <= 0 or percentage > 100:
+        return {"error": "Percentage must be between 0 and 100"}
+
+    allocation = PortfolioAllocation(
+        user_id=user_id,
+        asset_type=asset_type,
+        symbol=symbol.upper() if symbol else None,
+        name=name,
+        percentage=round(percentage, 2)
+    )
+
+    db.session.add(allocation)
+    db.session.commit()
+
+    return allocation.to_dict()
+
+
+def db_update_allocation(user_id: str, allocation_id: str,
+                         percentage: Optional[float] = None,
+                         name: Optional[str] = None,
+                         symbol: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Update an existing allocation in database.
+
+    Args:
+        user_id: UUID of the user (for ownership verification)
+        allocation_id: UUID of the allocation
+        percentage: New percentage (optional)
+        name: New name (optional)
+        symbol: New symbol (optional)
+
+    Returns:
+        Updated allocation dict, or error dict
+    """
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+
+    allocation = PortfolioAllocation.query.filter_by(
+        id=allocation_id,
+        user_id=user_id
+    ).first()
+
+    if not allocation:
+        return {"error": f"Allocation not found: {allocation_id}"}
+
+    if percentage is not None:
+        if percentage <= 0 or percentage > 100:
+            return {"error": "Percentage must be between 0 and 100"}
+        allocation.percentage = round(percentage, 2)
+
+    if name is not None:
+        allocation.name = name
+
+    if symbol is not None:
+        allocation.symbol = symbol.upper() if symbol else None
+
+    db.session.commit()
+
+    return allocation.to_dict()
+
+
+def db_delete_allocation(user_id: str, allocation_id: str) -> Dict[str, Any]:
+    """
+    Delete an allocation from user's portfolio.
+
+    Args:
+        user_id: UUID of the user (for ownership verification)
+        allocation_id: UUID of the allocation
+
+    Returns:
+        Success message or error dict
+    """
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+
+    allocation = PortfolioAllocation.query.filter_by(
+        id=allocation_id,
+        user_id=user_id
+    ).first()
+
+    if not allocation:
+        return {"error": f"Allocation not found: {allocation_id}"}
+
+    db.session.delete(allocation)
+    db.session.commit()
+
+    return {"success": True, "message": "Allocation deleted"}
+
+
+def db_validate_allocation_total(user_id: str) -> Dict[str, Any]:
+    """
+    Check if user's allocations sum to approximately 100%.
+
+    Args:
+        user_id: UUID of the user
+
+    Returns:
+        Dict with total percentage and validation status
+    """
+    if not DB_AVAILABLE:
+        return {"error": "Database not available"}
+
+    allocations = PortfolioAllocation.query.filter_by(user_id=user_id).all()
+    total = sum(a.percentage for a in allocations)
+
+    return {
+        "total_percentage": round(total, 2),
+        "is_valid": 95 <= total <= 105,
+        "message": "Valid" if 95 <= total <= 105 else f"Total is {total:.1f}% (should be ~100%)"
+    }
+
+
+def db_get_portfolio_with_prices(user_id: str) -> Dict[str, Any]:
+    """
+    Get user's portfolio allocations with current prices.
+
+    Args:
+        user_id: UUID of the user
+
+    Returns:
+        Portfolio data with prices and performance info
+    """
+    if not DB_AVAILABLE:
+        return {"allocations": [], "error": "Database not available"}
+
+    allocations = PortfolioAllocation.query.filter_by(user_id=user_id).all()
+    allocations_with_prices = []
+
+    for allocation in allocations:
+        alloc_data = allocation.to_dict()
+
+        # Fetch price based on asset type
+        price_info = fetch_asset_price(
+            allocation.asset_type,
+            allocation.symbol
+        )
+
+        alloc_data["price_info"] = price_info
+        allocations_with_prices.append(alloc_data)
+
+    # Calculate totals and breakdowns
+    total_percentage = sum(a.percentage for a in allocations)
+
+    # Asset type breakdown
+    type_breakdown = {}
+    for alloc in allocations:
+        atype = alloc.asset_type
+        type_breakdown[atype] = type_breakdown.get(atype, 0) + alloc.percentage
+
+    last_modified = max((a.updated_at for a in allocations), default=None)
+
+    return {
+        "allocations": allocations_with_prices,
+        "total_percentage": round(total_percentage, 2),
+        "is_valid": 95 <= total_percentage <= 105,
+        "type_breakdown": type_breakdown,
+        "last_modified": last_modified.isoformat() if last_modified else None
+    }
+
+
+def db_get_portfolio_summary_for_ai(user_id: str) -> Dict[str, Any]:
+    """
+    Get user's portfolio data formatted for AI analysis.
+
+    Args:
+        user_id: UUID of the user
+
+    Returns:
+        Dict with portfolio summary suitable for AI briefing generation
+    """
+    portfolio_data = db_get_portfolio_with_prices(user_id)
+
+    if "error" in portfolio_data:
+        return portfolio_data
 
     # Build summary sections
     holdings_summary = []

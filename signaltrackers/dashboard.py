@@ -4,7 +4,8 @@ Market Divergence Dashboard
 A comprehensive web dashboard for tracking the historic market divergence.
 """
 
-from flask import Flask, render_template, jsonify, request, redirect
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required, current_user
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -35,10 +36,23 @@ from metric_tools import (
 from portfolio import (
     load_portfolio, save_portfolio, add_allocation, update_allocation,
     delete_allocation, validate_allocation_total, validate_symbol,
-    get_portfolio_with_prices, get_portfolio_summary_for_ai
+    get_portfolio_with_prices, get_portfolio_summary_for_ai,
+    # Database-backed functions for multi-user mode
+    db_load_portfolio, db_add_allocation, db_update_allocation,
+    db_delete_allocation, db_validate_allocation_total,
+    db_get_portfolio_with_prices, db_get_portfolio_summary_for_ai
 )
+from config import get_config
+from extensions import init_extensions, db, limiter, csrf
+from models import User, UserSettings
 
 app = Flask(__name__)
+
+# Load configuration
+app.config.from_object(get_config())
+
+# Initialize extensions (database, login manager, CSRF, rate limiting)
+init_extensions(app)
 
 # Initialize OpenAI client (only if API key is available)
 openai_api_key = os.environ.get('OPENAI_API_KEY')
@@ -968,6 +982,122 @@ def get_dashboard_data():
     return data
 
 
+# =============================================================================
+# Authentication Routes
+# =============================================================================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """User login page."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        remember = request.form.get('remember', False)
+
+        if not username or not password:
+            flash('Please enter both username and password.', 'danger')
+            return render_template('auth/login.html')
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            if not user.is_active:
+                flash('This account has been deactivated.', 'danger')
+                return render_template('auth/login.html')
+
+            login_user(user, remember=bool(remember))
+            user.update_last_login()
+            db.session.commit()
+
+            next_page = request.args.get('next')
+            if next_page and next_page.startswith('/'):
+                return redirect(next_page)
+            return redirect(url_for('index'))
+
+        flash('Invalid username or password.', 'danger')
+
+    return render_template('auth/login.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+
+        errors = []
+
+        # Validation
+        if not username:
+            errors.append('Username is required.')
+        elif len(username) < 3:
+            errors.append('Username must be at least 3 characters.')
+        elif len(username) > 80:
+            errors.append('Username must be less than 80 characters.')
+        elif User.query.filter_by(username=username).first():
+            errors.append('Username already exists.')
+
+        if not email:
+            errors.append('Email is required.')
+        elif User.query.filter_by(email=email).first():
+            errors.append('Email already registered.')
+
+        if not password:
+            errors.append('Password is required.')
+        elif len(password) < 8:
+            errors.append('Password must be at least 8 characters.')
+        elif not any(c.isupper() for c in password):
+            errors.append('Password must contain at least one uppercase letter.')
+        elif not any(c.isdigit() for c in password):
+            errors.append('Password must contain at least one number.')
+
+        if password != confirm_password:
+            errors.append('Passwords do not match.')
+
+        if errors:
+            for error in errors:
+                flash(error, 'danger')
+            return render_template('auth/register.html')
+
+        # Create user
+        user = User(username=username, email=email)
+        user.set_password(password)
+
+        # Create default settings
+        settings = UserSettings(user=user, ai_provider='openai')
+
+        db.session.add(user)
+        db.session.add(settings)
+        db.session.commit()
+
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
+
+    return render_template('auth/register.html')
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Log out current user."""
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('index'))
+
+
+# =============================================================================
+# Page Routes
+# =============================================================================
+
 @app.route('/')
 def index():
     """Main dashboard page."""
@@ -1017,9 +1147,59 @@ def dollar():
 
 
 @app.route('/portfolio')
+@login_required
 def portfolio():
     """Personal portfolio tracking page."""
     return render_template('portfolio.html')
+
+
+@app.route('/settings')
+@login_required
+def settings():
+    """User settings page."""
+    from services.ai_service import check_user_ai_configured
+    return render_template('settings.html', check_user_ai_configured=check_user_ai_configured)
+
+
+@app.route('/settings/api-keys', methods=['POST'])
+@login_required
+def settings_update_api_keys():
+    """Update user's AI API keys."""
+    ai_provider = request.form.get('ai_provider', 'openai')
+    openai_key = request.form.get('openai_key', '').strip()
+    anthropic_key = request.form.get('anthropic_key', '').strip()
+
+    # Validate provider
+    if ai_provider not in ['openai', 'anthropic']:
+        ai_provider = 'openai'
+
+    # Get or create user settings
+    settings = current_user.settings
+    if not settings:
+        settings = UserSettings(user=current_user)
+        db.session.add(settings)
+
+    # Update provider
+    settings.ai_provider = ai_provider
+
+    # Update keys only if provided (don't clear existing keys if empty)
+    if openai_key:
+        try:
+            settings.set_openai_key(openai_key)
+        except Exception as e:
+            flash(f'Error saving OpenAI key: {e}', 'danger')
+            return redirect(url_for('settings'))
+
+    if anthropic_key:
+        try:
+            settings.set_anthropic_key(anthropic_key)
+        except Exception as e:
+            flash(f'Error saving Anthropic key: {e}', 'danger')
+            return redirect(url_for('settings'))
+
+    db.session.commit()
+    flash('Settings saved successfully!', 'success')
+    return redirect(url_for('settings'))
 
 
 @app.route('/api/dashboard')
@@ -1646,16 +1826,19 @@ def api_generate_dollar_summary():
 # ============================================================================
 
 @app.route('/api/portfolio')
+@login_required
 def api_portfolio_get():
-    """Get all portfolio allocations with current prices."""
+    """Get all portfolio allocations with current prices for current user."""
     try:
-        portfolio_data = get_portfolio_with_prices()
+        portfolio_data = db_get_portfolio_with_prices(current_user.id)
         return jsonify(portfolio_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/portfolio', methods=['POST'])
+@csrf.exempt
+@login_required
 def api_portfolio_add():
     """Add a new allocation to the portfolio."""
     try:
@@ -1676,7 +1859,7 @@ def api_portfolio_add():
         except (ValueError, TypeError):
             return jsonify({'error': 'Percentage must be a number'}), 400
 
-        result = add_allocation(asset_type, symbol, name, percentage)
+        result = db_add_allocation(current_user.id, asset_type, symbol, name, percentage)
 
         if 'error' in result:
             return jsonify(result), 400
@@ -1687,6 +1870,8 @@ def api_portfolio_add():
 
 
 @app.route('/api/portfolio/<allocation_id>', methods=['PUT'])
+@csrf.exempt
+@login_required
 def api_portfolio_update(allocation_id):
     """Update an existing allocation."""
     try:
@@ -1704,7 +1889,7 @@ def api_portfolio_update(allocation_id):
             except (ValueError, TypeError):
                 return jsonify({'error': 'Percentage must be a number'}), 400
 
-        result = update_allocation(allocation_id, percentage=percentage, name=name, symbol=symbol)
+        result = db_update_allocation(current_user.id, allocation_id, percentage=percentage, name=name, symbol=symbol)
 
         if 'error' in result:
             return jsonify(result), 404
@@ -1715,10 +1900,12 @@ def api_portfolio_update(allocation_id):
 
 
 @app.route('/api/portfolio/<allocation_id>', methods=['DELETE'])
+@csrf.exempt
+@login_required
 def api_portfolio_delete(allocation_id):
-    """Delete an allocation from the portfolio."""
+    """Delete an allocation from current user's portfolio."""
     try:
-        result = delete_allocation(allocation_id)
+        result = db_delete_allocation(current_user.id, allocation_id)
 
         if 'error' in result:
             return jsonify(result), 404
@@ -1729,10 +1916,11 @@ def api_portfolio_delete(allocation_id):
 
 
 @app.route('/api/portfolio/validate')
+@login_required
 def api_portfolio_validate():
-    """Validate portfolio allocation total."""
+    """Validate current user's portfolio allocation total."""
     try:
-        result = validate_allocation_total()
+        result = db_validate_allocation_total(current_user.id)
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1751,6 +1939,7 @@ def api_portfolio_validate_symbol(symbol):
 
 
 @app.route('/api/portfolio/summary')
+@login_required
 def api_portfolio_summary():
     """Get the current portfolio AI summary."""
     from ai_summary import get_portfolio_summary_for_display
@@ -1764,12 +1953,31 @@ def api_portfolio_summary():
 
 
 @app.route('/api/portfolio/summary/generate', methods=['POST'])
+@csrf.exempt
+@login_required
 def api_generate_portfolio_summary():
-    """Manually trigger portfolio AI summary generation."""
+    """Manually trigger portfolio AI summary generation for current user."""
     from ai_summary import generate_portfolio_summary
+    from services.ai_service import get_user_ai_client, AIServiceError
+
     try:
-        # Get portfolio data for AI
-        portfolio_data = get_portfolio_summary_for_ai()
+        # Get user's AI client for this request
+        try:
+            user_client, provider = get_user_ai_client()
+        except AIServiceError as e:
+            return jsonify({
+                'status': 'error',
+                'error': str(e)
+            }), 400
+
+        # Get current user's portfolio data for AI
+        portfolio_data = db_get_portfolio_summary_for_ai(current_user.id)
+
+        if 'error' in portfolio_data:
+            return jsonify({
+                'status': 'error',
+                'error': portfolio_data['error']
+            }), 500
 
         if not portfolio_data.get('holdings'):
             return jsonify({
@@ -1780,8 +1988,8 @@ def api_generate_portfolio_summary():
         # Generate market summary for context
         market_summary = generate_portfolio_market_context()
 
-        # Generate AI summary
-        result = generate_portfolio_summary(portfolio_data, market_summary)
+        # Generate AI summary using user's API key
+        result = generate_portfolio_summary(portfolio_data, market_summary, user_client=user_client)
 
         if result['success']:
             return jsonify({
@@ -2917,8 +3125,13 @@ def generate_dollar_market_summary():
 
 
 @app.route('/api/chat', methods=['POST'])
+@csrf.exempt  # API endpoint uses login_required for auth
+@limiter.limit("10 per minute")
+@login_required
 def api_chat():
-    """Handle chat messages with OpenAI API, with web search capability."""
+    """Handle chat messages with user's API key, with web search capability."""
+    from services.ai_service import get_user_ai_client, AIServiceError
+
     try:
         data = request.json
         user_message = data.get('message', '')
@@ -2927,11 +3140,17 @@ def api_chat():
         if not user_message:
             return jsonify({'error': 'No message provided'}), 400
 
-        # Check if OpenAI API key is configured
-        if not os.environ.get('OPENAI_API_KEY'):
+        # Get user's AI client
+        try:
+            user_client, provider = get_user_ai_client()
+        except AIServiceError as e:
+            return jsonify({'error': str(e)}), 400
+
+        # Currently chatbot only supports OpenAI due to tool calling
+        if provider != 'openai':
             return jsonify({
-                'error': 'OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.'
-            }), 500
+                'error': 'Chatbot currently requires OpenAI. Please configure an OpenAI API key in Settings.'
+            }), 400
 
         # Check if web search is available
         web_search_available = is_tavily_configured()
@@ -3013,7 +3232,7 @@ IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools
             iteration += 1
             print(f"[CHAT] API call iteration {iteration}/{max_iterations}")
 
-            response = openai_client.chat.completions.create(**api_params)
+            response = user_client.chat.completions.create(**api_params)
             response_message = response.choices[0].message
 
             # Log full response details
@@ -3084,7 +3303,7 @@ IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools
                     "temperature": 0.7,
                     "max_completion_tokens": 500
                 }
-                retry_response = openai_client.chat.completions.create(**retry_params)
+                retry_response = user_client.chat.completions.create(**retry_params)
                 retry_content = retry_response.choices[0].message.content
                 print(f"[CHAT] Retry finish_reason: {retry_response.choices[0].finish_reason}")
                 print(f"[CHAT] Retry content: {repr(retry_content)[:200] if retry_content else 'None'}")
@@ -3128,6 +3347,10 @@ IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools
 
 
 if __name__ == '__main__':
+    # Create database tables if they don't exist
+    with app.app_context():
+        db.create_all()
+
     # Initialize the scheduler for automatic daily refresh
     init_scheduler()
 
