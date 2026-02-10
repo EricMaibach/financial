@@ -73,6 +73,12 @@
                             <i class="bi bi-clock"></i> <span id="update-time">Loading...</span>
                         </span>
                     </li>
+                    <li class="nav-item me-3">
+                        <button class="btn btn-outline-light btn-sm" id="refresh-data-btn" title="Refresh market data and AI briefings">
+                            <i class="bi bi-arrow-repeat" id="refresh-icon"></i>
+                            <span class="d-none d-lg-inline" id="refresh-text">Refresh Data</span>
+                        </button>
+                    </li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
@@ -138,6 +144,20 @@
         <span class="badge bg-danger" id="ai-chat-badge" style="display: none;">!</span>
     </button>
 
+    <!-- Refresh Progress Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="refresh-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+            <div class="toast-header bg-primary text-white">
+                <i class="bi bi-arrow-repeat me-2" id="toast-icon"></i>
+                <strong class="me-auto" id="toast-title">Refreshing Data</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-body">
+                Starting data refresh...
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-dark text-light py-3 mt-5">
         <div class="container text-center">
@@ -150,6 +170,144 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+    <!-- Refresh Data Handler -->
+    <script>
+    (function() {
+        const refreshBtn = document.getElementById('refresh-data-btn');
+        const refreshIcon = document.getElementById('refresh-icon');
+        const refreshText = document.getElementById('refresh-text');
+        const toastEl = document.getElementById('refresh-toast');
+        const toastBody = document.getElementById('toast-body');
+        const toastTitle = document.getElementById('toast-title');
+        const toastIcon = document.getElementById('toast-icon');
+
+        let toast = null;
+        let pollInterval = null;
+        let isRefreshing = false;
+
+        // Initialize toast when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            toast = new bootstrap.Toast(toastEl);
+        });
+
+        function setRefreshing(refreshing) {
+            isRefreshing = refreshing;
+            refreshBtn.disabled = refreshing;
+
+            if (refreshing) {
+                refreshIcon.classList.add('spin-animation');
+                if (refreshText) refreshText.textContent = 'Refreshing...';
+            } else {
+                refreshIcon.classList.remove('spin-animation');
+                if (refreshText) refreshText.textContent = 'Refresh Data';
+            }
+        }
+
+        function showToast(title, message, isSuccess = null) {
+            toastTitle.textContent = title;
+            toastBody.textContent = message;
+
+            // Update icon based on status
+            toastIcon.className = 'bi me-2';
+            if (isSuccess === true) {
+                toastIcon.classList.add('bi-check-circle-fill');
+                toastEl.querySelector('.toast-header').className = 'toast-header bg-success text-white';
+            } else if (isSuccess === false) {
+                toastIcon.classList.add('bi-x-circle-fill');
+                toastEl.querySelector('.toast-header').className = 'toast-header bg-danger text-white';
+            } else {
+                toastIcon.classList.add('bi-arrow-repeat', 'spin-animation');
+                toastEl.querySelector('.toast-header').className = 'toast-header bg-primary text-white';
+            }
+
+            toast.show();
+        }
+
+        function pollStatus() {
+            fetch('/api/reload-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.running) {
+                        showToast('Refreshing Data', data.status || 'Processing...');
+                    } else if (data.last_run) {
+                        // Refresh complete
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                        setRefreshing(false);
+
+                        if (data.last_run.success) {
+                            showToast('Refresh Complete', 'Data and AI briefings updated successfully!', true);
+                            // Auto-hide success toast after 3 seconds
+                            setTimeout(() => {
+                                toast.hide();
+                                // Reload page to show new data
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            showToast('Refresh Failed', data.last_run.error || 'An error occurred', false);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error polling status:', error);
+                });
+        }
+
+        refreshBtn.addEventListener('click', function() {
+            if (isRefreshing) return;
+
+            setRefreshing(true);
+            showToast('Refreshing Data', 'Starting data collection...');
+
+            fetch('/api/reload-data', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started' || data.status === 'already_running') {
+                        // Start polling for status
+                        pollInterval = setInterval(pollStatus, 2000);
+
+                        if (data.status === 'already_running') {
+                            showToast('Refreshing Data', 'Refresh already in progress...');
+                        }
+                    } else {
+                        setRefreshing(false);
+                        showToast('Error', 'Failed to start refresh', false);
+                    }
+                })
+                .catch(error => {
+                    setRefreshing(false);
+                    showToast('Error', 'Failed to connect to server', false);
+                    console.error('Error starting refresh:', error);
+                });
+        });
+
+        // Check if refresh is already running on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/reload-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.running) {
+                        setRefreshing(true);
+                        showToast('Refreshing Data', data.status || 'Processing...');
+                        pollInterval = setInterval(pollStatus, 2000);
+                    }
+                })
+                .catch(() => {});
+        });
+    })();
+    </script>
+
+    <!-- Spin animation style -->
+    <style>
+    .spin-animation {
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    </style>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

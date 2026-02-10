@@ -125,8 +125,9 @@ class MarketSignalsTracker:
             'gold_miners': 'GDX',
             'silver': 'SLV',
 
-            # Bitcoin
+            # Crypto
             'bitcoin': 'BTC-USD',
+            'ethereum': 'ETH-USD',
 
             # Currency
             'dollar_index': 'UUP',

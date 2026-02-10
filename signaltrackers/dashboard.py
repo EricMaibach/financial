@@ -62,7 +62,9 @@ openai_client = OpenAI(api_key=openai_api_key) if openai_api_key else None
 reload_status = {
     'in_progress': False,
     'last_reload': None,
-    'error': None
+    'error': None,
+    'status': None,
+    'success': None
 }
 
 DATA_DIR = Path("data")
@@ -979,6 +981,183 @@ def get_dashboard_data():
     # Calculate top movers
     data['top_movers'] = calculate_top_movers(5)
 
+    # ========================================
+    # Market Conditions Grid Data (US-1.1.2)
+    # ========================================
+    market_grid = {}
+
+    # Credit Section (HY Spread already loaded, add IG Spread)
+    credit_data = {}
+    if hy_df is not None and len(hy_df) > 0:
+        hy_val = hy_df.iloc[-1][hy_df.columns[1]] * 100
+        hy_5d_val = hy_df.iloc[max(0, len(hy_df)-6)][hy_df.columns[1]] * 100 if len(hy_df) > 5 else hy_val
+        credit_data['hy_spread'] = {
+            'value': round(hy_val, 0),
+            'change_5d': round(hy_val - hy_5d_val, 0)
+        }
+    if ig_df is not None and len(ig_df) > 0:
+        ig_val = ig_df.iloc[-1][ig_df.columns[1]] * 100
+        ig_5d_val = ig_df.iloc[max(0, len(ig_df)-6)][ig_df.columns[1]] * 100 if len(ig_df) > 5 else ig_val
+        credit_data['ig_spread'] = {
+            'value': round(ig_val, 0),
+            'change_5d': round(ig_val - ig_5d_val, 0)
+        }
+    if ccc_df is not None and hy_df is not None and len(ccc_df) > 0 and len(hy_df) > 0:
+        ccc_val = ccc_df.iloc[-1][ccc_df.columns[1]] * 100
+        hy_val = hy_df.iloc[-1][hy_df.columns[1]] * 100
+        ratio = ccc_val / hy_val if hy_val > 0 else 0
+        ratio_5d = None
+        if len(ccc_df) > 5 and len(hy_df) > 5:
+            ccc_5d = ccc_df.iloc[-6][ccc_df.columns[1]] * 100
+            hy_5d = hy_df.iloc[-6][hy_df.columns[1]] * 100
+            ratio_5d = ccc_5d / hy_5d if hy_5d > 0 else ratio
+        credit_data['ccc_ratio'] = {
+            'value': round(ratio, 2),
+            'change_5d': round(ratio - ratio_5d, 2) if ratio_5d else 0
+        }
+    market_grid['credit'] = credit_data
+
+    # Equities Section (SPY, VIX already loaded, add Russell 2000)
+    equities_data = {}
+    if spy_df is not None and len(spy_df) > 0:
+        spy_val = spy_df.iloc[-1][spy_df.columns[1]]
+        spy_returns = calculate_returns(spy_df, spy_df.columns[1], [5])
+        equities_data['spy'] = {
+            'value': round(spy_val, 2),
+            'change_5d': round(spy_returns.get('5d', 0), 2)
+        }
+    russell_df = load_csv_data('small_cap_price.csv')  # IWM - Russell 2000 ETF
+    if russell_df is not None and len(russell_df) > 0:
+        russell_val = russell_df.iloc[-1][russell_df.columns[1]]
+        russell_returns = calculate_returns(russell_df, russell_df.columns[1], [5])
+        equities_data['russell'] = {
+            'value': round(russell_val, 2),
+            'change_5d': round(russell_returns.get('5d', 0), 2)
+        }
+    if vix_df is not None and len(vix_df) > 0:
+        vix_val = vix_df.iloc[-1][vix_df.columns[1]]
+        vix_returns = calculate_returns(vix_df, vix_df.columns[1], [5])
+        equities_data['vix'] = {
+            'value': round(vix_val, 2),
+            'change_5d': round(vix_returns.get('5d', 0), 2)
+        }
+    market_grid['equities'] = equities_data
+
+    # Rates Section (10Y, 2Y, Curve)
+    rates_data = {}
+    treasury_10y_df = load_csv_data('treasury_10y.csv')
+    yield_curve_df = load_csv_data('yield_curve_10y2y.csv')
+    if treasury_10y_df is not None and len(treasury_10y_df) > 0:
+        t10y_val = treasury_10y_df.iloc[-1][treasury_10y_df.columns[1]]
+        t10y_5d_val = treasury_10y_df.iloc[max(0, len(treasury_10y_df)-6)][treasury_10y_df.columns[1]] if len(treasury_10y_df) > 5 else t10y_val
+        rates_data['treasury_10y'] = {
+            'value': round(t10y_val, 2),
+            'change_5d': round((t10y_val - t10y_5d_val) * 100, 0)  # Change in bp
+        }
+    # Calculate 2Y from 10Y and curve spread
+    if yield_curve_df is not None and len(yield_curve_df) > 0 and treasury_10y_df is not None:
+        curve_val = yield_curve_df.iloc[-1][yield_curve_df.columns[1]]
+        curve_5d_val = yield_curve_df.iloc[max(0, len(yield_curve_df)-6)][yield_curve_df.columns[1]] if len(yield_curve_df) > 5 else curve_val
+        t10y_val = treasury_10y_df.iloc[-1][treasury_10y_df.columns[1]]
+        # 2Y = 10Y - curve_spread
+        t2y_val = t10y_val - curve_val
+        t2y_5d_val = (treasury_10y_df.iloc[max(0, len(treasury_10y_df)-6)][treasury_10y_df.columns[1]] if len(treasury_10y_df) > 5 else t10y_val) - curve_5d_val
+        rates_data['treasury_2y'] = {
+            'value': round(t2y_val, 2),
+            'change_5d': round((t2y_val - t2y_5d_val) * 100, 0)  # Change in bp
+        }
+        # Use the curve data directly
+        rates_data['curve'] = {
+            'value': round(curve_val, 2),
+            'change_5d': round((curve_val - curve_5d_val) * 100, 0)  # Change in bp
+        }
+    market_grid['rates'] = rates_data
+
+    # Safe Havens Section (Gold already loaded, add Silver, TLT)
+    havens_data = {}
+    if gold_df is not None and len(gold_df) > 0:
+        gold_val = gold_df.iloc[-1][gold_df.columns[1]] * 10
+        gold_returns = calculate_returns(gold_df, gold_df.columns[1], [5, 20])
+        havens_data['gold'] = {
+            'value': round(gold_val, 0),
+            'change_5d': round(gold_returns.get('5d', 0), 2),
+            'change_30d': round(gold_returns.get('20d', 0), 2)
+        }
+    silver_df = load_csv_data('silver_price.csv')
+    if silver_df is not None and len(silver_df) > 0:
+        silver_val = silver_df.iloc[-1][silver_df.columns[1]]
+        silver_returns = calculate_returns(silver_df, silver_df.columns[1], [5])
+        havens_data['silver'] = {
+            'value': round(silver_val, 2),
+            'change_5d': round(silver_returns.get('5d', 0), 2)
+        }
+    tlt_df = load_csv_data('treasury_20yr_price.csv')
+    if tlt_df is not None and len(tlt_df) > 0:
+        tlt_val = tlt_df.iloc[-1][tlt_df.columns[1]]
+        tlt_returns = calculate_returns(tlt_df, tlt_df.columns[1], [5])
+        havens_data['tlt'] = {
+            'value': round(tlt_val, 2),
+            'change_5d': round(tlt_returns.get('5d', 0), 2)
+        }
+    market_grid['havens'] = havens_data
+
+    # Crypto Section (Bitcoin already loaded, add Ethereum, BTC Dominance)
+    crypto_data = {}
+    if btc_df is not None and len(btc_df) > 0:
+        btc_val = btc_df.iloc[-1][btc_df.columns[1]]
+        btc_returns = calculate_returns(btc_df, btc_df.columns[1], [5, 20])
+        crypto_data['btc'] = {
+            'value': round(btc_val, 0),
+            'change_5d': round(btc_returns.get('5d', 0), 2),
+            'change_30d': round(btc_returns.get('20d', 0), 2)
+        }
+    eth_df = load_csv_data('ethereum_price.csv')
+    if eth_df is not None and len(eth_df) > 0:
+        eth_val = eth_df.iloc[-1][eth_df.columns[1]]
+        eth_returns = calculate_returns(eth_df, eth_df.columns[1], [5])
+        crypto_data['eth'] = {
+            'value': round(eth_val, 0),
+            'change_5d': round(eth_returns.get('5d', 0), 2)
+        }
+    btc_dom_df = load_csv_data('btc_dominance.csv')
+    if btc_dom_df is not None and len(btc_dom_df) > 0:
+        btc_dom_val = btc_dom_df.iloc[-1][btc_dom_df.columns[1]]
+        btc_dom_returns = calculate_returns(btc_dom_df, btc_dom_df.columns[1], [5])
+        crypto_data['btc_dominance'] = {
+            'value': round(btc_dom_val, 1),
+            'change_5d': round(btc_dom_returns.get('5d', 0), 2)
+        }
+    market_grid['crypto'] = crypto_data
+
+    # Dollar Section (add DXY, EUR/USD, USD/JPY)
+    dollar_data = {}
+    dxy_df = load_csv_data('dollar_index_price.csv')
+    if dxy_df is not None and len(dxy_df) > 0:
+        dxy_val = dxy_df.iloc[-1][dxy_df.columns[1]]
+        dxy_returns = calculate_returns(dxy_df, dxy_df.columns[1], [5])
+        dollar_data['dxy'] = {
+            'value': round(dxy_val, 2),
+            'change_5d': round(dxy_returns.get('5d', 0), 2)
+        }
+    eurusd_df = load_csv_data('eurusd_price.csv')
+    if eurusd_df is not None and len(eurusd_df) > 0:
+        eurusd_val = eurusd_df.iloc[-1][eurusd_df.columns[1]]
+        eurusd_returns = calculate_returns(eurusd_df, eurusd_df.columns[1], [5])
+        dollar_data['eurusd'] = {
+            'value': round(eurusd_val, 4),
+            'change_5d': round(eurusd_returns.get('5d', 0), 2)
+        }
+    if usdjpy_df is not None and len(usdjpy_df) > 0:
+        usdjpy_val = usdjpy_df.iloc[-1][usdjpy_df.columns[1]]
+        usdjpy_returns = calculate_returns(usdjpy_df, usdjpy_df.columns[1], [5])
+        dollar_data['usdjpy'] = {
+            'value': round(usdjpy_val, 2),
+            'change_5d': round(usdjpy_returns.get('5d', 0), 2)
+        }
+    market_grid['dollar'] = dollar_data
+
+    data['market_grid'] = market_grid
+
     return data
 
 
@@ -1504,6 +1683,8 @@ def run_data_collection():
     try:
         reload_status['in_progress'] = True
         reload_status['error'] = None
+        reload_status['success'] = None
+        reload_status['status'] = 'Collecting market data...'
 
         # Run market_signals.py (default 30-day lookback)
         print("Running market_signals.py...")
@@ -1518,6 +1699,7 @@ def run_data_collection():
             raise Exception(f"market_signals.py failed: {result1.stderr}")
 
         # Run divergence_analysis.py
+        reload_status['status'] = 'Running divergence analysis...'
         print("Running divergence_analysis.py...")
         result2 = subprocess.run(
             ['python', 'divergence_analysis.py'],
@@ -1533,6 +1715,7 @@ def run_data_collection():
         print("Data reload completed successfully!")
 
         # Generate AI summary after successful data reload
+        reload_status['status'] = 'Generating AI daily summary...'
         print("Generating AI daily summary...")
         try:
             market_summary = generate_market_summary()
@@ -1546,6 +1729,7 @@ def run_data_collection():
             print(f"AI summary error (non-fatal): {summary_error}")
 
         # Generate Crypto AI summary
+        reload_status['status'] = 'Generating Crypto AI summary...'
         print("Generating Crypto AI summary...")
         try:
             crypto_summary_data = generate_crypto_market_summary()
@@ -1558,6 +1742,7 @@ def run_data_collection():
             print(f"Crypto AI summary error (non-fatal): {crypto_summary_error}")
 
         # Generate Equity AI summary
+        reload_status['status'] = 'Generating Equity AI summary...'
         print("Generating Equity Markets AI summary...")
         try:
             equity_summary_data = generate_equity_market_summary()
@@ -1570,6 +1755,7 @@ def run_data_collection():
             print(f"Equity AI summary error (non-fatal): {equity_summary_error}")
 
         # Generate Rates AI summary
+        reload_status['status'] = 'Generating Rates AI summary...'
         print("Generating Rates & Yield Curve AI summary...")
         try:
             rates_summary_data = generate_rates_market_summary()
@@ -1581,14 +1767,21 @@ def run_data_collection():
         except Exception as rates_summary_error:
             print(f"Rates AI summary error (non-fatal): {rates_summary_error}")
 
+        # Mark as successful
+        reload_status['success'] = True
+        reload_status['status'] = 'Complete!'
+
     except Exception as e:
         reload_status['error'] = str(e)
+        reload_status['success'] = False
+        reload_status['status'] = 'Error occurred'
         print(f"Data reload error: {e}")
 
     finally:
         reload_status['in_progress'] = False
 
 
+@csrf.exempt
 @app.route('/api/reload-data', methods=['POST'])
 def api_reload_data():
     """Trigger data reload in background."""
@@ -1615,9 +1808,13 @@ def api_reload_data():
 def api_reload_status():
     """Get current reload status."""
     return jsonify({
-        'in_progress': reload_status['in_progress'],
-        'last_reload': reload_status['last_reload'],
-        'error': reload_status['error']
+        'running': reload_status['in_progress'],
+        'status': reload_status['status'],
+        'last_run': {
+            'success': reload_status['success'],
+            'error': reload_status['error'],
+            'timestamp': reload_status['last_reload']
+        } if reload_status['last_reload'] or reload_status['error'] else None
     })
 
 
@@ -3403,15 +3600,15 @@ def _filter_reasoning_artifacts(message):
     return result
 
 
+# Initialize scheduler at module load time (works with both direct run and gunicorn --preload)
+# This runs when the module is imported, ensuring the scheduler starts regardless of how the app is launched
+with app.app_context():
+    db.create_all()
+init_scheduler()
+
+
 if __name__ == '__main__':
-    # Create database tables if they don't exist
-    with app.app_context():
-        db.create_all()
-
-    # Initialize the scheduler for automatic daily refresh
-    init_scheduler()
-
-    # Run Flask app
+    # Run Flask app in development mode
     # Note: For production, use Gunicorn with --preload flag:
     # gunicorn -w 1 --preload dashboard:app
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -705,3 +705,457 @@ footer {
 #summary-timestamp {
     font-size: 0.85rem;
 }
+
+/* ========================================
+   Hero Briefing Section Styles (US-1.1.1)
+   ======================================== */
+
+.hero-briefing {
+    margin-bottom: 2rem;
+}
+
+.hero-briefing .card {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.hero-briefing-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
+    color: white;
+    padding: 1.25rem 1.5rem;
+    border-bottom: none;
+}
+
+.hero-briefing-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.hero-briefing-header .badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+.briefing-content {
+    padding: 2rem;
+}
+
+.briefing-narrative {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: #333;
+    max-width: 900px;
+}
+
+.briefing-narrative p {
+    margin-bottom: 1rem;
+}
+
+.briefing-narrative p:last-child {
+    margin-bottom: 0;
+}
+
+.briefing-key-points h5 {
+    color: #0d6efd;
+    font-size: 1.1rem;
+}
+
+.briefing-key-points ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.briefing-key-points li {
+    padding: 0.5rem 0;
+    padding-left: 1.75rem;
+    position: relative;
+    font-size: 1.05rem;
+    line-height: 1.5;
+}
+
+.briefing-key-points li::before {
+    content: "•";
+    color: #0d6efd;
+    font-weight: bold;
+    font-size: 1.25rem;
+    position: absolute;
+    left: 0;
+    top: 0.4rem;
+}
+
+/* Loading Skeleton */
+.briefing-skeleton {
+    animation: briefing-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes briefing-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.skeleton-line {
+    height: 1rem;
+    background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-line-full {
+    width: 100%;
+}
+
+.skeleton-line-90 {
+    width: 90%;
+}
+
+.skeleton-line-75 {
+    width: 75%;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Outdated Warning */
+.briefing-outdated-warning {
+    color: #856404;
+    font-weight: 500;
+}
+
+/* Hero Briefing Card Footer */
+.hero-briefing .card-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+    .briefing-content {
+        padding: 1.5rem;
+    }
+
+    .briefing-narrative {
+        font-size: 1.05rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-briefing-header {
+        padding: 1rem;
+    }
+
+    .hero-briefing-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .briefing-content {
+        padding: 1rem;
+    }
+
+    .briefing-narrative {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .briefing-key-points li {
+        font-size: 1rem;
+    }
+
+    .hero-briefing .card-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+}
+
+/* ========================================
+   Market Conditions Grid Styles (US-1.1.2)
+   ======================================== */
+
+.market-conditions-grid {
+    margin: 2rem 0;
+}
+
+.market-conditions-grid .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+/* Market Cards */
+.market-card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+}
+
+.market-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.market-card .card-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.market-card .category-icon {
+    font-size: 1.25rem;
+}
+
+.market-card .category-name {
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.market-card .card-body {
+    padding: 1rem;
+}
+
+.market-card .card-footer {
+    background: transparent;
+    border-top: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+}
+
+/* Category Accent Colors (left border) */
+.category-credit {
+    border-left: 4px solid #dc3545;
+}
+
+.category-equities {
+    border-left: 4px solid #0d6efd;
+}
+
+.category-rates {
+    border-left: 4px solid #6f42c1;
+}
+
+.category-havens {
+    border-left: 4px solid #ffc107;
+}
+
+.category-crypto {
+    border-left: 4px solid #fd7e14;
+}
+
+.category-dollar {
+    border-left: 4px solid #198754;
+}
+
+/* Metric Rows */
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.metric-row:last-of-type {
+    border-bottom: none;
+}
+
+.metric-label {
+    color: #666;
+    font-size: 0.875rem;
+    flex: 1;
+}
+
+.metric-value {
+    font-weight: 600;
+    font-size: 1rem;
+    text-align: right;
+    min-width: 80px;
+}
+
+.metric-change {
+    font-size: 0.875rem;
+    min-width: 70px;
+    text-align: right;
+}
+
+.metric-change.positive {
+    color: #198754;
+}
+
+.metric-change.negative {
+    color: #dc3545;
+}
+
+/* Status Badge Row */
+.status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.status-label {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+/* Status Badge Colors */
+.status-crisis {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.status-stressed {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
+.status-elevated {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+.status-normal {
+    background-color: #6c757d !important;
+    color: white;
+}
+
+.status-calm {
+    background-color: #198754 !important;
+    color: white;
+}
+
+.status-risk-on {
+    background-color: #198754 !important;
+    color: white;
+}
+
+.status-risk-off {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
+.status-fear {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.status-cautious {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+.status-neutral {
+    background-color: #6c757d !important;
+    color: white;
+}
+
+.status-inverted {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
+.status-deeply-inverted {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.status-steep {
+    background-color: #17a2b8 !important;
+    color: white;
+}
+
+.status-flat {
+    background-color: #0d6efd !important;
+    color: white;
+}
+
+.status-flight {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.status-euphoric {
+    background-color: #198754 !important;
+    color: white;
+}
+
+.status-bullish {
+    background-color: #0d6efd !important;
+    color: white;
+}
+
+.status-bearish {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
+.status-capitulation {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.status-strong {
+    background-color: #0d6efd !important;
+    color: white;
+}
+
+.status-very-strong {
+    background-color: #fd7e14 !important;
+    color: white;
+}
+
+.status-weak {
+    background-color: #dc3545 !important;
+    color: white;
+}
+
+.status-very-weak {
+    background-color: #198754 !important;
+    color: white;
+}
+
+/* View Link */
+.view-link {
+    color: #0d6efd;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.view-link:hover {
+    text-decoration: underline;
+    color: #0b5ed7;
+}
+
+/* Responsive Adjustments for Market Grid */
+@media (max-width: 768px) {
+    .market-card .card-header {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .market-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .metric-value {
+        font-size: 0.9rem;
+        min-width: 70px;
+    }
+
+    .metric-change {
+        font-size: 0.8rem;
+        min-width: 60px;
+    }
+}
