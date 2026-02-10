@@ -48,18 +48,18 @@ The product has been perceived as narrowly focused on gold/credit divergence. Th
 
 #### 1.1 Homepage & Positioning Overhaul
 **Priority:** CRITICAL
-**Status:** [ ] Not Started
+**Status:** [x] ✅ COMPLETE (2026-02-09)
 **Effort:** 2 weeks
 
 **Problem:** Divergence metric dominates, creating single-thesis perception.
 
 **Deliverables:**
-- [ ] Redesign homepage to lead with "Today's Market Briefing"
-- [ ] Add balanced metric grid: Credit | Equities | Rates | Safe Havens | Crypto | Dollar
-- [ ] Create "What's Moving Today" section (top movers across ALL categories)
-- [ ] Move divergence to "Signals" section (one of several)
-- [ ] Update tagline: "Comprehensive macro intelligence for individual investors"
-- [ ] Remove hero messaging about gold vs. credit
+- [x] Redesign homepage to lead with "Today's Market Briefing"
+- [x] Add balanced metric grid: Credit | Equities | Rates | Safe Havens | Crypto | Dollar
+- [x] Create "What's Moving Today" section (top movers across ALL categories)
+- [x] Move divergence to "Signals" section (one of several)
+- [x] Update tagline: "Comprehensive macro intelligence for individual investors"
+- [x] Remove hero messaging about gold vs. credit
 
 **Files to Modify:**
 - `signaltrackers/templates/index.html`
@@ -317,6 +317,7 @@ Items to address alongside feature work:
 | Date | Change | Author |
 |------|--------|--------|
 | 2026-02-09 | Initial roadmap created | PM |
+| 2026-02-09 | Phase 1.1 Homepage Overhaul marked COMPLETE | PM |
 
 ---
 

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Financial Markets Dashboard{% endblock %}</title>
+    <meta name="description" content="Daily macro intelligence briefings for individual investors. Track credit, equities, rates, safe havens, crypto, and currency markets in one dashboard.">
+    <title>{% block title %}SignalTrackers - Macro Intelligence Platform{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
@@ -13,47 +14,53 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="bi bi-graph-up-arrow"></i> Financial Markets Dashboard
-            </a>
+            <div class="navbar-brand-container">
+                <a class="navbar-brand" href="/">
+                    <i class="bi bi-graph-up-arrow"></i> SignalTrackers
+                </a>
+                <span class="navbar-tagline d-none d-md-inline">
+                    Comprehensive macro intelligence for individual investors
+                </span>
+            </div>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="/">
                             <i class="bi bi-speedometer2"></i> Dashboard
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'equity' %}active{% endif %}" href="/equity">
-                            <i class="bi bi-bar-chart-line"></i> Equity Markets
+
+                    <!-- Markets Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['equity', 'safe_havens', 'crypto', 'rates', 'dollar'] %}active{% endif %}" href="#" role="button"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-graph-up-arrow"></i> Markets
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item {% if request.endpoint == 'equity' %}active{% endif %}" href="/equity">
+                                <i class="bi bi-bar-chart-line"></i> Equities
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'safe_havens' %}active{% endif %}" href="/safe-havens">
+                                <i class="bi bi-shield-check"></i> Safe Havens
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'crypto' %}active{% endif %}" href="/crypto">
+                                <i class="bi bi-currency-bitcoin"></i> Crypto
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'rates' %}active{% endif %}" href="/rates">
+                                <i class="bi bi-graph-down-arrow"></i> Rates
+                            </a></li>
+                            <li><a class="dropdown-item {% if request.endpoint == 'dollar' %}active{% endif %}" href="/dollar">
+                                <i class="bi bi-currency-dollar"></i> Dollar
+                            </a></li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'safe_havens' %}active{% endif %}" href="/safe-havens">
-                            <i class="bi bi-shield-check"></i> Safe Havens
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'crypto' %}active{% endif %}" href="/crypto">
-                            <i class="bi bi-currency-bitcoin"></i> Crypto
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'rates' %}active{% endif %}" href="/rates">
-                            <i class="bi bi-graph-down-arrow"></i> Rates
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'dollar' %}active{% endif %}" href="/dollar">
-                            <i class="bi bi-currency-dollar"></i> Dollar
-                        </a>
-                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'divergence' %}active{% endif %}" href="/divergence">
-                            <i class="bi bi-arrow-left-right"></i> Divergence
+                            <i class="bi bi-activity"></i> Signals
                         </a>
                     </li>
                     <li class="nav-item">
@@ -61,11 +68,13 @@
                             <i class="bi bi-graph-up"></i> Explorer
                         </a>
                     </li>
+                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'portfolio' %}active{% endif %}" href="/portfolio">
                             <i class="bi bi-pie-chart"></i> Portfolio
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item me-3">
@@ -161,7 +170,7 @@
     <!-- Footer -->
     <footer class="bg-dark text-light py-3 mt-5">
         <div class="container text-center">
-            <small>Financial Markets Dashboard | Data updated daily</small>
+            <small>SignalTrackers | Macro Intelligence for Individual Investors | Data updated daily</small>
         </div>
     </footer>
 

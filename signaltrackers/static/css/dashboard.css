@@ -103,9 +103,32 @@ canvas {
 }
 
 /* Navigation */
+.navbar-brand-container {
+    display: flex;
+    flex-direction: column;
+}
+
 .navbar-brand {
     font-weight: bold;
     font-size: 1.25rem;
+}
+
+.navbar-tagline {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    margin-top: -4px;
+}
+
+@media (min-width: 992px) {
+    .navbar-brand-container {
+        flex-direction: row;
+        align-items: baseline;
+        gap: 1rem;
+    }
+
+    .navbar-tagline {
+        margin-top: 0;
+    }
 }
 
 .nav-link {
@@ -119,6 +142,56 @@ canvas {
 
 .nav-link.active {
     font-weight: 700;
+}
+
+/* Markets Dropdown Styling */
+.dropdown-menu-dark {
+    background-color: #343a40;
+    border: 1px solid #495057;
+}
+
+.dropdown-menu-dark .dropdown-item {
+    color: #dee2e6;
+}
+
+.dropdown-menu-dark .dropdown-item:hover,
+.dropdown-menu-dark .dropdown-item:focus {
+    background-color: #495057;
+    color: #fff;
+}
+
+.dropdown-menu-dark .dropdown-item.active {
+    background-color: #0d6efd;
+}
+
+.dropdown-menu-dark .dropdown-item i {
+    margin-right: 0.5rem;
+    width: 1rem;
+    text-align: center;
+}
+
+/* Mobile accordion for Markets submenu */
+@media (max-width: 991px) {
+    .navbar-nav .dropdown-menu {
+        background-color: transparent;
+        border: none;
+        padding-left: 1rem;
+    }
+
+    .navbar-nav .dropdown-menu .dropdown-item {
+        color: rgba(255, 255, 255, 0.55);
+        padding: 0.5rem 0;
+    }
+
+    .navbar-nav .dropdown-menu .dropdown-item:hover {
+        color: rgba(255, 255, 255, 0.75);
+        background-color: transparent;
+    }
+
+    .navbar-nav .dropdown-menu .dropdown-item.active {
+        color: #fff;
+        background-color: transparent;
+    }
 }
 
 /* Tables */
@@ -1157,5 +1230,386 @@ footer {
     .metric-change {
         font-size: 0.8rem;
         min-width: 60px;
+    }
+}
+
+/* ========================================
+   What's Moving Today Styles (US-1.1.3)
+   ======================================== */
+
+.whats-moving-section {
+    margin: 2rem 0;
+}
+
+.whats-moving-section .section-header {
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.whats-moving-section .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Movers Container - Horizontal scrollable on mobile */
+.movers-container {
+    overflow-x: auto;
+    padding: 0.5rem 0;
+    position: relative;
+}
+
+.movers-row {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    min-height: 180px;
+}
+
+/* Mover Card */
+.mover-card {
+    flex: 0 0 auto;
+    min-width: 160px;
+    max-width: 180px;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.mover-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.15);
+    transform: translateY(-3px);
+}
+
+/* Rank Number */
+.mover-rank {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Metric Name */
+.mover-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Current Value */
+.mover-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+}
+
+/* Change Indicator */
+.mover-change {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.mover-change.positive {
+    color: #198754;
+}
+
+.mover-change.negative {
+    color: #dc3545;
+}
+
+/* Z-Score Display */
+.mover-zscore {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Severity Badge */
+.mover-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    padding: 0.35em 0.65em;
+    border-radius: 4px;
+}
+
+/* Elevated badge - custom yellow */
+.badge-elevated {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+/* Category accent colors (bottom border) */
+.mover-category-credit {
+    border-bottom: 3px solid #dc3545;
+}
+
+.mover-category-equities {
+    border-bottom: 3px solid #0d6efd;
+}
+
+.mover-category-rates {
+    border-bottom: 3px solid #6f42c1;
+}
+
+.mover-category-havens {
+    border-bottom: 3px solid #ffc107;
+}
+
+.mover-category-crypto {
+    border-bottom: 3px solid #fd7e14;
+}
+
+.mover-category-dollar {
+    border-bottom: 3px solid #198754;
+}
+
+/* Pulse animation for extreme movers (z-score > 2.5) */
+@keyframes attention-pulse {
+    0%, 100% {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2), 0 4px 12px rgba(220, 53, 69, 0.15);
+    }
+}
+
+.mover-card.extreme {
+    animation: attention-pulse 2s ease-in-out infinite;
+    border-color: #dc3545;
+}
+
+.mover-card.extreme:hover {
+    animation: none;
+}
+
+/* Loading state */
+.mover-card-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+}
+
+/* Responsive: Desktop (>992px) - all 5 cards in a row */
+@media (min-width: 993px) {
+    .movers-row {
+        justify-content: center;
+    }
+
+    .mover-card {
+        flex: 1 1 0;
+        max-width: 200px;
+    }
+}
+
+/* Responsive: Tablet (768-992px) - 3 cards per row */
+@media (min-width: 768px) and (max-width: 992px) {
+    .movers-row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .mover-card {
+        flex: 0 0 calc(33.333% - 1rem);
+        max-width: calc(33.333% - 1rem);
+        min-width: 140px;
+    }
+}
+
+/* Responsive: Mobile (<768px) - Horizontal scroll */
+@media (max-width: 767px) {
+    .movers-container {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        margin: 0 -0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .movers-row {
+        padding-right: 1rem;
+    }
+
+    .mover-card {
+        min-width: 150px;
+        max-width: 150px;
+    }
+
+    .mover-value {
+        font-size: 1.2rem;
+    }
+
+    .mover-change {
+        font-size: 0.9rem;
+    }
+
+    /* Scroll hint - fade on right edge */
+    .movers-container::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 40px;
+        background: linear-gradient(to right, transparent, rgba(248, 249, 250, 0.95));
+        pointer-events: none;
+    }
+
+    .whats-moving-section .section-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem;
+    }
+
+    .whats-moving-section .section-header .btn {
+        align-self: flex-end;
+    }
+}
+
+/* ========================================
+   Market Signals Section Styles (US-1.1.4)
+   ======================================== */
+
+.market-signals-section {
+    margin: 2rem 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+.market-signals-section .section-header {
+    margin-bottom: 1rem;
+}
+
+.market-signals-section .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+/* Signal Cards - Muted/Secondary styling */
+.signal-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 1.25rem;
+    transition: all 0.2s ease;
+}
+
+.signal-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: #dee2e6;
+}
+
+.signal-header {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.75rem;
+}
+
+.signal-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.signal-icon {
+    font-size: 1.25rem;
+}
+
+.signal-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Signal Status Colors */
+.signal-label.critical {
+    color: #dc3545;
+}
+
+.signal-label.elevated {
+    color: #fd7e14;
+}
+
+.signal-label.notable {
+    color: #0d6efd;
+}
+
+.signal-label.normal {
+    color: #198754;
+}
+
+.signal-percentile {
+    font-size: 0.8rem;
+    color: #6c757d;
+    background: #e9ecef;
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+}
+
+.signal-description {
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Section Footer */
+.market-signals-section .section-footer .view-link {
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.market-signals-section .section-footer .view-link:hover {
+    color: #0d6efd;
+    text-decoration: underline;
+}
+
+/* Responsive Adjustments for Signal Cards */
+@media (max-width: 767px) {
+    .market-signals-section {
+        padding-top: 1rem;
+    }
+
+    .signal-card {
+        padding: 1rem;
+    }
+
+    .signal-header {
+        font-size: 0.85rem;
+    }
+
+    .signal-description {
+        font-size: 0.75rem;
     }
 }

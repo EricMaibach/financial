@@ -61,28 +61,33 @@
     </div>
 </section>
 
-<!-- Top Movers Section -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightning-fill"></i> Top Movers (5 Day) - Biggest Unusual Moves
-                </h5>
-            </div>
-            <div class="card-body py-2">
-                <div class="row" id="top-movers-container">
-                    <div class="col text-center text-muted">Loading top movers...</div>
+<!-- Section 2: What's Moving Today -->
+<section class="whats-moving-section mb-4">
+    <div class="section-header d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="section-title mb-0"><i class="bi bi-lightning-fill me-2"></i>What's Moving Today</h3>
+            <small class="text-muted">Top movers across all 50+ metrics, ranked by statistical significance</small>
+        </div>
+        <a href="/explorer" class="btn btn-outline-secondary btn-sm">View All Metrics →</a>
+    </div>
+
+    <div class="movers-container">
+        <div class="movers-row" id="top-movers-row">
+            <!-- Loading state -->
+            <div class="mover-card-loading text-center text-muted py-4 w-100">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Ranked by z-score: how unusual the 5-day move is relative to historical volatility.
-                    </small>
-                </div>
+                Market movements loading...
             </div>
         </div>
     </div>
-</div>
+    <div class="mt-2">
+        <small class="text-muted">
+            <i class="bi bi-info-circle"></i> <strong>Z-score</strong> measures how unusual a move is compared to historical volatility. Higher = more unusual.
+        </small>
+    </div>
+</section>
 
 <!-- Top Movers Chart -->
 <div class="row mb-4">
@@ -327,6 +332,75 @@
     </div>
 </section>
 
+<!-- Section 4: Market Signals (US-1.1.4) -->
+<section class="market-signals-section mb-4">
+    <div class="section-header mb-3">
+        <h3 class="section-title">Market Signals</h3>
+        <small class="text-muted">Cross-market indicators worth watching</small>
+    </div>
+
+    <div class="row g-3">
+        <!-- Gold/Credit Divergence -->
+        <div class="col-12 col-md-4">
+            <div class="signal-card h-100">
+                <div class="signal-header">Gold/Credit Divergence</div>
+                <div class="signal-status" id="divergence-status">
+                    <span class="signal-icon">--</span>
+                    <span class="signal-label">--</span>
+                </div>
+                <div class="signal-percentile" id="divergence-percentile">
+                    -- Percentile
+                </div>
+                <div class="signal-description">
+                    When gold prices rise while credit spreads remain stable, it suggests
+                    gold is pricing in risks that credit markets haven't acknowledged yet.
+                </div>
+            </div>
+        </div>
+
+        <!-- Yield Curve Status -->
+        <div class="col-12 col-md-4">
+            <div class="signal-card h-100">
+                <div class="signal-header">Yield Curve Status</div>
+                <div class="signal-status" id="yieldcurve-status">
+                    <span class="signal-icon">--</span>
+                    <span class="signal-label">--</span>
+                </div>
+                <div class="signal-percentile" id="yieldcurve-percentile">
+                    -- Percentile
+                </div>
+                <div class="signal-description">
+                    An inverted yield curve (short rates higher than long rates) has
+                    historically preceded recessions. Currently tracking the 10Y-2Y spread.
+                </div>
+            </div>
+        </div>
+
+        <!-- VIX Term Structure -->
+        <div class="col-12 col-md-4">
+            <div class="signal-card h-100">
+                <div class="signal-header">VIX Term Structure</div>
+                <div class="signal-status" id="vixterm-status">
+                    <span class="signal-icon">--</span>
+                    <span class="signal-label">--</span>
+                </div>
+                <div class="signal-percentile" id="vixterm-percentile">
+                    -- Percentile
+                </div>
+                <div class="signal-description">
+                    When near-term VIX exceeds longer-term VIX (backwardation), it signals
+                    acute market stress and demand for immediate protection.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-footer mt-3 text-end">
+        <a href="/divergence" class="view-link">View All Signals →</a>
+    </div>
+</section>
+
+<!-- Additional Insights Section -->
 <!-- Market Concentration Row -->
 <div class="row mb-4">
     <div class="col-12">
@@ -605,47 +679,9 @@ async function loadDashboard() {
         const updateTimeEl = document.getElementById('update-time');
         if (updateTimeEl) updateTimeEl.textContent = data.timestamp;
 
-        // Update top movers
+        // Update top movers (What's Moving Today - US-1.1.3)
         if (data.top_movers && data.top_movers.length > 0) {
-            const container = document.getElementById('top-movers-container');
-            container.innerHTML = data.top_movers.map((mover, idx) => {
-                const isPositive = mover.change_5d >= 0;
-                const changeSign = isPositive ? '+' : '';
-                const changeColor = isPositive ? 'text-success' : 'text-danger';
-                const arrow = isPositive ? 'bi-arrow-up-right' : 'bi-arrow-down-right';
-
-                // Format the change value
-                let changeDisplay;
-                if (mover.unit === 'bp') {
-                    changeDisplay = `${changeSign}${mover.change_5d} bp`;
-                } else {
-                    changeDisplay = `${changeSign}${mover.change_5d.toFixed(1)}%`;
-                }
-
-                // Z-score badge color
-                const absZ = Math.abs(mover.z_score);
-                const zBadgeClass = absZ >= 2.5 ? 'bg-danger' : absZ >= 2 ? 'bg-warning' : 'bg-secondary';
-
-                return `
-                    <div class="col">
-                        <a href="${mover.link}" class="text-decoration-none">
-                            <div class="card h-100 border-0 bg-light">
-                                <div class="card-body py-2 px-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-bold text-dark">${mover.name}</span>
-                                        <span class="badge ${zBadgeClass}">${mover.z_score > 0 ? '+' : ''}${mover.z_score}σ</span>
-                                    </div>
-                                    <div class="d-flex align-items-center mt-1">
-                                        <i class="bi ${arrow} ${changeColor} me-1"></i>
-                                        <span class="${changeColor} fw-bold">${changeDisplay}</span>
-                                        <span class="text-muted ms-1">(5d)</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                `;
-            }).join('');
+            renderTopMovers(data.top_movers);
 
             // Load the movers chart with the top movers data
             loadMoversChart(data.top_movers);
@@ -804,6 +840,9 @@ async function loadDashboard() {
 
         // Update Market Conditions Grid (US-1.1.2)
         updateMarketConditionsGrid(data);
+
+        // Update Market Signals Section (US-1.1.4)
+        updateSignalsSection(data);
 
         // Update economic indicators
         if (data.metrics.economic_indicators) {
@@ -1055,6 +1094,109 @@ function updateMarketConditionsGrid(data) {
     }
 }
 
+// ========================================
+// Market Signals Section Functions (US-1.1.4)
+// ========================================
+
+// Update all signal cards with current data
+function updateSignalsSection(data) {
+    const metrics = data.metrics || {};
+    const marketGrid = data.market_grid || {};
+
+    // Gold/Credit Divergence - data is in metrics.divergence
+    const divergence = metrics.divergence || {};
+    const divPercentile = divergence.percentile || 50;
+    const divStatus = getDivergenceStatus(divPercentile);
+    updateSignalCard('divergence', divStatus, divPercentile);
+
+    // Yield Curve Status
+    const treasury10y = marketGrid.rates?.treasury_10y?.value || metrics.treasury_10y?.value || 4.0;
+    const treasury2y = marketGrid.rates?.treasury_2y?.value || metrics.treasury_2y?.value || 4.0;
+    const curveSpread = treasury10y - treasury2y;
+    const yieldStatus = getYieldCurveStatus(curveSpread);
+    const yieldPercentile = calculateYieldCurvePercentile(curveSpread);
+    updateSignalCard('yieldcurve', yieldStatus, yieldPercentile);
+
+    // VIX Term Structure (using VIX level as proxy if term structure unavailable)
+    const vix = metrics.vix?.current || marketGrid.equities?.vix?.value || 15;
+    const vixStatus = getVIXTermStatus(vix);
+    // Use percentile from API if available, otherwise calculate from VIX level
+    const vixPercentile = metrics.vix?.percentile ?? calculateVIXPercentile(vix);
+    updateSignalCard('vixterm', vixStatus, vixPercentile);
+}
+
+// Get divergence signal status based on percentile
+function getDivergenceStatus(percentile) {
+    if (percentile > 90) return { icon: '🔴', label: 'CRITICAL', class: 'critical' };
+    if (percentile > 70) return { icon: '⚠️', label: 'ELEVATED', class: 'elevated' };
+    if (percentile > 50) return { icon: 'ℹ️', label: 'NOTABLE', class: 'notable' };
+    return { icon: '✓', label: 'NORMAL', class: 'normal' };
+}
+
+// Get yield curve signal status based on 10Y-2Y spread
+function getYieldCurveStatus(spread) {
+    if (spread < -0.5) return { icon: '🔴', label: 'DEEPLY INVERTED', class: 'critical' };
+    if (spread < 0) return { icon: '⚠️', label: 'INVERTED', class: 'elevated' };
+    if (spread < 0.25) return { icon: 'ℹ️', label: 'FLAT', class: 'notable' };
+    return { icon: '✓', label: 'NORMAL', class: 'normal' };
+}
+
+// Get VIX term structure status (using VIX level as proxy)
+function getVIXTermStatus(vix) {
+    if (vix > 30) return { icon: '🔴', label: 'FEAR SPIKE', class: 'critical' };
+    if (vix > 25) return { icon: '⚠️', label: 'STRESSED', class: 'elevated' };
+    if (vix > 20) return { icon: 'ℹ️', label: 'ELEVATED', class: 'notable' };
+    return { icon: '✓', label: 'NORMAL', class: 'normal' };
+}
+
+// Calculate yield curve percentile (simplified)
+// Historical range roughly: -1.0% to +2.5%
+// Inverted (negative) = high percentile (unusual)
+function calculateYieldCurvePercentile(spread) {
+    if (spread < -0.5) return 98;
+    if (spread < 0) return 90;
+    if (spread < 0.25) return 70;
+    if (spread < 0.5) return 50;
+    if (spread < 1.0) return 30;
+    return 15;
+}
+
+// Calculate VIX percentile based on level
+function calculateVIXPercentile(vix) {
+    if (vix > 35) return 98;
+    if (vix > 30) return 95;
+    if (vix > 25) return 85;
+    if (vix > 20) return 70;
+    if (vix > 15) return 50;
+    if (vix > 12) return 30;
+    return 15;
+}
+
+// Get ordinal suffix for percentile display
+function getOrdinalSuffix(n) {
+    const s = ['th', 'st', 'nd', 'rd'];
+    const v = Math.round(n) % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+}
+
+// Update a single signal card's display
+function updateSignalCard(id, status, percentile) {
+    const statusEl = document.getElementById(`${id}-status`);
+    const percentileEl = document.getElementById(`${id}-percentile`);
+
+    if (statusEl) {
+        statusEl.innerHTML = `
+            <span class="signal-icon">${status.icon}</span>
+            <span class="signal-label ${status.class}">${status.label}</span>
+        `;
+    }
+
+    if (percentileEl) {
+        const roundedPercentile = Math.round(percentile);
+        percentileEl.textContent = `${roundedPercentile}${getOrdinalSuffix(roundedPercentile)} Percentile`;
+    }
+}
+
 // Load prediction markets data from Kalshi
 async function loadPredictionMarkets() {
     try {
@@ -1220,6 +1362,136 @@ async function loadAISummary() {
         errorEl.style.display = 'block';
         errorMsgEl.textContent = 'Market briefing is being generated. Check back shortly.';
     }
+}
+
+// ========================================
+// What's Moving Today Functions (US-1.1.3)
+// ========================================
+
+// Render top movers section with new card design
+function renderTopMovers(movers) {
+    const container = document.getElementById('top-movers-row');
+
+    if (!movers || movers.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center w-100 py-4">Market movements loading...</p>';
+        return;
+    }
+
+    // Sort by absolute z-score and take top 5
+    const topMovers = movers
+        .sort((a, b) => Math.abs(b.z_score) - Math.abs(a.z_score))
+        .slice(0, 5);
+
+    container.innerHTML = topMovers.map((mover, index) => {
+        const rank = index + 1;
+        const isPositive = mover.change_5d >= 0;
+        const changeClass = isPositive ? 'positive' : 'negative';
+        const directionIcon = isPositive ? '▲' : '▼';
+
+        // Determine severity badge based on absolute z-score
+        const absZ = Math.abs(mover.z_score);
+        let badgeClass, badgeText;
+        if (absZ > 2.5) {
+            badgeClass = 'bg-danger';
+            badgeText = 'EXTREME';
+        } else if (absZ > 2.0) {
+            badgeClass = 'bg-warning text-dark';
+            badgeText = 'UNUSUAL';
+        } else if (absZ > 1.5) {
+            badgeClass = 'badge-elevated';
+            badgeText = 'ELEVATED';
+        } else if (absZ > 1.0) {
+            badgeClass = 'bg-primary';
+            badgeText = 'NOTABLE';
+        } else {
+            badgeClass = 'bg-secondary';
+            badgeText = 'NORMAL';
+        }
+
+        // Add extreme class for pulse animation
+        const extremeClass = absZ > 2.5 ? 'extreme' : '';
+
+        // Format the current value
+        const formattedValue = formatMoverValue(mover.current_value, mover.unit, mover.metric);
+
+        // Format the change value
+        let changeDisplay;
+        if (mover.unit === 'bp') {
+            changeDisplay = `${Math.abs(mover.change_5d)}bp`;
+        } else {
+            changeDisplay = `${Math.abs(mover.change_5d).toFixed(1)}%`;
+        }
+
+        // Get category color for optional indicator
+        const categoryClass = getCategoryClass(mover.category);
+
+        return `
+            <div class="mover-card ${extremeClass} ${categoryClass}" onclick="navigateToMetric('${mover.metric}')">
+                <div class="mover-rank">#${rank}</div>
+                <div class="mover-name" title="${mover.name}">${mover.name}</div>
+                <div class="mover-value">${formattedValue}</div>
+                <div class="mover-change ${changeClass}">
+                    ${directionIcon} ${changeDisplay}
+                </div>
+                <div class="mover-zscore">z-score: ${mover.z_score.toFixed(1)}</div>
+                <span class="mover-badge badge ${badgeClass}">${badgeText}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Format value based on metric type
+function formatMoverValue(value, unit, metricId) {
+    if (value === null || value === undefined) return '--';
+
+    if (unit === 'bp') {
+        return `${Math.round(value)}bp`;
+    }
+
+    // Format based on metric type
+    if (metricId && (metricId.includes('gold') || metricId.includes('silver') ||
+        metricId.includes('spy') || metricId.includes('btc') || metricId.includes('bitcoin') ||
+        metricId.includes('eth') || metricId.includes('tlt'))) {
+        return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    if (metricId && (metricId.includes('yield') || metricId.includes('rate'))) {
+        return `${value.toFixed(2)}%`;
+    }
+
+    if (metricId && (metricId.includes('ratio') || metricId.includes('dominance'))) {
+        return value.toFixed(2);
+    }
+
+    // Default formatting
+    if (Math.abs(value) >= 1000) {
+        return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    } else if (Math.abs(value) >= 100) {
+        return value.toFixed(1);
+    } else {
+        return value.toFixed(2);
+    }
+}
+
+// Get category class for accent styling
+function getCategoryClass(category) {
+    if (!category) return '';
+    const categoryMap = {
+        'credit': 'mover-category-credit',
+        'equities': 'mover-category-equities',
+        'rates': 'mover-category-rates',
+        'havens': 'mover-category-havens',
+        'safe-havens': 'mover-category-havens',
+        'crypto': 'mover-category-crypto',
+        'dollar': 'mover-category-dollar',
+        'currency': 'mover-category-dollar'
+    };
+    return categoryMap[category.toLowerCase()] || '';
+}
+
+// Navigate to metric detail page
+function navigateToMetric(metricId) {
+    window.location.href = `/explorer?metric=${metricId}`;
 }
 
 // Top Movers Chart

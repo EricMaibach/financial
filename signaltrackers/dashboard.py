@@ -562,14 +562,21 @@ def calculate_top_movers(num_movers=5):
 
         z_score = (current_change - rolling_mean) / rolling_std
 
+        # Get current value (apply multiplier for display)
+        raw_value = df[col].iloc[-1]
+        if pd.isna(raw_value):
+            continue
+        current_value = float(raw_value) * multiplier
+
         movers.append({
             'metric': metric_name,
             'name': config['name'],
             'link': config['link'],
-            'change_5d': round(current_change, 2),
-            'z_score': round(z_score, 2),
+            'change_5d': round(float(current_change), 2),
+            'z_score': round(float(z_score), 2),
             'unit': config['unit'],
-            'display_type': config['display']
+            'display_type': config['display'],
+            'current_value': round(current_value, 2)
         })
 
     # Add calculated metrics (divergence gap, CCC/HY ratio)
@@ -596,15 +603,18 @@ def calculate_top_movers(num_movers=5):
 
             if not pd.isna(current_change) and not pd.isna(rolling_std) and rolling_std > 0:
                 z_score = (current_change - rolling_mean) / rolling_std
-                movers.append({
-                    'metric': 'divergence_gap',
-                    'name': 'Divergence Gap',
-                    'link': '/explorer?metric=divergence_gap',
-                    'change_5d': round(current_change, 0),
-                    'z_score': round(z_score, 2),
-                    'unit': 'bp',
-                    'display_type': 'abs'
-                })
+                current_divergence = merged['divergence_gap'].iloc[-1]
+                if not pd.isna(current_divergence):
+                    movers.append({
+                        'metric': 'divergence_gap',
+                        'name': 'Divergence Gap',
+                        'link': '/explorer?metric=divergence_gap',
+                        'change_5d': int(round(float(current_change), 0)),
+                        'z_score': round(float(z_score), 2),
+                        'unit': 'bp',
+                        'display_type': 'abs',
+                        'current_value': int(round(float(current_divergence), 0))
+                    })
 
     # Sort by absolute z-score and return top N
     movers.sort(key=lambda x: abs(x['z_score']), reverse=True)
@@ -784,23 +794,45 @@ def get_dashboard_data():
             implied_30d = ((gold_30d / 2000) ** 1.5) * 400
             gap_30d_ago = implied_30d - hy_30d
 
+        # Calculate historical percentile for divergence gap
+        divergence_percentile = 50  # Default
+        try:
+            # Merge gold and HY data to calculate historical divergence series
+            merged = pd.merge(gold_df, hy_df, on='date', how='inner')
+            if len(merged) > 0:
+                gold_col = [c for c in merged.columns if c != 'date'][0]
+                hy_col = [c for c in merged.columns if c != 'date'][1]
+                gold_prices_hist = merged[gold_col] * 10
+                hy_spreads_hist = merged[hy_col] * 100
+                gold_implied_hist = ((gold_prices_hist / 2000) ** 1.5) * 400
+                divergence_hist = gold_implied_hist - hy_spreads_hist
+                # Calculate percentile: what percentage of historical values are below current
+                divergence_percentile = (divergence_hist < divergence_gap).sum() / len(divergence_hist) * 100
+        except Exception as e:
+            print(f"Error calculating divergence percentile: {e}")
+
         data['metrics']['divergence'] = {
             'gap': round(divergence_gap, 0),
             'gold_implied_spread': round(gold_implied, 0),
             'actual_spread': round(hy_current, 0),
             'gap_change_5d': round(divergence_gap - gap_5d_ago, 0) if gap_5d_ago is not None else 0,
-            'gap_change_30d': round(divergence_gap - gap_30d_ago, 0) if gap_30d_ago is not None else 0
+            'gap_change_30d': round(divergence_gap - gap_30d_ago, 0) if gap_30d_ago is not None else 0,
+            'percentile': round(divergence_percentile, 1)
         }
 
     # VIX
     if vix_df is not None:
         vix_current = vix_df.iloc[-1][vix_df.columns[1]]
         vix_returns = calculate_returns(vix_df, vix_df.columns[1], [5, 20])
+        # Calculate VIX percentile
+        vix_values = vix_df[vix_df.columns[1]].dropna()
+        vix_percentile = (vix_values < vix_current).sum() / len(vix_values) * 100
         data['metrics']['vix'] = {
             'current': round(vix_current, 2),
             'change_5d': round(vix_returns.get('5d', 0), 2),
             'change_30d': round(vix_returns.get('20d', 0), 2),
-            'status': 'low' if vix_current < 16 else 'normal' if vix_current < 25 else 'elevated'
+            'status': 'low' if vix_current < 16 else 'normal' if vix_current < 25 else 'elevated',
+            'percentile': round(vix_percentile, 1)
         }
 
     # CCC/HY Ratio
