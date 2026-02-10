@@ -84,7 +84,7 @@
     </div>
     <div class="mt-2">
         <small class="text-muted">
-            <i class="bi bi-info-circle"></i> <strong>Z-score</strong> measures how unusual a move is compared to historical volatility. Higher = more unusual.
+            <i class="bi bi-info-circle"></i> Rarity shows how unusual a move is compared to history. "Top 1% move" means this size move only happens ~1% of the time.
         </small>
     </div>
 </section>
@@ -1425,6 +1425,20 @@ function renderTopMovers(movers) {
         // Get category color for optional indicator
         const categoryClass = getCategoryClass(mover.category);
 
+        // Convert z-score to user-friendly rarity description
+        let rarityText;
+        if (absZ > 2.5) {
+            rarityText = 'Top 1% move';
+        } else if (absZ > 2.0) {
+            rarityText = 'Top 2% move';
+        } else if (absZ > 1.5) {
+            rarityText = 'Top 7% move';
+        } else if (absZ > 1.0) {
+            rarityText = 'Top 16% move';
+        } else {
+            rarityText = 'Normal range';
+        }
+
         return `
             <div class="mover-card ${extremeClass} ${categoryClass}" onclick="navigateToMetric('${mover.metric}')">
                 <div class="mover-rank">#${rank}</div>
@@ -1433,7 +1447,7 @@ function renderTopMovers(movers) {
                 <div class="mover-change ${changeClass}">
                     ${directionIcon} ${changeDisplay}
                 </div>
-                <div class="mover-zscore">z-score: ${mover.z_score.toFixed(1)}</div>
+                <div class="mover-zscore">${rarityText}</div>
                 <span class="mover-badge badge ${badgeClass}">${badgeText}</span>
             </div>
         `;

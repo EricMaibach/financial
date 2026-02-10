@@ -534,6 +534,12 @@ def calculate_top_movers(num_movers=5):
         if df is None or len(df) < 60:  # Need enough history for z-score
             continue
 
+        # Check data freshness - only include metrics with data from past 5 days
+        last_date = df['date'].iloc[-1]
+        days_since_update = (pd.Timestamp.now() - pd.Timestamp(last_date)).days
+        if days_since_update > 5:
+            continue
+
         col = df.columns[1]  # Data column
         multiplier = config.get('multiplier', 1)
 
@@ -1614,6 +1620,11 @@ def api_metric_data(metric_name):
         'vix': 'vix_price',
         'sp500': 'sp500_price',
         'market_breadth': 'market_breadth_ratio',
+        # Treasury ETF ticker aliases
+        'tlt_price': 'treasury_20yr_price',
+        'ief_price': 'treasury_7_10yr_price',
+        'shy_price': 'treasury_short_price',
+        'tip_price': 'tips_inflation_price',
     }
 
     # Apply alias if one exists
