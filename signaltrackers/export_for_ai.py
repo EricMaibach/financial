@@ -100,7 +100,7 @@ def generate_markdown_summary():
     output = []
 
     # Header
-    output.append("# MARKET DIVERGENCE DATA SUMMARY")
+    output.append("# MACRO FINANCIAL DATA SUMMARY")
     output.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     output.append("")
     output.append("This document contains a comprehensive summary of all tracked market metrics,")
@@ -111,13 +111,13 @@ def generate_markdown_summary():
 
     # Table of Contents
     output.append("## TABLE OF CONTENTS")
-    output.append("1. [Key Divergence Metrics](#key-divergence-metrics)")
-    output.append("2. [Credit Markets](#credit-markets)")
-    output.append("3. [Equity Markets](#equity-markets)")
-    output.append("4. [Safe Haven Assets](#safe-haven-assets)")
-    output.append("5. [Fixed Income](#fixed-income)")
-    output.append("6. [Commodities](#commodities)")
-    output.append("7. [Market Breadth & Ratios](#market-breadth--ratios)")
+    output.append("1. [Credit Markets](#credit-markets)")
+    output.append("2. [Equity Markets](#equity-markets)")
+    output.append("3. [Safe Haven Assets](#safe-haven-assets)")
+    output.append("4. [Fixed Income](#fixed-income)")
+    output.append("5. [Commodities](#commodities)")
+    output.append("6. [Market Breadth & Ratios](#market-breadth--ratios)")
+    output.append("7. [Divergence Metrics](#divergence-metrics)")
     output.append("8. [Raw Data (JSON)](#raw-data-json)")
     output.append("")
     output.append("---")
@@ -173,34 +173,10 @@ def generate_markdown_summary():
         }
     }
 
-    # Calculate divergence gap
+    # Calculate divergence gap (will be added after other categories)
     gold_df = load_csv_safely('gold_price.csv')
     hy_df = load_csv_safely('high_yield_spread.csv')
     divergence_stats = calculate_divergence_gap(gold_df, hy_df)
-
-    # KEY DIVERGENCE METRICS
-    output.append("## KEY DIVERGENCE METRICS")
-    output.append("")
-    output.append("### Divergence Gap (Gold-Implied Spread vs Actual HY Spread)")
-    if divergence_stats:
-        output.append(f"- **Current:** {divergence_stats['current']:.1f} bp")
-        output.append(f"- **1-Day Change:** {divergence_stats.get('change_1d', 0):+.1f} bp ({divergence_stats.get('change_1d_pct', 0):+.2f}%)")
-        output.append(f"- **5-Day Change:** {divergence_stats.get('change_5d', 0):+.1f} bp ({divergence_stats.get('change_5d_pct', 0):+.2f}%)")
-        output.append(f"- **10-Day Change:** {divergence_stats.get('change_10d', 0):+.1f} bp ({divergence_stats.get('change_10d_pct', 0):+.2f}%)")
-        output.append(f"- **30-Day Change:** {divergence_stats.get('change_30d', 0):+.1f} bp ({divergence_stats.get('change_30d_pct', 0):+.2f}%)")
-        output.append(f"- **Range:** {divergence_stats['min']:.1f} - {divergence_stats['max']:.1f} bp")
-        output.append(f"- **Mean:** {divergence_stats['mean']:.1f} bp")
-        output.append("")
-        output.append("**Recent 10 Days:**")
-        output.append("```")
-        output.append("Date       | Divergence Gap (bp)")
-        output.append("-----------|-------------------")
-        for item in divergence_stats['recent_data']:
-            output.append(f"{item['date']} | {item['value']:.1f}")
-        output.append("```")
-        output.append("")
-        all_stats['divergence_gap'] = divergence_stats
-    output.append("")
 
     # Process each category
     for category, category_metrics in metrics.items():
@@ -244,6 +220,30 @@ def generate_markdown_summary():
 
         output.append("")
 
+    # DIVERGENCE METRICS (added after other categories)
+    output.append("## DIVERGENCE METRICS")
+    output.append("")
+    output.append("### Divergence Gap (Gold-Implied Spread vs Actual HY Spread)")
+    if divergence_stats:
+        output.append(f"- **Current:** {divergence_stats['current']:.1f} bp")
+        output.append(f"- **1-Day Change:** {divergence_stats.get('change_1d', 0):+.1f} bp ({divergence_stats.get('change_1d_pct', 0):+.2f}%)")
+        output.append(f"- **5-Day Change:** {divergence_stats.get('change_5d', 0):+.1f} bp ({divergence_stats.get('change_5d_pct', 0):+.2f}%)")
+        output.append(f"- **10-Day Change:** {divergence_stats.get('change_10d', 0):+.1f} bp ({divergence_stats.get('change_10d_pct', 0):+.2f}%)")
+        output.append(f"- **30-Day Change:** {divergence_stats.get('change_30d', 0):+.1f} bp ({divergence_stats.get('change_30d_pct', 0):+.2f}%)")
+        output.append(f"- **Range:** {divergence_stats['min']:.1f} - {divergence_stats['max']:.1f} bp")
+        output.append(f"- **Mean:** {divergence_stats['mean']:.1f} bp")
+        output.append("")
+        output.append("**Recent 10 Days:**")
+        output.append("```")
+        output.append("Date       | Divergence Gap (bp)")
+        output.append("-----------|-------------------")
+        for item in divergence_stats['recent_data']:
+            output.append(f"{item['date']} | {item['value']:.1f}")
+        output.append("```")
+        output.append("")
+        all_stats['divergence_gap'] = divergence_stats
+    output.append("")
+
     # RAW DATA (JSON)
     output.append("## RAW DATA (JSON)")
     output.append("")
@@ -252,43 +252,6 @@ def generate_markdown_summary():
     output.append("```json")
     output.append(json.dumps(all_stats, indent=2))
     output.append("```")
-    output.append("")
-
-    # CRISIS CONTEXT
-    output.append("---")
-    output.append("")
-    output.append("## CRISIS CONTEXT")
-    output.append("")
-    output.append("### What Makes This Unusual")
-    output.append("")
-    output.append("1. **Divergence Gap**: At ~970 bp, this represents an unprecedented disconnect between")
-    output.append("   what gold (safe haven) is pricing versus what credit markets (risk) are pricing.")
-    output.append("")
-    output.append("2. **Credit Spreads**: HY spreads at 274 bp (3.8th percentile) are extremely tight,")
-    output.append("   indicating markets see very low default risk.")
-    output.append("")
-    output.append("3. **Gold Price**: GLD at $425+ (implying ~$4,250/oz gold) is at 91st percentile,")
-    output.append("   indicating extreme crisis fears.")
-    output.append("")
-    output.append("4. **VIX**: Recently ticked up from 14 to 16.75, first sign of concern emerging.")
-    output.append("")
-    output.append("5. **Bitcoin**: Recovered from -24% to -19% off peak ($120k), showing improving")
-    output.append("   liquidity conditions.")
-    output.append("")
-    output.append("### Historical Context")
-    output.append("")
-    output.append("- **Data Period:** July 2025 - January 2026 (6 months)")
-    output.append("- **Divergence Trend:** Gap widened from 757 bp to 969 bp (+28%)")
-    output.append("- **Acceleration:** Last 10 days saw +115 bp widening")
-    output.append("- **Rate:** Currently widening at ~12 bp/day")
-    output.append("")
-    output.append("### Key Questions for AI Analysis")
-    output.append("")
-    output.append("1. Is this divergence sustainable or will it resolve? How?")
-    output.append("2. Which market is 'right' - credit or gold?")
-    output.append("3. What are the most likely resolution scenarios and timelines?")
-    output.append("4. What leading indicators should we watch for resolution?")
-    output.append("5. Compare this setup to historical precedents (if any exist).")
     output.append("")
 
     return "\n".join(output)
@@ -316,7 +279,7 @@ def main():
     print("You can now:")
     print("  1. Copy the entire file content")
     print("  2. Paste into Claude, ChatGPT, or Grok")
-    print("  3. Ask for analysis of the market divergence")
+    print("  3. Ask for analysis of the market conditions")
     print("")
     print("Example prompt:")
     print('  "Analyze this market data and tell me what\'s happening,')

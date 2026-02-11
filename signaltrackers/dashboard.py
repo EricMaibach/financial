@@ -2435,16 +2435,6 @@ def generate_market_summary():
             year_ago = float(values.iloc[-13])
             return ((current / year_ago) - 1) * 100 if year_ago != 0 else 0
 
-        # Divergence Gap
-        if divergence_df is not None:
-            stats = get_stats(divergence_df)
-            if stats:
-                summary_parts.append("## DIVERGENCE GAP (Gold-Implied Spread minus Actual HY Spread)")
-                summary_parts.append(f"Current: {stats['current']:.0f} bp ({stats['percentile']:.1f}th percentile)")
-                summary_parts.append(f"5-Day Change: {stats['change_5d']:+.0f} bp | 30-Day Change: {stats['change_30d']:+.0f} bp")
-                summary_parts.append(f"Historical Range: {stats['min']:.0f} - {stats['max']:.0f} bp")
-                summary_parts.append("")
-
         # Credit Spreads Section
         summary_parts.append("## CREDIT SPREADS")
         if hy_spread_df is not None:
@@ -2572,6 +2562,16 @@ def generate_market_summary():
                 summary_parts.append(f"CPI Index: {stats['current']:.1f} | YoY Inflation: {yoy:+.1f}%")
                 summary_parts.append("  (Fed target ~2%, >5% = high inflation)")
         summary_parts.append("")
+
+        # Divergence Gap (Gold vs Credit)
+        if divergence_df is not None:
+            stats = get_stats(divergence_df)
+            if stats:
+                summary_parts.append("## DIVERGENCE GAP (Gold-Implied Spread minus Actual HY Spread)")
+                summary_parts.append(f"Current: {stats['current']:.0f} bp ({stats['percentile']:.1f}th percentile)")
+                summary_parts.append(f"5-Day Change: {stats['change_5d']:+.0f} bp | 30-Day Change: {stats['change_30d']:+.0f} bp")
+                summary_parts.append(f"Historical Range: {stats['min']:.0f} - {stats['max']:.0f} bp")
+                summary_parts.append("")
 
         # Prediction Markets
         try:
