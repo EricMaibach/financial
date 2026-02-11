@@ -26,7 +26,8 @@ from ai_summary import (
     generate_crypto_summary, get_crypto_summary_for_display,
     generate_equity_summary, get_equity_summary_for_display,
     generate_rates_summary, get_rates_summary_for_display,
-    generate_dollar_summary, get_dollar_summary_for_display
+    generate_dollar_summary, get_dollar_summary_for_display,
+    get_ai_client, call_ai_with_tools
 )
 from metric_tools import (
     LIST_METRICS_FUNCTION,
@@ -1810,6 +1811,18 @@ def run_data_collection():
         except Exception as rates_summary_error:
             print(f"Rates AI summary error (non-fatal): {rates_summary_error}")
 
+        # Generate Market Conditions Synthesis (one-liner)
+        reload_status['status'] = 'Generating market conditions synthesis...'
+        print("Generating Market Conditions Synthesis...")
+        try:
+            synthesis_result = generate_market_conditions_synthesis()
+            if synthesis_result['success']:
+                print("Market conditions synthesis generated successfully!")
+            else:
+                print(f"Market synthesis generation failed: {synthesis_result['error']}")
+        except Exception as synthesis_error:
+            print(f"Market synthesis error (non-fatal): {synthesis_error}")
+
         # Mark as successful
         reload_status['success'] = True
         reload_status['status'] = 'Complete!'
@@ -2048,6 +2061,267 @@ def api_generate_dollar_summary():
             return jsonify({
                 'status': 'success',
                 'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# Market Conditions Synthesis API (US-1.2.2)
+# ============================================================================
+
+# Caching for market conditions synthesis
+MARKET_SYNTHESIS_FILE = Path("data/market_synthesis.json")
+
+
+def calculate_market_statuses(dashboard_data: dict) -> dict:
+    """
+    Calculate market status labels from dashboard data.
+    Ports the status calculation logic from frontend JS to Python.
+
+    Args:
+        dashboard_data: Output from get_dashboard_data()
+
+    Returns:
+        Dict with status labels for each market dimension
+    """
+    metrics = dashboard_data.get('metrics', {})
+    market_grid = dashboard_data.get('market_grid', {})
+
+    # Credit Status (based on HY spread)
+    hy_spread = metrics.get('hy_spread', {}).get('current', 0)
+    if hy_spread > 600:
+        credit = 'crisis'
+    elif hy_spread > 450:
+        credit = 'stressed'
+    elif hy_spread > 350:
+        credit = 'tight'
+    elif hy_spread < 300:
+        credit = 'calm'
+    else:
+        credit = 'normal'
+
+    # Equities Status (based on VIX)
+    vix = metrics.get('vix', {}).get('current', 15)
+    if vix > 30:
+        equities = 'fear'
+    elif vix > 25:
+        equities = 'risk-off'
+    elif vix > 20:
+        equities = 'cautious'
+    elif vix < 15:
+        equities = 'risk-on'
+    else:
+        equities = 'neutral'
+
+    # Rates Status (10Y - 2Y curve)
+    t10y = market_grid.get('rates', {}).get('treasury_10y', {}).get('value', 4.0)
+    t2y = market_grid.get('rates', {}).get('treasury_2y', {}).get('value', 4.0)
+    curve = t10y - t2y
+    if curve < -0.5:
+        rates = 'deeply-inverted'
+    elif curve < 0:
+        rates = 'inverted'
+    elif curve > 1:
+        rates = 'steep'
+    elif curve < 0.25:
+        rates = 'flat'
+    else:
+        rates = 'normal'
+
+    # Volatility Status (based on VIX)
+    if vix > 30:
+        volatility = 'spiking'
+    elif vix > 20:
+        volatility = 'elevated'
+    else:
+        volatility = 'calm'
+
+    # Dollar Status (based on DXY)
+    dxy = market_grid.get('dollar', {}).get('dxy', {}).get('value', 100)
+    if dxy > 107:
+        dollar = 'very-strong'
+    elif dxy > 104:
+        dollar = 'strong'
+    elif dxy < 97:
+        dollar = 'very-weak'
+    elif dxy < 100:
+        dollar = 'weak'
+    else:
+        dollar = 'neutral'
+
+    # Liquidity Status (based on M2 YoY change)
+    m2_yoy = metrics.get('economic_indicators', {}).get('m2_money_supply', {}).get('yoy_change', 0)
+    if m2_yoy > 8:
+        liquidity = 'expanding'
+    elif m2_yoy < 0:
+        liquidity = 'contracting'
+    else:
+        liquidity = 'stable'
+
+    return {
+        'credit': credit,
+        'equities': equities,
+        'rates': rates,
+        'volatility': volatility,
+        'dollar': dollar,
+        'liquidity': liquidity
+    }
+
+
+def load_market_synthesis():
+    """Load cached market synthesis from file."""
+    if MARKET_SYNTHESIS_FILE.exists():
+        try:
+            with open(MARKET_SYNTHESIS_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return None
+    return None
+
+
+def save_market_synthesis(synthesis_data: dict):
+    """Save market synthesis to cache file."""
+    Path("data").mkdir(exist_ok=True)
+    with open(MARKET_SYNTHESIS_FILE, 'w') as f:
+        json.dump(synthesis_data, f, indent=2)
+
+
+def generate_market_conditions_synthesis():
+    """
+    Generate an AI one-liner synthesis of current market conditions.
+
+    Returns:
+        dict with 'success', 'synthesis', 'statuses', 'generated_at', and 'error' keys
+    """
+    client, error = get_ai_client()
+    if client is None:
+        return {
+            'success': False,
+            'synthesis': None,
+            'statuses': {},
+            'generated_at': None,
+            'error': error
+        }
+
+    try:
+        # Get current dashboard data and calculate statuses
+        dashboard_data = get_dashboard_data()
+        statuses = calculate_market_statuses(dashboard_data)
+
+        # Build the AI prompt
+        system_prompt = """You are a financial market analyst. Given market condition statuses, write a single sentence (max 150 characters) that synthesizes the overall market environment. Be concise, objective, and highlight the 2-3 most important conditions. Write only the synthesis sentence, nothing else."""
+
+        user_prompt = f"""Current Market Statuses:
+- Credit: {statuses['credit']}
+- Equities: {statuses['equities']}
+- Rates: {statuses['rates']}
+- Volatility: {statuses['volatility']}
+- Dollar: {statuses['dollar']}
+- Liquidity: {statuses['liquidity']}
+
+Write a single sentence synthesis (max 150 characters)."""
+
+        # Make the API call
+        result = call_ai_with_tools(
+            client=client,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=100,
+            log_prefix="[Market Synthesis]"
+        )
+
+        if not result['success']:
+            return {
+                'success': False,
+                'synthesis': None,
+                'statuses': statuses,
+                'generated_at': None,
+                'error': result['error']
+            }
+
+        synthesis = result['content'].strip()
+
+        # Truncate if over 200 chars (hard max)
+        if len(synthesis) > 200:
+            synthesis = synthesis[:197] + "..."
+
+        generated_at = datetime.utcnow().isoformat() + 'Z'
+
+        # Cache the result
+        synthesis_data = {
+            'synthesis': synthesis,
+            'statuses': statuses,
+            'generated_at': generated_at
+        }
+        save_market_synthesis(synthesis_data)
+
+        print(f"[Market Synthesis] Generated synthesis: {synthesis}")
+
+        return {
+            'success': True,
+            'synthesis': synthesis,
+            'statuses': statuses,
+            'generated_at': generated_at,
+            'error': None
+        }
+
+    except Exception as e:
+        print(f"[Market Synthesis] Error generating synthesis: {e}")
+        return {
+            'success': False,
+            'synthesis': None,
+            'statuses': {},
+            'generated_at': None,
+            'error': str(e)
+        }
+
+
+def get_market_synthesis_for_display():
+    """
+    Get cached market synthesis for display.
+    Returns dict with synthesis info or None if not available.
+    """
+    cached = load_market_synthesis()
+    if cached and cached.get('synthesis'):
+        return cached
+    return None
+
+
+@app.route('/api/market-conditions-synthesis')
+def api_market_conditions_synthesis():
+    """Get the current AI-generated market conditions synthesis."""
+    cached = get_market_synthesis_for_display()
+    if cached:
+        return jsonify(cached)
+    # Return null synthesis if no cache exists
+    return jsonify({
+        'synthesis': None,
+        'statuses': {},
+        'generated_at': None
+    })
+
+
+@app.route('/api/market-conditions-synthesis/generate', methods=['POST'])
+def api_generate_market_synthesis():
+    """Manually trigger market conditions synthesis generation."""
+    try:
+        result = generate_market_conditions_synthesis()
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'synthesis': result['synthesis'],
+                'statuses': result['statuses'],
+                'generated_at': result['generated_at']
             })
         else:
             return jsonify({
