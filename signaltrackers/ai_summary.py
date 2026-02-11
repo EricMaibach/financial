@@ -504,6 +504,29 @@ def generate_daily_summary(market_data_summary, top_movers):
         if news_context:
             news_section = f"\n\n## TODAY'S NEWS CONTEXT:\n{news_context}"
 
+        # Get latest specific market briefings to use as context
+        specific_briefings_context = ""
+        briefings_found = []
+
+        crypto_summary = get_latest_crypto_summary()
+        if crypto_summary and crypto_summary.get("date") == today:
+            briefings_found.append(f"### Crypto/Bitcoin Briefing:\n{crypto_summary['summary']}")
+
+        equity_summary = get_latest_equity_summary()
+        if equity_summary and equity_summary.get("date") == today:
+            briefings_found.append(f"### Equity Markets Briefing:\n{equity_summary['summary']}")
+
+        rates_summary = get_latest_rates_summary()
+        if rates_summary and rates_summary.get("date") == today:
+            briefings_found.append(f"### Rates & Yield Curve Briefing:\n{rates_summary['summary']}")
+
+        dollar_summary = get_latest_dollar_summary()
+        if dollar_summary and dollar_summary.get("date") == today:
+            briefings_found.append(f"### Dollar & Currency Briefing:\n{dollar_summary['summary']}")
+
+        if briefings_found:
+            specific_briefings_context = "\n\n## TODAY'S SPECIFIC MARKET BRIEFINGS (synthesize these into your narrative):\n" + "\n\n".join(briefings_found)
+
         # Format top movers
         movers_text = ""
         if top_movers:
@@ -529,6 +552,7 @@ CRITICAL RULES:
 - Second paragraph: The "so what" - implications, what to watch, connecting today to bigger trends
 - DO NOT just list data points or metrics - ANALYZE and INTERPRET
 - DO NOT repeat themes from your previous summaries - find fresh angles
+- If specific market briefings (crypto, equity, rates, dollar) are provided, SYNTHESIZE key insights from them into a cohesive narrative rather than summarizing each separately
 - If something is at an extreme percentile or historically unusual, HIGHLIGHT it with context
 - Reference specific numbers sparingly but meaningfully
 - If news events are driving markets, weave them into the narrative
@@ -544,6 +568,7 @@ You're writing the one thing someone reads about markets today. Make it count.""
 {market_data_summary}
 {movers_text}
 {news_section}
+{specific_briefings_context}
 {previous_context}
 
 Remember: 2 paragraphs, tell the story, don't repeat previous themes, make it the most valuable 30 seconds of their day."""
