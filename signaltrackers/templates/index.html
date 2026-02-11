@@ -61,6 +61,35 @@
     </div>
 </section>
 
+<!-- Section 1.5: Market Conditions at a Glance (US-1.2.1) -->
+<section class="market-summary-widget mb-4">
+    <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+                <i class="bi bi-speedometer2 me-2"></i>Market Conditions at a Glance
+            </h3>
+            <a href="#market-conditions-grid" class="btn btn-outline-secondary btn-sm">View Details →</a>
+        </div>
+        <div class="card-body">
+            <!-- Status indicators row -->
+            <div class="summary-indicators d-flex flex-wrap justify-content-around mb-3" id="summary-indicators">
+                <!-- Loading state -->
+                <div class="text-center text-muted py-3 w-100" id="summary-loading">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Loading market conditions...
+                </div>
+            </div>
+            <!-- AI synthesis -->
+            <div class="summary-synthesis border-top pt-3" id="summary-synthesis">
+                <small class="text-muted"><i class="bi bi-robot me-1"></i></small>
+                <span id="summary-synthesis-text" class="text-muted">Loading market synthesis...</span>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Section 2: What's Moving Today -->
 <section class="whats-moving-section mb-4">
     <div class="section-header d-flex justify-content-between align-items-center mb-3">
@@ -123,7 +152,7 @@
 </div>
 
 <!-- Section 3: Market Conditions Grid -->
-<section class="market-conditions-grid mb-4">
+<section class="market-conditions-grid mb-4" id="market-conditions-grid">
     <h3 class="section-title">Market Conditions</h3>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <!-- Credit Card -->
@@ -961,13 +990,26 @@ function calculateMarketStatuses(data) {
     else if (dxy < 97) dollarStatus = { text: 'VERY WEAK', class: 'status-very-weak' };
     else if (dxy < 100) dollarStatus = { text: 'WEAK', class: 'status-weak' };
 
+    // Volatility Status (based on VIX level)
+    let volatilityStatus = { text: 'CALM', class: 'status-calm' };
+    if (vix > 30) volatilityStatus = { text: 'SPIKING', class: 'status-spiking' };
+    else if (vix > 20) volatilityStatus = { text: 'ELEVATED', class: 'status-elevated' };
+
+    // Liquidity Status (based on M2 YoY change)
+    const m2YoY = metrics.economic_indicators?.m2_money_supply?.yoy_change || 0;
+    let liquidityStatus = { text: 'STABLE', class: 'status-stable' };
+    if (m2YoY > 8) liquidityStatus = { text: 'EXPANDING', class: 'status-expanding' };
+    else if (m2YoY < 0) liquidityStatus = { text: 'CONTRACTING', class: 'status-contracting' };
+
     return {
         credit: creditStatus,
         equities: equitiesStatus,
         rates: ratesStatus,
         havens: havensStatus,
         crypto: cryptoStatus,
-        dollar: dollarStatus
+        dollar: dollarStatus,
+        volatility: volatilityStatus,
+        liquidity: liquidityStatus
     };
 }
 
@@ -1091,6 +1133,72 @@ function updateMarketConditionsGrid(data) {
     if (dollarStatusEl) {
         dollarStatusEl.textContent = statuses.dollar.text;
         dollarStatusEl.className = 'badge ' + statuses.dollar.class;
+    }
+
+    // Update Summary Widget (US-1.2.1)
+    updateSummaryWidget(statuses);
+}
+
+// ========================================
+// Market Conditions Summary Widget (US-1.2.1)
+// ========================================
+
+// Define summary dimension configuration
+const summaryDimensions = [
+    { key: 'credit', name: 'CREDIT', icon: '💳', link: '/rates' },
+    { key: 'equities', name: 'EQUITIES', icon: '📈', link: '/equity' },
+    { key: 'rates', name: 'RATES', icon: '📊', link: '/rates' },
+    { key: 'volatility', name: 'VOLATILITY', icon: '📉', link: '/equity' },
+    { key: 'dollar', name: 'DOLLAR', icon: '💵', link: '/dollar' },
+    { key: 'liquidity', name: 'LIQUIDITY', icon: '💧', link: '/rates' }
+];
+
+// Update the summary widget with current statuses
+function updateSummaryWidget(statuses) {
+    const container = document.getElementById('summary-indicators');
+    const loadingEl = document.getElementById('summary-loading');
+
+    if (!container) return;
+
+    // Hide loading state
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    // Build the indicator HTML
+    const html = summaryDimensions.map(dim => {
+        const status = statuses[dim.key] || { text: '--', class: 'status-neutral' };
+        return `
+            <a href="${dim.link}" class="summary-indicator" title="View ${dim.name} details">
+                <div class="summary-indicator-icon">${dim.icon}</div>
+                <div class="summary-indicator-name">${dim.name}</div>
+                <span class="badge summary-status-badge ${status.class}">${status.text}</span>
+            </a>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+// Load and display AI market conditions synthesis
+async function loadMarketSynthesis() {
+    const synthesisTextEl = document.getElementById('summary-synthesis-text');
+    if (!synthesisTextEl) return;
+
+    try {
+        const response = await fetch('/api/market-conditions-synthesis');
+        const data = await response.json();
+
+        if (data.synthesis) {
+            synthesisTextEl.textContent = data.synthesis;
+            synthesisTextEl.classList.remove('text-muted');
+            synthesisTextEl.classList.add('synthesis-text');
+        } else {
+            synthesisTextEl.textContent = 'Market synthesis unavailable. Check back shortly.';
+            synthesisTextEl.classList.add('text-muted');
+        }
+    } catch (error) {
+        console.error('Error loading market synthesis:', error);
+        synthesisTextEl.textContent = 'Market synthesis unavailable.';
+        synthesisTextEl.classList.add('text-muted');
     }
 }
 
@@ -1739,6 +1847,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDashboard();
     loadPredictionMarkets();
     loadAISummary();
+    loadMarketSynthesis();
 
     // Refresh every 60 seconds
     setInterval(loadDashboard, 60000);
@@ -1746,6 +1855,8 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(loadPredictionMarkets, 900000);
     // Refresh AI summary every 5 minutes (in case it was regenerated)
     setInterval(loadAISummary, 300000);
+    // Refresh market synthesis every 5 minutes (in case it was regenerated)
+    setInterval(loadMarketSynthesis, 300000);
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
