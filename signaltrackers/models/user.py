@@ -53,5 +53,16 @@ class User(UserMixin, db.Model):
         """Update last login timestamp."""
         self.last_login = datetime.utcnow()
 
+    def create_default_alert_preferences(self):
+        """Create default alert preferences for new user."""
+        from models.alert import AlertPreference
+
+        if not self.alert_preferences:
+            prefs = AlertPreference(user_id=self.id)
+            db.session.add(prefs)
+            db.session.commit()
+
+        return self.alert_preferences
+
     def __repr__(self):
         return f'<User {self.username}>'

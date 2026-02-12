@@ -1293,8 +1293,13 @@ def register():
         # Create default settings
         settings = UserSettings(user=user, ai_provider='openai')
 
+        # Create default alert preferences
+        from models.alert import AlertPreference
+        alert_prefs = AlertPreference(user=user)
+
         db.session.add(user)
         db.session.add(settings)
+        db.session.add(alert_prefs)
         db.session.commit()
 
         flash('Registration successful! Please log in.', 'success')
