@@ -136,5 +136,9 @@ The `.env` file contains sensitive, production configuration that is excluded fr
 - Write to `.env`
 - Edit `.env`
 - Modify `.env` in any way
+- Run `git add .env` or add `.env` to git in any way
+- Commit `.env` to git (it's in .gitignore for a reason)
 
 If you need to add environment configuration, update `.env.example` and inform the user to update their `.env` file manually.
+
+**The .env file contains sensitive credentials and must NEVER be committed to git.**
