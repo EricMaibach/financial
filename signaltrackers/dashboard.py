@@ -1437,9 +1437,72 @@ def alert_history():
 @app.route('/settings/alerts')
 @login_required
 def settings_alerts():
-    """Alert preferences settings."""
-    # Implement in US-1.3.7
-    return render_template('settings_alerts.html')
+    """Alert preferences settings page."""
+    # Get or create alert preferences for the current user
+    prefs = current_user.alert_preferences
+    if not prefs:
+        prefs = current_user.create_default_alert_preferences()
+
+    # Get list of common timezones
+    timezones = [
+        'America/New_York',
+        'America/Chicago',
+        'America/Denver',
+        'America/Los_Angeles',
+        'America/Anchorage',
+        'Pacific/Honolulu',
+        'Europe/London',
+        'Europe/Paris',
+        'Asia/Tokyo',
+        'Asia/Shanghai',
+        'Asia/Dubai',
+        'Australia/Sydney',
+    ]
+
+    return render_template('settings_alerts.html', prefs=prefs, timezones=timezones)
+
+
+@app.route('/settings/alerts/save', methods=['POST'])
+@login_required
+def save_alert_settings():
+    """Save alert preferences."""
+    try:
+        # Get or create alert preferences
+        prefs = current_user.alert_preferences
+        if not prefs:
+            prefs = current_user.create_default_alert_preferences()
+
+        # Daily briefing settings
+        prefs.daily_briefing_enabled = request.form.get('daily_briefing_enabled') == 'on'
+        prefs.briefing_frequency = request.form.get('briefing_frequency', 'daily')
+
+        # Parse time
+        time_str = request.form.get('briefing_time', '07:00')
+        prefs.briefing_time = datetime.strptime(time_str, '%H:%M').time()
+
+        prefs.briefing_timezone = request.form.get('briefing_timezone', 'America/New_York')
+        prefs.include_portfolio_analysis = request.form.get('include_portfolio_analysis') == 'on'
+
+        # Alert settings
+        prefs.alerts_enabled = request.form.get('alerts_enabled') == 'on'
+        prefs.vix_threshold_25 = request.form.get('vix_threshold_25') == 'on'
+        prefs.vix_threshold_30 = request.form.get('vix_threshold_30') == 'on'
+        prefs.credit_spread_threshold_50bp = request.form.get('credit_spread_threshold_50bp') == 'on'
+        prefs.yield_curve_inversion = request.form.get('yield_curve_inversion') == 'on'
+        prefs.equity_breadth_deterioration = request.form.get('equity_breadth_deterioration') == 'on'
+
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': 'Alert preferences saved successfully!'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error saving preferences: {str(e)}'
+        }), 500
 
 
 @app.route('/unsubscribe/alerts/<int:user_id>')
