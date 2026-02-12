@@ -743,7 +743,11 @@ def get_latest_metrics():
             if df.empty:
                 continue
 
-            df['date'] = pd.to_datetime(df['date'])
+            # us_recessions.csv has start_date/end_date, not date
+            if metric_name != 'us_recessions':
+                df['date'] = pd.to_datetime(df['date'])
+            else:
+                continue  # Skip us_recessions.csv in metric loading
 
             # Get the value column (second column)
             value_col = df.columns[1]
@@ -812,7 +816,11 @@ def get_historical_metrics(days_ago=1):
             if df.empty:
                 continue
 
-            df['date'] = pd.to_datetime(df['date'])
+            # us_recessions.csv has start_date/end_date, not date
+            if metric_name != 'us_recessions':
+                df['date'] = pd.to_datetime(df['date'])
+            else:
+                continue  # Skip us_recessions.csv in metric loading
 
             # Get the value column (second column)
             value_col = df.columns[1]
