@@ -281,9 +281,9 @@ class ExtremePercentileDetector(AlertDetector):
         )
 
     def should_trigger(self, user, metrics):
-        # Only trigger if user has general alerts enabled
+        # Check user preference (not just master toggle)
         prefs = user.alert_preferences
-        if not prefs.alerts_enabled:
+        if not prefs.extreme_percentile_enabled:
             return None
 
         # Check all metrics for extreme percentiles

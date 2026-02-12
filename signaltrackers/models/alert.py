@@ -33,6 +33,7 @@ class AlertPreference(db.Model):
     credit_spread_threshold_50bp = db.Column(db.Boolean, default=True, nullable=False)
     yield_curve_inversion = db.Column(db.Boolean, default=True, nullable=False)
     equity_breadth_deterioration = db.Column(db.Boolean, default=True, nullable=False)
+    extreme_percentile_enabled = db.Column(db.Boolean, default=True, nullable=False)
 
     # Relationships
     user = db.relationship('User', backref=db.backref('alert_preferences', uselist=False))
