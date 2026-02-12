@@ -42,6 +42,9 @@ COPY signaltrackers/ .
 # Create directories for persistent data and logs
 RUN mkdir -p data logs
 
+# Make entrypoint script executable
+RUN chmod +x docker-entrypoint.sh
+
 # Install curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -59,8 +62,8 @@ ENV AI_PROVIDER=anthropic
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-# Run with gunicorn
+# Run entrypoint script which handles migrations before starting gunicorn
 # - Single worker (-w 1) ensures scheduler runs only once
 # - --preload loads app before forking, required for APScheduler
 # - Bind to all interfaces for container networking
-CMD ["gunicorn", "-w", "1", "--preload", "-b", "0.0.0.0:5000", "--timeout", "120", "dashboard:app"]
+CMD ["./docker-entrypoint.sh"]

@@ -46,6 +46,7 @@ from portfolio import (
 from config import get_config
 from extensions import init_extensions, db, limiter, csrf
 from models import User, UserSettings
+from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
 
 app = Flask(__name__)
 
@@ -75,12 +76,13 @@ scheduler = None
 
 
 def init_scheduler():
-    """Initialize background scheduler for automatic data refresh."""
+    """Initialize background scheduler for automatic data refresh and alerts."""
     global scheduler
 
-    scheduler = BackgroundScheduler()
+    # Initialize the APScheduler with all configured jobs (alerts, emails, etc.)
+    scheduler = init_apscheduler(app)
 
-    # Daily refresh at 5:30 PM Eastern, Monday-Friday
+    # Add the data refresh job to the scheduler
     eastern = pytz.timezone('US/Eastern')
     scheduler.add_job(
         scheduled_data_refresh,
@@ -90,11 +92,10 @@ def init_scheduler():
         name='Daily Data Refresh'
     )
 
-    scheduler.start()
     print(f"Scheduler started. Next refresh: {scheduler.get_job('daily_refresh').next_run_time}")
 
     # Ensure scheduler shuts down on exit
-    atexit.register(lambda: scheduler.shutdown() if scheduler else None)
+    atexit.register(shutdown_scheduler)
 
     return scheduler
 
@@ -3920,6 +3921,33 @@ def _filter_reasoning_artifacts(message):
     if not result:
         return "I apologize, but I wasn't able to generate a response. Please try asking your question again."
     return result
+
+
+# Admin endpoints for testing scheduled jobs
+@app.route('/admin/trigger-alert-check')
+@login_required
+def trigger_alert_check():
+    """Manually trigger alert check (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized - admin access required'}), 403
+
+    from jobs.alert_jobs import check_alert_thresholds
+    check_alert_thresholds()
+
+    return jsonify({'status': 'Alert check triggered successfully'})
+
+
+@app.route('/admin/trigger-daily-briefing')
+@login_required
+def trigger_daily_briefing():
+    """Manually trigger daily briefing (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Unauthorized - admin access required'}), 403
+
+    from jobs.email_jobs import send_daily_briefings
+    send_daily_briefings()
+
+    return jsonify({'status': 'Daily briefing triggered successfully'})
 
 
 # Initialize scheduler at module load time (works with both direct run and gunicorn --preload)
