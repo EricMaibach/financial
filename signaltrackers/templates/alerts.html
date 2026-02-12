@@ -3,23 +3,260 @@
 {% block title %}Alert History - SignalTrackers{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1><i class="bi bi-bell"></i> Alert History</h1>
-        <p class="text-muted">View your triggered alerts and notifications.</p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="bi bi-clock-history"></i> Alert History
+                    </h1>
+                    <p class="text-muted mb-0">Review your market alert notifications</p>
+                </div>
+                <a href="{{ url_for('settings_alerts') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-gear"></i> Alert Settings
+                </a>
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-clock-history" style="font-size: 3rem; color: #6c757d;"></i>
-                <h3 class="mt-3">Alert History</h3>
-                <p class="text-muted">This feature will be implemented in US-1.3.8</p>
-                <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Dashboard</a>
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <label for="alert-type-filter" class="form-label">Filter by Type</label>
+            <select class="form-select" id="alert-type-filter">
+                <option value="all">All Alerts</option>
+                <option value="vix_spike">VIX Spikes</option>
+                <option value="credit_spread">Credit Spreads</option>
+                <option value="yield_curve">Yield Curve</option>
+                <option value="equity_breadth">Equity Breadth</option>
+                <option value="extreme_percentile">Extreme Readings</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="severity-filter" class="form-label">Filter by Severity</label>
+            <select class="form-select" id="severity-filter">
+                <option value="all">All Severities</option>
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="critical">Critical</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="status-filter" class="form-label">Filter by Status</label>
+            <select class="form-select" id="status-filter">
+                <option value="all">All</option>
+                <option value="unread">Unread Only</option>
+                <option value="read">Read Only</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Alerts List -->
+    <div class="row">
+        <div class="col-12">
+            <div id="alerts-container">
+                {% if alerts|length == 0 %}
+                <!-- Empty State -->
+                <div class="card text-center py-5">
+                    <div class="card-body">
+                        <i class="bi bi-bell-slash" style="font-size: 48px; color: #6c757d;"></i>
+                        <h5 class="mt-3">No Alerts Yet</h5>
+                        <p class="text-muted">
+                            You haven't received any alerts. When market conditions trigger your configured thresholds, they'll appear here.
+                        </p>
+                        <a href="{{ url_for('settings_alerts') }}" class="btn btn-primary mt-2">
+                            Configure Alerts
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Alerts -->
+                {% for alert in alerts %}
+                <div class="card mb-3 alert-card {{ 'alert-unread' if not alert.read }}" data-alert-id="{{ alert.id }}"
+                     data-type="{{ alert.alert_type }}" data-severity="{{ alert.severity }}" data-read="{{ alert.read }}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <!-- Header -->
+                                <div class="d-flex align-items-center mb-2">
+                                    <!-- Severity Badge -->
+                                    <span class="badge me-2 severity-{{ alert.severity }}">
+                                        {{ alert.severity|upper }}
+                                    </span>
+
+                                    <!-- Unread Indicator -->
+                                    {% if not alert.read %}
+                                    <span class="badge bg-primary me-2">NEW</span>
+                                    {% endif %}
+
+                                    <!-- Timestamp -->
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i>
+                                        {{ alert.triggered_at|format_datetime }}
+                                    </small>
+                                </div>
+
+                                <!-- Title -->
+                                <h5 class="card-title mb-2">{{ alert.title }}</h5>
+
+                                <!-- Message -->
+                                {% if alert.message %}
+                                <p class="card-text text-muted mb-2">{{ alert.message }}</p>
+                                {% endif %}
+
+                                <!-- Metric Details -->
+                                {% if alert.metric_name %}
+                                <div class="alert-metrics mt-3">
+                                    <div class="row">
+                                        <div class="col-auto">
+                                            <small class="text-muted d-block">Metric</small>
+                                            <strong>{{ alert.metric_name }}</strong>
+                                        </div>
+                                        <div class="col-auto">
+                                            <small class="text-muted d-block">Value</small>
+                                            <strong>{{ alert.metric_value|format_number }}</strong>
+                                        </div>
+                                        <div class="col-auto">
+                                            <small class="text-muted d-block">Threshold</small>
+                                            <strong>{{ alert.threshold_value|format_number }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="ms-3">
+                                {% if not alert.read %}
+                                <button class="btn btn-sm btn-outline-secondary mark-read-btn"
+                                        data-alert-id="{{ alert.id }}">
+                                    <i class="bi bi-check2"></i> Mark Read
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if pagination.pages > 1 %}
+                <nav aria-label="Alert history pagination">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {{ 'disabled' if pagination.page == 1 }}">
+                            <a class="page-link" href="?page={{ pagination.page - 1 }}">Previous</a>
+                        </li>
+                        {% for p in range(1, pagination.pages + 1) %}
+                        <li class="page-item {{ 'active' if p == pagination.page }}">
+                            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+                        <li class="page-item {{ 'disabled' if pagination.page == pagination.pages }}">
+                            <a class="page-link" href="?page={{ pagination.page + 1 }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+                {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.alert-card {
+    transition: all 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.alert-unread {
+    background-color: #f8f9fa;
+    border-left-color: #667eea;
+}
+
+.severity-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.severity-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.severity-critical {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-metrics {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    padding: 12px;
+}
+</style>
+
+<script>
+// Filter alerts client-side
+function filterAlerts() {
+    const typeFilter = document.getElementById('alert-type-filter').value;
+    const severityFilter = document.getElementById('severity-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
+
+    document.querySelectorAll('.alert-card').forEach(card => {
+        const type = card.dataset.type;
+        const severity = card.dataset.severity;
+        const read = card.dataset.read === 'True';
+
+        let show = true;
+
+        if (typeFilter !== 'all' && !type.startsWith(typeFilter)) {
+            show = false;
+        }
+        if (severityFilter !== 'all' && severity !== severityFilter) {
+            show = false;
+        }
+        if (statusFilter === 'unread' && read) {
+            show = false;
+        }
+        if (statusFilter === 'read' && !read) {
+            show = false;
+        }
+
+        card.style.display = show ? 'block' : 'none';
+    });
+}
+
+// Attach filter listeners
+['alert-type-filter', 'severity-filter', 'status-filter'].forEach(id => {
+    document.getElementById(id).addEventListener('change', filterAlerts);
+});
+
+// Mark alert as read
+document.querySelectorAll('.mark-read-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const alertId = this.dataset.alertId;
+
+        try {
+            const response = await fetch(`/alerts/${alertId}/mark-read`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const card = document.querySelector(`[data-alert-id="${alertId}"]`);
+                card.classList.remove('alert-unread');
+                card.dataset.read = 'True';
+                this.remove();
+
+                // Remove NEW badge
+                const newBadge = card.querySelector('.badge.bg-primary');
+                if (newBadge) newBadge.remove();
+            }
+        } catch (error) {
+            console.error('Error marking alert as read:', error);
+        }
+    });
+});
+</script>
 {% endblock %}
