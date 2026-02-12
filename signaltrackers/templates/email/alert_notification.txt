@@ -1,0 +1,40 @@
+{% extends "email/base_email.txt" %}
+
+{% block content %}
+SIGNALTRACKERS MARKET ALERT{% if alerts|length > 1 %}S{% endif %}
+{{ triggered_time }}
+================================================================================
+
+{% if alerts|length > 1 %}
+{{ alerts|length }} alerts were triggered based on your notification preferences.
+
+{% endif %}
+{% for alert in alerts %}
+{% if alerts|length > 1 %}[ALERT {{ loop.index }}]{% endif %}
+{{ alert.severity|upper }}: {{ alert.title }}
+--------------------------------------------------------------------------------
+
+{{ alert.message }}
+
+{% if alert.metric_name %}
+Metric: {{ alert.metric_name }}
+Current Value: {{ alert.metric_value_formatted }}
+Threshold: {{ alert.threshold_value_formatted }}
+{% endif %}
+
+{% if not loop.last %}
+
+{% endif %}
+{% endfor %}
+
+================================================================================
+
+View Dashboard: {{ dashboard_url }}
+View Alert History: {{ alert_history_url }}
+Manage Alert Preferences: {{ settings_url }}
+
+{% endblock %}
+
+{% block unsubscribe_text %}
+To unsubscribe from alert notifications, visit: {{ unsubscribe_url }}
+{% endblock %}
