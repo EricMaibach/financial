@@ -1426,6 +1426,22 @@ def settings_update_api_keys():
     return redirect(url_for('settings'))
 
 
+@app.route('/unsubscribe/briefing/<user_id>')
+def unsubscribe_briefing(user_id):
+    """Unsubscribe from daily briefing emails."""
+    from models.user import User
+    from models.alert import AlertPreference
+
+    user = User.query.get_or_404(user_id)
+    prefs = user.alert_preferences
+
+    if prefs:
+        prefs.daily_briefing_enabled = False
+        db.session.commit()
+
+    return render_template('unsubscribe_success.html', email_type='daily briefing')
+
+
 @app.route('/api/dashboard')
 def api_dashboard():
     """API endpoint for dashboard data."""
