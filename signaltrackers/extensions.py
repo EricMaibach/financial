@@ -11,6 +11,7 @@ from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail
 
 # Database
 db = SQLAlchemy()
@@ -33,6 +34,9 @@ limiter = Limiter(
     default_limits=['100 per minute']
 )
 
+# Email
+mail = Mail()
+
 
 def init_extensions(app):
     """Initialize all extensions with the Flask app."""
@@ -41,6 +45,7 @@ def init_extensions(app):
     login_manager.init_app(app)
     csrf.init_app(app)
     limiter.init_app(app)
+    mail.init_app(app)
 
     # User loader for Flask-Login
     from models import User

@@ -1,0 +1,25 @@
+{% block header %}
+================================================================================
+SIGNALTRACKERS - Macro Financial Intelligence
+================================================================================
+{% endblock %}
+
+{% block content %}
+{% endblock %}
+
+{% block footer %}
+--------------------------------------------------------------------------------
+
+This email was sent by SignalTrackers
+
+{% block unsubscribe_text %}
+To unsubscribe from these emails, visit: {{ unsubscribe_url }}
+{% endblock %}
+
+DISCLAIMER: The information provided is for educational purposes only and does
+not constitute financial advice. Past performance does not guarantee future
+results. Always consult with a qualified financial advisor before making
+investment decisions.
+
+================================================================================
+{% endblock %}
