@@ -117,3 +117,28 @@ python dashboard.py
 ```bash
 python signaltrackers/market_signals.py
 ```
+
+### Environment Configuration (.env file)
+**CRITICAL RULE**: **NEVER EDIT THE `.env` FILE - EVER**
+
+The `.env` file contains sensitive, production configuration that is excluded from git (no backup exists).
+
+**When adding new environment variables:**
+1. **ONLY edit `.env.example`** - Add new variables with placeholder values and comments
+2. **Ask the user** to manually add the variable to their `.env` file
+3. **Document the new variable** in the .env.example comments
+
+**You may ONLY:**
+- Read `.env` to understand current configuration
+- Edit `.env.example` to document new variables
+
+**You may NEVER:**
+- Write to `.env`
+- Edit `.env`
+- Modify `.env` in any way
+- Run `git add .env` or add `.env` to git in any way
+- Commit `.env` to git (it's in .gitignore for a reason)
+
+If you need to add environment configuration, update `.env.example` and inform the user to update their `.env` file manually.
+
+**The .env file contains sensitive credentials and must NEVER be committed to git.**

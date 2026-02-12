@@ -6,7 +6,7 @@ Supports single alerts and batching multiple alerts into one email.
 """
 
 from datetime import datetime
-from flask import url_for
+from flask import current_app
 from services.email_service import send_email
 from models.alert import Alert
 from extensions import db
@@ -118,6 +118,9 @@ def send_alert_notification(user, alerts):
                 'threshold_value_formatted': format_metric_value(alert.threshold_value),
             })
 
+        # Get base URL from config
+        base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+
         # Prepare template context
         context = {
             'user': user,
@@ -126,10 +129,10 @@ def send_alert_notification(user, alerts):
             'header_bg_color': colors['header_bg'],
             'header_text_color': colors['header_text'],
             'border_color': colors['border'],
-            'dashboard_url': url_for('index', _external=True),
-            'alert_history_url': url_for('alert_history', _external=True),
-            'settings_url': url_for('settings_alerts', _external=True),
-            'unsubscribe_url': url_for('unsubscribe_alerts', user_id=user.id, _external=True)
+            'dashboard_url': f'{base_url}/',
+            'alert_history_url': f'{base_url}/alerts/history',
+            'settings_url': f'{base_url}/settings/alerts',
+            'unsubscribe_url': f'{base_url}/alerts/unsubscribe/{user.id}'
         }
 
         # Send email
