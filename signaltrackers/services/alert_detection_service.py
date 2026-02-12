@@ -9,6 +9,7 @@ from models.alert import Alert, AlertPreference
 from models.user import User
 from market_signals import get_latest_metrics, get_historical_metrics
 from extensions import db
+from services.alert_email_service import send_pending_alert_notifications
 import logging
 
 logger = logging.getLogger(__name__)
@@ -378,7 +379,7 @@ def check_all_users_alerts():
     Called by background job every 15 minutes
 
     Returns:
-        dict: Summary of alerts created
+        dict: Summary of alerts created and emails sent
     """
     users = User.query.join(AlertPreference).filter(
         AlertPreference.alerts_enabled == True
@@ -397,8 +398,15 @@ def check_all_users_alerts():
             logger.error(f"Error checking alerts for user {user.id}: {str(e)}", exc_info=True)
             continue
 
+    # After creating alerts, send notifications
+    email_results = {'emails_sent': 0, 'alerts_sent': 0}
+    if total_alerts > 0:
+        email_results = send_pending_alert_notifications()
+        logger.info(f"Sent {email_results['emails_sent']} alert notification emails")
+
     return {
         'total_alerts': total_alerts,
         'users_alerted': users_alerted,
-        'users_checked': len(users)
+        'users_checked': len(users),
+        'emails_sent': email_results.get('emails_sent', 0)
     }

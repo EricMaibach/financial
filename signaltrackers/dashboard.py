@@ -1426,6 +1426,37 @@ def settings_update_api_keys():
     return redirect(url_for('settings'))
 
 
+@app.route('/alerts/history')
+@login_required
+def alert_history():
+    """Show user's alert history."""
+    # Implement in US-1.3.8
+    return render_template('alerts.html')
+
+
+@app.route('/settings/alerts')
+@login_required
+def settings_alerts():
+    """Alert preferences settings."""
+    # Implement in US-1.3.7
+    return render_template('settings_alerts.html')
+
+
+@app.route('/unsubscribe/alerts/<int:user_id>')
+def unsubscribe_alerts(user_id):
+    """Unsubscribe from alert emails."""
+    from models.user import User
+
+    user = User.query.get_or_404(user_id)
+    prefs = user.alert_preferences
+
+    if prefs:
+        prefs.alerts_enabled = False
+        db.session.commit()
+
+    return render_template('unsubscribe_success.html', email_type='alert notifications')
+
+
 @app.route('/unsubscribe/briefing/<user_id>')
 def unsubscribe_briefing(user_id):
     """Unsubscribe from daily briefing emails."""
