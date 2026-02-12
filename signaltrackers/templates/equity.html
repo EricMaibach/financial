@@ -287,6 +287,76 @@
     </div>
 </div>
 
+<!-- AI/Tech Market Concentration -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-pie-chart-fill"></i> AI/Tech Market Concentration
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <a href="/explorer?metric=smh_spy_ratio" class="metric-link">
+                            <div class="card h-100">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted mb-1">SEMICONDUCTOR / SPY</h6>
+                                    <h3 class="mb-0" id="smh-spy-ratio">--</h3>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <span id="smh-spy-change-5d">--</span>% (5d) / <span id="smh-spy-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="smh-spy-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="/explorer?metric=xlk_spy_ratio" class="metric-link">
+                            <div class="card h-100">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted mb-1">TECH SECTOR / SPY</h6>
+                                    <h3 class="mb-0" id="xlk-spy-ratio">--</h3>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <span id="xlk-spy-change-5d">--</span>% (5d) / <span id="xlk-spy-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="xlk-spy-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="/explorer?metric=growth_value_ratio" class="metric-link">
+                            <div class="card h-100">
+                                <div class="card-body py-2">
+                                    <h6 class="text-muted mb-1">GROWTH / VALUE</h6>
+                                    <h3 class="mb-0" id="growth-value-ratio">--</h3>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <span id="growth-value-change-5d">--</span>% (5d) / <span id="growth-value-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="growth-value-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Higher ratios = more concentration in AI/tech sectors. Extreme readings may indicate bubble-like conditions.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Index Performance Chart -->
 <div class="row mb-4">
     <div class="col-12">
@@ -681,6 +751,9 @@ async function loadEquityData() {
         // Load Sector data
         await loadSectorData();
 
+        // Load concentration metrics for AI/Tech Market Concentration section
+        await loadConcentrationMetrics();
+
         // Build charts
         buildIndexChart();
         buildRotationChart();
@@ -725,6 +798,59 @@ async function loadSectorData() {
         const change30d = calcChange(xleData.values, 30);
         if (change5d !== null) document.getElementById('xle-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
         if (change30d !== null) document.getElementById('xle-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+    }
+}
+
+async function loadConcentrationMetrics() {
+    try {
+        // Fetch concentration data from the API
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+
+        if (data.metrics && data.metrics.concentration) {
+            const conc = data.metrics.concentration;
+
+            // Update SMH/SPY ratio
+            if (conc.smh_spy) {
+                document.getElementById('smh-spy-ratio').textContent = conc.smh_spy.current.toFixed(2);
+                document.getElementById('smh-spy-change-5d').textContent =
+                    (conc.smh_spy.change_5d >= 0 ? '+' : '') + conc.smh_spy.change_5d.toFixed(1);
+                document.getElementById('smh-spy-change-30d').textContent =
+                    (conc.smh_spy.change_30d >= 0 ? '+' : '') + conc.smh_spy.change_30d.toFixed(1);
+                const smhBadge = document.getElementById('smh-spy-percentile');
+                smhBadge.textContent = `${conc.smh_spy.percentile.toFixed(0)}%ile`;
+                smhBadge.className = conc.smh_spy.percentile > 80 ? 'badge bg-danger' :
+                                      conc.smh_spy.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            // Update XLK/SPY ratio
+            if (conc.xlk_spy) {
+                document.getElementById('xlk-spy-ratio').textContent = conc.xlk_spy.current.toFixed(2);
+                document.getElementById('xlk-spy-change-5d').textContent =
+                    (conc.xlk_spy.change_5d >= 0 ? '+' : '') + conc.xlk_spy.change_5d.toFixed(1);
+                document.getElementById('xlk-spy-change-30d').textContent =
+                    (conc.xlk_spy.change_30d >= 0 ? '+' : '') + conc.xlk_spy.change_30d.toFixed(1);
+                const xlkBadge = document.getElementById('xlk-spy-percentile');
+                xlkBadge.textContent = `${conc.xlk_spy.percentile.toFixed(0)}%ile`;
+                xlkBadge.className = conc.xlk_spy.percentile > 80 ? 'badge bg-danger' :
+                                      conc.xlk_spy.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+
+            // Update Growth/Value ratio
+            if (conc.growth_value) {
+                document.getElementById('growth-value-ratio').textContent = conc.growth_value.current.toFixed(2);
+                document.getElementById('growth-value-change-5d').textContent =
+                    (conc.growth_value.change_5d >= 0 ? '+' : '') + conc.growth_value.change_5d.toFixed(1);
+                document.getElementById('growth-value-change-30d').textContent =
+                    (conc.growth_value.change_30d >= 0 ? '+' : '') + conc.growth_value.change_30d.toFixed(1);
+                const gvBadge = document.getElementById('growth-value-percentile');
+                gvBadge.textContent = `${conc.growth_value.percentile.toFixed(0)}%ile`;
+                gvBadge.className = conc.growth_value.percentile > 80 ? 'badge bg-danger' :
+                                     conc.growth_value.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading concentration metrics:', error);
     }
 }
 
