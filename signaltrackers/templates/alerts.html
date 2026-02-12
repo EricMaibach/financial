@@ -237,10 +237,15 @@ function filterAlerts() {
 document.querySelectorAll('.mark-read-btn').forEach(btn => {
     btn.addEventListener('click', async function() {
         const alertId = this.dataset.alertId;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         try {
             const response = await fetch(`/alerts/${alertId}/mark-read`, {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
             });
 
             if (response.ok) {
@@ -252,8 +257,14 @@ document.querySelectorAll('.mark-read-btn').forEach(btn => {
                 // Remove NEW badge
                 const newBadge = card.querySelector('.badge.bg-primary');
                 if (newBadge) newBadge.remove();
+            } else {
+                // Show error message to user
+                alert('Failed to mark alert as read. Please try again.');
+                console.error('Failed to mark alert as read:', response.status, response.statusText);
             }
         } catch (error) {
+            // Show error message to user
+            alert('An error occurred while marking the alert as read. Please try again.');
             console.error('Error marking alert as read:', error);
         }
     });
