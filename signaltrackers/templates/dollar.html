@@ -346,6 +346,60 @@
     </div>
 </div>
 
+<!-- Yen Carry Trade -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-yen"></i> Yen Carry Trade Monitor
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a href="/explorer?metric=usdjpy_price" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">USD/JPY Exchange Rate</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="yen-carry-usdjpy-value">--</h3>
+                                        <small class="text-muted">
+                                            <span id="yen-carry-usdjpy-change-5d">--</span>% (5d) / <span id="yen-carry-usdjpy-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="yen-carry-usdjpy-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a href="/explorer?metric=japan_10y_yield" class="text-decoration-none">
+                            <div class="card h-100 metric-card">
+                                <div class="card-body">
+                                    <h6 class="text-muted">Japan 10Y Government Bond Yield</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h3 class="mb-0" id="yen-carry-japan-10y-value">--</h3>
+                                        <small class="text-muted">
+                                            <span id="yen-carry-japan-10y-change-5d">--</span>% (5d) / <span id="yen-carry-japan-10y-change-30d">--</span>% (30d)
+                                        </small>
+                                        <span class="badge" id="yen-carry-japan-10y-percentile">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> Carry trade risk: Investors borrow cheap yen to invest in higher-yielding assets. Sharp yen strengthening (USD/JPY drop) or rising JGB yields can trigger violent unwinds.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Educational Sections -->
 <div class="row mb-4">
     <div class="col-md-6 mb-3">
@@ -650,6 +704,54 @@ async function loadDollarData() {
             } else {
                 statusEl.textContent = 'YEN STRONG';
                 statusEl.className = 'badge bg-success';
+            }
+
+            // Also populate Yen Carry Trade section
+            document.getElementById('yen-carry-usdjpy-value').textContent = current.toFixed(2);
+            if (change5d !== null) {
+                document.getElementById('yen-carry-usdjpy-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (change30d !== null) {
+                document.getElementById('yen-carry-usdjpy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+
+            // Percentile for Yen Carry Trade section
+            const percentile = calcPercentile(usdjpyData.values, current);
+            if (percentile !== null) {
+                const usdjpyBadge = document.getElementById('yen-carry-usdjpy-percentile');
+                usdjpyBadge.textContent = `${percentile.toFixed(0)}%ile`;
+                // Lower USD/JPY (stronger yen) = more risk, so invert the warning logic
+                usdjpyBadge.className = percentile < 20 ? 'badge bg-danger' :
+                                        percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
+            }
+        }
+
+        // Load Japan 10Y Yield for Yen Carry Trade section
+        const japan10yResponse = await fetch('/api/metrics/japan_10y_yield');
+        const japan10yData = await japan10yResponse.json();
+
+        if (japan10yData && japan10yData.values && japan10yData.values.length > 0) {
+            const current = japan10yData.values[japan10yData.values.length - 1];
+            document.getElementById('yen-carry-japan-10y-value').textContent = current.toFixed(2) + '%';
+
+            const change5d = calcPctChange(japan10yData.values, 5);
+            const change30d = calcPctChange(japan10yData.values, 30);
+
+            if (change5d !== null) {
+                document.getElementById('yen-carry-japan-10y-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
+            }
+            if (change30d !== null) {
+                document.getElementById('yen-carry-japan-10y-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+            }
+
+            // Percentile for Japan 10Y
+            const percentile = calcPercentile(japan10yData.values, current);
+            if (percentile !== null) {
+                const japan10yBadge = document.getElementById('yen-carry-japan-10y-percentile');
+                japan10yBadge.textContent = `${percentile.toFixed(0)}%ile`;
+                // Higher Japan yields = more risk (carry trade unwinding)
+                japan10yBadge.className = percentile > 80 ? 'badge bg-danger' :
+                                          percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
             }
         }
 

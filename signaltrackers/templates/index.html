@@ -430,60 +430,6 @@
 </section>
 
 <!-- Additional Insights Section -->
-<!-- Yen Carry Trade -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-currency-yen"></i> Yen Carry Trade Monitor
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <a href="/explorer?metric=usdjpy_price" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">USD/JPY Exchange Rate</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="usdjpy-value">--</h3>
-                                        <small class="text-muted">
-                                            <span id="usdjpy-change-5d">--</span>% (5d) / <span id="usdjpy-change-30d">--</span>% (30d)
-                                        </small>
-                                        <span class="badge" id="usdjpy-percentile">--</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <a href="/explorer?metric=japan_10y_yield" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">Japan 10Y Government Bond Yield</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="japan-10y-value">--</h3>
-                                        <small class="text-muted">
-                                            <span id="japan-10y-change-5d">--</span>% (5d) / <span id="japan-10y-change-30d">--</span>% (30d)
-                                        </small>
-                                        <span class="badge" id="japan-10y-percentile">--</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Carry trade risk: Investors borrow cheap yen to invest in higher-yielding assets. Sharp yen strengthening (USD/JPY drop) or rising JGB yields can trigger violent unwinds.
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Economic Indicators -->
 <div class="row mb-4">
     <div class="col-12">
@@ -723,37 +669,6 @@ async function loadDashboard() {
                 (data.metrics.ccc_hy_ratio.change_5d >= 0 ? '+' : '') + data.metrics.ccc_hy_ratio.change_5d.toFixed(2);
             document.getElementById('ccc-change-30d').textContent =
                 (data.metrics.ccc_hy_ratio.change_30d >= 0 ? '+' : '') + data.metrics.ccc_hy_ratio.change_30d.toFixed(2);
-        }
-
-        // Update yen carry trade metrics
-        if (data.metrics.carry_trade) {
-            const carry = data.metrics.carry_trade;
-
-            if (carry.usdjpy) {
-                document.getElementById('usdjpy-value').textContent = carry.usdjpy.current.toFixed(2);
-                document.getElementById('usdjpy-change-5d').textContent =
-                    (carry.usdjpy.change_5d >= 0 ? '+' : '') + carry.usdjpy.change_5d.toFixed(1);
-                document.getElementById('usdjpy-change-30d').textContent =
-                    (carry.usdjpy.change_30d >= 0 ? '+' : '') + carry.usdjpy.change_30d.toFixed(1);
-                const usdjpyBadge = document.getElementById('usdjpy-percentile');
-                usdjpyBadge.textContent = `${carry.usdjpy.percentile.toFixed(0)}%ile`;
-                // Lower USD/JPY (stronger yen) = more risk, so invert the warning logic
-                usdjpyBadge.className = carry.usdjpy.percentile < 20 ? 'badge bg-danger' :
-                                        carry.usdjpy.percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-
-            if (carry.japan_10y) {
-                document.getElementById('japan-10y-value').textContent = carry.japan_10y.current.toFixed(2) + '%';
-                document.getElementById('japan-10y-change-5d').textContent =
-                    (carry.japan_10y.change_5d >= 0 ? '+' : '') + carry.japan_10y.change_5d.toFixed(1);
-                document.getElementById('japan-10y-change-30d').textContent =
-                    (carry.japan_10y.change_30d >= 0 ? '+' : '') + carry.japan_10y.change_30d.toFixed(1);
-                const japan10yBadge = document.getElementById('japan-10y-percentile');
-                japan10yBadge.textContent = `${carry.japan_10y.percentile.toFixed(0)}%ile`;
-                // Higher Japan yields = more risk (carry trade unwinding)
-                japan10yBadge.className = carry.japan_10y.percentile > 80 ? 'badge bg-danger' :
-                                          carry.japan_10y.percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
         }
 
         // Update Market Conditions Grid (US-1.1.2)
