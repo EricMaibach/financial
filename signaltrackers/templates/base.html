@@ -96,6 +96,14 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li>
+                                <a class="dropdown-item" href="{{ url_for('alert_history') }}">
+                                    <i class="bi bi-clock-history"></i> Alert History
+                                    {% if unread_alert_count > 0 %}
+                                    <span class="badge bg-danger ms-1">{{ unread_alert_count }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="{{ url_for('settings') }}">
                                     <i class="bi bi-gear"></i> Settings
                                 </a>

@@ -4,7 +4,7 @@ Market Divergence Dashboard
 A comprehensive web dashboard for tracking the historic market divergence.
 """
 
-from flask import Flask, render_template, jsonify, request, redirect, url_for, flash
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, abort
 from flask_login import login_user, logout_user, login_required, current_user
 import pandas as pd
 import numpy as np
@@ -73,6 +73,62 @@ DATA_DIR = Path("data")
 
 # Background scheduler for automatic data refresh
 scheduler = None
+
+
+# Template filters
+@app.template_filter('format_datetime')
+def format_datetime(dt):
+    """Format datetime for display."""
+    if not dt:
+        return 'N/A'
+
+    now = datetime.utcnow()
+    diff = now - dt
+
+    if diff < timedelta(minutes=1):
+        return 'Just now'
+    elif diff < timedelta(hours=1):
+        mins = int(diff.total_seconds() / 60)
+        return f'{mins} minute{"s" if mins > 1 else ""} ago'
+    elif diff < timedelta(days=1):
+        hours = int(diff.total_seconds() / 3600)
+        return f'{hours} hour{"s" if hours > 1 else ""} ago'
+    elif diff < timedelta(days=7):
+        days = diff.days
+        return f'{days} day{"s" if days > 1 else ""} ago'
+    else:
+        return dt.strftime('%b %d, %Y at %I:%M %p')
+
+
+@app.template_filter('format_number')
+def format_number(value):
+    """Format number for display."""
+    if value is None:
+        return 'N/A'
+
+    if isinstance(value, float):
+        if 0 <= abs(value) <= 1:
+            return f'{value * 100:.2f}%'
+        elif abs(value) > 100:
+            return f'{value:,.1f}'
+        else:
+            return f'{value:.2f}'
+
+    return str(value)
+
+
+# Context processors
+@app.context_processor
+def inject_unread_alerts():
+    """Inject unread alert count into all templates."""
+    if current_user.is_authenticated:
+        from models.alert import Alert
+        count = Alert.query.filter_by(
+            user_id=current_user.id,
+            read=False
+        ).count()
+        return {'unread_alert_count': count}
+    return {'unread_alert_count': 0}
 
 
 def init_scheduler():
@@ -1430,8 +1486,38 @@ def settings_update_api_keys():
 @login_required
 def alert_history():
     """Show user's alert history."""
-    # Implement in US-1.3.8
-    return render_template('alerts.html')
+    from models.alert import Alert
+
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+
+    # Query alerts for current user, newest first
+    pagination = Alert.query.filter_by(user_id=current_user.id)\
+        .order_by(Alert.triggered_at.desc())\
+        .paginate(page=page, per_page=per_page, error_out=False)
+
+    return render_template('alerts.html',
+                         alerts=pagination.items,
+                         pagination=pagination)
+
+
+@app.route('/alerts/<int:alert_id>/mark-read', methods=['POST'])
+@login_required
+def mark_alert_read(alert_id):
+    """Mark an alert as read."""
+    from models.alert import Alert
+
+    alert = Alert.query.get_or_404(alert_id)
+
+    # Security: ensure user owns this alert
+    if alert.user_id != current_user.id:
+        abort(403)
+
+    alert.read = True
+    alert.read_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({'success': True})
 
 
 @app.route('/settings/alerts')
