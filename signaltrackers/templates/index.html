@@ -364,29 +364,11 @@
 <!-- Section 4: Market Signals (US-1.1.4) -->
 <section class="market-signals-section mb-4">
     <div class="section-header mb-3">
-        <h3 class="section-title">Market Signals</h3>
+        <h3 class="section-title">Cross-Market Indicators</h3>
         <small class="text-muted">Cross-market indicators worth watching</small>
     </div>
 
     <div class="row g-3">
-        <!-- Gold/Credit Divergence -->
-        <div class="col-12 col-md-4">
-            <div class="signal-card h-100">
-                <div class="signal-header">Gold/Credit Divergence</div>
-                <div class="signal-status" id="divergence-status">
-                    <span class="signal-icon">--</span>
-                    <span class="signal-label">--</span>
-                </div>
-                <div class="signal-percentile" id="divergence-percentile">
-                    -- Percentile
-                </div>
-                <div class="signal-description">
-                    When gold prices rise while credit spreads remain stable, it suggests
-                    gold is pricing in risks that credit markets haven't acknowledged yet.
-                </div>
-            </div>
-        </div>
-
         <!-- Yield Curve Status -->
         <div class="col-12 col-md-4">
             <div class="signal-card h-100">
@@ -422,10 +404,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- Gold/Credit Divergence -->
+        <div class="col-12 col-md-4">
+            <div class="signal-card h-100">
+                <div class="signal-header">Gold/Credit Divergence</div>
+                <div class="signal-status" id="divergence-status">
+                    <span class="signal-icon">--</span>
+                    <span class="signal-label">--</span>
+                </div>
+                <div class="signal-percentile" id="divergence-percentile">
+                    -- Percentile
+                </div>
+                <div class="signal-description">
+                    When gold prices rise while credit spreads remain stable, it suggests
+                    gold is pricing in risks that credit markets haven't acknowledged yet.
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="section-footer mt-3 text-end">
-        <a href="/divergence" class="view-link">View All Signals →</a>
+        <a href="/divergence" class="view-link">View All Indicators →</a>
     </div>
 </section>
 
