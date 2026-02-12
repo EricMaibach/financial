@@ -476,7 +476,9 @@ def load_csv_data(filename):
     filepath = DATA_DIR / filename
     if filepath.exists():
         df = pd.read_csv(filepath)
-        df['date'] = pd.to_datetime(df['date'])
+        # us_recessions.csv has start_date/end_date, not date
+        if filename != 'us_recessions.csv':
+            df['date'] = pd.to_datetime(df['date'])
         return df
     return None
 
