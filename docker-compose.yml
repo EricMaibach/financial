@@ -36,6 +36,15 @@ services:
 
       # Anthropic effort level (low/medium/high/max)
       - ANTHROPIC_EFFORT=${ANTHROPIC_EFFORT:-medium}
+
+      # Email Configuration (for alerts and briefings)
+      - MAIL_SERVER=${MAIL_SERVER:-smtp-relay.brevo.com}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USE_TLS=${MAIL_USE_TLS:-True}
+      - MAIL_USE_SSL=${MAIL_USE_SSL:-False}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+      - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER:-}
     volumes:
       # Persist market data between container restarts
       - ./signaltrackers/data:/app/data

@@ -1,0 +1,47 @@
+{% extends "email/base_email.html" %}
+
+{% block title %}Email Test - SignalTrackers{% endblock %}
+
+{% block content %}
+<h2 style="color: #1e3a5f; font-size: 22px; margin: 0 0 20px 0; font-weight: 600;">
+    Email Configuration Test
+</h2>
+
+<p style="margin: 0 0 16px 0;">
+    Congratulations! Your SignalTrackers email service is configured correctly.
+</p>
+
+<p style="margin: 0 0 16px 0;">
+    This test email was successfully sent to: <strong>{{ recipient_email }}</strong>
+</p>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 20px 0;">
+    <tr>
+        <td style="padding: 20px; background-color: #e8f4f8; border-left: 4px solid #1e3a5f; border-radius: 4px;">
+            <p style="margin: 0; color: #333333; font-size: 14px;">
+                <strong>✓ Email Service Status:</strong> Operational<br/>
+                <strong>✓ HTML Rendering:</strong> Supported<br/>
+                <strong>✓ Template System:</strong> Working
+            </p>
+        </td>
+    </tr>
+</table>
+
+<p style="margin: 0 0 16px 0;">
+    Your email infrastructure is now ready for:
+</p>
+
+<ul style="margin: 0 0 16px 0; padding-left: 20px;">
+    <li style="margin-bottom: 8px;">Alert notifications</li>
+    <li style="margin-bottom: 8px;">Daily market briefings</li>
+    <li style="margin-bottom: 8px;">Portfolio updates</li>
+</ul>
+
+<p style="margin: 0;">
+    You can safely proceed with implementing email-based features.
+</p>
+{% endblock %}
+
+{% block unsubscribe_text %}
+<!-- No unsubscribe for test emails -->
+{% endblock %}

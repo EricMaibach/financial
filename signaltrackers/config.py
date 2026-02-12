@@ -44,6 +44,15 @@ class Config:
     FRED_API_KEY = os.environ.get('FRED_API_KEY')
     TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
 
+    # Email configuration (Flask-Mail)
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp-relay.brevo.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'False').lower() in ('true', '1', 't')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'SignalTrackers <briefings@signaltrackers.com>')
+
 
 class DevelopmentConfig(Config):
     """Development configuration."""

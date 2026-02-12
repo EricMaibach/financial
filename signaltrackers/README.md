@@ -120,6 +120,80 @@ echo "export FRED_API_KEY='your_api_key_here'" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+## Email Configuration (Optional)
+
+SignalTrackers supports email notifications for alerts and daily briefings. Email configuration is **optional** but required for alert notifications and automated briefings.
+
+### Supported Email Providers
+
+The application uses SMTP for email delivery. We recommend **Brevo (formerly Sendinblue)** for the free tier:
+- **Free tier**: 300 emails/day (9,000/month)
+- **Easy setup**: Simple SMTP configuration
+- **Reliable**: High deliverability rates
+
+### Setting Up Brevo
+
+1. **Sign up** at [https://www.brevo.com](https://www.brevo.com)
+2. **Navigate** to SMTP & API → SMTP
+3. **Create** an SMTP key
+4. **Verify** your sender email address
+
+### Configure Environment Variables
+
+Add to your `.env` file or environment:
+
+```bash
+# Email Configuration
+MAIL_SERVER=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USERNAME=your-email@example.com
+MAIL_PASSWORD=your-brevo-smtp-key
+MAIL_DEFAULT_SENDER=SignalTrackers <briefings@signaltrackers.com>
+```
+
+See `.env.example` for a complete configuration template.
+
+### Test Email Configuration
+
+Verify your email setup is working:
+
+```bash
+python scripts/test_email.py your-email@example.com
+```
+
+This sends a test email to verify:
+- SMTP connection works
+- Credentials are correct
+- Email templates render properly
+- Messages reach the inbox (not spam)
+
+### Email Deliverability (Production)
+
+For production deployments, configure DNS records for better deliverability:
+
+**SPF Record** (add to your domain's DNS):
+```
+v=spf1 include:spf.brevo.com ~all
+```
+
+**DKIM**: Brevo provides DKIM records in the SMTP settings - add these to your DNS
+
+**DMARC** (optional but recommended):
+```
+v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com
+```
+
+### Alternative Email Providers
+
+The application works with any SMTP provider:
+- **SendGrid**: [https://sendgrid.com](https://sendgrid.com) (100 emails/day free)
+- **Mailgun**: [https://www.mailgun.com](https://www.mailgun.com) (5,000 emails/month free for 3 months)
+- **Amazon SES**: [https://aws.amazon.com/ses/](https://aws.amazon.com/ses/) (62,000 emails/month free with EC2)
+- **Gmail SMTP**: Not recommended for production (low sending limits)
+
+Just update the `MAIL_SERVER`, `MAIL_PORT`, and credentials accordingly.
+
 ## Usage
 
 ### Daily Collection

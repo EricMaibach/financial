@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{% block title %}SignalTrackers{% endblock %}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f4f4;">
+        <tr>
+            <td style="padding: 20px 0;">
+                <!-- Main Container -->
+                <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border: 1px solid #dddddd; border-radius: 8px;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 30px 30px 20px 30px; background-color: #1e3a5f; border-radius: 8px 8px 0 0;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center" style="color: #ffffff; font-size: 28px; font-weight: bold; letter-spacing: -0.5px;">
+                                        SignalTrackers
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-top: 8px; color: #a8c5e8; font-size: 14px; font-weight: normal;">
+                                        Macro Financial Intelligence
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 30px 30px 40px 30px; color: #333333; font-size: 16px; line-height: 1.6;">
+                            {% block content %}
+                            <!-- Email content goes here -->
+                            {% endblock %}
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 30px; background-color: #f8f9fa; border-top: 1px solid #e0e0e0; border-radius: 0 0 8px 8px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center" style="color: #666666; font-size: 12px; line-height: 1.5;">
+                                        <p style="margin: 0 0 10px 0;">
+                                            This email was sent by <strong>SignalTrackers</strong>
+                                        </p>
+                                        <p style="margin: 0 0 10px 0;">
+                                            {% block unsubscribe_text %}
+                                            <a href="{{ unsubscribe_url }}" style="color: #1e3a5f; text-decoration: underline;">Unsubscribe</a> from these emails
+                                            {% endblock %}
+                                        </p>
+                                        <p style="margin: 0; color: #999999; font-size: 11px;">
+                                            <strong>Disclaimer:</strong> The information provided is for educational purposes only and does not constitute financial advice.
+                                            Past performance does not guarantee future results. Always consult with a qualified financial advisor before making investment decisions.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
