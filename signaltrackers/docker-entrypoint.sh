@@ -4,6 +4,9 @@
 
 set -e
 
+# Set Flask app for migration commands
+export FLASK_APP=dashboard:app
+
 echo "Running database migrations..."
 flask db upgrade || {
     echo "Migration failed, but continuing (might be first run)..."
