@@ -430,76 +430,6 @@
 </section>
 
 <!-- Additional Insights Section -->
-<!-- Economic Indicators -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-bar-chart-line-fill"></i> Economic Indicators
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <a href="/explorer?metric=consumer_confidence" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">Consumer Confidence</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="consumer-confidence-value">--</h3>
-                                        <span class="badge" id="consumer-confidence-percentile">--</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <span id="consumer-confidence-change">--</span>% (30d)
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="/explorer?metric=m2_money_supply" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">M2 Money Supply</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="m2-value">--</h3>
-                                        <span class="badge" id="m2-percentile">--</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <span id="m2-yoy-change">--</span>% YoY
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="/explorer?metric=cpi" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">CPI (Inflation)</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="cpi-value">--</h3>
-                                        <span class="badge" id="cpi-percentile">--</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <span id="cpi-yoy-change">--</span>% YoY
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Key economic health indicators. Consumer Confidence leads spending. M2 tracks Fed liquidity. CPI measures inflation pressure.
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Prediction Markets -->
 <div class="row mb-4">
     <div class="col-12">
@@ -676,44 +606,6 @@ async function loadDashboard() {
 
         // Update Market Signals Section (US-1.1.4)
         updateSignalsSection(data);
-
-        // Update economic indicators
-        if (data.metrics.economic_indicators) {
-            const econ = data.metrics.economic_indicators;
-
-            if (econ.consumer_confidence) {
-                document.getElementById('consumer-confidence-value').textContent = econ.consumer_confidence.current.toFixed(1);
-                document.getElementById('consumer-confidence-change').textContent =
-                    (econ.consumer_confidence.change_30d >= 0 ? '+' : '') + econ.consumer_confidence.change_30d.toFixed(1);
-                const ccBadge = document.getElementById('consumer-confidence-percentile');
-                ccBadge.textContent = `${econ.consumer_confidence.percentile.toFixed(0)}%ile`;
-                // Lower confidence = more warning
-                ccBadge.className = econ.consumer_confidence.percentile < 20 ? 'badge bg-danger' :
-                                    econ.consumer_confidence.percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-
-            if (econ.m2_money_supply) {
-                document.getElementById('m2-value').textContent = '$' + econ.m2_money_supply.current.toFixed(1) + 'T';
-                document.getElementById('m2-yoy-change').textContent =
-                    (econ.m2_money_supply.yoy_change >= 0 ? '+' : '') + econ.m2_money_supply.yoy_change.toFixed(1);
-                const m2Badge = document.getElementById('m2-percentile');
-                m2Badge.textContent = `${econ.m2_money_supply.percentile.toFixed(0)}%ile`;
-                // YoY change is key - negative is very unusual
-                m2Badge.className = econ.m2_money_supply.yoy_change < 0 ? 'badge bg-danger' :
-                                    econ.m2_money_supply.yoy_change > 10 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-
-            if (econ.cpi) {
-                document.getElementById('cpi-value').textContent = econ.cpi.current.toFixed(1);
-                document.getElementById('cpi-yoy-change').textContent =
-                    (econ.cpi.yoy_change >= 0 ? '+' : '') + econ.cpi.yoy_change.toFixed(1);
-                const cpiBadge = document.getElementById('cpi-percentile');
-                cpiBadge.textContent = `${econ.cpi.percentile.toFixed(0)}%ile`;
-                // High inflation = warning
-                cpiBadge.className = econ.cpi.yoy_change > 5 ? 'badge bg-danger' :
-                                    econ.cpi.yoy_change > 3 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-        }
 
     } catch (error) {
         console.error('Error loading dashboard:', error);
