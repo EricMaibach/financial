@@ -709,5 +709,151 @@ def main():
         tracker.show_summary()
 
 
+def get_latest_metrics():
+    """
+    Get latest values for all available metrics.
+
+    Returns:
+        dict: Dictionary mapping metric names to their latest data
+              Format: {
+                  'metric_name': {
+                      'value': float,
+                      'percentile': float,
+                      'display_name': str,
+                      'date': str
+                  }
+              }
+    """
+    from pathlib import Path
+    import pandas as pd
+    from metric_tools import calculate_percentile, METRIC_INFO
+
+    data_dir = Path("data")
+    metrics = {}
+
+    if not data_dir.exists():
+        return metrics
+
+    # Load all CSV files
+    for csv_file in data_dir.glob("*.csv"):
+        metric_name = csv_file.stem  # filename without extension
+
+        try:
+            df = pd.read_csv(csv_file)
+            if df.empty:
+                continue
+
+            df['date'] = pd.to_datetime(df['date'])
+
+            # Get the value column (second column)
+            value_col = df.columns[1]
+
+            # Get latest non-null value
+            df_clean = df.dropna(subset=[value_col])
+            if df_clean.empty:
+                continue
+
+            latest_row = df_clean.iloc[-1]
+            latest_value = latest_row[value_col]
+            latest_date = latest_row['date']
+
+            # Calculate percentile
+            all_values = df_clean[value_col].tolist()
+            percentile = calculate_percentile(all_values, latest_value)
+
+            # Get display name
+            display_name = metric_name.replace('_', ' ').title()
+            if metric_name in METRIC_INFO:
+                display_name = METRIC_INFO[metric_name].get('description', display_name)
+
+            metrics[metric_name] = {
+                'value': latest_value,
+                'percentile': percentile,
+                'display_name': display_name,
+                'date': latest_date.strftime('%Y-%m-%d')
+            }
+
+        except Exception as e:
+            print(f"Error loading {csv_file.name}: {e}")
+            continue
+
+    return metrics
+
+
+def get_historical_metrics(days_ago=1):
+    """
+    Get metrics from N days ago.
+
+    Args:
+        days_ago: Number of days to look back
+
+    Returns:
+        dict: Metrics data structure (same format as get_latest_metrics)
+    """
+    from pathlib import Path
+    import pandas as pd
+    from datetime import datetime, timedelta
+    from metric_tools import calculate_percentile, METRIC_INFO
+
+    data_dir = Path("data")
+    metrics = {}
+
+    if not data_dir.exists():
+        return metrics
+
+    target_date = datetime.now() - timedelta(days=days_ago)
+
+    # Load all CSV files
+    for csv_file in data_dir.glob("*.csv"):
+        metric_name = csv_file.stem
+
+        try:
+            df = pd.read_csv(csv_file)
+            if df.empty:
+                continue
+
+            df['date'] = pd.to_datetime(df['date'])
+
+            # Get the value column (second column)
+            value_col = df.columns[1]
+
+            # Find the closest date to target_date
+            df_clean = df.dropna(subset=[value_col])
+            if df_clean.empty:
+                continue
+
+            # Filter to dates on or before target date
+            df_before = df_clean[df_clean['date'] <= target_date]
+            if df_before.empty:
+                continue
+
+            # Get the most recent row before/on target date
+            historical_row = df_before.iloc[-1]
+            historical_value = historical_row[value_col]
+            historical_date = historical_row['date']
+
+            # Calculate percentile using all historical data up to that point
+            all_values = df_clean[df_clean['date'] <= historical_date][value_col].tolist()
+            percentile = calculate_percentile(all_values, historical_value)
+
+            # Get display name
+            display_name = metric_name.replace('_', ' ').title()
+            if metric_name in METRIC_INFO:
+                display_name = METRIC_INFO[metric_name].get('description', display_name)
+
+            metrics[metric_name] = {
+                'value': historical_value,
+                'percentile': percentile,
+                'display_name': display_name,
+                'date': historical_date.strftime('%Y-%m-%d')
+            }
+
+        except Exception as e:
+            print(f"Error loading {csv_file.name}: {e}")
+            continue
+
+    return metrics
+
+
 if __name__ == '__main__':
     main()

@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def check_alert_thresholds():
     """
     Background job to check all alert thresholds
@@ -11,10 +12,15 @@ def check_alert_thresholds():
     try:
         logger.info("Starting alert threshold check...")
 
-        # TODO: Implement in US-1.3.5
-        # This is a placeholder for now
+        # Import here to avoid circular imports
+        from services.alert_detection_service import check_all_users_alerts
 
-        logger.info("Alert threshold check completed")
+        results = check_all_users_alerts()
+
+        logger.info(
+            f"Alert check completed: {results['total_alerts']} alerts created "
+            f"for {results['users_alerted']} users ({results['users_checked']} checked)"
+        )
 
     except Exception as e:
         logger.error(f"Error checking alert thresholds: {str(e)}", exc_info=True)
