@@ -155,6 +155,17 @@
                                 </div>
                                 <small class="text-muted d-block ms-4">Notify when market breadth weakens significantly</small>
                             </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="extreme_percentile_enabled"
+                                           name="extreme_percentile_enabled" {{ 'checked' if prefs.extreme_percentile_enabled }}>
+                                    <label class="form-check-label" for="extreme_percentile_enabled">
+                                        <strong>Extreme Metric Readings</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block ms-4">Notify when 3+ metrics reach extreme percentiles (>95th or <5th)</small>
+                            </div>
                         </div>
                     </div>
                 </div>

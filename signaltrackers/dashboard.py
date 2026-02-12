@@ -1576,6 +1576,7 @@ def save_alert_settings():
         prefs.credit_spread_threshold_50bp = request.form.get('credit_spread_threshold_50bp') == 'on'
         prefs.yield_curve_inversion = request.form.get('yield_curve_inversion') == 'on'
         prefs.equity_breadth_deterioration = request.form.get('equity_breadth_deterioration') == 'on'
+        prefs.extreme_percentile_enabled = request.form.get('extreme_percentile_enabled') == 'on'
 
         db.session.commit()
 
