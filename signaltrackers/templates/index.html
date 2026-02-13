@@ -161,7 +161,7 @@
 </div>
 
 <!-- Section 3: Market Conditions Grid (Expandable) -->
-<div class="market-conditions-grid-expandable mt-3" id="market-conditions-grid" style="display:none;">
+<div class="market-conditions-grid-expandable mt-3 collapsed" id="market-conditions-grid">
     <h3 class="section-title">Market Conditions</h3>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <!-- Credit Card -->
@@ -478,21 +478,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (showText && hideText) {
             toggleButton.addEventListener('click', function() {
-                console.log('Toggle clicked. Current display:', grid.style.display);
-                if (grid.style.display === 'none' || grid.style.display === '') {
+                const isCollapsed = grid.classList.contains('collapsed');
+                console.log('Toggle clicked. Currently collapsed:', isCollapsed);
+
+                if (isCollapsed) {
                     // Expand
                     console.log('Expanding grid...');
-                    grid.style.display = 'block';
+                    grid.classList.remove('collapsed');
                     showText.style.display = 'none';
                     hideText.style.display = 'inline';
-                    console.log('Grid display after expand:', grid.style.display);
                 } else {
                     // Collapse
                     console.log('Collapsing grid...');
-                    grid.style.display = 'none';
+                    grid.classList.add('collapsed');
                     showText.style.display = 'inline';
                     hideText.style.display = 'none';
-                    console.log('Grid display after collapse:', grid.style.display);
                 }
             });
             console.log('Market Conditions: Toggle initialized successfully');
