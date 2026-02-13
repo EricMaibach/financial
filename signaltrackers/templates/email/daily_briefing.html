@@ -18,6 +18,8 @@
     </td>
 </tr>
 
+<!-- AI Market Briefing Section (conditional - only if AI configured) -->
+{% if market_briefing_html %}
 <!-- One-liner Synthesis (Preheader) -->
 <tr>
     <td style="padding: 20px; background-color: #f8f9fa; border-left: 4px solid #667eea;">
@@ -38,6 +40,7 @@
         </div>
     </td>
 </tr>
+{% endif %}
 
 <!-- Section 2: Market Conditions at a Glance -->
 <tr>

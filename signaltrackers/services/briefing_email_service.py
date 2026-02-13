@@ -182,9 +182,15 @@ def send_daily_briefing_to_user(user):
 
         # Get content
         briefing = get_market_briefing_content()
+
+        # Graceful degradation: if AI briefing unavailable, send email without it
         if not briefing:
-            logger.warning(f"User {user.id}: No market briefing available")
-            return False
+            logger.info(f"User {user.id}: No AI market briefing available, sending email without it")
+            briefing = {
+                'html': None,
+                'text': None,
+                'synthesis': None
+            }
 
         conditions = get_market_conditions_summary()
         top_movers = get_top_movers()
