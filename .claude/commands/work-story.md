@@ -7,11 +7,10 @@ as you go.
 ## Input
 The user stories are in Github, ask the user what user story they would like you to work on before beginning.
 
-## Phase 1: Create feature branch
-Adopt the Senior Engineer mindset. Read .claude/commands/engineer.md 
-for your instructions.
+## Phase 1: Setup
 - Create a feature branch: feature/{story-id}
 - Make sure the feature branch is checked out locally so all work is captured in feature branch
+- Create a docs/test-plans/{story-id}-workflow-log.md file to be a running log.
 
 ## Phase 2: QA Test Planning
 Adopt the QA Test Engineer mindset. Read .claude/commands/qa.md for 
@@ -56,7 +55,5 @@ If QA verdict is CHANGES_REQUESTED:
 
 ## Rules
 - Between phases, briefly state which role you're switching to
-- Make sure engineer has created the feature branch in Phase 1 before making any file changes
-- Keep a running log in docs/test-plans/{story-id}-workflow-log.md
 - If you hit ambiguity in the user story, stop and ask rather than assuming
 - Do not skip phases
