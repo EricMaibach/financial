@@ -92,10 +92,10 @@
     </div>
 
     <!-- Toggle button -->
-    <div class="text-end mt-2">
-        <button class="btn btn-sm btn-outline-secondary" id="market-conditions-toggle">
-            <span class="toggle-text-show">Show Details ↓</span>
-            <span class="toggle-text-hide" style="display:none;">Hide Details ↑</span>
+    <div class="text-center mt-3">
+        <button type="button" class="btn btn-sm btn-primary" id="market-conditions-toggle">
+            <span class="toggle-text-show"><i class="bi bi-chevron-down me-1"></i>Show Details</span>
+            <span class="toggle-text-hide" style="display:none;"><i class="bi bi-chevron-up me-1"></i>Hide Details</span>
         </button>
     </div>
 </section>
@@ -472,23 +472,30 @@
 document.addEventListener('DOMContentLoaded', function() {
     const toggleButton = document.getElementById('market-conditions-toggle');
     const grid = document.getElementById('market-conditions-grid');
-    const showText = toggleButton.querySelector('.toggle-text-show');
-    const hideText = toggleButton.querySelector('.toggle-text-hide');
 
-    if (toggleButton && grid && showText && hideText) {
-        toggleButton.addEventListener('click', function() {
-            if (grid.style.display === 'none' || grid.style.display === '') {
-                // Expand
-                grid.style.display = 'block';
-                showText.style.display = 'none';
-                hideText.style.display = 'inline';
-            } else {
-                // Collapse
-                grid.style.display = 'none';
-                showText.style.display = 'inline';
-                hideText.style.display = 'none';
-            }
-        });
+    if (toggleButton && grid) {
+        const showText = toggleButton.querySelector('.toggle-text-show');
+        const hideText = toggleButton.querySelector('.toggle-text-hide');
+
+        if (showText && hideText) {
+            toggleButton.addEventListener('click', function() {
+                if (grid.style.display === 'none' || grid.style.display === '') {
+                    // Expand
+                    grid.style.display = 'block';
+                    showText.style.display = 'none';
+                    hideText.style.display = 'inline';
+                } else {
+                    // Collapse
+                    grid.style.display = 'none';
+                    showText.style.display = 'inline';
+                    hideText.style.display = 'none';
+                }
+            });
+        } else {
+            console.error('Market Conditions: Toggle button text spans not found');
+        }
+    } else {
+        console.error('Market Conditions: Toggle button or grid not found');
     }
 });
 
