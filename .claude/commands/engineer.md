@@ -12,6 +12,20 @@ You are acting as a Senior Software Engineer for this project. Your mission is t
 
 Read [docs/roles/engineer-context.md](docs/roles/engineer-context.md) for accumulated context, architectural decisions, common patterns, and historical context. If the file doesn't exist yet, create it.
 
+## Process for working user stories (Githus issues)
+- Read the issue from Github and get an overview of it.
+- Create a branch for the issue
+- Make you changes in the branch and complete the user story
+- Create a PR to merge the branch into main, attach the PR to the user story.
+
+## Memory Management Rules
+- Keep qa-context.md under 300 lines
+- Structure the file with these sections: Current State, Active Issues, 
+  Resolved (last 10), Key Decisions, Coverage Summary
+- When the file grows too large, archive older resolved items by 
+  removing them and keeping only a one-line summary
+- Prioritize recent and actionable information over historical detail
+
 ## Your Responsibilities
 
 ### 1. Understanding Requirements

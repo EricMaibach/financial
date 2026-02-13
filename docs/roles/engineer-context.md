@@ -32,7 +32,19 @@
 - Data collection: `signaltrackers/market_signals.py`
 
 ### Common Patterns
-- (To be documented as patterns emerge)
+
+#### Database Migrations
+- Use Alembic for database migrations
+- Migration files located in `signaltrackers/migrations/versions/`
+- Run migrations: `cd signaltrackers && source venv/bin/activate && flask --app dashboard db upgrade`
+- Follow naming convention: `<revision>_<description>.py`
+
+#### Deduplication Pattern
+When preventing duplicate scheduled operations:
+1. Add a tracking field to the model (e.g., `last_sent_date`)
+2. Check field value in user's timezone before executing
+3. Update field after successful execution
+4. Always use user's timezone for date comparisons to handle day boundaries correctly
 
 ### Naming Conventions
 - (To be documented as patterns emerge)
@@ -63,6 +75,18 @@
 ---
 
 ## Data Model
+
+### Database Tables
+
+#### AlertPreference Model
+Location: `signaltrackers/models/alert.py`
+
+Key fields for daily briefing deduplication:
+- `last_briefing_sent_date` (Date, nullable) - Tracks last date briefing was sent to prevent duplicates
+- `briefing_time` (Time) - User's preferred briefing time
+- `briefing_timezone` (String) - User's timezone for accurate day boundary detection
+- `daily_briefing_enabled` (Boolean) - Whether briefings are enabled
+- `briefing_frequency` (String) - 'daily', 'weekly', or 'off'
 
 ### CSV Data Files
 Location: `signaltrackers/data/`
@@ -131,7 +155,8 @@ python signaltrackers/market_signals.py
 ### Lessons from Development
 - **AI summaries**: Eastern Time display preferred over UTC (fixed in issue #60)
 - **Briefing frequency**: 15-minute interval for daily briefings (fixed in issue #64)
-- (Add more as discovered)
+- **Duplicate briefings**: When scheduler runs on intervals (not cron), always add deduplication tracking to prevent multiple sends during target window (fixed in issue #68)
+- **Timezone handling**: Always use user's timezone for date comparisons when tracking "daily" operations to correctly handle day boundaries
 
 ---
 
@@ -141,9 +166,13 @@ python signaltrackers/market_signals.py
 |----------------|---------|
 | `signaltrackers/dashboard.py` | Main Flask application entry point |
 | `signaltrackers/market_signals.py` | Data collection for market metrics |
+| `signaltrackers/jobs/email_jobs.py` | Scheduled jobs for sending briefing emails |
+| `signaltrackers/services/briefing_email_service.py` | Daily briefing email generation and sending |
+| `signaltrackers/models/alert.py` | AlertPreference and Alert database models |
 | `signaltrackers/templates/` | Jinja2 HTML templates |
 | `signaltrackers/static/` | CSS, JavaScript, images |
 | `signaltrackers/data/` | CSV data files for metrics |
+| `signaltrackers/migrations/versions/` | Alembic database migration files |
 | `.env` | **NEVER COMMIT** - Contains API keys and secrets |
 | `.env.example` | Template for environment variables |
 
@@ -151,7 +180,17 @@ python signaltrackers/market_signals.py
 
 ## Session History
 
-### 2026-02-12
+### 2026-02-12 (Session 2)
+- **Fixed:** Issue #68 - Daily briefing duplicate emails
+- **Changes:**
+  - Added `last_briefing_sent_date` field to AlertPreference model
+  - Implemented deduplication logic in `send_daily_briefing_to_user()`
+  - Created database migration `f1a2b3c4d5e6_add_last_briefing_sent_date.py`
+  - Ensures exactly one briefing per day per user
+- **Technical Decision:** Use database-backed deduplication (not in-memory) to survive app restarts
+- **Commit:** dd1b754
+
+### 2026-02-12 (Session 1)
 - **Created:** Initial engineer context file
 - **Status:** Template created, to be populated as work progresses
 
