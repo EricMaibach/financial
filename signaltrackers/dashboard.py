@@ -121,13 +121,20 @@ def format_number(value):
 @app.context_processor
 def inject_unread_alerts():
     """Inject unread alert count into all templates."""
-    if current_user.is_authenticated:
-        from models.alert import Alert
-        count = Alert.query.filter_by(
-            user_id=current_user.id,
-            read=False
-        ).count()
-        return {'unread_alert_count': count}
+    # Handle case where current_user doesn't exist (background jobs, email rendering)
+    try:
+        from flask_login import current_user
+        if current_user and current_user.is_authenticated:
+            from models.alert import Alert
+            count = Alert.query.filter_by(
+                user_id=current_user.id,
+                read=False
+            ).count()
+            return {'unread_alert_count': count}
+    except (AttributeError, RuntimeError):
+        # current_user doesn't exist in this context (background jobs)
+        pass
+
     return {'unread_alert_count': 0}
 
 
