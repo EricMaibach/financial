@@ -146,7 +146,10 @@ def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_
         print(f"{log_prefix} Web search tool not available (Tavily not configured)")
 
     # Tool calling loop
-    max_iterations = 3
+    # Allow up to 6 web search iterations for comprehensive market analysis
+    # Complex market days often require 4-5 searches for context (breaking news,
+    # economic data, Fed policy, sector developments, geopolitical events)
+    max_iterations = 6
     iteration = 0
 
     while iteration < max_iterations:
@@ -256,7 +259,10 @@ def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, l
     thinking_budget = effort_budgets.get(ANTHROPIC_EFFORT, 4096)
 
     # Tool calling loop
-    max_iterations = 3
+    # Allow up to 6 web search iterations for comprehensive market analysis
+    # Complex market days often require 4-5 searches for context (breaking news,
+    # economic data, Fed policy, sector developments, geopolitical events)
+    max_iterations = 6
     iteration = 0
 
     while iteration < max_iterations:
