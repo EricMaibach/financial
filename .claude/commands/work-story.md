@@ -13,14 +13,14 @@ your instructions.
 - Review the user story and acceptance criteria
 - Write a test plan with specific test cases covering: happy path, 
   edge cases, error handling, security considerations
-- Save the test plan to docs/test-plans/{story-id}-test-plan.md and post a summary of the test plan on the Github issue
+- Save the test plan to the Github issue
 - Log: "✅ Phase 1 Complete: Test plan created"
 
 ## Phase 2: Implementation
 Adopt the Senior Engineer mindset. Read .claude/commands/engineer.md 
 for your instructions.
 - Create a feature branch: feature/{story-id}
-- Review the test plan from Phase 1 so you know what you're building toward
+- Review the test plan on the user story from Phase 1 so you know what you're building toward
 - Implement the feature according to the user story and acceptance criteria
 - Write unit tests alongside your code
 - Log: "✅ Phase 2 Complete: Implementation done"
@@ -30,7 +30,7 @@ Adopt the QA Test Engineer mindset again.
 - Review the implementation against the test plan from Phase 1
 - Run existing tests and verify they pass
 - Write integration/e2e tests for the feature
-- Create a review file at docs/test-plans/{story-id}-qa-review.md with:
+- Create a review on the Github issue with:
   - PASS/FAIL status for each test case
   - Any bugs or concerns found
   - Overall verdict: APPROVED or CHANGES_REQUESTED
