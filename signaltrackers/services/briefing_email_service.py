@@ -7,7 +7,7 @@ Aggregates market data, AI summaries, and user alerts into a comprehensive email
 
 from datetime import datetime, timedelta
 import pytz
-from flask import url_for
+from flask import current_app
 from services.email_service import send_email
 from models.user import User
 from models.alert import AlertPreference, Alert
@@ -184,6 +184,7 @@ def send_daily_briefing_to_user(user):
         portfolio_analysis = get_portfolio_analysis_snippet(user)
 
         # Prepare template context
+        base_url = current_app.config['BASE_URL']
         context = {
             'user': user,
             'briefing_date': datetime.now().strftime('%A, %B %d, %Y'),
@@ -195,8 +196,8 @@ def send_daily_briefing_to_user(user):
             'triggered_alerts': triggered_alerts,
             'include_portfolio': prefs.include_portfolio_analysis,
             'portfolio_analysis': portfolio_analysis,
-            'dashboard_url': url_for('index', _external=True),
-            'unsubscribe_url': url_for('unsubscribe_briefing', user_id=user.id, _external=True)
+            'dashboard_url': base_url,
+            'unsubscribe_url': f"{base_url}/unsubscribe/{user.id}"
         }
 
         # Send email
