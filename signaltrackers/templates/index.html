@@ -95,7 +95,217 @@
                     <span class="toggle-text-hide" style="display:none;"><i class="bi bi-chevron-up me-1"></i>Hide Details</span>
                 </button>
             </div>
+
+            <!-- Expandable detailed grid -->
+            <div class="market-conditions-grid-expandable mt-4 collapsed" id="market-conditions-grid">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    <!-- Credit Card -->
+                    <div class="col">
+                        <div class="card market-card category-credit h-100">
+                            <div class="card-header">
+                                <span class="category-icon">💳</span>
+                                <span class="category-name">CREDIT</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-row">
+                                    <span class="metric-label">HY Spread</span>
+                                    <span class="metric-value" id="grid-credit-hy-spread">--</span>
+                                    <span class="metric-change" id="grid-credit-hy-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">IG Spread</span>
+                                    <span class="metric-value" id="grid-credit-ig-spread">--</span>
+                                    <span class="metric-change" id="grid-credit-ig-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">CCC/HY Ratio</span>
+                                    <span class="metric-value" id="grid-credit-ccc-ratio">--</span>
+                                    <span class="metric-change" id="grid-credit-ccc-change">--</span>
+                                </div>
+                                <div class="status-row mt-3">
+                                    <span class="status-label">Status:</span>
+                                    <span class="badge" id="grid-credit-status">--</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/credit" class="view-link">View Credit →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equities Card -->
+                    <div class="col">
+                        <div class="card market-card category-equities h-100">
+                            <div class="card-header">
+                                <span class="category-icon">📈</span>
+                                <span class="category-name">EQUITIES</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-row">
+                                    <span class="metric-label">S&P 500</span>
+                                    <span class="metric-value" id="grid-equities-spy">--</span>
+                                    <span class="metric-change" id="grid-equities-spy-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Russell 2000</span>
+                                    <span class="metric-value" id="grid-equities-russell">--</span>
+                                    <span class="metric-change" id="grid-equities-russell-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">VIX</span>
+                                    <span class="metric-value" id="grid-equities-vix">--</span>
+                                    <span class="metric-change" id="grid-equities-vix-change">--</span>
+                                </div>
+                                <div class="status-row mt-3">
+                                    <span class="status-label">Status:</span>
+                                    <span class="badge" id="grid-equities-status">--</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/equity" class="view-link">View Equities →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rates Card -->
+                    <div class="col">
+                        <div class="card market-card category-rates h-100">
+                            <div class="card-header">
+                                <span class="category-icon">📊</span>
+                                <span class="category-name">RATES</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-row">
+                                    <span class="metric-label">10Y Yield</span>
+                                    <span class="metric-value" id="grid-rates-10y">--</span>
+                                    <span class="metric-change" id="grid-rates-10y-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">2Y Yield</span>
+                                    <span class="metric-value" id="grid-rates-2y">--</span>
+                                    <span class="metric-change" id="grid-rates-2y-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Curve (10Y-2Y)</span>
+                                    <span class="metric-value" id="grid-rates-curve">--</span>
+                                    <span class="metric-change" id="grid-rates-curve-change">--</span>
+                                </div>
+                                <div class="status-row mt-3">
+                                    <span class="status-label">Status:</span>
+                                    <span class="badge" id="grid-rates-status">--</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/rates" class="view-link">View Rates →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Safe Havens Card -->
+                    <div class="col">
+                        <div class="card market-card category-havens h-100">
+                            <div class="card-header">
+                                <span class="category-icon">🛡️</span>
+                                <span class="category-name">SAFE HAVENS</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-row">
+                                    <span class="metric-label">Gold</span>
+                                    <span class="metric-value" id="grid-havens-gold">--</span>
+                                    <span class="metric-change" id="grid-havens-gold-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Silver</span>
+                                    <span class="metric-value" id="grid-havens-silver">--</span>
+                                    <span class="metric-change" id="grid-havens-silver-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">TLT (Long Treasuries)</span>
+                                    <span class="metric-value" id="grid-havens-tlt">--</span>
+                                    <span class="metric-change" id="grid-havens-tlt-change">--</span>
+                                </div>
+                                <div class="status-row mt-3">
+                                    <span class="status-label">Status:</span>
+                                    <span class="badge" id="grid-havens-status">--</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/safe-havens" class="view-link">View Safe Havens →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Crypto Card -->
+                    <div class="col">
+                        <div class="card market-card category-crypto h-100">
+                            <div class="card-header">
+                                <span class="category-icon">₿</span>
+                                <span class="category-name">CRYPTO</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-row">
+                                    <span class="metric-label">Bitcoin</span>
+                                    <span class="metric-value" id="grid-crypto-btc">--</span>
+                                    <span class="metric-change" id="grid-crypto-btc-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">Ethereum</span>
+                                    <span class="metric-value" id="grid-crypto-eth">--</span>
+                                    <span class="metric-change" id="grid-crypto-eth-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">BTC Dominance</span>
+                                    <span class="metric-value" id="grid-crypto-dom">--</span>
+                                    <span class="metric-change" id="grid-crypto-dom-change">--</span>
+                                </div>
+                                <div class="status-row mt-3">
+                                    <span class="status-label">Status:</span>
+                                    <span class="badge" id="grid-crypto-status">--</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/crypto" class="view-link">View Crypto →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dollar Card -->
+                    <div class="col">
+                        <div class="card market-card category-dollar h-100">
+                            <div class="card-header">
+                                <span class="category-icon">💵</span>
+                                <span class="category-name">DOLLAR</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-row">
+                                    <span class="metric-label">DXY Index</span>
+                                    <span class="metric-value" id="grid-dollar-dxy">--</span>
+                                    <span class="metric-change" id="grid-dollar-dxy-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">EUR/USD</span>
+                                    <span class="metric-value" id="grid-dollar-eurusd">--</span>
+                                    <span class="metric-change" id="grid-dollar-eurusd-change">--</span>
+                                </div>
+                                <div class="metric-row">
+                                    <span class="metric-label">USD/JPY</span>
+                                    <span class="metric-value" id="grid-dollar-usdjpy">--</span>
+                                    <span class="metric-change" id="grid-dollar-usdjpy-change">--</span>
+                                </div>
+                                <div class="status-row mt-3">
+                                    <span class="status-label">Status:</span>
+                                    <span class="badge" id="grid-dollar-status">--</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <a href="/dollar" class="view-link">View Dollar →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+    </div>
     </div>
 </section>
 
@@ -160,215 +370,6 @@
     </div>
 </div>
 
-<!-- Section 3: Market Conditions Grid (Expandable) -->
-<div class="market-conditions-grid-expandable mt-3 collapsed" id="market-conditions-grid">
-    <h3 class="section-title">Market Conditions</h3>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <!-- Credit Card -->
-        <div class="col">
-            <div class="card market-card category-credit h-100">
-                <div class="card-header">
-                    <span class="category-icon">💳</span>
-                    <span class="category-name">CREDIT</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">HY Spread</span>
-                        <span class="metric-value" id="grid-credit-hy-spread">--</span>
-                        <span class="metric-change" id="grid-credit-hy-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">IG Spread</span>
-                        <span class="metric-value" id="grid-credit-ig-spread">--</span>
-                        <span class="metric-change" id="grid-credit-ig-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">CCC/HY Ratio</span>
-                        <span class="metric-value" id="grid-credit-ccc-ratio">--</span>
-                        <span class="metric-change" id="grid-credit-ccc-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-credit-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/credit" class="view-link">View Credit →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Equities Card -->
-        <div class="col">
-            <div class="card market-card category-equities h-100">
-                <div class="card-header">
-                    <span class="category-icon">📈</span>
-                    <span class="category-name">EQUITIES</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">S&P 500</span>
-                        <span class="metric-value" id="grid-equities-spy">--</span>
-                        <span class="metric-change" id="grid-equities-spy-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Russell 2000</span>
-                        <span class="metric-value" id="grid-equities-russell">--</span>
-                        <span class="metric-change" id="grid-equities-russell-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">VIX</span>
-                        <span class="metric-value" id="grid-equities-vix">--</span>
-                        <span class="metric-change" id="grid-equities-vix-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-equities-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/equity" class="view-link">View Equities →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Rates Card -->
-        <div class="col">
-            <div class="card market-card category-rates h-100">
-                <div class="card-header">
-                    <span class="category-icon">📊</span>
-                    <span class="category-name">RATES</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">10Y Yield</span>
-                        <span class="metric-value" id="grid-rates-10y">--</span>
-                        <span class="metric-change" id="grid-rates-10y-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">2Y Yield</span>
-                        <span class="metric-value" id="grid-rates-2y">--</span>
-                        <span class="metric-change" id="grid-rates-2y-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Curve (10Y-2Y)</span>
-                        <span class="metric-value" id="grid-rates-curve">--</span>
-                        <span class="metric-change" id="grid-rates-curve-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-rates-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/rates" class="view-link">View Rates →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Safe Havens Card -->
-        <div class="col">
-            <div class="card market-card category-havens h-100">
-                <div class="card-header">
-                    <span class="category-icon">🛡️</span>
-                    <span class="category-name">SAFE HAVENS</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">Gold</span>
-                        <span class="metric-value" id="grid-havens-gold">--</span>
-                        <span class="metric-change" id="grid-havens-gold-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Silver</span>
-                        <span class="metric-value" id="grid-havens-silver">--</span>
-                        <span class="metric-change" id="grid-havens-silver-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">TLT (Long Treasuries)</span>
-                        <span class="metric-value" id="grid-havens-tlt">--</span>
-                        <span class="metric-change" id="grid-havens-tlt-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-havens-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/safe-havens" class="view-link">View Safe Havens →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Crypto Card -->
-        <div class="col">
-            <div class="card market-card category-crypto h-100">
-                <div class="card-header">
-                    <span class="category-icon">₿</span>
-                    <span class="category-name">CRYPTO</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">Bitcoin</span>
-                        <span class="metric-value" id="grid-crypto-btc">--</span>
-                        <span class="metric-change" id="grid-crypto-btc-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Ethereum</span>
-                        <span class="metric-value" id="grid-crypto-eth">--</span>
-                        <span class="metric-change" id="grid-crypto-eth-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">BTC Dominance</span>
-                        <span class="metric-value" id="grid-crypto-dom">--</span>
-                        <span class="metric-change" id="grid-crypto-dom-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-crypto-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/crypto" class="view-link">View Crypto →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dollar Card -->
-        <div class="col">
-            <div class="card market-card category-dollar h-100">
-                <div class="card-header">
-                    <span class="category-icon">💵</span>
-                    <span class="category-name">DOLLAR</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">DXY Index</span>
-                        <span class="metric-value" id="grid-dollar-dxy">--</span>
-                        <span class="metric-change" id="grid-dollar-dxy-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">EUR/USD</span>
-                        <span class="metric-value" id="grid-dollar-eurusd">--</span>
-                        <span class="metric-change" id="grid-dollar-eurusd-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">USD/JPY</span>
-                        <span class="metric-value" id="grid-dollar-usdjpy">--</span>
-                        <span class="metric-change" id="grid-dollar-usdjpy-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-dollar-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/dollar" class="view-link">View Dollar →</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
 <section class="market-signals-section mb-4">
