@@ -1963,20 +1963,7 @@ def run_data_collection():
         reload_status['last_reload'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         print("Data reload completed successfully!")
 
-        # Generate AI summary after successful data reload
-        reload_status['status'] = 'Generating AI daily summary...'
-        print("Generating AI daily summary...")
-        try:
-            market_summary = generate_market_summary()
-            top_movers = calculate_top_movers(5)
-            result = generate_daily_summary(market_summary, top_movers)
-            if result['success']:
-                print("AI summary generated successfully!")
-            else:
-                print(f"AI summary generation failed: {result['error']}")
-        except Exception as summary_error:
-            print(f"AI summary error (non-fatal): {summary_error}")
-
+        # Generate market-specific briefings FIRST so they can be included in general summary
         # Generate Crypto AI summary
         reload_status['status'] = 'Generating Crypto AI summary...'
         print("Generating Crypto AI summary...")
@@ -2015,6 +2002,21 @@ def run_data_collection():
                 print(f"Rates AI summary generation failed: {rates_result['error']}")
         except Exception as rates_summary_error:
             print(f"Rates AI summary error (non-fatal): {rates_summary_error}")
+
+        # Generate general AI summary AFTER market-specific briefings
+        # This allows it to include crypto/equity/rates briefings as context
+        reload_status['status'] = 'Generating AI daily summary...'
+        print("Generating AI daily summary...")
+        try:
+            market_summary = generate_market_summary()
+            top_movers = calculate_top_movers(5)
+            result = generate_daily_summary(market_summary, top_movers)
+            if result['success']:
+                print("AI summary generated successfully!")
+            else:
+                print(f"AI summary generation failed: {result['error']}")
+        except Exception as summary_error:
+            print(f"AI summary error (non-fatal): {summary_error}")
 
         # Generate Market Conditions Synthesis (one-liner)
         reload_status['status'] = 'Generating market conditions synthesis...'
