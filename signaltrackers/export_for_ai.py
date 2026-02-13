@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+import pytz
 import json
 
 DATA_DIR = Path("data")
@@ -101,9 +102,10 @@ def generate_markdown_summary():
 
     output = []
 
+    eastern = pytz.timezone('US/Eastern')
     # Header
     output.append("# MACRO FINANCIAL DATA SUMMARY")
-    output.append(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    output.append(f"**Generated:** {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
     output.append("")
     output.append("This document contains a comprehensive summary of all tracked market metrics,")
     output.append("optimized for AI analysis. All data includes current values, trends, and recent history.")

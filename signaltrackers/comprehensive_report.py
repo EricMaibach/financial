@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta
+import pytz
 
 
 class ComprehensiveAnalyzer:
@@ -98,9 +99,10 @@ class ComprehensiveAnalyzer:
     def print_comprehensive_report(self):
         """Generate comprehensive analysis report."""
 
+        eastern = pytz.timezone('US/Eastern')
         print("\n" + "="*100)
         print("COMPREHENSIVE MARKET ANALYSIS REPORT")
-        print(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         print("="*100)
 
         # SECTION 1: CREDIT MARKETS

@@ -183,11 +183,12 @@ def send_daily_briefing_to_user(user):
         triggered_alerts = get_user_triggered_alerts(user.id)
         portfolio_analysis = get_portfolio_analysis_snippet(user)
 
+        eastern = pytz.timezone('US/Eastern')
         # Prepare template context
         base_url = current_app.config['BASE_URL']
         context = {
             'user': user,
-            'briefing_date': datetime.now().strftime('%A, %B %d, %Y'),
+            'briefing_date': datetime.now(eastern).strftime('%A, %B %d, %Y'),
             'market_briefing_html': briefing['html'],
             'market_briefing_text': briefing['text'],
             'market_synthesis': briefing['synthesis'],
@@ -201,7 +202,7 @@ def send_daily_briefing_to_user(user):
         }
 
         # Send email
-        subject = f"Your SignalTrackers Daily Briefing - {datetime.now().strftime('%b %d')}"
+        subject = f"Your SignalTrackers Daily Briefing - {datetime.now(eastern).strftime('%b %d')}"
         success = send_email(
             to=user.email,
             subject=subject,

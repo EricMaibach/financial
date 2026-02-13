@@ -11,6 +11,7 @@ import os
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
+import pytz
 
 # AI Provider imports - both optional
 try:
@@ -410,7 +411,8 @@ def get_recent_summaries(days=3):
     if not data["summaries"]:
         return []
 
-    cutoff = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    eastern = pytz.timezone('US/Eastern')
+    cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
     recent = [s for s in data["summaries"] if s["date"] >= cutoff]
     # Sort by date ascending (oldest first) for chronological context
     return sorted(recent, key=lambda x: x["date"])
@@ -423,17 +425,18 @@ def save_summary(date_str, summary_text, web_search_used=False, news_context=Non
     # Remove existing summary for this date if present
     data["summaries"] = [s for s in data["summaries"] if s["date"] != date_str]
 
+    eastern = pytz.timezone('US/Eastern')
     # Add new summary
     data["summaries"].append({
         "date": date_str,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(eastern).isoformat(),
         "summary": summary_text,
         "web_search_used": web_search_used,
         "news_context": news_context[:500] if news_context else None  # Store snippet of news used
     })
 
     # Keep last 90 days of summaries
-    cutoff = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+    cutoff = (datetime.now(eastern) - timedelta(days=90)).strftime('%Y-%m-%d')
     data["summaries"] = [s for s in data["summaries"] if s["date"] >= cutoff]
 
     save_summaries(data)
@@ -493,7 +496,8 @@ def generate_daily_summary(market_data_summary, top_movers):
         }
 
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous summaries for context
         recent_summaries = get_recent_summaries(days=3)
@@ -677,7 +681,8 @@ def get_recent_crypto_summaries(days=3):
     if not data["summaries"]:
         return []
 
-    cutoff = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    eastern = pytz.timezone('US/Eastern')
+    cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
     recent = [s for s in data["summaries"] if s["date"] >= cutoff]
     return sorted(recent, key=lambda x: x["date"])
 
@@ -689,17 +694,18 @@ def save_crypto_summary(date_str, summary_text, web_search_used=False, news_cont
     # Remove existing summary for this date if present
     data["summaries"] = [s for s in data["summaries"] if s["date"] != date_str]
 
+    eastern = pytz.timezone('US/Eastern')
     # Add new summary
     data["summaries"].append({
         "date": date_str,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(eastern).isoformat(),
         "summary": summary_text,
         "web_search_used": web_search_used,
         "news_context": news_context[:500] if news_context else None
     })
 
     # Keep last 90 days of summaries
-    cutoff = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+    cutoff = (datetime.now(eastern) - timedelta(days=90)).strftime('%Y-%m-%d')
     data["summaries"] = [s for s in data["summaries"] if s["date"] >= cutoff]
 
     save_crypto_summaries(data)
@@ -750,7 +756,8 @@ def generate_crypto_summary(crypto_data_summary):
         }
 
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous crypto summaries for context
         recent_summaries = get_recent_crypto_summaries(days=3)
@@ -894,7 +901,8 @@ def get_recent_equity_summaries(days=3):
     if not data["summaries"]:
         return []
 
-    cutoff = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    eastern = pytz.timezone('US/Eastern')
+    cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
     recent = [s for s in data["summaries"] if s["date"] >= cutoff]
     return sorted(recent, key=lambda x: x["date"])
 
@@ -906,17 +914,18 @@ def save_equity_summary(date_str, summary_text, web_search_used=False, news_cont
     # Remove existing summary for this date if present
     data["summaries"] = [s for s in data["summaries"] if s["date"] != date_str]
 
+    eastern = pytz.timezone('US/Eastern')
     # Add new summary
     data["summaries"].append({
         "date": date_str,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(eastern).isoformat(),
         "summary": summary_text,
         "web_search_used": web_search_used,
         "news_context": news_context[:500] if news_context else None
     })
 
     # Keep last 90 days of summaries
-    cutoff = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+    cutoff = (datetime.now(eastern) - timedelta(days=90)).strftime('%Y-%m-%d')
     data["summaries"] = [s for s in data["summaries"] if s["date"] >= cutoff]
 
     save_equity_summaries(data)
@@ -967,7 +976,8 @@ def generate_equity_summary(equity_data_summary):
         }
 
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous equity summaries for context
         recent_summaries = get_recent_equity_summaries(days=3)
@@ -1093,6 +1103,7 @@ def save_rates_summary(date_str, summary_text, web_search_used=False, news_conte
     """Save a rates AI summary to storage."""
     data = load_rates_summaries()
 
+    eastern = pytz.timezone('US/Eastern')
     # Update existing or add new
     existing_idx = None
     for idx, s in enumerate(data["summaries"]):
@@ -1102,7 +1113,7 @@ def save_rates_summary(date_str, summary_text, web_search_used=False, news_conte
 
     summary_entry = {
         "date": date_str,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(eastern).isoformat(),
         "summary": summary_text,
         "web_search_used": web_search_used,
         "news_context": news_context[:500] if news_context else None
@@ -1186,7 +1197,8 @@ def generate_rates_summary(rates_data_summary):
         }
 
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous rates summaries for context
         recent_summaries = get_recent_rates_summaries(days=3)
@@ -1312,6 +1324,7 @@ def save_dollar_summary(date_str, summary_text, web_search_used=False, news_cont
     """Save a dollar AI summary to storage."""
     data = load_dollar_summaries()
 
+    eastern = pytz.timezone('US/Eastern')
     # Update existing or add new
     existing_idx = None
     for idx, s in enumerate(data["summaries"]):
@@ -1321,7 +1334,7 @@ def save_dollar_summary(date_str, summary_text, web_search_used=False, news_cont
 
     summary_entry = {
         "date": date_str,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(eastern).isoformat(),
         "summary": summary_text,
         "web_search_used": web_search_used,
         "news_context": news_context[:500] if news_context else None
@@ -1405,7 +1418,8 @@ def generate_dollar_summary(dollar_data_summary):
         }
 
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous dollar summaries for context
         recent_summaries = get_recent_dollar_summaries(days=3)
@@ -1531,6 +1545,7 @@ def save_portfolio_summary_entry(date_str, summary_text, portfolio_context=None)
     """Save a portfolio AI summary to storage."""
     data = load_portfolio_summaries()
 
+    eastern = pytz.timezone('US/Eastern')
     # Update existing or add new
     existing_idx = None
     for idx, s in enumerate(data["summaries"]):
@@ -1540,7 +1555,7 @@ def save_portfolio_summary_entry(date_str, summary_text, portfolio_context=None)
 
     summary_entry = {
         "date": date_str,
-        "generated_at": datetime.now().isoformat(),
+        "generated_at": datetime.now(eastern).isoformat(),
         "summary": summary_text,
         "portfolio_context": portfolio_context[:1000] if portfolio_context else None
     }
@@ -1606,6 +1621,7 @@ def db_save_portfolio_summary(user_id, date_str, summary_text, portfolio_context
     if not DB_AVAILABLE:
         return
 
+    eastern = pytz.timezone('US/Eastern')
     # Check if entry exists for this user and date
     existing = PortfolioSummary.query.filter_by(
         user_id=user_id,
@@ -1616,7 +1632,7 @@ def db_save_portfolio_summary(user_id, date_str, summary_text, portfolio_context
         # Update existing
         existing.summary = summary_text
         existing.portfolio_context = portfolio_context[:1000] if portfolio_context else None
-        existing.generated_at = datetime.now()
+        existing.generated_at = datetime.now(eastern)
     else:
         # Create new
         summary = PortfolioSummary(
@@ -1724,7 +1740,8 @@ def generate_portfolio_summary(portfolio_data, market_context, user_client=None,
         }
 
     try:
-        today = datetime.now().strftime('%Y-%m-%d')
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous portfolio summaries for context (user-specific if user_id provided)
         if user_id and DB_AVAILABLE:
