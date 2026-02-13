@@ -61,8 +61,10 @@
     </div>
 </section>
 
-<!-- Section 1.5: Market Conditions at a Glance (US-1.2.1) -->
-<section class="market-summary-widget mb-4">
+<!-- Section 1.5: Market Conditions Progressive Disclosure (US-2.0.1) -->
+<section class="market-conditions-section mb-4" id="market-conditions">
+    <!-- Summary widget (always visible) -->
+    <div class="market-summary-widget">
     <div class="card shadow">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h3 class="mb-0">
@@ -87,6 +89,14 @@
                 <span id="summary-synthesis-text" class="text-muted">Loading market synthesis...</span>
             </div>
         </div>
+    </div>
+
+    <!-- Toggle button -->
+    <div class="text-end mt-2">
+        <button class="btn btn-sm btn-outline-secondary" id="market-conditions-toggle">
+            <span class="toggle-text-show">Show Details ↓</span>
+            <span class="toggle-text-hide" style="display:none;">Hide Details ↑</span>
+        </button>
     </div>
 </section>
 
@@ -151,8 +161,8 @@
     </div>
 </div>
 
-<!-- Section 3: Market Conditions Grid -->
-<section class="market-conditions-grid mb-4" id="market-conditions-grid">
+<!-- Section 3: Market Conditions Grid (Expandable) -->
+<div class="market-conditions-grid-expandable mt-3" id="market-conditions-grid" style="display:none;">
     <h3 class="section-title">Market Conditions</h3>
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         <!-- Credit Card -->
@@ -359,7 +369,7 @@
             </div>
         </div>
     </div>
-</section>
+</div>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
 <section class="market-signals-section mb-4">
@@ -458,6 +468,30 @@
 
 {% block extra_js %}
 <script>
+// Market Conditions Toggle (US-2.0.1)
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('market-conditions-toggle');
+    const grid = document.getElementById('market-conditions-grid');
+    const showText = toggleButton.querySelector('.toggle-text-show');
+    const hideText = toggleButton.querySelector('.toggle-text-hide');
+
+    if (toggleButton && grid && showText && hideText) {
+        toggleButton.addEventListener('click', function() {
+            if (grid.style.display === 'none' || grid.style.display === '') {
+                // Expand
+                grid.style.display = 'block';
+                showText.style.display = 'none';
+                hideText.style.display = 'inline';
+            } else {
+                // Collapse
+                grid.style.display = 'none';
+                showText.style.display = 'inline';
+                hideText.style.display = 'none';
+            }
+        });
+    }
+});
+
 let recessionData = []; // Store recession periods for shading
 
 // Fetch recession data on load

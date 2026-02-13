@@ -1234,6 +1234,31 @@ footer {
 }
 
 /* ========================================
+   Progressive Disclosure Styles (US-2.0.1)
+   ======================================== */
+
+/* Market Conditions Section Container */
+.market-conditions-section {
+    position: relative;
+}
+
+/* Expandable Grid Container */
+.market-conditions-grid-expandable {
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+}
+
+/* Toggle Button Styles */
+#market-conditions-toggle {
+    transition: all 0.2s ease;
+}
+
+#market-conditions-toggle:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ========================================
    What's Moving Today Styles (US-1.1.3)
    ======================================== */
 
