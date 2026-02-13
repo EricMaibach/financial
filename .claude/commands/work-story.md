@@ -13,7 +13,7 @@ for your instructions.
 - Create a feature branch: feature/{story-id}
 - Make sure the feature branch is checked out locally so all work is captured in feature branch
 
-## Phase 1: QA Test Planning
+## Phase 2: QA Test Planning
 Adopt the QA Test Engineer mindset. Read .claude/commands/qa.md for 
 your instructions.
 - Review the user story and acceptance criteria
@@ -22,7 +22,7 @@ your instructions.
 - Save the test plan to the Github issue
 - Log: "✅ Phase 1 Complete: Test plan created"
 
-## Phase 2: Implementation
+## Phase 3: Implementation
 Adopt the Senior Engineer mindset. Read .claude/commands/engineer.md 
 for your instructions.
 - Create a feature branch: feature/{story-id}
@@ -31,7 +31,7 @@ for your instructions.
 - Write unit tests alongside your code
 - Log: "✅ Phase 2 Complete: Implementation done"
 
-## Phase 3: QA Verification
+## Phase 4: QA Verification
 Adopt the QA Test Engineer mindset again.
 - Review the implementation against the test plan from Phase 1
 - Run existing tests and verify they pass
@@ -42,7 +42,7 @@ Adopt the QA Test Engineer mindset again.
   - Overall verdict: APPROVED or CHANGES_REQUESTED
 - Log: "✅ Phase 3 Complete: QA review filed"
 
-## Phase 4: Resolution
+## Phase 5: Resolution
 If QA verdict is APPROVED:
   - Adopt Engineer mindset
   - Create the PR with a summary of changes and test results
@@ -56,6 +56,7 @@ If QA verdict is CHANGES_REQUESTED:
 
 ## Rules
 - Between phases, briefly state which role you're switching to
+- Make sure engineer has created the feature branch in Phase 1 before making any file changes
 - Keep a running log in docs/test-plans/{story-id}-workflow-log.md
 - If you hit ambiguity in the user story, stop and ask rather than assuming
 - Do not skip phases
