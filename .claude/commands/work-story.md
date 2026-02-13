@@ -7,6 +7,12 @@ as you go.
 ## Input
 The user stories are in Github, ask the user what user story they would like you to work on before beginning.
 
+## Phase 1: Create feature branch
+Adopt the Senior Engineer mindset. Read .claude/commands/engineer.md 
+for your instructions.
+- Create a feature branch: feature/{story-id}
+- Make sure the feature branch is checked out locally so all work is captured in feature branch
+
 ## Phase 1: QA Test Planning
 Adopt the QA Test Engineer mindset. Read .claude/commands/qa.md for 
 your instructions.
