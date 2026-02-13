@@ -63,17 +63,17 @@ def register_jobs(app):
     )
     logger.info("Registered job: check_alerts (every 15 minutes)")
 
-    # Daily briefings - runs every hour, sends to users when their local time matches preference
+    # Daily briefings - runs every 15 minutes, sends to users when their local time matches preference
     # Job checks each user's timezone and preferred time, only sends when hour matches
     scheduler.add_job(
         func=send_daily_briefings_wrapper,
-        trigger='cron',
-        minute=0,  # Run every hour at the top of the hour
+        trigger='interval',
+        minutes=15,  # Run every 15 minutes
         id='daily_briefings',
         name='Send daily briefing emails',
         replace_existing=True
     )
-    logger.info("Registered job: daily_briefings (every hour at :00)")
+    logger.info("Registered job: daily_briefings (every 15 minutes)")
 
 
 def shutdown_scheduler():
