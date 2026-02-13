@@ -18,6 +18,36 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _extract_synthesis(summary_text):
+    """
+    Extract a brief one-liner synthesis from the AI summary.
+    Takes the first sentence or ~150 characters.
+
+    Args:
+        summary_text: The full AI summary text
+
+    Returns:
+        str: Brief synthesis (first sentence or ~150 chars)
+    """
+    if not summary_text or not summary_text.strip():
+        return 'Market conditions update'
+
+    # Try to get first sentence (ending with . ! or ?)
+    sentences = summary_text.split('. ')
+    if sentences and sentences[0]:
+        first_sentence = sentences[0].strip()
+        # If first sentence is reasonable length, use it
+        if len(first_sentence) <= 200:
+            return first_sentence + ('.' if not first_sentence.endswith(('.', '!', '?')) else '')
+
+    # Fallback: truncate to ~150 chars at word boundary
+    if len(summary_text) > 150:
+        truncated = summary_text[:150].rsplit(' ', 1)[0]
+        return truncated + '...'
+
+    return summary_text.strip()
+
+
 def get_market_briefing_content():
     """
     Fetch AI-generated market briefing
@@ -29,10 +59,10 @@ def get_market_briefing_content():
     if not summary:
         return None
 
-    # Convert to HTML paragraphs
-    narrative = summary.get('narrative', '')
-    if narrative:
-        paragraphs = narrative.split('\n\n')
+    # Get the AI summary text (key is 'summary', not 'narrative')
+    summary_text = summary.get('summary', '')
+    if summary_text:
+        paragraphs = summary_text.split('\n\n')
         briefing_html = ''.join(
             f'<p style="margin: 0 0 15px 0;">{para}</p>'
             for para in paragraphs if para.strip()
@@ -40,12 +70,12 @@ def get_market_briefing_content():
     else:
         briefing_html = ''
 
-    briefing_text = narrative
+    briefing_text = summary_text
 
     return {
         'html': briefing_html,
         'text': briefing_text,
-        'synthesis': summary.get('one_liner', 'Market conditions update')
+        'synthesis': _extract_synthesis(summary_text)
     }
 
 
@@ -182,9 +212,15 @@ def send_daily_briefing_to_user(user):
 
         # Get content
         briefing = get_market_briefing_content()
+
+        # Graceful degradation: if AI briefing unavailable, send email without it
         if not briefing:
-            logger.warning(f"User {user.id}: No market briefing available")
-            return False
+            logger.info(f"User {user.id}: No AI market briefing available, sending email without it")
+            briefing = {
+                'html': None,
+                'text': None,
+                'synthesis': None
+            }
 
         conditions = get_market_conditions_summary()
         top_movers = get_top_movers()
