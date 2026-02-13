@@ -779,8 +779,9 @@ def calculate_crisis_score():
 
 def get_dashboard_data():
     """Get all dashboard data."""
+    eastern = pytz.timezone('US/Eastern')
     data = {
-        'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'timestamp': datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S'),
         'metrics': {},
         'charts': {},
         'warnings': []
@@ -1960,7 +1961,8 @@ def run_data_collection():
         if result2.returncode != 0:
             raise Exception(f"divergence_analysis.py failed: {result2.stderr}")
 
-        reload_status['last_reload'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        eastern = pytz.timezone('US/Eastern')
+        reload_status['last_reload'] = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
         print("Data reload completed successfully!")
 
         # Generate market-specific briefings FIRST so they can be included in general summary
@@ -2845,9 +2847,10 @@ def api_debug_web_search():
 def generate_market_summary():
     """Generate a comprehensive market data summary for AI context."""
     try:
+        eastern = pytz.timezone('US/Eastern')
         summary_parts = []
         summary_parts.append("# CURRENT MARKET DATA SUMMARY")
-        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
         # Load all key metrics
@@ -3078,9 +3081,10 @@ def generate_market_summary():
 def generate_crypto_market_summary():
     """Generate a crypto-focused market data summary for the Crypto AI briefing."""
     try:
+        eastern = pytz.timezone('US/Eastern')
         summary_parts = []
         summary_parts.append("# CRYPTO/BITCOIN MARKET DATA SUMMARY")
-        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
         def get_stats(df):
@@ -3265,9 +3269,10 @@ def generate_crypto_market_summary():
 def generate_equity_market_summary():
     """Generate an equity-focused market data summary for the Equity AI briefing."""
     try:
+        eastern = pytz.timezone('US/Eastern')
         summary_parts = []
         summary_parts.append("# EQUITY MARKETS DATA SUMMARY")
-        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
         def get_stats(df):
@@ -3452,9 +3457,10 @@ def generate_equity_market_summary():
 def generate_rates_market_summary():
     """Generate a rates-focused market data summary for the Rates AI briefing."""
     try:
+        eastern = pytz.timezone('US/Eastern')
         summary_parts = []
         summary_parts.append("# RATES & YIELD CURVE DATA SUMMARY")
-        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
         def get_stats(df):
@@ -3685,9 +3691,10 @@ def generate_rates_market_summary():
 def generate_dollar_market_summary():
     """Generate a dollar-focused market data summary for the Dollar AI briefing."""
     try:
+        eastern = pytz.timezone('US/Eastern')
         summary_parts = []
         summary_parts.append("# DOLLAR & CURRENCY DATA SUMMARY")
-        summary_parts.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
         def get_stats(df):

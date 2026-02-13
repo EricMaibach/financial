@@ -6,6 +6,7 @@ Supports single alerts and batching multiple alerts into one email.
 """
 
 from datetime import datetime
+import pytz
 from flask import current_app
 from services.email_service import send_email
 from models.alert import Alert
@@ -121,11 +122,12 @@ def send_alert_notification(user, alerts):
         # Get base URL from config
         base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
 
+        eastern = pytz.timezone('US/Eastern')
         # Prepare template context
         context = {
             'user': user,
             'alerts': formatted_alerts,
-            'triggered_time': datetime.now().strftime('%A, %B %d, %Y at %I:%M %p'),
+            'triggered_time': datetime.now(eastern).strftime('%A, %B %d, %Y at %I:%M %p ET'),
             'header_bg_color': colors['header_bg'],
             'header_text_color': colors['header_text'],
             'border_color': colors['border'],

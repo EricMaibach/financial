@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+import pytz
 
 
 class DivergenceAnalyzer:
@@ -255,9 +256,10 @@ class DivergenceAnalyzer:
         # Calculate crisis score
         crisis_score, warnings = self.calculate_crisis_score(metrics)
 
+        eastern = pytz.timezone('US/Eastern')
         print("\n" + "="*80)
         print("MARKET DIVERGENCE ANALYSIS")
-        print(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"Date: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         print("="*80)
 
         # Crisis Score

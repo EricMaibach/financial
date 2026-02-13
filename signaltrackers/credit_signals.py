@@ -15,6 +15,7 @@ Data is appended daily to CSV files for historical tracking.
 import os
 import sys
 from datetime import datetime, timedelta
+import pytz
 import pandas as pd
 import requests
 from pathlib import Path
@@ -237,6 +238,7 @@ class CreditSignalsTracker:
         Args:
             lookback_days: Number of days to look back for new data (default: 12775, ~35 years)
         """
+        eastern = pytz.timezone('US/Eastern')
         print("\n=== Collecting FRED Data ===")
 
         for signal_name, series_id in self.fred_series.items():
@@ -250,7 +252,7 @@ class CreditSignalsTracker:
                 start_date = (last_date - timedelta(days=5)).strftime('%Y-%m-%d')
                 print(f"Last date in file: {last_date.date()}, fetching from {start_date}")
             else:
-                start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
+                start_date = (datetime.now(eastern) - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
                 print(f"No existing data, fetching from {start_date}")
 
             df = self.fetch_fred_data(series_id, start_date=start_date)
@@ -266,6 +268,7 @@ class CreditSignalsTracker:
         Args:
             lookback_days: Number of days to look back for new data (default: 12775, ~35 years)
         """
+        eastern = pytz.timezone('US/Eastern')
         print("\n=== Collecting ETF Data ===")
 
         # Collect individual ETF data
@@ -276,7 +279,7 @@ class CreditSignalsTracker:
             last_date = self.get_last_date_in_file(filepath)
 
             # Always fetch based on lookback_days from today to get full history
-            start_date = (datetime.now() - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
+            start_date = (datetime.now(eastern) - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
 
             if last_date:
                 print(f"Last date in file: {last_date.date()}, fetching {lookback_days} days from {start_date}")
@@ -328,7 +331,8 @@ class CreditSignalsTracker:
         Args:
             lookback_days: Number of days to look back (default: 12775, ~35 years)
         """
-        print(f"Credit Signals Tracker - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        eastern = pytz.timezone('US/Eastern')
+        print(f"Credit Signals Tracker - {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         print(f"Data directory: {self.data_dir.absolute()}")
 
         self.collect_fred_signals(lookback_days=lookback_days)

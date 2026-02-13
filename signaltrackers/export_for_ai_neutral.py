@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+import pytz
 import json
 
 DATA_DIR = Path("data")
@@ -133,9 +134,10 @@ def generate_markdown_summary():
 
     output = []
 
+    eastern = pytz.timezone('US/Eastern')
     # Header
     output.append("# MARKET DATA EXPORT")
-    output.append(f"**Export Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    output.append(f"**Export Date:** {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
     output.append("")
     output.append("Comprehensive financial market data with statistics and trends.")
     output.append("All values presented as-is without interpretation.")
@@ -367,7 +369,7 @@ def generate_markdown_summary():
     output.append("")
     output.append("## METADATA")
     output.append("")
-    output.append(f"- **Export Timestamp:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    output.append(f"- **Export Timestamp:** {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
     output.append(f"- **Data Directory:** {DATA_DIR}")
     output.append(f"- **Number of Metrics:** {len(all_stats)}")
     output.append(f"- **Total Observations:** {sum(s.get('count', 0) for s in all_stats.values())}")
