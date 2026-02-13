@@ -186,13 +186,19 @@ python signaltrackers/market_signals.py
   - Modified `briefing_email_service.py` to remove blocking logic when AI briefing unavailable
   - Added conditional rendering in `daily_briefing.html` and `daily_briefing.txt` templates
   - Changed log level from warning to info when AI briefing is unavailable
+  - **Bug Fix:** Fixed dictionary key mismatch (`'narrative'` → `'summary'`) causing empty AI content in emails
+  - **Added:** `_extract_synthesis()` helper function to generate briefing one-liner from summary text
 - **Technical Decision:** Graceful degradation pattern - email delivery continues even when optional AI features fail
 - **Pattern Established:** When adding optional AI-powered features to emails:
   1. Never block email delivery on AI feature failure
   2. Use conditional template rendering (`{% if variable %}...{% endif %}`)
   3. Log at appropriate level (info for expected cases, warning for unexpected failures)
   4. Provide fallback values (None/empty dict) rather than early returns
-- **Commit:** 0212916
+- **Bug Discovered:** Email code used wrong dictionary keys ('narrative', 'one_liner') while AI summaries save with key 'summary'
+  - Dashboard code was correct: `summary.get('summary', '')`
+  - Email code was wrong: `summary.get('narrative', '')` → always returned empty string
+  - Result: Emails showed headers but no AI content even when briefing existed
+- **Commits:** 0212916 (graceful degradation), 5681319 (key mismatch fix)
 - **PR:** #70
 
 ### 2026-02-12 (Session 2)
