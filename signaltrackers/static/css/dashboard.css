@@ -1234,6 +1234,62 @@ footer {
 }
 
 /* ========================================
+   Progressive Disclosure Styles (US-2.0.1)
+   ======================================== */
+
+/* Market Conditions Section Container */
+.market-conditions-section {
+    position: relative;
+}
+
+/* Summary View (visible when collapsed) */
+.market-conditions-summary-view {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    opacity: 1;
+}
+
+.market-conditions-summary-view.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+
+/* Expandable Grid Container (visible when expanded) */
+.market-conditions-grid-expandable {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    opacity: 1;
+}
+
+.market-conditions-grid-expandable.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+
+/* Toggle Button Styles */
+#market-conditions-toggle {
+    transition: all 0.2s ease;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+#market-conditions-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#market-conditions-toggle:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* ========================================
    What's Moving Today Styles (US-1.1.3)
    ======================================== */
 

@@ -180,6 +180,43 @@ python signaltrackers/market_signals.py
 
 ## Session History
 
+### 2026-02-13 (Session 4)
+- **Implemented:** Issue #36 - US-2.0.1 Market Conditions Progressive Disclosure
+- **Changes:**
+  - Modified `signaltrackers/templates/index.html` to implement progressive disclosure pattern
+    - Wrapped Market Conditions summary widget and grid in `.market-conditions-section` container
+    - Added toggle button between summary and grid sections with "Show Details ↓" / "Hide Details ↑" labels
+    - Grid hidden by default with `style="display:none"`
+    - JavaScript toggle functionality to show/hide grid and swap button text on click
+  - Modified `signaltrackers/static/css/dashboard.css`
+    - Added `.market-conditions-section` container styles
+    - Added `.market-conditions-grid-expandable` with 300ms CSS transition for smooth expand/collapse
+    - Added toggle button hover effects (slight lift + shadow)
+- **Technical Decision:** Progressive disclosure pattern for dashboard sections
+  - Summary widget always visible (6 status indicators + AI synthesis)
+  - Full detail view (6-card grid) collapsed by default to reduce visual overwhelm
+  - Smooth CSS transitions (300ms ease-in-out) for better UX
+  - Button text changes to clearly indicate current state and available action
+- **Pattern Established:** Progressive disclosure implementation approach
+  - Grid uses `display:none` when collapsed (removed from layout, not just visually hidden)
+  - DOMContentLoaded event listener ensures safe DOM manipulation
+  - Null checks on all DOM elements before attaching event listeners
+  - Button state managed via inline `style.display` toggling for both grid and text spans
+  - Transition applied via CSS `transition: all 0.3s ease-in-out` for smooth animation
+- **Files Modified:**
+  - `signaltrackers/templates/index.html` (lines 64-102, 165-372, 470-493)
+  - `signaltrackers/static/css/dashboard.css` (lines 1236-1260 - added progressive disclosure section)
+- **Testing Notes:**
+  - Implementation verified through file inspection and code review
+  - HTML structure validated: proper nesting, IDs present, default state correct
+  - JavaScript logic validated: toggle works both ways, text swaps correctly
+  - CSS transitions validated: 300ms timing matches specification
+  - **Production server (Gunicorn) requires restart to pick up template changes**
+- **Next Steps:**
+  - Production server restart needed to see changes live
+  - QA testing against test plan (docs/test-plans/US-2.0.1-test-plan.md)
+  - Cross-browser and mobile testing per acceptance criteria
+
 ### 2026-02-12 (Session 3)
 - **Implemented:** Issue #69 - Include AI Market Briefing in Daily Email with Graceful Degradation
 - **Changes:**
