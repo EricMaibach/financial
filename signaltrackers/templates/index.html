@@ -72,20 +72,23 @@
             </h3>
         </div>
         <div class="card-body">
-            <!-- Status indicators row -->
-            <div class="summary-indicators d-flex flex-wrap justify-content-around mb-3" id="summary-indicators">
-                <!-- Loading state -->
-                <div class="text-center text-muted py-3 w-100" id="summary-loading">
-                    <div class="spinner-border spinner-border-sm me-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
+            <!-- Summary view (collapsed state) -->
+            <div class="market-conditions-summary-view" id="market-conditions-summary">
+                <!-- Status indicators row -->
+                <div class="summary-indicators d-flex flex-wrap justify-content-around mb-3" id="summary-indicators">
+                    <!-- Loading state -->
+                    <div class="text-center text-muted py-3 w-100" id="summary-loading">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading market conditions...
                     </div>
-                    Loading market conditions...
                 </div>
-            </div>
-            <!-- AI synthesis -->
-            <div class="summary-synthesis border-top pt-3" id="summary-synthesis">
-                <small class="text-muted"><i class="bi bi-robot me-1"></i></small>
-                <span id="summary-synthesis-text" class="text-muted">Loading market synthesis...</span>
+                <!-- AI synthesis -->
+                <div class="summary-synthesis border-top pt-3" id="summary-synthesis">
+                    <small class="text-muted"><i class="bi bi-robot me-1"></i></small>
+                    <span id="summary-synthesis-text" class="text-muted">Loading market synthesis...</span>
+                </div>
             </div>
 
             <!-- Toggle button -->
@@ -471,37 +474,32 @@
 // Market Conditions Toggle (US-2.0.1)
 document.addEventListener('DOMContentLoaded', function() {
     const toggleButton = document.getElementById('market-conditions-toggle');
+    const summary = document.getElementById('market-conditions-summary');
     const grid = document.getElementById('market-conditions-grid');
 
-    if (toggleButton && grid) {
+    if (toggleButton && summary && grid) {
         const showText = toggleButton.querySelector('.toggle-text-show');
         const hideText = toggleButton.querySelector('.toggle-text-hide');
 
         if (showText && hideText) {
             toggleButton.addEventListener('click', function() {
                 const isCollapsed = grid.classList.contains('collapsed');
-                console.log('Toggle clicked. Currently collapsed:', isCollapsed);
 
                 if (isCollapsed) {
-                    // Expand
-                    console.log('Expanding grid...');
+                    // Expand: hide summary, show grid
+                    summary.classList.add('collapsed');
                     grid.classList.remove('collapsed');
                     showText.style.display = 'none';
                     hideText.style.display = 'inline';
                 } else {
-                    // Collapse
-                    console.log('Collapsing grid...');
+                    // Collapse: hide grid, show summary
                     grid.classList.add('collapsed');
+                    summary.classList.remove('collapsed');
                     showText.style.display = 'inline';
                     hideText.style.display = 'none';
                 }
             });
-            console.log('Market Conditions: Toggle initialized successfully');
-        } else {
-            console.error('Market Conditions: Toggle button text spans not found');
         }
-    } else {
-        console.error('Market Conditions: Toggle button or grid not found');
     }
 });
 

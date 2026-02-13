@@ -1242,11 +1242,25 @@ footer {
     position: relative;
 }
 
-/* Expandable Grid Container */
+/* Summary View (visible when collapsed) */
+.market-conditions-summary-view {
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
+    opacity: 1;
+}
+
+.market-conditions-summary-view.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+}
+
+/* Expandable Grid Container (visible when expanded) */
 .market-conditions-grid-expandable {
     max-height: 5000px;
     overflow: hidden;
-    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transition: max-height 0.4s ease-in-out, opacity 0.4s ease-in-out;
     opacity: 1;
 }
 
