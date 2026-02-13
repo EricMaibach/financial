@@ -172,6 +172,14 @@ def send_daily_briefing_to_user(user):
             logger.debug(f"User {user.id}: Daily briefing disabled")
             return False
 
+        # Deduplication: Check if briefing already sent today (in user's timezone)
+        user_tz = pytz.timezone(prefs.briefing_timezone)
+        today_user_tz = datetime.now(user_tz).date()
+
+        if prefs.last_briefing_sent_date == today_user_tz:
+            logger.debug(f"User {user.id}: Briefing already sent today ({today_user_tz})")
+            return False
+
         # Get content
         briefing = get_market_briefing_content()
         if not briefing:
@@ -212,6 +220,9 @@ def send_daily_briefing_to_user(user):
         )
 
         if success:
+            # Update last sent date to prevent duplicates
+            prefs.last_briefing_sent_date = today_user_tz
+            db.session.commit()
             logger.info(f"Daily briefing sent to user {user.id} ({user.email})")
         else:
             logger.error(f"Failed to send daily briefing to user {user.id} ({user.email})")

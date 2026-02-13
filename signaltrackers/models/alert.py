@@ -23,6 +23,7 @@ class AlertPreference(db.Model):
     briefing_time = db.Column(db.Time, default=datetime.strptime('07:00', '%H:%M').time(), nullable=False)  # Default 7 AM
     briefing_timezone = db.Column(db.String(50), default='America/New_York', nullable=False)
     include_portfolio_analysis = db.Column(db.Boolean, default=True, nullable=False)
+    last_briefing_sent_date = db.Column(db.Date, nullable=True)  # Track last sent date to prevent duplicates
 
     # Alert preferences
     alerts_enabled = db.Column(db.Boolean, default=True, nullable=False)
