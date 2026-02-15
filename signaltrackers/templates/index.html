@@ -61,32 +61,272 @@
     </div>
 </section>
 
-<!-- Section 1.5: Market Conditions at a Glance (US-1.2.1) -->
-<section class="market-summary-widget mb-4">
-    <div class="card shadow">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">
-                <i class="bi bi-speedometer2 me-2"></i>Market Conditions at a Glance
-            </h3>
-            <a href="#market-conditions-grid" class="btn btn-outline-secondary btn-sm">View Details →</a>
+<!-- Section: Market Conditions (US-2.0.3) -->
+<section class="market-conditions-section mb-4" id="market-conditions">
+    <!-- Section header -->
+    <div class="section-header mb-3">
+        <h3 class="section-title"><i class="bi bi-speedometer2 me-2"></i>Market Conditions at a Glance</h3>
+    </div>
+
+    <!-- AI Synthesis (always visible) -->
+    <div class="ai-synthesis-container mb-3">
+        <p class="text-muted fst-italic mb-0">
+            <i class="bi bi-robot me-2"></i>
+            <span id="market-synthesis-text">Loading market synthesis...</span>
+        </p>
+    </div>
+
+    <!-- Compact badges (default state) -->
+    <div class="market-badges-grid" id="market-badges">
+        <div class="badge-card" data-category="credit">
+            <i class="bi bi-bank2 badge-icon"></i>
+            <div class="badge-label">CREDIT</div>
+            <div class="badge-status" id="badge-credit-status">--</div>
         </div>
-        <div class="card-body">
-            <!-- Status indicators row -->
-            <div class="summary-indicators d-flex flex-wrap justify-content-around mb-3" id="summary-indicators">
-                <!-- Loading state -->
-                <div class="text-center text-muted py-3 w-100" id="summary-loading">
-                    <div class="spinner-border spinner-border-sm me-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
+        <div class="badge-card" data-category="equities">
+            <i class="bi bi-graph-up badge-icon"></i>
+            <div class="badge-label">EQUITIES</div>
+            <div class="badge-status" id="badge-equities-status">--</div>
+        </div>
+        <div class="badge-card" data-category="rates">
+            <i class="bi bi-graph-up-arrow badge-icon"></i>
+            <div class="badge-label">RATES</div>
+            <div class="badge-status" id="badge-rates-status">--</div>
+        </div>
+        <div class="badge-card" data-category="havens">
+            <i class="bi bi-shield-check badge-icon"></i>
+            <div class="badge-label">SAFE HAVENS</div>
+            <div class="badge-status" id="badge-havens-status">--</div>
+        </div>
+        <div class="badge-card" data-category="crypto">
+            <i class="bi bi-currency-bitcoin badge-icon"></i>
+            <div class="badge-label">CRYPTO</div>
+            <div class="badge-status" id="badge-crypto-status">--</div>
+        </div>
+        <div class="badge-card" data-category="dollar">
+            <i class="bi bi-currency-dollar badge-icon"></i>
+            <div class="badge-label">DOLLAR</div>
+            <div class="badge-status" id="badge-dollar-status">--</div>
+        </div>
+    </div>
+
+    <!-- Detailed cards (expanded state, hidden by default) -->
+    <div class="market-cards-grid" id="market-cards" style="display: none;">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <!-- Credit Card -->
+            <div class="col">
+                <div class="card market-card category-credit h-100">
+                    <div class="card-header">
+                        <span class="category-icon">💳</span>
+                        <span class="category-name">CREDIT</span>
                     </div>
-                    Loading market conditions...
+                    <div class="card-body">
+                        <div class="metric-row">
+                            <span class="metric-label">HY Spread</span>
+                            <span class="metric-value" id="grid-credit-hy-spread">--</span>
+                            <span class="metric-change" id="grid-credit-hy-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">IG Spread</span>
+                            <span class="metric-value" id="grid-credit-ig-spread">--</span>
+                            <span class="metric-change" id="grid-credit-ig-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">CCC/HY Ratio</span>
+                            <span class="metric-value" id="grid-credit-ccc-ratio">--</span>
+                            <span class="metric-change" id="grid-credit-ccc-change">--</span>
+                        </div>
+                        <div class="status-row mt-3">
+                            <span class="status-label">Status:</span>
+                            <span class="badge" id="grid-credit-status">--</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/credit" class="view-link">View Credit →</a>
+                    </div>
                 </div>
             </div>
-            <!-- AI synthesis -->
-            <div class="summary-synthesis border-top pt-3" id="summary-synthesis">
-                <small class="text-muted"><i class="bi bi-robot me-1"></i></small>
-                <span id="summary-synthesis-text" class="text-muted">Loading market synthesis...</span>
+
+            <!-- Equities Card -->
+            <div class="col">
+                <div class="card market-card category-equities h-100">
+                    <div class="card-header">
+                        <span class="category-icon">📈</span>
+                        <span class="category-name">EQUITIES</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-row">
+                            <span class="metric-label">S&P 500</span>
+                            <span class="metric-value" id="grid-equities-spy">--</span>
+                            <span class="metric-change" id="grid-equities-spy-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Russell 2000</span>
+                            <span class="metric-value" id="grid-equities-russell">--</span>
+                            <span class="metric-change" id="grid-equities-russell-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">VIX</span>
+                            <span class="metric-value" id="grid-equities-vix">--</span>
+                            <span class="metric-change" id="grid-equities-vix-change">--</span>
+                        </div>
+                        <div class="status-row mt-3">
+                            <span class="status-label">Status:</span>
+                            <span class="badge" id="grid-equities-status">--</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/equity" class="view-link">View Equities →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rates Card -->
+            <div class="col">
+                <div class="card market-card category-rates h-100">
+                    <div class="card-header">
+                        <span class="category-icon">📊</span>
+                        <span class="category-name">RATES</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-row">
+                            <span class="metric-label">10Y Yield</span>
+                            <span class="metric-value" id="grid-rates-10y">--</span>
+                            <span class="metric-change" id="grid-rates-10y-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">2Y Yield</span>
+                            <span class="metric-value" id="grid-rates-2y">--</span>
+                            <span class="metric-change" id="grid-rates-2y-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Curve (10Y-2Y)</span>
+                            <span class="metric-value" id="grid-rates-curve">--</span>
+                            <span class="metric-change" id="grid-rates-curve-change">--</span>
+                        </div>
+                        <div class="status-row mt-3">
+                            <span class="status-label">Status:</span>
+                            <span class="badge" id="grid-rates-status">--</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/rates" class="view-link">View Rates →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Safe Havens Card -->
+            <div class="col">
+                <div class="card market-card category-havens h-100">
+                    <div class="card-header">
+                        <span class="category-icon">🛡️</span>
+                        <span class="category-name">SAFE HAVENS</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-row">
+                            <span class="metric-label">Gold</span>
+                            <span class="metric-value" id="grid-havens-gold">--</span>
+                            <span class="metric-change" id="grid-havens-gold-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Silver</span>
+                            <span class="metric-value" id="grid-havens-silver">--</span>
+                            <span class="metric-change" id="grid-havens-silver-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">TLT (Long Treasuries)</span>
+                            <span class="metric-value" id="grid-havens-tlt">--</span>
+                            <span class="metric-change" id="grid-havens-tlt-change">--</span>
+                        </div>
+                        <div class="status-row mt-3">
+                            <span class="status-label">Status:</span>
+                            <span class="badge" id="grid-havens-status">--</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/safe-havens" class="view-link">View Safe Havens →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crypto Card -->
+            <div class="col">
+                <div class="card market-card category-crypto h-100">
+                    <div class="card-header">
+                        <span class="category-icon">₿</span>
+                        <span class="category-name">CRYPTO</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-row">
+                            <span class="metric-label">Bitcoin</span>
+                            <span class="metric-value" id="grid-crypto-btc">--</span>
+                            <span class="metric-change" id="grid-crypto-btc-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">Ethereum</span>
+                            <span class="metric-value" id="grid-crypto-eth">--</span>
+                            <span class="metric-change" id="grid-crypto-eth-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">BTC Dominance</span>
+                            <span class="metric-value" id="grid-crypto-dom">--</span>
+                            <span class="metric-change" id="grid-crypto-dom-change">--</span>
+                        </div>
+                        <div class="status-row mt-3">
+                            <span class="status-label">Status:</span>
+                            <span class="badge" id="grid-crypto-status">--</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/crypto" class="view-link">View Crypto →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dollar Card -->
+            <div class="col">
+                <div class="card market-card category-dollar h-100">
+                    <div class="card-header">
+                        <span class="category-icon">💵</span>
+                        <span class="category-name">DOLLAR</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-row">
+                            <span class="metric-label">DXY Index</span>
+                            <span class="metric-value" id="grid-dollar-dxy">--</span>
+                            <span class="metric-change" id="grid-dollar-dxy-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">EUR/USD</span>
+                            <span class="metric-value" id="grid-dollar-eurusd">--</span>
+                            <span class="metric-change" id="grid-dollar-eurusd-change">--</span>
+                        </div>
+                        <div class="metric-row">
+                            <span class="metric-label">USD/JPY</span>
+                            <span class="metric-value" id="grid-dollar-usdjpy">--</span>
+                            <span class="metric-change" id="grid-dollar-usdjpy-change">--</span>
+                        </div>
+                        <div class="status-row mt-3">
+                            <span class="status-label">Status:</span>
+                            <span class="badge" id="grid-dollar-status">--</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/dollar" class="view-link">View Dollar →</a>
+                    </div>
+                </div>
             </div>
         </div>
+    </div>
+
+    <!-- Expansion control -->
+    <div class="expansion-control" id="market-expansion-control">
+        <div class="divider-line"></div>
+        <button class="expansion-button" id="market-toggle" aria-expanded="false" aria-label="Toggle market conditions detail view">
+            <span class="expand-text">⌄ Show Details</span>
+            <span class="collapse-text" style="display: none;">⌃ Hide Details</span>
+        </button>
+        <div class="divider-line"></div>
     </div>
 </section>
 
@@ -150,216 +390,6 @@
         </div>
     </div>
 </div>
-
-<!-- Section 3: Market Conditions Grid -->
-<section class="market-conditions-grid mb-4" id="market-conditions-grid">
-    <h3 class="section-title">Market Conditions</h3>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <!-- Credit Card -->
-        <div class="col">
-            <div class="card market-card category-credit h-100">
-                <div class="card-header">
-                    <span class="category-icon">💳</span>
-                    <span class="category-name">CREDIT</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">HY Spread</span>
-                        <span class="metric-value" id="grid-credit-hy-spread">--</span>
-                        <span class="metric-change" id="grid-credit-hy-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">IG Spread</span>
-                        <span class="metric-value" id="grid-credit-ig-spread">--</span>
-                        <span class="metric-change" id="grid-credit-ig-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">CCC/HY Ratio</span>
-                        <span class="metric-value" id="grid-credit-ccc-ratio">--</span>
-                        <span class="metric-change" id="grid-credit-ccc-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-credit-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/credit" class="view-link">View Credit →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Equities Card -->
-        <div class="col">
-            <div class="card market-card category-equities h-100">
-                <div class="card-header">
-                    <span class="category-icon">📈</span>
-                    <span class="category-name">EQUITIES</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">S&P 500</span>
-                        <span class="metric-value" id="grid-equities-spy">--</span>
-                        <span class="metric-change" id="grid-equities-spy-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Russell 2000</span>
-                        <span class="metric-value" id="grid-equities-russell">--</span>
-                        <span class="metric-change" id="grid-equities-russell-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">VIX</span>
-                        <span class="metric-value" id="grid-equities-vix">--</span>
-                        <span class="metric-change" id="grid-equities-vix-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-equities-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/equity" class="view-link">View Equities →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Rates Card -->
-        <div class="col">
-            <div class="card market-card category-rates h-100">
-                <div class="card-header">
-                    <span class="category-icon">📊</span>
-                    <span class="category-name">RATES</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">10Y Yield</span>
-                        <span class="metric-value" id="grid-rates-10y">--</span>
-                        <span class="metric-change" id="grid-rates-10y-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">2Y Yield</span>
-                        <span class="metric-value" id="grid-rates-2y">--</span>
-                        <span class="metric-change" id="grid-rates-2y-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Curve (10Y-2Y)</span>
-                        <span class="metric-value" id="grid-rates-curve">--</span>
-                        <span class="metric-change" id="grid-rates-curve-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-rates-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/rates" class="view-link">View Rates →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Safe Havens Card -->
-        <div class="col">
-            <div class="card market-card category-havens h-100">
-                <div class="card-header">
-                    <span class="category-icon">🛡️</span>
-                    <span class="category-name">SAFE HAVENS</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">Gold</span>
-                        <span class="metric-value" id="grid-havens-gold">--</span>
-                        <span class="metric-change" id="grid-havens-gold-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Silver</span>
-                        <span class="metric-value" id="grid-havens-silver">--</span>
-                        <span class="metric-change" id="grid-havens-silver-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">TLT (Long Treasuries)</span>
-                        <span class="metric-value" id="grid-havens-tlt">--</span>
-                        <span class="metric-change" id="grid-havens-tlt-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-havens-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/safe-havens" class="view-link">View Safe Havens →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Crypto Card -->
-        <div class="col">
-            <div class="card market-card category-crypto h-100">
-                <div class="card-header">
-                    <span class="category-icon">₿</span>
-                    <span class="category-name">CRYPTO</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">Bitcoin</span>
-                        <span class="metric-value" id="grid-crypto-btc">--</span>
-                        <span class="metric-change" id="grid-crypto-btc-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">Ethereum</span>
-                        <span class="metric-value" id="grid-crypto-eth">--</span>
-                        <span class="metric-change" id="grid-crypto-eth-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">BTC Dominance</span>
-                        <span class="metric-value" id="grid-crypto-dom">--</span>
-                        <span class="metric-change" id="grid-crypto-dom-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-crypto-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/crypto" class="view-link">View Crypto →</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Dollar Card -->
-        <div class="col">
-            <div class="card market-card category-dollar h-100">
-                <div class="card-header">
-                    <span class="category-icon">💵</span>
-                    <span class="category-name">DOLLAR</span>
-                </div>
-                <div class="card-body">
-                    <div class="metric-row">
-                        <span class="metric-label">DXY Index</span>
-                        <span class="metric-value" id="grid-dollar-dxy">--</span>
-                        <span class="metric-change" id="grid-dollar-dxy-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">EUR/USD</span>
-                        <span class="metric-value" id="grid-dollar-eurusd">--</span>
-                        <span class="metric-change" id="grid-dollar-eurusd-change">--</span>
-                    </div>
-                    <div class="metric-row">
-                        <span class="metric-label">USD/JPY</span>
-                        <span class="metric-value" id="grid-dollar-usdjpy">--</span>
-                        <span class="metric-change" id="grid-dollar-usdjpy-change">--</span>
-                    </div>
-                    <div class="status-row mt-3">
-                        <span class="status-label">Status:</span>
-                        <span class="badge" id="grid-dollar-status">--</span>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a href="/dollar" class="view-link">View Dollar →</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
 <section class="market-signals-section mb-4">
@@ -831,52 +861,30 @@ function updateMarketConditionsGrid(data) {
         dollarStatusEl.className = 'badge ' + statuses.dollar.class;
     }
 
-    // Update Summary Widget (US-1.2.1)
-    updateSummaryWidget(statuses);
+    // Update Badge Statuses (US-2.0.3)
+    updateBadgeStatuses(statuses);
 }
 
 // ========================================
-// Market Conditions Summary Widget (US-1.2.1)
+// Market Conditions Badge Statuses (US-2.0.3)
 // ========================================
 
-// Define summary dimension configuration
-const summaryDimensions = [
-    { key: 'credit', name: 'CREDIT', icon: '💳', link: '/rates' },
-    { key: 'equities', name: 'EQUITIES', icon: '📈', link: '/equity' },
-    { key: 'rates', name: 'RATES', icon: '📊', link: '/rates' },
-    { key: 'volatility', name: 'VOLATILITY', icon: '📉', link: '/equity' },
-    { key: 'dollar', name: 'DOLLAR', icon: '💵', link: '/dollar' },
-    { key: 'liquidity', name: 'LIQUIDITY', icon: '💧', link: '/rates' }
-];
+// Update badge statuses in the compact badge view
+function updateBadgeStatuses(statuses) {
+    const badgeCategories = ['credit', 'equities', 'rates', 'havens', 'crypto', 'dollar'];
 
-// Update the summary widget with current statuses
-function updateSummaryWidget(statuses) {
-    const container = document.getElementById('summary-indicators');
-    const loadingEl = document.getElementById('summary-loading');
-
-    if (!container) return;
-
-    // Hide loading state
-    if (loadingEl) loadingEl.style.display = 'none';
-
-    // Build the indicator HTML
-    const html = summaryDimensions.map(dim => {
-        const status = statuses[dim.key] || { text: '--', class: 'status-neutral' };
-        return `
-            <a href="${dim.link}" class="summary-indicator" title="View ${dim.name} details">
-                <div class="summary-indicator-icon">${dim.icon}</div>
-                <div class="summary-indicator-name">${dim.name}</div>
-                <span class="badge summary-status-badge ${status.class}">${status.text}</span>
-            </a>
-        `;
-    }).join('');
-
-    container.innerHTML = html;
+    badgeCategories.forEach(category => {
+        const badgeStatusEl = document.getElementById(`badge-${category}-status`);
+        if (badgeStatusEl && statuses[category]) {
+            badgeStatusEl.textContent = statuses[category].text;
+            badgeStatusEl.className = 'badge-status ' + statuses[category].class;
+        }
+    });
 }
 
 // Load and display AI market conditions synthesis
 async function loadMarketSynthesis() {
-    const synthesisTextEl = document.getElementById('summary-synthesis-text');
+    const synthesisTextEl = document.getElementById('market-synthesis-text');
     if (!synthesisTextEl) return;
 
     try {
@@ -897,6 +905,44 @@ async function loadMarketSynthesis() {
         synthesisTextEl.classList.add('text-muted');
     }
 }
+
+// ========================================
+// Market Conditions Expansion Toggle (US-2.0.3)
+// ========================================
+
+// Toggle between compact badges and detailed cards
+function toggleMarketConditions() {
+    const badges = document.getElementById('market-badges');
+    const cards = document.getElementById('market-cards');
+    const toggleButton = document.getElementById('market-toggle');
+    const expandText = toggleButton.querySelector('.expand-text');
+    const collapseText = toggleButton.querySelector('.collapse-text');
+    const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+
+    if (!isExpanded) {
+        // Expand: hide badges, show cards
+        badges.style.display = 'none';
+        cards.style.display = 'block';
+        expandText.style.display = 'none';
+        collapseText.style.display = 'inline';
+        toggleButton.setAttribute('aria-expanded', 'true');
+    } else {
+        // Collapse: hide cards, show badges
+        cards.style.display = 'none';
+        badges.style.display = 'grid';
+        collapseText.style.display = 'none';
+        expandText.style.display = 'inline';
+        toggleButton.setAttribute('aria-expanded', 'false');
+    }
+}
+
+// Initialize expansion control event listener
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButton = document.getElementById('market-toggle');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', toggleMarketConditions);
+    }
+});
 
 // ========================================
 // Market Signals Section Functions (US-1.1.4)
