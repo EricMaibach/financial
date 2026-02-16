@@ -180,19 +180,19 @@ python signaltrackers/market_signals.py
 
 ## Session History
 
-### 2026-02-15 (Session 4)
+### 2026-02-15 (Session 5)
 - **Implemented:** Issue #72 (US-2.0.3) - Refine Market Conditions Widget Expansion UX
 - **Changes:**
-  - Replaced separate "Market Conditions at a Glance" summary widget and "Market Conditions Grid" sections with unified expandable section
+  - Replaced US-2.0.1 implementation with refined version
   - Created compact badge cards (6 cards in 2x3 grid) showing category name, icon, and status
   - Moved existing detailed cards into expandable state (hidden by default)
   - Added subtle horizontal divider expansion control with chevron icons
-  - Implemented smooth CSS transitions (350ms ease-in-out) for badge→card expansion
+  - Implemented smooth CSS transitions (350ms ease-in-out) with opacity + height animations
   - AI synthesis now always visible above widgets (not hidden in either state)
   - Removed old `updateSummaryWidget()` function, replaced with `updateBadgeStatuses()`
   - Updated `loadMarketSynthesis()` to use new element ID: `market-synthesis-text`
 - **Files Modified:**
-  - `signaltrackers/templates/index.html` (lines 64-362 replaced with new unified section)
+  - `signaltrackers/templates/index.html` (replaced Market Conditions section)
   - `signaltrackers/static/css/dashboard.css` (added ~200 lines of CSS for badges, expansion control, animations, responsive design)
 - **Technical Decisions:**
   - **Widget-level expansion:** All 6 widgets expand/collapse together (not individual expansion) to keep homepage simple and predictable
@@ -203,7 +203,7 @@ python signaltrackers/market_signals.py
 - **UX Pattern Established:**
   - Progressive disclosure for homepage widgets: compact summary by default, detailed view on demand
   - Expansion control should be subtle (divider + chevron) not prominent (bright button)
-  - Use CSS `display: none/grid/block` for instant state switches with CSS transitions for smooth appearance
+  - Use CSS opacity/visibility/height transitions for smooth animations (not just display switching)
   - Grid position mapping for expansion creates intuitive widget-grows-in-place feel
 - **Accessibility:**
   - Added `aria-expanded` attribute to toggle button
@@ -214,8 +214,51 @@ python signaltrackers/market_signals.py
   - Desktop: 2x3 grid for both badges and cards
   - Tablet: 2x3 grid (maintained)
   - Mobile: 2x2 grid for badges and cards (6 items wrap to 3 rows)
-- **Status:** Implementation complete, ready for testing after server restart
-- **Next Steps:** User needs to restart gunicorn/dashboard to see changes
+- **Bugs Fixed (post-PR feedback):**
+  - Fixed missing animations (was using display switching, now uses opacity + visibility + height)
+  - Fixed layout spacing issues (hidden elements were taking up space, now properly collapsed)
+- **Commits:** 9b7aef7 (initial), e7f02fd (animation fix), bf96192 (spacing fix)
+- **PR:** #73
+- **Status:** Implementation complete with animation and spacing fixes, supersedes US-2.0.1
+
+### 2026-02-13 (Session 4)
+- **Implemented:** Issue #36 - US-2.0.1 Market Conditions Progressive Disclosure
+- **Changes:**
+  - Modified `signaltrackers/templates/index.html` to implement progressive disclosure pattern
+    - Wrapped Market Conditions summary widget and grid in `.market-conditions-section` container
+    - Added toggle button between summary and grid sections with "Show Details ↓" / "Hide Details ↑" labels
+    - Grid hidden by default with `style="display:none"`
+    - JavaScript toggle functionality to show/hide grid and swap button text on click
+  - Modified `signaltrackers/static/css/dashboard.css`
+    - Added `.market-conditions-section` container styles
+    - Added `.market-conditions-grid-expandable` with 300ms CSS transition for smooth expand/collapse
+    - Added toggle button hover effects (slight lift + shadow)
+- **Technical Decision:** Progressive disclosure pattern for dashboard sections
+  - Summary widget always visible (6 status indicators + AI synthesis)
+  - Full detail view (6-card grid) collapsed by default to reduce visual overwhelm
+  - Smooth CSS transitions (300ms ease-in-out) for better UX
+  - Button text changes to clearly indicate current state and available action
+- **Pattern Established:** Progressive disclosure implementation approach
+  - Grid uses `display:none` when collapsed (removed from layout, not just visually hidden)
+  - DOMContentLoaded event listener ensures safe DOM manipulation
+  - Null checks on all DOM elements before attaching event listeners
+  - Button state managed via inline `style.display` toggling for both grid and text spans
+  - Transition applied via CSS `transition: all 0.3s ease-in-out` for smooth animation
+- **Files Modified:**
+  - `signaltrackers/templates/index.html` (lines 64-102, 165-372, 470-493)
+  - `signaltrackers/static/css/dashboard.css` (lines 1236-1260 - added progressive disclosure section)
+- **Testing Notes:**
+  - Implementation verified through file inspection and code review
+  - HTML structure validated: proper nesting, IDs present, default state correct
+  - JavaScript logic validated: toggle works both ways, text swaps correctly
+  - CSS transitions validated: 300ms timing matches specification
+  - **Production server (Gunicorn) requires restart to pick up template changes**
+- **Next Steps:**
+  - Production server restart needed to see changes live
+  - QA testing against test plan (docs/test-plans/US-2.0.1-test-plan.md)
+  - Cross-browser and mobile testing per acceptance criteria
+- **PR:** #71
+- **Status:** Merged to main, superseded by US-2.0.3
 
 ### 2026-02-12 (Session 3)
 - **Implemented:** Issue #69 - Include AI Market Briefing in Daily Email with Graceful Degradation
