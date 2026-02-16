@@ -356,17 +356,17 @@
             <i class="bi bi-info-circle"></i> Rarity shows how unusual a move is compared to history. "Top 1% move" means this size move only happens ~1% of the time.
         </small>
     </div>
-
-    <!-- Expansion control -->
-    <div class="expansion-control" id="movers-expansion-control">
-        <div class="divider-line"></div>
-        <button class="expansion-button" id="movers-toggle" aria-expanded="false" aria-label="Toggle top movers trend chart view">
-            <span class="expand-text">⌄ Show Trends Chart</span>
-            <span class="collapse-text" style="display: none;">⌃ Hide Chart</span>
-        </button>
-        <div class="divider-line"></div>
-    </div>
 </section>
+
+<!-- Expansion control -->
+<div class="expansion-control" id="movers-expansion-control">
+    <div class="divider-line"></div>
+    <button class="expansion-button" id="movers-toggle" aria-expanded="false" aria-label="Toggle top movers trend chart view">
+        <span class="expand-text">⌄ Show Trends Chart</span>
+        <span class="collapse-text" style="display: none;">⌃ Hide Chart</span>
+    </button>
+    <div class="divider-line"></div>
+</div>
 
 <!-- Top Movers Chart (hidden by default) -->
 <div class="row mb-4" id="movers-chart-container" style="display: none;">
@@ -399,6 +399,15 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Expansion control (collapse chart) -->
+<div class="expansion-control" id="movers-collapse-control" style="display: none;">
+    <div class="divider-line"></div>
+    <button class="expansion-button" onclick="toggleMoversChart()" aria-label="Hide top movers trend chart">
+        <span class="collapse-text">⌃ Hide Chart</span>
+    </button>
+    <div class="divider-line"></div>
 </div>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
@@ -949,16 +958,16 @@ function toggleMarketConditions() {
 // Toggle Top Movers Chart (US-2.0.2)
 function toggleMoversChart() {
     const chartContainer = document.getElementById('movers-chart-container');
+    const expansionControl = document.getElementById('movers-expansion-control');
+    const collapseControl = document.getElementById('movers-collapse-control');
     const toggleButton = document.getElementById('movers-toggle');
-    const expandText = toggleButton.querySelector('.expand-text');
-    const collapseText = toggleButton.querySelector('.collapse-text');
     const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
 
     if (!isExpanded) {
-        // Expand: show chart
+        // Expand: show chart, hide expansion control, show collapse control
         chartContainer.style.display = 'flex';
-        expandText.style.display = 'none';
-        collapseText.style.display = 'inline';
+        expansionControl.style.display = 'none';
+        collapseControl.style.display = 'flex';
         toggleButton.setAttribute('aria-expanded', 'true');
 
         // Trigger window resize to ensure Chart.js renders properly
@@ -966,10 +975,10 @@ function toggleMoversChart() {
             window.dispatchEvent(new Event('resize'));
         }, 50);
     } else {
-        // Collapse: hide chart
+        // Collapse: hide chart, show expansion control, hide collapse control
         chartContainer.style.display = 'none';
-        collapseText.style.display = 'none';
-        expandText.style.display = 'inline';
+        expansionControl.style.display = 'flex';
+        collapseControl.style.display = 'none';
         toggleButton.setAttribute('aria-expanded', 'false');
     }
 }
