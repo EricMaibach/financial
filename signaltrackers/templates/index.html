@@ -111,7 +111,7 @@
     </div>
 
     <!-- Detailed cards (expanded state, hidden by default) -->
-    <div class="market-cards-grid" id="market-cards" style="display: none;">
+    <div class="market-cards-grid" id="market-cards">
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             <!-- Credit Card -->
             <div class="col">
@@ -920,16 +920,16 @@ function toggleMarketConditions() {
     const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
 
     if (!isExpanded) {
-        // Expand: hide badges, show cards
-        badges.style.display = 'none';
-        cards.style.display = 'block';
+        // Expand: fade out badges, fade in cards
+        badges.classList.add('hidden');
+        cards.classList.add('visible');
         expandText.style.display = 'none';
         collapseText.style.display = 'inline';
         toggleButton.setAttribute('aria-expanded', 'true');
     } else {
-        // Collapse: hide cards, show badges
-        cards.style.display = 'none';
-        badges.style.display = 'grid';
+        // Collapse: fade out cards, fade in badges
+        cards.classList.remove('visible');
+        badges.classList.remove('hidden');
         collapseText.style.display = 'none';
         expandText.style.display = 'inline';
         toggleButton.setAttribute('aria-expanded', 'false');

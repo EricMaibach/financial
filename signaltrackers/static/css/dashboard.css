@@ -1828,8 +1828,17 @@ footer {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
-    transition: opacity 0.35s ease-in-out;
     margin-bottom: 1.5rem;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0s;
+}
+
+.market-badges-grid.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0.35s;
+    pointer-events: none;
 }
 
 .badge-card {
@@ -1838,7 +1847,7 @@ footer {
     border-radius: 0.5rem;
     padding: 1.25rem;
     text-align: center;
-    transition: all 0.35s ease-in-out;
+    transition: all 0.2s ease;
     cursor: default;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -1874,8 +1883,18 @@ footer {
 
 /* Detailed Cards Grid (Expanded State) */
 .market-cards-grid {
-    transition: opacity 0.35s ease-in-out;
     margin-bottom: 1.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0.35s;
+    pointer-events: none;
+}
+
+.market-cards-grid.visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0s;
+    pointer-events: auto;
 }
 
 /* Expansion Control */
