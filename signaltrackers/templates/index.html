@@ -358,8 +358,18 @@
     </div>
 </section>
 
-<!-- Top Movers Chart -->
-<div class="row mb-4">
+<!-- Expansion control -->
+<div class="expansion-control" id="movers-expansion-control">
+    <div class="divider-line"></div>
+    <button class="expansion-button" id="movers-toggle" aria-expanded="false" aria-label="Toggle top movers trend chart view">
+        <span class="expand-text">⌄ Show Trends Chart</span>
+        <span class="collapse-text" style="display: none;">⌃ Hide Chart</span>
+    </button>
+    <div class="divider-line"></div>
+</div>
+
+<!-- Top Movers Chart (hidden by default) -->
+<div class="row mb-4" id="movers-chart-container" style="display: none;">
     <div class="col-12">
         <div class="card">
             <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
@@ -389,6 +399,15 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Expansion control (collapse chart) -->
+<div class="expansion-control" id="movers-collapse-control" style="display: none;">
+    <div class="divider-line"></div>
+    <button class="expansion-button" onclick="toggleMoversChart()" aria-label="Hide top movers trend chart">
+        <span class="collapse-text">⌃ Hide Chart</span>
+    </button>
+    <div class="divider-line"></div>
 </div>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
@@ -936,11 +955,46 @@ function toggleMarketConditions() {
     }
 }
 
-// Initialize expansion control event listener
+// Toggle Top Movers Chart (US-2.0.2)
+function toggleMoversChart() {
+    const chartContainer = document.getElementById('movers-chart-container');
+    const expansionControl = document.getElementById('movers-expansion-control');
+    const collapseControl = document.getElementById('movers-collapse-control');
+    const toggleButton = document.getElementById('movers-toggle');
+    const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
+
+    if (!isExpanded) {
+        // Expand: show chart, hide expansion control, show collapse control
+        chartContainer.style.display = 'flex';
+        expansionControl.style.display = 'none';
+        collapseControl.style.display = 'flex';
+        toggleButton.setAttribute('aria-expanded', 'true');
+
+        // Trigger window resize to ensure Chart.js renders properly
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 50);
+    } else {
+        // Collapse: hide chart, show expansion control, hide collapse control
+        chartContainer.style.display = 'none';
+        expansionControl.style.display = 'flex';
+        collapseControl.style.display = 'none';
+        toggleButton.setAttribute('aria-expanded', 'false');
+    }
+}
+
+// Initialize expansion control event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    const toggleButton = document.getElementById('market-toggle');
-    if (toggleButton) {
-        toggleButton.addEventListener('click', toggleMarketConditions);
+    // Market Conditions toggle (US-2.0.3)
+    const marketToggle = document.getElementById('market-toggle');
+    if (marketToggle) {
+        marketToggle.addEventListener('click', toggleMarketConditions);
+    }
+
+    // Top Movers Chart toggle (US-2.0.2)
+    const moversToggle = document.getElementById('movers-toggle');
+    if (moversToggle) {
+        moversToggle.addEventListener('click', toggleMoversChart);
     }
 });
 
