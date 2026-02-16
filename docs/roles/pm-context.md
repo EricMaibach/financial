@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last Updated:** 2026-02-10
+**Last Updated:** 2026-02-15
 **Status:** Active Development
 **Target Audience:** Individual investors with $100K+ portfolios
 
@@ -93,6 +93,29 @@ Explicitly out of scope to maintain focus:
 
 ---
 
+## Key Decisions
+
+### UX Pattern: Progressive Disclosure (Feb 2026)
+**Decision**: Establish divider/chevron expansion control as the standard pattern for progressive disclosure across the app.
+
+**Context**:
+- US-2.0.3 implemented a refined expansion control for Market Conditions section
+- Pattern uses horizontal divider lines with centered chevron/text: `─────────── ⌄ Show Details ───────────`
+- More subtle and elegant than traditional buttons
+
+**Impact**:
+- US-2.0.2 (What's Moving Today) updated to follow same pattern for consistency
+- Future sections using progressive disclosure should use this pattern
+- Engineers may extract to reusable CSS classes (`.expansion-control`, `.expansion-button`)
+
+**Rationale**:
+- Visual consistency across homepage sections
+- Reduces cognitive load (same interaction pattern everywhere)
+- Subtle styling doesn't compete with content
+- Establishes scalable design system
+
+---
+
 ## Technical Debt & Cleanup
 
 Items to address alongside feature work:
@@ -111,6 +134,7 @@ Items to address alongside feature work:
 | 2026-02-09 | Initial roadmap created | PM |
 | 2026-02-09 | Phase 1.1 Homepage Overhaul marked COMPLETE | PM |
 | 2026-02-10 | Migrated features to GitHub Issues; slimmed doc to strategy only | PM |
+| 2026-02-15 | Established divider/chevron as standard progressive disclosure pattern; updated US-2.0.2 | PM |
 
 ---
 
