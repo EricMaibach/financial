@@ -1831,13 +1831,18 @@ footer {
     margin-bottom: 1.5rem;
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.35s ease-in-out, visibility 0s linear 0s;
+    height: auto;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0s, height 0.35s ease-in-out, margin 0.35s ease-in-out;
 }
 
 .market-badges-grid.hidden {
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.35s ease-in-out, visibility 0s linear 0.35s;
+    height: 0;
+    min-height: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0.35s, height 0.35s ease-in-out, margin 0.35s ease-in-out;
     pointer-events: none;
 }
 
@@ -1883,17 +1888,22 @@ footer {
 
 /* Detailed Cards Grid (Expanded State) */
 .market-cards-grid {
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
+    height: 0;
+    min-height: 0;
+    overflow: hidden;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.35s ease-in-out, visibility 0s linear 0.35s;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0.35s, height 0.35s ease-in-out, margin 0.35s ease-in-out;
     pointer-events: none;
 }
 
 .market-cards-grid.visible {
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.35s ease-in-out, visibility 0s linear 0s;
+    height: auto;
+    margin-bottom: 1.5rem;
+    transition: opacity 0.35s ease-in-out, visibility 0s linear 0s, height 0.35s ease-in-out, margin 0.35s ease-in-out;
     pointer-events: auto;
 }
 
