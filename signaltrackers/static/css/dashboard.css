@@ -787,40 +787,15 @@ footer {
     margin-bottom: 2rem;
 }
 
-.hero-briefing .card {
-    border: none;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.hero-briefing-header {
-    background: #fff;
-    color: #333;
-    padding: 0.875rem 1.25rem;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.hero-briefing-header h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-    color: #333;
-}
-
-.hero-briefing-header .badge {
-    font-weight: 500;
-    padding: 0.4em 0.65em;
-}
 
 .briefing-content {
-    padding: 1.25rem;
+    /* Padding removed for consistency with other sections */
 }
 
 .briefing-narrative {
     font-size: 1.0625rem;
     line-height: 1.65;
     color: #444;
-    max-width: 900px;
 }
 
 .briefing-narrative p {
@@ -901,35 +876,15 @@ footer {
     font-weight: 500;
 }
 
-/* Hero Briefing Card Footer */
-.hero-briefing .card-footer {
-    padding: 0.75rem 1.5rem;
-    border-top: 1px solid #e9ecef;
-}
 
 /* Responsive Styles */
 @media (max-width: 992px) {
-    .briefing-content {
-        padding: 1.25rem;
-    }
-
     .briefing-narrative {
         font-size: 1rem;
     }
 }
 
 @media (max-width: 768px) {
-    .hero-briefing-header {
-        padding: 0.875rem 1rem;
-    }
-
-    .hero-briefing-header h3 {
-        font-size: 1.1rem;
-    }
-
-    .briefing-content {
-        padding: 1rem;
-    }
 
     .briefing-narrative {
         font-size: 1rem;
@@ -938,12 +893,6 @@ footer {
 
     .briefing-key-points li {
         font-size: 1rem;
-    }
-
-    .hero-briefing .card-footer {
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: center;
     }
 }
 
@@ -1309,25 +1258,8 @@ footer {
     color: #333;
 }
 
-/* Movers Container - Horizontal scrollable on mobile */
-.movers-container {
-    overflow-x: auto;
-    padding: 0.5rem 0;
-    position: relative;
-}
-
-.movers-row {
-    display: flex;
-    gap: 1rem;
-    padding: 0.5rem 0;
-    min-height: 180px;
-}
-
-/* Mover Card */
+/* Mover Card - Bootstrap grid responsive */
 .mover-card {
-    flex: 0 0 auto;
-    min-width: 160px;
-    max-width: 180px;
     padding: 1rem;
     background: #fff;
     border: 1px solid #e9ecef;
@@ -1470,70 +1402,8 @@ footer {
     min-height: 160px;
 }
 
-/* Responsive: Desktop (>992px) - all 5 cards in a row */
-@media (min-width: 993px) {
-    .movers-row {
-        justify-content: center;
-    }
-
-    .mover-card {
-        flex: 1 1 0;
-        max-width: 200px;
-    }
-}
-
-/* Responsive: Tablet (768-992px) - 3 cards per row */
-@media (min-width: 768px) and (max-width: 992px) {
-    .movers-row {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .mover-card {
-        flex: 0 0 calc(33.333% - 1rem);
-        max-width: calc(33.333% - 1rem);
-        min-width: 140px;
-    }
-}
-
-/* Responsive: Mobile (<768px) - Horizontal scroll */
+/* Bootstrap grid handles responsive layout */
 @media (max-width: 767px) {
-    .movers-container {
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        margin: 0 -0.75rem;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .movers-row {
-        padding-right: 1rem;
-    }
-
-    .mover-card {
-        min-width: 150px;
-        max-width: 150px;
-    }
-
-    .mover-value {
-        font-size: 1.2rem;
-    }
-
-    .mover-change {
-        font-size: 0.9rem;
-    }
-
-    /* Scroll hint - fade on right edge */
-    .movers-container::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 40px;
-        background: linear-gradient(to right, transparent, rgba(248, 249, 250, 0.95));
-        pointer-events: none;
-    }
-
     .whats-moving-section .section-header {
         flex-direction: column;
         align-items: flex-start !important;
