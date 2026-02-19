@@ -1273,10 +1273,10 @@ function renderTopMovers(movers) {
         return;
     }
 
-    // Sort by absolute z-score and take top 6
+    // Sort by absolute z-score and take top 5
     const topMovers = movers
         .sort((a, b) => Math.abs(b.z_score) - Math.abs(a.z_score))
-        .slice(0, 6);
+        .slice(0, 5);
 
     container.innerHTML = topMovers.map((mover, index) => {
         const rank = index + 1;
@@ -1336,7 +1336,7 @@ function renderTopMovers(movers) {
         }
 
         return `
-            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+            <div class="col-12 col-sm-6 col-md-4 col-lg">
                 <div class="mover-card h-100 ${extremeClass} ${categoryClass}" onclick="navigateToMetric('${mover.metric}')">
                     <div class="mover-rank">#${rank}</div>
                     <div class="mover-name" title="${mover.name}">${mover.name}</div>
