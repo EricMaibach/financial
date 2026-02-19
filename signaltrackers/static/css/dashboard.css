@@ -1430,7 +1430,7 @@ footer {
 /* Responsive: Desktop (>992px) - all 5 cards in a row */
 @media (min-width: 993px) {
     .movers-row {
-        justify-content: center;
+        justify-content: flex-start;
     }
 
     .mover-card {
@@ -1443,7 +1443,7 @@ footer {
 @media (min-width: 768px) and (max-width: 992px) {
     .movers-row {
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: flex-start;
     }
 
     .mover-card {
