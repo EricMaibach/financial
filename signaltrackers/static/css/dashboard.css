@@ -789,7 +789,7 @@ footer {
 
 
 .briefing-content {
-    padding: 1.25rem;
+    /* Padding removed for consistency with other sections */
 }
 
 .briefing-narrative {
