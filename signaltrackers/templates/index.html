@@ -3,6 +3,12 @@
 {% block title %}SignalTrackers - Macro Intelligence Platform{% endblock %}
 
 {% block content %}
+{#
+  LAYOUT CONVENTION: All homepage sections use direct <section> tags
+  as immediate children of the container-fluid main element.
+  Do NOT wrap sections in Bootstrap grid (row/col) — this adds gutters
+  and breaks alignment. Cards may be used inside sections freely.
+#}
 <!-- Section 1: Market Conditions at a Glance -->
 <section class="market-conditions-section mb-4" id="market-conditions">
     <!-- Section header -->
@@ -369,9 +375,8 @@
 </div>
 
 <!-- Top Movers Chart (hidden by default) -->
-<div class="row mb-4" id="movers-chart-container" style="display: none;">
-    <div class="col-12">
-        <div class="card">
+<section class="movers-chart-section mb-4" id="movers-chart-container" style="display: none;">
+    <div class="card">
             <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     <i class="bi bi-graph-up"></i> Top Movers Trends
@@ -398,8 +403,7 @@
                 </small>
             </div>
         </div>
-    </div>
-</div>
+</section>
 
 <!-- Expansion control (collapse chart) -->
 <div class="expansion-control" id="movers-collapse-control" style="display: none;">
@@ -480,9 +484,8 @@
 
 <!-- Additional Insights Section -->
 <!-- Prediction Markets -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
+<section class="prediction-markets-section mb-4">
+    <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-graph-up-arrow"></i> Prediction Markets
@@ -500,8 +503,7 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+</section>
 
 {% endblock %}
 
