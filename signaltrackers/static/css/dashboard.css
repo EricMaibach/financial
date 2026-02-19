@@ -796,7 +796,6 @@ footer {
     font-size: 1.0625rem;
     line-height: 1.65;
     color: #444;
-    max-width: 900px;
 }
 
 .briefing-narrative p {
@@ -1427,15 +1426,10 @@ footer {
     min-height: 160px;
 }
 
-/* Responsive: Desktop (>992px) - all 5 cards in a row */
+/* Responsive: Desktop (>992px) - fixed-width cards from left */
 @media (min-width: 993px) {
     .movers-row {
         justify-content: flex-start;
-    }
-
-    .mover-card {
-        flex: 1 1 0;
-        max-width: 200px;
     }
 }
 
