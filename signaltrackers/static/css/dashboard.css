@@ -817,7 +817,7 @@ footer {
 }
 
 .briefing-narrative {
-    font-size: 1rem;
+    font-size: 1.0625rem;
     line-height: 1.65;
     color: #444;
     max-width: 900px;
