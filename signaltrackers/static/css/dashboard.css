@@ -794,31 +794,32 @@ footer {
 }
 
 .hero-briefing-header {
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-    color: white;
-    padding: 1.25rem 1.5rem;
-    border-bottom: none;
+    background: #fff;
+    color: #333;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 2px solid #e9ecef;
 }
 
-.hero-briefing-header h2 {
-    font-size: 1.5rem;
+.hero-briefing-header h3 {
+    font-size: 1.25rem;
     font-weight: 600;
     margin: 0;
+    color: #333;
 }
 
 .hero-briefing-header .badge {
     font-weight: 500;
-    padding: 0.5em 0.75em;
+    padding: 0.4em 0.65em;
 }
 
 .briefing-content {
-    padding: 2rem;
+    padding: 1.25rem;
 }
 
 .briefing-narrative {
-    font-size: 1.125rem;
-    line-height: 1.7;
-    color: #333;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: #444;
     max-width: 900px;
 }
 
@@ -909,21 +910,21 @@ footer {
 /* Responsive Styles */
 @media (max-width: 992px) {
     .briefing-content {
-        padding: 1.5rem;
+        padding: 1.25rem;
     }
 
     .briefing-narrative {
-        font-size: 1.05rem;
+        font-size: 1rem;
     }
 }
 
 @media (max-width: 768px) {
     .hero-briefing-header {
-        padding: 1rem;
+        padding: 0.875rem 1rem;
     }
 
-    .hero-briefing-header h2 {
-        font-size: 1.25rem;
+    .hero-briefing-header h3 {
+        font-size: 1.1rem;
     }
 
     .briefing-content {
