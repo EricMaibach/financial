@@ -1258,25 +1258,8 @@ footer {
     color: #333;
 }
 
-/* Movers Container - Horizontal scrollable on mobile */
-.movers-container {
-    overflow-x: auto;
-    padding: 0.5rem 0;
-    position: relative;
-}
-
-.movers-row {
-    display: flex;
-    gap: 1rem;
-    padding: 0.5rem 0;
-    min-height: 180px;
-}
-
-/* Mover Card */
+/* Mover Card - Bootstrap grid responsive */
 .mover-card {
-    flex: 0 0 auto;
-    min-width: 160px;
-    max-width: 180px;
     padding: 1rem;
     background: #fff;
     border: 1px solid #e9ecef;
@@ -1419,65 +1402,8 @@ footer {
     min-height: 160px;
 }
 
-/* Responsive: Desktop (>992px) - fixed-width cards from left */
-@media (min-width: 993px) {
-    .movers-row {
-        justify-content: flex-start;
-    }
-}
-
-/* Responsive: Tablet (768-992px) - 3 cards per row */
-@media (min-width: 768px) and (max-width: 992px) {
-    .movers-row {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-    }
-
-    .mover-card {
-        flex: 0 0 calc(33.333% - 1rem);
-        max-width: calc(33.333% - 1rem);
-        min-width: 140px;
-    }
-}
-
-/* Responsive: Mobile (<768px) - Horizontal scroll */
+/* Bootstrap grid handles responsive layout */
 @media (max-width: 767px) {
-    .movers-container {
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        margin: 0 -0.75rem;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .movers-row {
-        padding-right: 1rem;
-    }
-
-    .mover-card {
-        min-width: 150px;
-        max-width: 150px;
-    }
-
-    .mover-value {
-        font-size: 1.2rem;
-    }
-
-    .mover-change {
-        font-size: 0.9rem;
-    }
-
-    /* Scroll hint - fade on right edge */
-    .movers-container::after {
-        content: '';
-        position: absolute;
-        right: 0;
-        top: 0;
-        bottom: 0;
-        width: 40px;
-        background: linear-gradient(to right, transparent, rgba(248, 249, 250, 0.95));
-        pointer-events: none;
-    }
-
     .whats-moving-section .section-header {
         flex-direction: column;
         align-items: flex-start !important;

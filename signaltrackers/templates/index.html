@@ -344,10 +344,10 @@
         <a href="/explorer" class="btn btn-outline-secondary btn-sm">View All Metrics →</a>
     </div>
 
-    <div class="movers-container">
-        <div class="movers-row" id="top-movers-row">
-            <!-- Loading state -->
-            <div class="mover-card-loading text-center text-muted py-4 w-100">
+    <div class="row g-3" id="top-movers-row">
+        <!-- Loading state -->
+        <div class="col-12">
+            <div class="text-center text-muted py-4">
                 <div class="spinner-border spinner-border-sm me-2" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
@@ -1336,15 +1336,17 @@ function renderTopMovers(movers) {
         }
 
         return `
-            <div class="mover-card ${extremeClass} ${categoryClass}" onclick="navigateToMetric('${mover.metric}')">
-                <div class="mover-rank">#${rank}</div>
-                <div class="mover-name" title="${mover.name}">${mover.name}</div>
-                <div class="mover-value">${formattedValue}</div>
-                <div class="mover-change ${changeClass}">
-                    ${directionIcon} ${changeDisplay}
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                <div class="mover-card h-100 ${extremeClass} ${categoryClass}" onclick="navigateToMetric('${mover.metric}')">
+                    <div class="mover-rank">#${rank}</div>
+                    <div class="mover-name" title="${mover.name}">${mover.name}</div>
+                    <div class="mover-value">${formattedValue}</div>
+                    <div class="mover-change ${changeClass}">
+                        ${directionIcon} ${changeDisplay}
+                    </div>
+                    <div class="mover-zscore">${rarityText}</div>
+                    <span class="mover-badge badge ${badgeClass}">${badgeText}</span>
                 </div>
-                <div class="mover-zscore">${rarityText}</div>
-                <span class="mover-badge badge ${badgeClass}">${badgeText}</span>
             </div>
         `;
     }).join('');
