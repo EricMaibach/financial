@@ -879,19 +879,12 @@ footer {
 
 /* Responsive Styles */
 @media (max-width: 992px) {
-    .briefing-content {
-        padding: 1.25rem;
-    }
-
     .briefing-narrative {
         font-size: 1rem;
     }
 }
 
 @media (max-width: 768px) {
-    .briefing-content {
-        padding: 1rem;
-    }
 
     .briefing-narrative {
         font-size: 1rem;
