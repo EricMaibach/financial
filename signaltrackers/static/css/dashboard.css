@@ -787,30 +787,6 @@ footer {
     margin-bottom: 2rem;
 }
 
-.hero-briefing .card {
-    border: none;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.hero-briefing-header {
-    background: #fff;
-    color: #333;
-    padding: 0.875rem 1.25rem;
-    border-bottom: 2px solid #e9ecef;
-}
-
-.hero-briefing-header h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 0;
-    color: #333;
-}
-
-.hero-briefing-header .badge {
-    font-weight: 500;
-    padding: 0.4em 0.65em;
-}
 
 .briefing-content {
     padding: 1.25rem;
@@ -901,11 +877,6 @@ footer {
     font-weight: 500;
 }
 
-/* Hero Briefing Card Footer */
-.hero-briefing .card-footer {
-    padding: 0.75rem 1.5rem;
-    border-top: 1px solid #e9ecef;
-}
 
 /* Responsive Styles */
 @media (max-width: 992px) {
@@ -919,14 +890,6 @@ footer {
 }
 
 @media (max-width: 768px) {
-    .hero-briefing-header {
-        padding: 0.875rem 1rem;
-    }
-
-    .hero-briefing-header h3 {
-        font-size: 1.1rem;
-    }
-
     .briefing-content {
         padding: 1rem;
     }
@@ -938,12 +901,6 @@ footer {
 
     .briefing-key-points li {
         font-size: 1rem;
-    }
-
-    .hero-briefing .card-footer {
-        flex-direction: column;
-        gap: 0.5rem;
-        text-align: center;
     }
 }
 

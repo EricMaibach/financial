@@ -280,14 +280,13 @@
 
 <!-- Section 2: Today's Market Briefing -->
 <section class="hero-briefing mb-4">
-    <div class="card shadow-sm">
-        <div class="card-header hero-briefing-header d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">
-                <i class="bi bi-bar-chart-line-fill me-2"></i>Today's Market Briefing
-            </h3>
-            <span class="badge bg-light text-dark fs-6" id="briefing-date">--</span>
-        </div>
-        <div class="card-body briefing-content">
+    <div class="section-header mb-3 d-flex justify-content-between align-items-center">
+        <h3 class="section-title">
+            <i class="bi bi-bar-chart-line-fill me-2"></i>Today's Market Briefing
+        </h3>
+        <span class="badge bg-light text-dark fs-6" id="briefing-date">--</span>
+    </div>
+    <div class="briefing-content">
             <!-- Loading State -->
             <div id="briefing-loading" class="briefing-skeleton">
                 <div class="d-flex align-items-center mb-3">
@@ -327,12 +326,11 @@
                 </div>
             </div>
         </div>
-        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-            <small class="text-muted" id="briefing-attribution">
-                <i class="bi bi-robot me-1"></i>AI-generated based on current market data
-            </small>
-            <small class="text-muted" id="briefing-timestamp">Generated: --</small>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted" id="briefing-attribution">
+            <i class="bi bi-robot me-1"></i>AI-generated based on current market data
+        </small>
+        <small class="text-muted" id="briefing-timestamp">Generated: --</small>
     </div>
 </section>
 
@@ -376,33 +374,29 @@
 
 <!-- Top Movers Chart (hidden by default) -->
 <section class="movers-chart-section mb-4" id="movers-chart-container" style="display: none;">
-    <div class="card">
-            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> Top Movers Trends
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="movers-timeframe-selector">
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="7">1W</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-light btn-sm active" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="7300">20Y</button>
-                    <button type="button" class="btn btn-outline-light btn-sm" data-timeframe="all">All</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <div id="movers-chart-legend" class="mb-2 small"></div>
-                <canvas id="movers-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Each metric normalized to show relative trend (0-100 scale). Hover for actual values. Grey bands indicate recession periods.
-                </small>
-            </div>
+    <div class="section-header mb-3 d-flex justify-content-between align-items-center">
+        <h3 class="section-title">
+            <i class="bi bi-graph-up"></i> Top Movers Trends
+        </h3>
+        <div class="btn-group btn-group-sm" role="group" id="movers-timeframe-selector">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="7">1W</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="30">1M</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm active" data-timeframe="90">3M</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="180">6M</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="365">1Y</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="1825">5Y</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="3650">10Y</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="7300">20Y</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="all">All</button>
         </div>
+    </div>
+    <div id="movers-chart-legend" class="mb-2 small"></div>
+    <canvas id="movers-chart"></canvas>
+    <div class="mt-2">
+        <small class="text-muted">
+            <i class="bi bi-info-circle"></i> Each metric normalized to show relative trend (0-100 scale). Hover for actual values. Grey bands indicate recession periods.
+        </small>
+    </div>
 </section>
 
 <!-- Expansion control (collapse chart) -->
@@ -485,24 +479,20 @@
 <!-- Additional Insights Section -->
 <!-- Prediction Markets -->
 <section class="prediction-markets-section mb-4">
-    <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up-arrow"></i> Prediction Markets
-                    <small class="ms-2 opacity-75">(via Kalshi)</small>
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row" id="prediction-markets-container">
-                    <div class="col text-center text-muted">Loading prediction markets...</div>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Real-money prediction market probabilities. Data from <a href="https://kalshi.com" target="_blank" class="text-decoration-none">Kalshi</a> (CFTC-regulated).
-                    </small>
-                </div>
-            </div>
-        </div>
+    <div class="section-header mb-3">
+        <h3 class="section-title">
+            <i class="bi bi-graph-up-arrow"></i> Prediction Markets
+            <small class="ms-2 opacity-75 fw-normal">(via Kalshi)</small>
+        </h3>
+    </div>
+    <div class="row" id="prediction-markets-container">
+        <div class="col text-center text-muted">Loading prediction markets...</div>
+    </div>
+    <div class="mt-2">
+        <small class="text-muted">
+            <i class="bi bi-info-circle"></i> Real-money prediction market probabilities. Data from <a href="https://kalshi.com" target="_blank" class="text-decoration-none">Kalshi</a> (CFTC-regulated).
+        </small>
+    </div>
 </section>
 
 {% endblock %}
