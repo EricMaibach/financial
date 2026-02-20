@@ -156,6 +156,40 @@ Explicitly out of scope to maintain focus:
 - Phase 2 milestone now complete (13/13 issues closed)
 - Next priority: Phase 3 features (Hosted Trial Mode, Onboarding Wizard)
 
+### Phase 3 Pivot: Mobile-First, Pre-Launch Focus (Feb 2026)
+**Decision**: Rescope Phase 3 from "Onboarding & Trial" to "Mobile-First Redesign" with pre-launch quality focus.
+
+**Context**:
+- Original Phase 3: Hosted Trial Mode, Onboarding Wizard
+- Product not yet launched, no users to onboard
+- Current assessment: Product is 7.5/10 - good, not great
+- Target users ($100K+ portfolios) likely check markets on mobile throughout the day
+- Mobile session duration is a key success metric (+25% target)
+- Original Phase 4 had mobile improvements, but too late in roadmap
+
+**Rationale**:
+- **Onboarding is premature** - Can't optimize acquisition before product is ready to launch
+- **Mobile is architectural** - Desktop-first assumptions baked into current design; every new feature built on this foundation creates more retrofit work
+- **User behavior** - Investors check markets on mobile during trading hours, commutes, throughout the day
+- **Cost of delay** - Building more desktop-first features before fixing mobile foundation is technical debt
+- **Pre-launch quality** - Focus should be on making the product excellent, not on growth features
+
+**New Phase 3 Focus:**
+1. **Mobile-First Redesign** - Redesign layouts and components mobile-first, scale up to desktop
+2. **Responsive excellence** - Mobile-first does NOT mean mobile-only; power users still need excellent desktop experience
+3. **Pre-launch polish** - Ensure product is truly ready for users before building onboarding/acquisition features
+
+**Design Philosophy:**
+- Design for mobile constraints first (small screens, touch, limited attention)
+- Scale up to tablet and desktop with progressive enhancement
+- Desktop experience should be excellent for power users (deep analysis, multiple charts, etc.)
+- Mobile-first is a design approach, not a device limitation
+
+**Outcome**:
+- Phase 3 Features (Hosted Trial, Onboarding Wizard) moved to future consideration
+- Feature 4.1 (Mobile Experience Improvements) being rescoped into comprehensive mobile-first redesign
+- New Phase 3 will focus on mobile-first architecture before adding more features
+
 ---
 
 ## Technical Debt & Cleanup
@@ -183,6 +217,8 @@ Items to address alongside feature work:
 | 2026-02-19 | Added "Statistical Anomalies Dashboard" to backlog for future consideration (Phase 5+) | PM |
 | 2026-02-20 | Feature 2.2 Portfolio Templates cancelled - doesn't serve actual user needs (Issue #6 closed) | PM |
 | 2026-02-20 | Phase 2 milestone complete (13/13 issues closed) | PM |
+| 2026-02-20 | Phase 3 rescoped from "Onboarding & Trial" to "Mobile-First Redesign" - pre-launch focus | PM |
+| 2026-02-20 | Established mobile-first design philosophy (mobile-first, not mobile-only) | PM |
 
 ---
 
