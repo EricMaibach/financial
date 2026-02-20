@@ -1414,8 +1414,8 @@ def safe_havens():
 
 @app.route('/divergence')
 def divergence():
-    """Divergence gap analysis page."""
-    return render_template('divergence.html')
+    """Redirect old divergence page to credit page for backward compatibility."""
+    return redirect(url_for('credit'), code=301)
 
 
 @app.route('/crypto')
