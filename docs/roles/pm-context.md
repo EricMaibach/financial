@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-20
 **Status:** Active Development
 **Target Audience:** Individual investors with $100K+ portfolios
 
@@ -136,6 +136,26 @@ Explicitly out of scope to maintain focus:
 - Subtle styling doesn't compete with content
 - Establishes scalable design system
 
+### Feature 2.2: Portfolio Templates Cancelled (Feb 2026)
+**Decision**: Remove Feature 2.2 (Portfolio Templates) from roadmap entirely.
+
+**Context**:
+- Feature proposed "Start from Template" with 5 preset allocations (60/40, All-Weather, etc.)
+- Intended to help users with empty portfolio page
+- Target users are individual investors with $100K+ portfolios
+
+**Rationale**:
+- Templates assume uninvested capital needing allocation
+- Actual user scenario: existing portfolios seeking market intelligence on current holdings
+- Templates won't match users' existing allocations → low adoption likely
+- Feature solves theoretical problem, not actual user need
+- Better to focus resources on trial mode and onboarding (Phase 3) to reduce barriers to entry
+
+**Outcome**:
+- Feature 2.2 closed (Issue #6)
+- Phase 2 milestone now complete (13/13 issues closed)
+- Next priority: Phase 3 features (Hosted Trial Mode, Onboarding Wizard)
+
 ---
 
 ## Technical Debt & Cleanup
@@ -161,6 +181,8 @@ Items to address alongside feature work:
 | 2026-02-19 | Feature 2.1 rescoped: Remove divergence page entirely (don't replace with signals page) | PM |
 | 2026-02-19 | Updated "What We're NOT Building" - refined trade signals positioning for future features | PM |
 | 2026-02-19 | Added "Statistical Anomalies Dashboard" to backlog for future consideration (Phase 5+) | PM |
+| 2026-02-20 | Feature 2.2 Portfolio Templates cancelled - doesn't serve actual user needs (Issue #6 closed) | PM |
+| 2026-02-20 | Phase 2 milestone complete (13/13 issues closed) | PM |
 
 ---
 
