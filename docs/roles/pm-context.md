@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-02-19
 **Status:** Active Development
 **Target Audience:** Individual investors with $100K+ portfolios
 
@@ -58,12 +58,12 @@ Items identified but not prioritized for current cycle:
 
 | Feature | Notes | Priority |
 |---------|-------|----------|
+| Statistical Anomalies Dashboard | Identify statistically cheap/unusual assets with low media attention. Frame as educational context ("here's what's unusual, you decide") not trade signals. Leverages our percentile data uniquely. Strong differentiation potential. Needs legal review of framing. | Medium (Phase 5+) |
 | Push notifications | Requires mobile app or PWA | Low |
 | ADR/International stock support | Expand portfolio coverage | Low |
 | Backtesting engine | Different product scope | Not planned |
 | Real-time data | Cost vs. value for macro focus | Not planned |
 | Options/derivatives in portfolio | Niche need, high complexity | Not planned |
-| Trade signals | Liability concerns, out of scope | Not planned |
 
 ---
 
@@ -84,7 +84,7 @@ Items identified but not prioritized for current cycle:
 
 Explicitly out of scope to maintain focus:
 
-1. **Trade signals or "buy/sell" recommendations** - Liability, different product
+1. **Prescriptive trade signals or "buy/sell" recommendations** - We provide context, data, and historical patterns but stop short of explicit recommendations. As the product evolves with more sophisticated analysis (percentiles, anomalies, patterns), we'll position as "maximum actionable intelligence within legal boundaries" rather than avoiding this space entirely. Key: educational framing, not advice.
 2. **Real-time streaming data** - Cost/complexity vs. macro user needs
 3. **"Balanced" thesis presentation** - We report data objectively; we don't need to artificially balance every metric
 4. **Options/derivatives portfolio support** - Serves <15% of users, high complexity
@@ -94,6 +94,28 @@ Explicitly out of scope to maintain focus:
 ---
 
 ## Key Decisions
+
+### Feature 2.1: Remove Divergence Page, Don't Replace (Feb 2026)
+**Decision**: Kill the standalone divergence page entirely. Do NOT create a replacement "signals page."
+
+**Context**:
+- Original plan was to transform `/divergence` into comprehensive `/signals` page with 7+ indicators
+- PM analysis showed this would violate "synthesis over data dump" principle
+- Homepage already shows 3 key signal cards; asset class pages provide deep dives
+- Creating signals page risks becoming a "ghost page" that adds complexity without clear value
+
+**Rationale**:
+- Simpler information architecture: Homepage → Asset Classes → Explorer
+- Aligns with product vision (synthesis, not more dashboards)
+- De-emphasizes divergence without giving cross-market signals MORE prominence
+- Users who want signal details can use /explorer or asset class pages
+
+**Implementation**:
+- Remove `/divergence` route and navigation item
+- Redirect `/divergence` → `/credit` (backward compatibility)
+- Keep 3 signal cards on homepage (Yield Curve, VIX, Gold/Credit)
+- Each card links to /explorer for that specific metric
+- Update or remove "View All Indicators →" link on homepage
 
 ### UX Pattern: Progressive Disclosure (Feb 2026)
 **Decision**: Establish divider/chevron expansion control as the standard pattern for progressive disclosure across the app.
@@ -135,6 +157,10 @@ Items to address alongside feature work:
 | 2026-02-09 | Phase 1.1 Homepage Overhaul marked COMPLETE | PM |
 | 2026-02-10 | Migrated features to GitHub Issues; slimmed doc to strategy only | PM |
 | 2026-02-15 | Established divider/chevron as standard progressive disclosure pattern; updated US-2.0.2 | PM |
+| 2026-02-19 | Feature 2.0 Homepage Streamlining marked COMPLETE; homepage reduced from 10→5 sections | PM |
+| 2026-02-19 | Feature 2.1 rescoped: Remove divergence page entirely (don't replace with signals page) | PM |
+| 2026-02-19 | Updated "What We're NOT Building" - refined trade signals positioning for future features | PM |
+| 2026-02-19 | Added "Statistical Anomalies Dashboard" to backlog for future consideration (Phase 5+) | PM |
 
 ---
 
