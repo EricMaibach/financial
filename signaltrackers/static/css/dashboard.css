@@ -1443,11 +1443,13 @@ footer {
     border-radius: 8px;
     padding: 1.25rem;
     transition: all 0.2s ease;
+    cursor: pointer;
 }
 
 .signal-card:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-color: #dee2e6;
+    transform: translateY(-2px);
 }
 
 .signal-header {
