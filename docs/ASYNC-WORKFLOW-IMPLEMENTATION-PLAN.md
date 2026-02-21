@@ -404,7 +404,7 @@ needs-human-decision   # Escalate to human for decision
   mv ~/projects/financial/docs/roles/*.md ~/.claude/projects/financial/roles/ 2>/dev/null || true
   ```
 
-- [ ] **2.4** Update .gitignore in all repos
+- [x} **2.4** Update .gitignore in all repos
   ```bash
   # Add to .gitignore
   docs/roles/
