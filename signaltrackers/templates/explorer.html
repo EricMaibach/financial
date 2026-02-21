@@ -633,6 +633,14 @@ function renderChart(dataArray, metricsToLoad) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 5,
+                    right: 5,
+                    top: 5,
+                    bottom: 5
+                }
+            },
             interaction: {
                 intersect: false,
                 mode: 'index'
