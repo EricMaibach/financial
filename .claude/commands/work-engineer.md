@@ -54,7 +54,16 @@ gh issue list --state open --json number,title,labels \
 
 ## Queue Processing
 
-Process queues in this priority order:
+**One item per session.** Find the highest-priority item across all queues, work it to completion, then stop. Do not chain multiple items in one session.
+
+Process in this priority order — clear existing obligations before starting new work:
+
+| Priority | Queue | Label |
+|----------|-------|-------|
+| 1 | Fix design change requests | `needs-design-changes` |
+| 2 | Fix QA bugs | `needs-fixes` |
+| 3 | Create PRs for approved stories | `ready-for-pr` |
+| 4 | Pick up new stories *(only if pipeline clear)* | `ready-for-implementation` |
 
 ### 1. Handle Design Change Requests
 
@@ -182,7 +191,7 @@ gh issue list --label ready-for-implementation --state open
    - Keep changes focused on the story
 8. Run tests before committing:
    ```bash
-   cd signaltrackers && python dashboard.py  # verify app starts
+   docker compose up -d  # verify app starts
    python -m pytest tests/ -v               # run test suite
    ```
 9. Commit:
