@@ -1,422 +1,526 @@
 {% extends "base.html" %}
 
-{% block title %}Crypto / Bitcoin - Financial Markets{% endblock %}
+{% block title %}Bitcoin & Crypto - SignalTrackers{% endblock %}
+
+{% block extra_css %}
+<!-- Component Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/chart-container.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/collapsible-section.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/key-stats-panel.css') }}">
+<style>
+/* Mobile-First Crypto Page Styles */
+:root {
+    /* Design system custom properties */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-8: 3rem;
+    --space-10: 4rem;
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+
+    --neutral-50: #f8f9fa;
+    --neutral-100: #f1f3f5;
+    --neutral-200: #dee2e6;
+    --neutral-300: #ced4da;
+    --neutral-500: #6c757d;
+    --neutral-600: #495057;
+    --neutral-700: #343a40;
+    --neutral-800: #212529;
+
+    --success-600: #198754;
+    --brand-blue-500: #0d6efd;
+    --warning-600: #ffc107;
+    --info-600: #0dcaf0;
+    --danger-600: #dc3545;
+
+    --container-xl: 1280px;
+}
+
+/* Page header */
+.crypto-header {
+    padding: var(--space-4);
+    background: white;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.crypto-header__title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    margin: 0 0 var(--space-2) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.crypto-header__description {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.crypto-header__updated {
+    font-size: var(--text-sm);
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+/* Content page */
+.content-page {
+    background: var(--neutral-50);
+    min-height: calc(100vh - 64px);
+}
+
+/* Content grid (mobile: stacked, tablet+: side-by-side) */
+.content-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+/* Time range controls */
+.time-range-controls {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: white;
+    margin: 0 var(--space-4);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.time-range-controls__button {
+    min-height: 44px;
+    min-width: 60px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    border: 1px solid var(--neutral-300);
+    border-radius: 6px;
+    background: white;
+    color: var(--neutral-700);
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.time-range-controls__button:hover {
+    background: var(--neutral-50);
+    border-color: var(--warning-600);
+}
+
+.time-range-controls__button.active {
+    background: var(--warning-600);
+    color: white;
+    border-color: var(--warning-600);
+}
+
+.time-range-controls__button:focus {
+    outline: 2px solid var(--warning-600);
+    outline-offset: 2px;
+}
+
+/* Statistics grid within collapsible section */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--space-3);
+    background: var(--neutral-50);
+    border-radius: 8px;
+}
+
+.stat-item__label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.stat-item__value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    font-family: monospace;
+}
+
+.stat-item__value--large {
+    font-size: var(--text-2xl);
+}
+
+.stat-item__secondary {
+    font-size: var(--text-xs);
+    color: var(--neutral-500);
+    margin-top: var(--space-1);
+}
+
+/* Info cards */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+}
+
+.info-card {
+    padding: var(--space-4);
+    background: var(--neutral-50);
+    border-radius: 8px;
+    border-left: 4px solid var(--info-600);
+}
+
+.info-card__title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--neutral-700);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.info-card__content {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    line-height: 1.6;
+}
+
+.info-card__content ul {
+    margin: 0;
+    padding-left: var(--space-5);
+}
+
+.info-card__content li {
+    margin-bottom: var(--space-2);
+}
+
+/* Tablet+ layouts */
+@media (min-width: 768px) {
+    .crypto-header {
+        padding: var(--space-6);
+    }
+
+    .crypto-header__title {
+        font-size: var(--text-3xl);
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr; /* 60/40 split */
+        gap: var(--space-6);
+        padding: var(--space-6);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Desktop layouts */
+@media (min-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 2fr 1fr; /* 66/33 split */
+        gap: var(--space-8);
+        max-width: var(--container-xl);
+        margin: 0 auto;
+        padding: var(--space-8);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (min-width: 1280px) {
+    .content-grid {
+        gap: var(--space-10);
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="bi bi-currency-bitcoin text-warning"></i>
-            Bitcoin & Crypto Analysis
+<main class="content-page">
+    <!-- Page Header -->
+    <header class="crypto-header">
+        <h1 class="crypto-header__title">
+            <i class="bi bi-currency-bitcoin text-warning"></i> Bitcoin & Crypto Analysis
         </h1>
-        <p class="lead">Macro liquidity indicators and sentiment metrics for Bitcoin</p>
-    </div>
-</div>
+        <p class="crypto-header__description">Macro liquidity indicators and sentiment metrics for Bitcoin</p>
+        <p class="crypto-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
+    </header>
 
-<!-- Educational Header -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightbulb-fill"></i> Understanding Bitcoin's Key Drivers
-                </h5>
+    <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
+    <div class="content-grid">
+        <!-- Left Column: Chart (mobile: full width, tablet+: 60-66% width) -->
+        <div>
+            <!-- Chart Container (HERO ELEMENT on mobile) -->
+            <div class="chart-container">
+                <canvas id="btc-liquidity-chart"></canvas>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6><i class="bi bi-droplet-fill text-primary"></i> Liquidity</h6>
-                        <p class="small mb-0">Bitcoin correlates strongly with global liquidity. Fed balance sheet expansion (QE) = bullish. Quantitative tightening (QT) = headwind. Watch M2 money supply and reverse repo for liquidity signals.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6><i class="bi bi-emoji-smile text-success"></i> Sentiment</h6>
-                        <p class="small mb-0">The Fear & Greed Index captures crypto market psychology. Extreme fear (<25) often marks bottoms - "be greedy when others are fearful." Extreme greed (>75) often precedes corrections.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6><i class="bi bi-bank text-info"></i> Financial Conditions</h6>
-                        <p class="small mb-0">The NFCI measures overall financial stress. Negative = loose conditions (bullish for risk assets). Positive = tight conditions (bearish). Spikes often coincide with BTC selloffs.</p>
-                    </div>
-                </div>
+
+            <!-- Time Range Controls (below chart) -->
+            <div class="time-range-controls" id="btc-timeframe-buttons">
+                <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- AI Crypto Briefing -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-warning">
-            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-chat-square-text-fill"></i> Daily Bitcoin Briefing
-                </h5>
-                <small id="crypto-summary-timestamp" class="opacity-75"></small>
+        <!-- Right Column: Key Stats Panel (hidden on mobile, visible tablet+) -->
+        <aside class="key-stats-panel">
+            <h3 class="key-stats-panel__title">Key Metrics</h3>
+
+            <div class="stat-card stat-card--warning">
+                <div class="stat-card__label">Bitcoin Price</div>
+                <div class="stat-card__value" id="key-btc-value">$--</div>
+                <div class="stat-card__secondary" id="key-btc-change">--</div>
             </div>
-            <div class="card-body">
+
+            <div class="stat-card stat-card--info">
+                <div class="stat-card__label">Fear & Greed</div>
+                <div class="stat-card__value" id="key-fear-greed-value">--</div>
+                <div class="stat-card__secondary" id="key-fear-greed-label">--</div>
+            </div>
+
+            <div class="stat-card stat-card--primary">
+                <div class="stat-card__label">Fed Balance Sheet</div>
+                <div class="stat-card__value" id="key-fed-balance">$-- T</div>
+                <div class="stat-card__secondary" id="key-fed-balance-status">--</div>
+            </div>
+
+            <div class="stat-card stat-card--neutral">
+                <div class="stat-card__label">NFCI</div>
+                <div class="stat-card__value" id="key-nfci-value">--</div>
+                <div class="stat-card__secondary">Stress index</div>
+            </div>
+
+            <div class="stat-card stat-card--success">
+                <div class="stat-card__label">Liquidity Status</div>
+                <div class="stat-card__value" id="key-liquidity-status">--</div>
+                <div class="stat-card__secondary" id="key-liquidity-detail">Analyzing...</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Collapsible Section: AI Crypto Briefing -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="ai-briefing">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-chat-square-text-fill"></i> Daily Bitcoin Briefing (AI)</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="background: white; padding: var(--space-4); border-radius: 8px;">
                 <div id="crypto-summary-content" class="summary-text">
                     <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading daily briefing...</p>
                 </div>
                 <div id="crypto-summary-error" class="text-muted d-none">
                     <p class="mb-0"><i class="bi bi-info-circle"></i> No briefing available yet. Click "Reload Data" on the main dashboard to generate one.</p>
                 </div>
+                <div id="crypto-summary-timestamp" style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);"></div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Bitcoin Price & Sentiment Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=bitcoin_price" class="metric-link">
-            <div class="card metric-card border-warning">
-                <div class="card-body">
-                    <h6 class="text-muted">BITCOIN PRICE</h6>
-                    <h2 class="mb-0 text-warning" id="btc-price">$--</h2>
-                    <small class="text-muted">
-                        <span id="btc-change-5d">--</span>% (5d) / <span id="btc-change-30d">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="btc-status">Loading</span>
+    <!-- Collapsible Section: Market Statistics -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="market-stats">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title">Market Statistics</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-item__label">Bitcoin Price</div>
+                    <div class="stat-item__value stat-item__value--large" id="btc-price">$--</div>
+                    <div class="stat-item__secondary">
+                        <span id="btc-change-5d">--</span>% (5d) | <span id="btc-change-30d">--</span>% (30d)
                     </div>
+                    <div class="stat-item__secondary" id="btc-status">Loading</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=fear_greed_index" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">FEAR & GREED INDEX</h6>
-                    <h2 class="mb-0" id="fear-greed-value">--</h2>
-                    <small class="text-muted" id="fear-greed-label">Loading...</small>
-                    <div class="mt-2">
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar" id="fear-greed-bar" role="progressbar" style="width: 50%;"></div>
-                        </div>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Fear & Greed Index</div>
+                    <div class="stat-item__value" id="fear-greed-value">--</div>
+                    <div class="stat-item__secondary" id="fear-greed-label">Loading</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=gold_price" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">GOLD PRICE</h6>
-                    <h2 class="mb-0" id="gold-price">$--</h2>
-                    <small class="text-muted">
-                        <span id="gold-change-5d">--</span>% (5d) / <span id="gold-change-30d">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <small class="text-muted">Safe haven comparison</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card metric-card">
-            <div class="card-body">
-                <h6 class="text-muted">BTC/GOLD RATIO</h6>
-                <h2 class="mb-0" id="btc-gold-ratio">--</h2>
-                <small class="text-muted">
-                    <span id="btc-gold-change">--</span>% (30d)
-                </small>
-                <div class="mt-2">
-                    <small class="text-muted">BTC priced in gold oz</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Liquidity Indicators Row -->
-<div class="row mb-4">
-    <div class="col-12">
-        <h5 class="mb-3"><i class="bi bi-droplet-half"></i> Liquidity Indicators</h5>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=fed_balance_sheet" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">FED BALANCE SHEET</h6>
-                    <h2 class="mb-0" id="fed-balance">$-- T</h2>
-                    <small class="text-muted">
+                <div class="stat-item">
+                    <div class="stat-item__label">Fed Balance Sheet</div>
+                    <div class="stat-item__value" id="fed-balance">$-- T</div>
+                    <div class="stat-item__secondary">
                         <span id="fed-balance-change">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="fed-balance-status">Loading</span>
                     </div>
+                    <div class="stat-item__secondary" id="fed-balance-status">Loading</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=reverse_repo" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">REVERSE REPO (RRP)</h6>
-                    <h2 class="mb-0" id="rrp-value">$-- B</h2>
-                    <small class="text-muted">
+                <div class="stat-item">
+                    <div class="stat-item__label">Reverse Repo (RRP)</div>
+                    <div class="stat-item__value" id="rrp-value">$-- B</div>
+                    <div class="stat-item__secondary">
                         <span id="rrp-change">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="rrp-status">Loading</span>
                     </div>
+                    <div class="stat-item__secondary" id="rrp-status">Loading</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=nfci" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">NFCI (STRESS INDEX)</h6>
-                    <h2 class="mb-0" id="nfci-value">--</h2>
-                    <small class="text-muted">
+                <div class="stat-item">
+                    <div class="stat-item__label">NFCI (Stress Index)</div>
+                    <div class="stat-item__value" id="nfci-value">--</div>
+                    <div class="stat-item__secondary">
                         <span id="nfci-change">--</span> (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="nfci-status">Loading</span>
                     </div>
+                    <div class="stat-item__secondary" id="nfci-status">Loading</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=m2_money_supply" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">M2 MONEY SUPPLY</h6>
-                    <h2 class="mb-0" id="m2-value">$-- T</h2>
-                    <small class="text-muted">
+                <div class="stat-item">
+                    <div class="stat-item__label">M2 Money Supply</div>
+                    <div class="stat-item__value" id="m2-value">$-- T</div>
+                    <div class="stat-item__secondary">
                         <span id="m2-change">--</span>% YoY
-                    </small>
-                    <div class="mt-2">
-                        <small class="text-muted">Global liquidity proxy</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Time Frame Selector -->
-<div class="row mb-3">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body py-2">
-                <div class="d-flex align-items-center justify-content-between flex-wrap">
-                    <small class="text-muted me-3"><i class="bi bi-calendar-range"></i> Time Frame:</small>
-                    <div class="btn-group btn-group-sm" role="group" id="timeframe-selector">
-                        <button type="button" class="btn btn-outline-secondary" data-timeframe="30">1M</button>
-                        <button type="button" class="btn btn-outline-secondary" data-timeframe="90">3M</button>
-                        <button type="button" class="btn btn-outline-secondary" data-timeframe="180">6M</button>
-                        <button type="button" class="btn btn-outline-secondary active" data-timeframe="365">1Y</button>
-                        <button type="button" class="btn btn-outline-secondary" data-timeframe="1825">5Y</button>
-                        <button type="button" class="btn btn-outline-secondary" data-timeframe="3650">10Y</button>
-                        <button type="button" class="btn btn-outline-secondary" data-timeframe="all">All</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Bitcoin vs Liquidity Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> Bitcoin vs Fed Liquidity
-                </h5>
-            </div>
-            <div class="card-body">
-                <canvas id="btc-liquidity-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Bitcoin price overlaid with Fed balance sheet. BTC tends to follow liquidity trends with some lag. Grey bands = recession periods.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Bitcoin vs Gold Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> Bitcoin vs Gold (Safe Haven Comparison)
-                </h5>
-            </div>
-            <div class="card-body">
-                <canvas id="btc-gold-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Both assets compete as inflation hedges. When gold outperforms, it often signals risk-off sentiment. When BTC outperforms, it signals risk appetite.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Educational Sections -->
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-success text-white">
-                <h6 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Bullish Signals</h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0 small">
-                    <li><strong>Fed Balance Sheet expanding</strong> - QE adds liquidity, bullish for BTC</li>
-                    <li><strong>NFCI negative (below zero)</strong> - Loose financial conditions favor risk assets</li>
-                    <li><strong>Fear & Greed below 25</strong> - Extreme fear = contrarian buying opportunity</li>
-                    <li><strong>RRP declining</strong> - Liquidity flowing into markets from Fed facility</li>
-                    <li><strong>M2 growing</strong> - Money supply expansion supports asset prices</li>
-                    <li><strong>Dollar weakening (DXY down)</strong> - Inverse correlation with BTC</li>
-                </ul>
+    <!-- Collapsible Section: Additional Charts -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="additional-charts">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-graph-up"></i> Additional Charts</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">Bitcoin vs Gold (Safe Haven Comparison)</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="btc-gold-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="btc-gold-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+                <div style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);">
+                    <i class="bi bi-info-circle"></i> Both assets compete as inflation hedges. When gold outperforms, it signals risk-off. When BTC outperforms, it signals risk appetite.
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Bearish Signals</h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0 small">
-                    <li><strong>Fed Balance Sheet shrinking</strong> - QT drains liquidity, headwind for BTC</li>
-                    <li><strong>NFCI positive (above zero)</strong> - Tight conditions = risk-off</li>
-                    <li><strong>Fear & Greed above 75</strong> - Extreme greed = potential top</li>
-                    <li><strong>RRP spiking</strong> - Excess cash fleeing to safety at Fed</li>
-                    <li><strong>M2 contracting</strong> - Rare and historically very bearish</li>
-                    <li><strong>Dollar strengthening (DXY up)</strong> - Flight to safety hurts BTC</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Risk Indicators Row -->
-<div class="row mb-4">
-    <div class="col-12">
-        <h5 class="mb-3"><i class="bi bi-exclamation-triangle"></i> Risk Indicators</h5>
-    </div>
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=vix_price" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">VIX (FEAR GAUGE)</h6>
-                    <h2 class="mb-0" id="vix-value">--</h2>
-                    <small class="text-muted">
-                        <span id="vix-change">--</span>% (5d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="vix-status">Loading</span>
+    <!-- Collapsible Section: Understanding Bitcoin -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="understanding-bitcoin">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-lightbulb-fill"></i> Understanding Bitcoin's Key Drivers</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-droplet-fill text-primary"></i> Liquidity</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Bitcoin correlates strongly with global liquidity. Fed balance sheet expansion (QE) = bullish. Quantitative tightening (QT) = headwind. Watch M2 money supply and reverse repo for liquidity signals.</p>
                     </div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=dollar_index_price" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">DOLLAR INDEX (DXY)</h6>
-                    <h2 class="mb-0" id="dxy-value">--</h2>
-                    <small class="text-muted">
-                        <span id="dxy-change">--</span>% (5d)
-                    </small>
-                    <div class="mt-2">
-                        <small class="text-muted">Inverse BTC correlation</small>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-emoji-smile text-success"></i> Sentiment</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">The Fear & Greed Index captures crypto market psychology. Extreme fear (<25) often marks bottoms. Extreme greed (>75) often precedes corrections.</p>
                     </div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=sp500_price" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">S&P 500</h6>
-                    <h2 class="mb-0" id="sp500-value">--</h2>
-                    <small class="text-muted">
-                        <span id="sp500-change">--</span>% (5d)
-                    </small>
-                    <div class="mt-2">
-                        <small class="text-muted">Risk asset correlation</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=nasdaq_price" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">NASDAQ 100</h6>
-                    <h2 class="mb-0" id="nasdaq-value">--</h2>
-                    <small class="text-muted">
-                        <span id="nasdaq-change">--</span>% (5d)
-                    </small>
-                    <div class="mt-2">
-                        <small class="text-muted">Tech/growth correlation</small>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Historical Context -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Bitcoin Cycle Context
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <h6>Halving Cycles</h6>
-                        <p class="text-muted small mb-0">Bitcoin supply issuance halves every ~4 years. Historically, major bull runs occur 12-18 months post-halving. Last halving: April 2024.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6>Liquidity Correlation</h6>
-                        <p class="text-muted small mb-0">BTC has ~0.7-0.8 correlation with global M2 liquidity. Fed policy shifts typically lead BTC moves by 2-6 months.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6>Volatility Regime</h6>
-                        <p class="text-muted small mb-0">BTC volatility has declined over time but remains 3-4x equity volatility. Expect 20-40% drawdowns even in bull markets.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6>Macro Sensitivity</h6>
-                        <p class="text-muted small mb-0">Despite "digital gold" narrative, BTC trades as a risk asset. It typically falls during equity corrections and credit stress events.</p>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-bank text-info"></i> Financial Conditions</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">The NFCI measures overall financial stress. Negative = loose conditions (bullish for risk assets). Positive = tight conditions (bearish). Spikes often coincide with BTC selloffs.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Collapsible Section: Bullish Signals -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="bullish-signals">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-arrow-up-circle"></i> Bullish Signals</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-card" style="border-left-color: var(--success-600);">
+                <div class="info-card__content">
+                    <ul class="mb-0">
+                        <li><strong>Fed Balance Sheet expanding</strong> - QE adds liquidity, bullish for BTC</li>
+                        <li><strong>NFCI negative (below zero)</strong> - Loose financial conditions favor risk assets</li>
+                        <li><strong>Fear & Greed below 25</strong> - Extreme fear = contrarian buying opportunity</li>
+                        <li><strong>RRP declining</strong> - Liquidity flowing into markets from Fed facility</li>
+                        <li><strong>M2 growing</strong> - Money supply expansion supports asset prices</li>
+                        <li><strong>Dollar weakening (DXY down)</strong> - Inverse correlation with BTC</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Section: Bearish Signals -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="bearish-signals">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-arrow-down-circle"></i> Bearish Signals</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-card" style="border-left-color: var(--danger-600);">
+                <div class="info-card__content">
+                    <ul class="mb-0">
+                        <li><strong>Fed Balance Sheet shrinking</strong> - QT drains liquidity, headwind for BTC</li>
+                        <li><strong>NFCI positive (above zero)</strong> - Tight conditions = risk-off</li>
+                        <li><strong>Fear & Greed above 75</strong> - Extreme greed = potential top</li>
+                        <li><strong>RRP spiking</strong> - Excess cash fleeing to safety at Fed</li>
+                        <li><strong>M2 contracting</strong> - Rare and historically very bearish</li>
+                        <li><strong>Dollar strengthening (DXY up)</strong> - Flight to safety hurts BTC</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
 {% endblock %}
 
 {% block extra_js %}
@@ -428,16 +532,17 @@ let btcGoldChart = null;
 let fullBtcData = null;
 let fullFedData = null;
 let fullGoldData = null;
-let currentTimeframe = 365;
+let currentBtcTimeframe = 365;
+let currentBtcGoldTimeframe = 365;
 
 // Fetch recession data on load
 fetch('/api/recessions')
     .then(response => response.json())
     .then(data => {
         recessionData = data;
-        // Re-render charts if data is already loaded
         if (fullBtcData) {
-            applyTimeFrameFilter(currentTimeframe);
+            buildBtcLiquidityChart();
+            buildBtcGoldChart();
         }
     })
     .catch(error => {
@@ -474,6 +579,87 @@ function getRecessionAnnotations(startDate, endDate) {
     return annotations;
 }
 
+// Filter data by timeframe
+function filterByTimeframe(dates, values, days) {
+    if (days === 0) return { dates, values };
+
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    const filteredDates = [];
+    const filteredValues = [];
+
+    dates.forEach((dateStr, idx) => {
+        const date = new Date(dateStr);
+        if (date >= cutoffDate) {
+            filteredDates.push(dateStr);
+            filteredValues.push(values[idx]);
+        }
+    });
+
+    return { dates: filteredDates, values: filteredValues };
+}
+
+// Align datasets by date
+function alignDataByDate(primaryDates, secondaryDates, secondaryValues) {
+    const dateMap = new Map();
+    secondaryDates.forEach((date, i) => {
+        dateMap.set(date, secondaryValues[i]);
+    });
+
+    return primaryDates.map(date => dateMap.has(date) ? dateMap.get(date) : null);
+}
+
+// Determine time unit based on date range
+function getTimeUnit(startDate, endDate) {
+    const dateRange = new Date(endDate) - new Date(startDate);
+    const dayRange = dateRange / (1000 * 60 * 60 * 24);
+    if (dayRange <= 90) return 'day';
+    if (dayRange <= 365) return 'week';
+    if (dayRange <= 1825) return 'month';
+    return 'year';
+}
+
+// Load crypto summary
+async function loadCryptoSummary() {
+    try {
+        const response = await fetch('/api/crypto-summary');
+        const data = await response.json();
+
+        const contentDiv = document.getElementById('crypto-summary-content');
+        const errorDiv = document.getElementById('crypto-summary-error');
+        const timestampDiv = document.getElementById('crypto-summary-timestamp');
+
+        if (data.error) {
+            contentDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true, gfm: true, sanitize: false });
+            contentDiv.innerHTML = marked.parse(data.summary);
+        } else {
+            contentDiv.innerHTML = data.summary
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        if (data.generated_at) {
+            const genDate = new Date(data.generated_at);
+            const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            timestampDiv.textContent = `Generated: ${dateStr} at ${timeStr}`;
+        }
+
+    } catch (error) {
+        console.error('Error loading crypto summary:', error);
+        document.getElementById('crypto-summary-content').classList.add('d-none');
+        document.getElementById('crypto-summary-error').classList.remove('d-none');
+    }
+}
+
 // Load all metrics data
 async function loadCryptoData() {
     try {
@@ -484,8 +670,8 @@ async function loadCryptoData() {
         if (btcData && btcData.values) {
             const currentPrice = btcData.values[btcData.values.length - 1];
             document.getElementById('btc-price').textContent = `$${Math.round(currentPrice).toLocaleString()}`;
+            document.getElementById('key-btc-value').textContent = `$${Math.round(currentPrice).toLocaleString()}`;
 
-            // Calculate changes
             if (btcData.values.length > 5) {
                 const change5d = ((currentPrice / btcData.values[btcData.values.length - 6]) - 1) * 100;
                 document.getElementById('btc-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
@@ -493,21 +679,18 @@ async function loadCryptoData() {
             if (btcData.values.length > 30) {
                 const change30d = ((currentPrice / btcData.values[btcData.values.length - 31]) - 1) * 100;
                 document.getElementById('btc-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+                document.getElementById('key-btc-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1) + '% (30d)';
             }
 
-            // Status based on 30d change
             const statusEl = document.getElementById('btc-status');
             if (btcData.values.length > 30) {
                 const change30d = ((currentPrice / btcData.values[btcData.values.length - 31]) - 1) * 100;
                 if (change30d > 10) {
                     statusEl.textContent = 'BULLISH';
-                    statusEl.className = 'badge bg-success';
                 } else if (change30d < -10) {
                     statusEl.textContent = 'BEARISH';
-                    statusEl.className = 'badge bg-danger';
                 } else {
                     statusEl.textContent = 'NEUTRAL';
-                    statusEl.className = 'badge bg-secondary';
                 }
             }
 
@@ -521,31 +704,23 @@ async function loadCryptoData() {
         if (fgData && fgData.values && fgData.values.length > 0) {
             const currentFG = fgData.values[fgData.values.length - 1];
             document.getElementById('fear-greed-value').textContent = Math.round(currentFG);
+            document.getElementById('key-fear-greed-value').textContent = Math.round(currentFG);
 
-            // Update progress bar and label
-            const bar = document.getElementById('fear-greed-bar');
-            bar.style.width = currentFG + '%';
-
-            let label, barClass;
+            let label;
             if (currentFG <= 25) {
                 label = 'Extreme Fear';
-                barClass = 'bg-danger';
             } else if (currentFG <= 46) {
                 label = 'Fear';
-                barClass = 'bg-warning';
             } else if (currentFG <= 54) {
                 label = 'Neutral';
-                barClass = 'bg-secondary';
             } else if (currentFG <= 75) {
                 label = 'Greed';
-                barClass = 'bg-success';
             } else {
                 label = 'Extreme Greed';
-                barClass = 'bg-success';
             }
 
             document.getElementById('fear-greed-label').textContent = label;
-            bar.className = 'progress-bar ' + barClass;
+            document.getElementById('key-fear-greed-label').textContent = label;
         }
 
         // Load Gold
@@ -553,36 +728,7 @@ async function loadCryptoData() {
         const goldData = await goldResponse.json();
 
         if (goldData && goldData.values) {
-            const currentGold = goldData.values[goldData.values.length - 1] * 10; // GLD to spot proxy
-            document.getElementById('gold-price').textContent = `$${Math.round(currentGold).toLocaleString()}`;
-
-            if (goldData.values.length > 5) {
-                const change5d = ((goldData.values[goldData.values.length - 1] / goldData.values[goldData.values.length - 6]) - 1) * 100;
-                document.getElementById('gold-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-            if (goldData.values.length > 30) {
-                const change30d = ((goldData.values[goldData.values.length - 1] / goldData.values[goldData.values.length - 31]) - 1) * 100;
-                document.getElementById('gold-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
-            }
-
             fullGoldData = goldData;
-
-            // Calculate BTC/Gold ratio
-            if (fullBtcData && fullBtcData.values) {
-                const btcPrice = fullBtcData.values[fullBtcData.values.length - 1];
-                const goldSpot = currentGold;
-                const ratio = btcPrice / goldSpot;
-                document.getElementById('btc-gold-ratio').textContent = ratio.toFixed(1) + ' oz';
-
-                // 30d change in ratio
-                if (fullBtcData.values.length > 30 && goldData.values.length > 30) {
-                    const btcOld = fullBtcData.values[fullBtcData.values.length - 31];
-                    const goldOld = goldData.values[goldData.values.length - 31] * 10;
-                    const oldRatio = btcOld / goldOld;
-                    const ratioChange = ((ratio / oldRatio) - 1) * 100;
-                    document.getElementById('btc-gold-change').textContent = (ratioChange >= 0 ? '+' : '') + ratioChange.toFixed(1);
-                }
-            }
         }
 
         // Load Fed Balance Sheet
@@ -592,22 +738,24 @@ async function loadCryptoData() {
         if (fedData && fedData.values && fedData.values.length > 0) {
             const currentFed = fedData.values[fedData.values.length - 1];
             document.getElementById('fed-balance').textContent = `$${(currentFed / 1000).toFixed(2)} T`;
+            document.getElementById('key-fed-balance').textContent = `$${(currentFed / 1000).toFixed(2)} T`;
 
             if (fedData.values.length > 30) {
                 const change30d = ((currentFed / fedData.values[fedData.values.length - 31]) - 1) * 100;
                 document.getElementById('fed-balance-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(2);
 
                 const statusEl = document.getElementById('fed-balance-status');
+                const keyStatusEl = document.getElementById('key-fed-balance-status');
+                let status;
                 if (change30d > 0.5) {
-                    statusEl.textContent = 'EXPANDING';
-                    statusEl.className = 'badge bg-success';
+                    status = 'EXPANDING';
                 } else if (change30d < -0.5) {
-                    statusEl.textContent = 'SHRINKING';
-                    statusEl.className = 'badge bg-danger';
+                    status = 'SHRINKING';
                 } else {
-                    statusEl.textContent = 'STABLE';
-                    statusEl.className = 'badge bg-secondary';
+                    status = 'STABLE';
                 }
+                statusEl.textContent = status;
+                keyStatusEl.textContent = status;
             }
 
             fullFedData = fedData;
@@ -628,13 +776,10 @@ async function loadCryptoData() {
                 const statusEl = document.getElementById('rrp-status');
                 if (change30d > 10) {
                     statusEl.textContent = 'RISING';
-                    statusEl.className = 'badge bg-warning';
                 } else if (change30d < -10) {
                     statusEl.textContent = 'DRAINING';
-                    statusEl.className = 'badge bg-success';
                 } else {
                     statusEl.textContent = 'STABLE';
-                    statusEl.className = 'badge bg-secondary';
                 }
             }
         }
@@ -646,6 +791,7 @@ async function loadCryptoData() {
         if (nfciData && nfciData.values && nfciData.values.length > 0) {
             const currentNFCI = nfciData.values[nfciData.values.length - 1];
             document.getElementById('nfci-value').textContent = currentNFCI.toFixed(2);
+            document.getElementById('key-nfci-value').textContent = currentNFCI.toFixed(2);
 
             if (nfciData.values.length > 30) {
                 const change30d = currentNFCI - nfciData.values[nfciData.values.length - 31];
@@ -655,16 +801,12 @@ async function loadCryptoData() {
             const statusEl = document.getElementById('nfci-status');
             if (currentNFCI > 0.5) {
                 statusEl.textContent = 'TIGHT';
-                statusEl.className = 'badge bg-danger';
             } else if (currentNFCI > 0) {
                 statusEl.textContent = 'TIGHTENING';
-                statusEl.className = 'badge bg-warning';
             } else if (currentNFCI > -0.5) {
                 statusEl.textContent = 'LOOSE';
-                statusEl.className = 'badge bg-success';
             } else {
                 statusEl.textContent = 'VERY LOOSE';
-                statusEl.className = 'badge bg-success';
             }
         }
 
@@ -676,444 +818,253 @@ async function loadCryptoData() {
             const currentM2 = m2Data.values[m2Data.values.length - 1];
             document.getElementById('m2-value').textContent = `$${(currentM2 / 1000).toFixed(1)} T`;
 
-            // YoY change (12 months for monthly data)
             if (m2Data.values.length > 12) {
                 const yoyChange = ((currentM2 / m2Data.values[m2Data.values.length - 13]) - 1) * 100;
                 document.getElementById('m2-change').textContent = (yoyChange >= 0 ? '+' : '') + yoyChange.toFixed(1);
             }
         }
 
-        // Load VIX
-        const vixResponse = await fetch('/api/metrics/vix_price');
-        const vixData = await vixResponse.json();
+        // Update liquidity status
+        updateLiquidityStatus();
 
-        if (vixData && vixData.values && vixData.values.length > 0) {
-            const currentVIX = vixData.values[vixData.values.length - 1];
-            document.getElementById('vix-value').textContent = currentVIX.toFixed(1);
+        // Build charts
+        buildBtcLiquidityChart();
+        buildBtcGoldChart();
 
-            if (vixData.values.length > 5) {
-                const change5d = ((currentVIX / vixData.values[vixData.values.length - 6]) - 1) * 100;
-                document.getElementById('vix-change').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-
-            const statusEl = document.getElementById('vix-status');
-            if (currentVIX > 30) {
-                statusEl.textContent = 'HIGH FEAR';
-                statusEl.className = 'badge bg-danger';
-            } else if (currentVIX > 20) {
-                statusEl.textContent = 'ELEVATED';
-                statusEl.className = 'badge bg-warning';
-            } else {
-                statusEl.textContent = 'LOW';
-                statusEl.className = 'badge bg-success';
-            }
-        }
-
-        // Load DXY
-        const dxyResponse = await fetch('/api/metrics/dollar_index_price');
-        const dxyData = await dxyResponse.json();
-
-        if (dxyData && dxyData.values && dxyData.values.length > 0) {
-            const currentDXY = dxyData.values[dxyData.values.length - 1];
-            document.getElementById('dxy-value').textContent = currentDXY.toFixed(2);
-
-            if (dxyData.values.length > 5) {
-                const change5d = ((currentDXY / dxyData.values[dxyData.values.length - 6]) - 1) * 100;
-                document.getElementById('dxy-change').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-        }
-
-        // Load S&P 500
-        const sp500Response = await fetch('/api/metrics/sp500_price');
-        const sp500Data = await sp500Response.json();
-
-        if (sp500Data && sp500Data.values && sp500Data.values.length > 0) {
-            const currentSP = sp500Data.values[sp500Data.values.length - 1];
-            document.getElementById('sp500-value').textContent = currentSP.toFixed(0);
-
-            if (sp500Data.values.length > 5) {
-                const change5d = ((currentSP / sp500Data.values[sp500Data.values.length - 6]) - 1) * 100;
-                document.getElementById('sp500-change').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-        }
-
-        // Load Nasdaq
-        const nasdaqResponse = await fetch('/api/metrics/nasdaq_price');
-        const nasdaqData = await nasdaqResponse.json();
-
-        if (nasdaqData && nasdaqData.values && nasdaqData.values.length > 0) {
-            const currentNas = nasdaqData.values[nasdaqData.values.length - 1];
-            document.getElementById('nasdaq-value').textContent = currentNas.toFixed(0);
-
-            if (nasdaqData.values.length > 5) {
-                const change5d = ((currentNas / nasdaqData.values[nasdaqData.values.length - 6]) - 1) * 100;
-                document.getElementById('nasdaq-change').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-        }
-
-        // Now render charts
-        applyTimeFrameFilter(currentTimeframe);
+        // Update last updated time
+        const now = new Date();
+        document.getElementById('last-updated-time').textContent = now.toLocaleString();
 
     } catch (error) {
         console.error('Error loading crypto data:', error);
     }
 }
 
-// Apply time frame filter and render charts
-function applyTimeFrameFilter(timeframe) {
-    currentTimeframe = timeframe;
-    renderBtcLiquidityChart(timeframe);
-    renderBtcGoldChart(timeframe);
+function updateLiquidityStatus() {
+    const statusEl = document.getElementById('key-liquidity-status');
+    const detailEl = document.getElementById('key-liquidity-detail');
+
+    if (fullFedData && fullFedData.values.length > 30) {
+        const currentFed = fullFedData.values[fullFedData.values.length - 1];
+        const fedChange = ((currentFed / fullFedData.values[fullFedData.values.length - 31]) - 1) * 100;
+
+        if (fedChange > 0.5) {
+            statusEl.textContent = 'Expanding';
+            detailEl.textContent = 'Fed adding liquidity';
+        } else if (fedChange < -0.5) {
+            statusEl.textContent = 'Contracting';
+            detailEl.textContent = 'QT in effect';
+        } else {
+            statusEl.textContent = 'Stable';
+            detailEl.textContent = 'No major change';
+        }
+    }
 }
 
-// Render BTC vs Fed Liquidity chart
-function renderBtcLiquidityChart(days) {
+function buildBtcLiquidityChart() {
     if (!fullBtcData || !fullFedData) return;
 
-    const useAllData = days === 'all' || isNaN(days);
-    const now = new Date();
-    const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const btcFiltered = filterByTimeframe(fullBtcData.dates, fullBtcData.values, currentBtcTimeframe);
+    if (btcFiltered.dates.length === 0) return;
 
-    // Create date maps
-    const btcMap = new Map();
-    fullBtcData.dates.forEach((date, idx) => {
-        if (new Date(date) >= cutoffDate) {
-            btcMap.set(date, fullBtcData.values[idx]);
-        }
-    });
+    const fedAligned = alignDataByDate(btcFiltered.dates, fullFedData.dates, fullFedData.values);
 
-    const fedMap = new Map();
-    fullFedData.dates.forEach((date, idx) => {
-        if (new Date(date) >= cutoffDate) {
-            fedMap.set(date, fullFedData.values[idx]);
-        }
-    });
-
-    // Find common dates (Fed is weekly, BTC is daily - use Fed dates)
-    const fedDates = Array.from(fedMap.keys()).sort();
-
-    // For each Fed date, find closest BTC date
-    const alignedData = {
-        dates: [],
-        btc: [],
-        fed: []
-    };
-
-    fedDates.forEach(fedDate => {
-        const btcValue = btcMap.get(fedDate);
-        if (btcValue !== undefined) {
-            alignedData.dates.push(fedDate);
-            alignedData.btc.push(btcValue);
-            alignedData.fed.push(fedMap.get(fedDate));
-        }
-    });
-
-    if (alignedData.dates.length === 0) return;
-
-    // Get recession annotations
-    const startDate = alignedData.dates[0];
-    const endDate = alignedData.dates[alignedData.dates.length - 1];
+    const startDate = btcFiltered.dates[0];
+    const endDate = btcFiltered.dates[btcFiltered.dates.length - 1];
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Destroy existing chart
-    if (btcLiquidityChart) {
-        btcLiquidityChart.destroy();
-    }
-
-    // Determine time unit
-    const dateRange = new Date(endDate) - new Date(startDate);
-    const dayRange = dateRange / (1000 * 60 * 60 * 24);
-    let timeUnit = 'year';
-    if (dayRange <= 90) timeUnit = 'day';
-    else if (dayRange <= 365) timeUnit = 'week';
-    else if (dayRange <= 1825) timeUnit = 'month';
+    if (btcLiquidityChart) btcLiquidityChart.destroy();
 
     const ctx = document.getElementById('btc-liquidity-chart').getContext('2d');
     btcLiquidityChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: alignedData.dates,
+            labels: btcFiltered.dates,
             datasets: [
                 {
                     label: 'Bitcoin Price',
-                    data: alignedData.btc,
+                    data: btcFiltered.values,
                     borderColor: 'rgb(255, 193, 7)',
                     backgroundColor: 'rgba(255, 193, 7, 0.1)',
                     borderWidth: 2,
                     fill: false,
                     yAxisID: 'y',
                     pointRadius: 0,
-                    pointHoverRadius: 4
+                    tension: 0.1
                 },
                 {
                     label: 'Fed Balance Sheet (B$)',
-                    data: alignedData.fed,
+                    data: fedAligned,
                     borderColor: 'rgb(13, 110, 253)',
                     borderWidth: 2,
                     fill: false,
                     yAxisID: 'y1',
                     pointRadius: 0,
-                    pointHoverRadius: 4
+                    tension: 0.1
                 }
             ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                },
-                annotation: {
-                    annotations: recessionAnnotations
-                }
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations }
             },
             scales: {
                 x: {
                     type: 'time',
-                    time: {
-                        unit: timeUnit,
-                        displayFormats: {
-                            day: 'MMM d',
-                            week: 'MMM d',
-                            month: 'MMM yyyy',
-                            year: 'yyyy'
-                        }
-                    },
-                    grid: { display: false }
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
                 },
                 y: {
                     type: 'linear',
                     display: true,
                     position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Bitcoin ($)'
-                    }
+                    title: { display: true, text: 'Bitcoin ($)' }
                 },
                 y1: {
                     type: 'linear',
                     display: true,
                     position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Fed Balance Sheet (B$)'
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    }
+                    title: { display: true, text: 'Fed Balance Sheet (B$)' },
+                    grid: { drawOnChartArea: false }
                 }
             }
         }
     });
 }
 
-// Render BTC vs Gold chart
-function renderBtcGoldChart(days) {
+function buildBtcGoldChart() {
     if (!fullBtcData || !fullGoldData) return;
 
-    const useAllData = days === 'all' || isNaN(days);
-    const now = new Date();
-    const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const btcFiltered = filterByTimeframe(fullBtcData.dates, fullBtcData.values, currentBtcGoldTimeframe);
+    if (btcFiltered.dates.length === 0) return;
 
-    // Create date maps
-    const btcMap = new Map();
-    fullBtcData.dates.forEach((date, idx) => {
-        if (new Date(date) >= cutoffDate) {
-            btcMap.set(date, fullBtcData.values[idx]);
-        }
-    });
+    const goldAligned = alignDataByDate(btcFiltered.dates, fullGoldData.dates, fullGoldData.values);
+    const goldScaled = goldAligned.map(v => v !== null ? v * 10 : null);
 
-    const goldMap = new Map();
-    fullGoldData.dates.forEach((date, idx) => {
-        if (new Date(date) >= cutoffDate) {
-            goldMap.set(date, fullGoldData.values[idx] * 10); // Convert to spot proxy
-        }
-    });
-
-    // Find common dates
-    const commonDates = Array.from(btcMap.keys()).filter(d => goldMap.has(d)).sort();
-
-    if (commonDates.length === 0) return;
-
-    const alignedData = {
-        dates: commonDates,
-        btc: commonDates.map(d => btcMap.get(d)),
-        gold: commonDates.map(d => goldMap.get(d))
-    };
-
-    // Get recession annotations
-    const startDate = alignedData.dates[0];
-    const endDate = alignedData.dates[alignedData.dates.length - 1];
+    const startDate = btcFiltered.dates[0];
+    const endDate = btcFiltered.dates[btcFiltered.dates.length - 1];
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
+    const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Destroy existing chart
-    if (btcGoldChart) {
-        btcGoldChart.destroy();
-    }
-
-    // Determine time unit
-    const dateRange = new Date(endDate) - new Date(startDate);
-    const dayRange = dateRange / (1000 * 60 * 60 * 24);
-    let timeUnit = 'year';
-    if (dayRange <= 90) timeUnit = 'day';
-    else if (dayRange <= 365) timeUnit = 'week';
-    else if (dayRange <= 1825) timeUnit = 'month';
+    if (btcGoldChart) btcGoldChart.destroy();
 
     const ctx = document.getElementById('btc-gold-chart').getContext('2d');
     btcGoldChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: alignedData.dates,
+            labels: btcFiltered.dates,
             datasets: [
                 {
                     label: 'Bitcoin Price',
-                    data: alignedData.btc,
+                    data: btcFiltered.values,
                     borderColor: 'rgb(255, 193, 7)',
                     backgroundColor: 'rgba(255, 193, 7, 0.1)',
                     borderWidth: 2,
                     fill: false,
                     yAxisID: 'y',
                     pointRadius: 0,
-                    pointHoverRadius: 4
+                    tension: 0.1
                 },
                 {
                     label: 'Gold Price ($)',
-                    data: alignedData.gold,
+                    data: goldScaled,
                     borderColor: 'rgb(212, 175, 55)',
                     borderWidth: 2,
                     fill: false,
                     yAxisID: 'y1',
                     pointRadius: 0,
-                    pointHoverRadius: 4
+                    tension: 0.1
                 }
             ]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: true,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: {
-                    display: true,
-                    position: 'top'
-                },
-                annotation: {
-                    annotations: recessionAnnotations
-                }
+                legend: { position: 'top' },
+                annotation: { annotations: recessionAnnotations }
             },
             scales: {
                 x: {
                     type: 'time',
-                    time: {
-                        unit: timeUnit,
-                        displayFormats: {
-                            day: 'MMM d',
-                            week: 'MMM d',
-                            month: 'MMM yyyy',
-                            year: 'yyyy'
-                        }
-                    },
-                    grid: { display: false }
+                    time: { unit: timeUnit, displayFormats: { day: 'MMM d', week: 'MMM d', month: 'MMM yyyy', year: 'yyyy' } }
                 },
                 y: {
                     type: 'linear',
                     display: true,
                     position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Bitcoin ($)'
-                    }
+                    title: { display: true, text: 'Bitcoin ($)' }
                 },
                 y1: {
                     type: 'linear',
                     display: true,
                     position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Gold ($)'
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    }
+                    title: { display: true, text: 'Gold ($)' },
+                    grid: { drawOnChartArea: false }
                 }
             }
         }
     });
 }
 
-// Time frame selector button handlers
-document.querySelectorAll('#timeframe-selector button[data-timeframe]').forEach(button => {
-    button.addEventListener('click', function() {
-        document.querySelectorAll('#timeframe-selector button').forEach(btn => {
-            btn.classList.remove('active');
+// Initialize collapsible sections
+function initCollapsibleSections() {
+    const sections = document.querySelectorAll('.collapsible-section');
+
+    sections.forEach(section => {
+        const header = section.querySelector('.collapsible-section__header');
+        const content = section.querySelector('.collapsible-section__content');
+
+        header.addEventListener('click', () => {
+            const isExpanded = header.getAttribute('aria-expanded') === 'true';
+
+            header.setAttribute('aria-expanded', !isExpanded);
+            content.hidden = isExpanded;
         });
-        this.classList.add('active');
 
-        const timeFrame = this.getAttribute('data-timeframe');
-        applyTimeFrameFilter(timeFrame === 'all' ? 'all' : parseInt(timeFrame));
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                header.click();
+            }
+        });
     });
-});
+}
 
-// Load AI-generated crypto summary
-async function loadCryptoSummary() {
-    try {
-        const response = await fetch('/api/crypto-summary');
-        const data = await response.json();
+// Initialize time range controls
+function initTimeRangeControls() {
+    // BTC liquidity chart
+    document.querySelectorAll('#btc-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#btc-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentBtcTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildBtcLiquidityChart();
+        });
+    });
 
-        const contentDiv = document.getElementById('crypto-summary-content');
-        const errorDiv = document.getElementById('crypto-summary-error');
-        const timestampSpan = document.getElementById('crypto-summary-timestamp');
-
-        if (data.error) {
-            contentDiv.classList.add('d-none');
-            errorDiv.classList.remove('d-none');
-            return;
-        }
-
-        // Use marked library for markdown rendering if available
-        if (typeof marked !== 'undefined') {
-            marked.setOptions({
-                breaks: true,
-                gfm: true,
-                sanitize: false
-            });
-            contentDiv.innerHTML = marked.parse(data.summary);
-        } else {
-            // Fallback: basic formatting
-            contentDiv.innerHTML = data.summary
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                .replace(/\n/g, '<br>');
-        }
-
-        // Format and display timestamp
-        if (data.generated_at) {
-            const genDate = new Date(data.generated_at);
-            const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            timestampSpan.textContent = `${dateStr} at ${timeStr}`;
-        }
-
-    } catch (error) {
-        console.error('Error loading crypto summary:', error);
-        document.getElementById('crypto-summary-content').classList.add('d-none');
-        document.getElementById('crypto-summary-error').classList.remove('d-none');
-    }
+    // BTC vs gold chart
+    document.querySelectorAll('#btc-gold-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#btc-gold-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            currentBtcGoldTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildBtcGoldChart();
+        });
+    });
 }
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadCryptoSummary();
     loadCryptoData();
+    initCollapsibleSections();
+    initTimeRangeControls();
 });
 </script>
 {% endblock %}

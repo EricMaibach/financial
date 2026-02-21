@@ -199,6 +199,102 @@ docs/
 9. **PM** validates against acceptance criteria
 10. PR merged, #50 auto-closes
 
+### Role-Based Collaboration Protocol
+
+This section defines how roles communicate and manage work autonomously in GitHub.
+
+#### Addressing Roles in GitHub
+
+When you need a specific role to review, respond, or take action, use clear role mentions:
+
+**In Issue/PR Comments:**
+```
+Designer: Please review the mobile layout implementation
+PM: Should we include dark mode in this story or defer?
+QA: Ready for testing, all acceptance criteria met
+Engineer: Implementation question about the API endpoint
+```
+
+**Using GitHub Labels for Workflow States:**
+- `needs-design-spec` - Feature needs design specification created
+- `needs-design-review` - Implementation/PR ready for designer approval
+- `needs-pm-review` - Awaiting PM decision or approval
+- `needs-qa-testing` - Ready for QA verification
+
+**Why This Works:**
+- Text mentions are searchable in GitHub (search for "Designer:" in comments)
+- Labels are filterable in GitHub UI and API (`gh issue list --label needs-design-review`)
+- Clear and unambiguous - no special syntax to remember
+- Works with existing GitHub features
+
+#### Autonomous Role Behavior
+
+When a role is invoked via their skill command (e.g., `/ui-designer`, `/pm`, `/qa`), they should:
+
+1. **Check for active workflow context first**
+   - If there's a specific user story or feature being discussed in recent messages
+   - If the conversation is clearly focused on one task
+   - → **FOCUSED MODE**: Work only on that specific task, don't search for other work
+
+2. **If no specific context (starting fresh)**
+   - User invoked the role command without ongoing work
+   - → **AUTONOMOUS MODE**: Check for pending work assigned to that role and proactively address it
+
+**IMPORTANT:** When a role is invoked as part of a workflow command (e.g., `/work-story`), the role should focus ONLY on the specific task in the workflow context, not autonomously search for other work.
+
+#### Role-Specific Autonomous Checklists
+
+**UI Designer** (when in autonomous mode):
+1. Check for new features needing design specs (`gh issue list --label feature,needs-design-spec`)
+2. Check for comments addressed to designer (search for "Designer:" in recent issues)
+3. Check for new user stories under features already designed (tracked in `docs/roles/ui-designer-context.md`)
+4. Check for PRs ready for design review (`gh pr list --label needs-design-review`)
+
+**Product Manager** (when in autonomous mode):
+1. Check for features awaiting PM approval (`gh issue list --label needs-pm-review`)
+2. Check for comments addressed to PM (search for "PM:" in recent issues)
+3. Review and prioritize new feature requests
+4. Check for completed features needing product validation
+
+**QA** (when in autonomous mode):
+1. Check for user stories ready for testing (`gh issue list --label user-story,needs-qa-testing`)
+2. Check for comments addressed to QA (search for "QA:" in recent issues)
+3. Check for PRs ready for QA validation
+4. Review test plan coverage for new features
+
+**Engineer** (when in autonomous mode):
+1. Check for user stories ready for implementation (approved design specs, not in progress)
+2. Check for comments addressed to Engineer (search for "Engineer:" in recent issues)
+3. Check for PRs needing engineering review
+4. Address technical debt and bug fixes
+
+#### Example Autonomous Session
+
+**Scenario:** User invokes `/ui-designer` with no specific context
+
+Designer should:
+```
+1. Check for new features needing design specs
+   → gh issue list --label feature,needs-design-spec --state open
+   → If found: Review feature, create design spec, comment on issue
+
+2. Check for comments addressed to designer
+   → Search recent comments on open issues for "Designer:"
+   → If found: Respond to questions with design guidance
+
+3. Check active features (from docs/roles/ui-designer-context.md)
+   → For each feature I've designed: Check for new user stories or PRs
+   → Review user stories for design compliance
+   → Review PRs for design implementation quality
+
+4. Check for PRs needing design review
+   → gh pr list --label needs-design-review --state open
+   → Review screenshots, provide approval or request changes
+
+5. Update role context with completed work
+   → Update docs/roles/ui-designer-context.md with progress
+```
+
 ## Common Commands
 
 ```bash

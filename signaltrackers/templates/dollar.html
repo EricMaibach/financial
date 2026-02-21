@@ -1,478 +1,632 @@
 {% extends "base.html" %}
 
-{% block title %}Dollar & Currency - Financial Markets{% endblock %}
+{% block title %}Dollar & Currency - SignalTrackers{% endblock %}
+
+{% block extra_css %}
+<!-- Component Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/chart-container.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/collapsible-section.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/key-stats-panel.css') }}">
+<style>
+/* Mobile-First Dollar Page Styles */
+:root {
+    /* Design system custom properties */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-8: 3rem;
+    --space-10: 4rem;
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+
+    --neutral-50: #f8f9fa;
+    --neutral-100: #f1f3f5;
+    --neutral-200: #dee2e6;
+    --neutral-300: #ced4da;
+    --neutral-500: #6c757d;
+    --neutral-600: #495057;
+    --neutral-700: #343a40;
+    --neutral-800: #212529;
+
+    --success-600: #198754;
+    --brand-blue-500: #0d6efd;
+    --warning-600: #ffc107;
+    --info-600: #0dcaf0;
+    --danger-600: #dc3545;
+
+    --container-xl: 1280px;
+}
+
+/* Page header */
+.dollar-header {
+    padding: var(--space-4);
+    background: white;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.dollar-header__title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    margin: 0 0 var(--space-2) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.dollar-header__description {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.dollar-header__updated {
+    font-size: var(--text-sm);
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+/* Content page */
+.content-page {
+    background: var(--neutral-50);
+    min-height: calc(100vh - 64px);
+}
+
+/* Content grid (mobile: stacked, tablet+: side-by-side) */
+.content-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+/* Time range controls */
+.time-range-controls {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: white;
+    margin: 0 var(--space-4);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.time-range-controls__button {
+    min-height: 44px;
+    min-width: 60px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    border: 1px solid var(--neutral-300);
+    border-radius: 6px;
+    background: white;
+    color: var(--neutral-700);
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.time-range-controls__button:hover {
+    background: var(--neutral-50);
+    border-color: var(--success-600);
+}
+
+.time-range-controls__button.active {
+    background: var(--success-600);
+    color: white;
+    border-color: var(--success-600);
+}
+
+.time-range-controls__button:focus {
+    outline: 2px solid var(--success-600);
+    outline-offset: 2px;
+}
+
+/* Statistics grid within collapsible section */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--space-3);
+    background: var(--neutral-50);
+    border-radius: 8px;
+}
+
+.stat-item__label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.stat-item__value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    font-family: monospace;
+}
+
+.stat-item__value--large {
+    font-size: var(--text-2xl);
+}
+
+.stat-item__secondary {
+    font-size: var(--text-xs);
+    color: var(--neutral-500);
+    margin-top: var(--space-1);
+}
+
+/* Info cards */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+}
+
+.info-card {
+    padding: var(--space-4);
+    background: var(--neutral-50);
+    border-radius: 8px;
+    border-left: 4px solid var(--info-600);
+}
+
+.info-card__title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--neutral-700);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.info-card__content {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    line-height: 1.6;
+}
+
+.info-card__content ul {
+    margin: 0;
+    padding-left: var(--space-5);
+}
+
+.info-card__content li {
+    margin-bottom: var(--space-2);
+}
+
+/* Tablet+ layouts */
+@media (min-width: 768px) {
+    .dollar-header {
+        padding: var(--space-6);
+    }
+
+    .dollar-header__title {
+        font-size: var(--text-3xl);
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr; /* 60/40 split */
+        gap: var(--space-6);
+        padding: var(--space-6);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Desktop layouts */
+@media (min-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 2fr 1fr; /* 66/33 split */
+        gap: var(--space-8);
+        max-width: var(--container-xl);
+        margin: 0 auto;
+        padding: var(--space-8);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+}
+
+@media (min-width: 1280px) {
+    .content-grid {
+        gap: var(--space-10);
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="bi bi-currency-dollar text-success"></i>
-            Dollar & Currency Markets
+<main class="content-page">
+    <!-- Page Header -->
+    <header class="dollar-header">
+        <h1 class="dollar-header__title">
+            <i class="bi bi-currency-dollar text-success"></i> Dollar & Currency Markets
         </h1>
-        <p class="lead">Tracking the US Dollar Index, major currency pairs, and global FX dynamics</p>
-    </div>
-</div>
+        <p class="dollar-header__description">Tracking the US Dollar Index, major currency pairs, and global FX dynamics</p>
+        <p class="dollar-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
+    </header>
 
-<!-- Educational Header -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-success">
-            <div class="card-header bg-success text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightbulb-fill"></i> Understanding Dollar & Currency Markets
-                </h5>
+    <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
+    <div class="content-grid">
+        <!-- Left Column: Chart (mobile: full width, tablet+: 60-66% width) -->
+        <div>
+            <!-- Chart Container (HERO ELEMENT on mobile) -->
+            <div class="chart-container">
+                <canvas id="dxy-chart"></canvas>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <h6><i class="bi bi-globe text-success"></i> Dollar Index (DXY)</h6>
-                        <p class="small mb-0">Measures USD against a basket of 6 major currencies (EUR 57.6%, JPY 13.6%, GBP 11.9%, CAD 9.1%, SEK 4.2%, CHF 3.6%). A rising DXY = stronger dollar = headwind for commodities and EM.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6><i class="bi bi-arrow-repeat text-warning"></i> Dollar Smile Theory</h6>
-                        <p class="small mb-0">The dollar strengthens in <strong>both</strong> risk-on (US growth outperformance) and risk-off (flight to safety) environments. It weakens when global growth is strong but US growth is moderate.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6><i class="bi bi-currency-yen text-danger"></i> Carry Trade & Yen</h6>
-                        <p class="small mb-0">Investors borrow in low-yield currencies (JPY) to invest in higher-yield assets. When USD/JPY falls sharply, carry trades unwind, causing broader deleveraging across risk assets.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6><i class="bi bi-graph-up-arrow text-info"></i> Rate Differentials</h6>
-                        <p class="small mb-0">US-Japan and US-Germany 10Y spreads drive currency flows. Wider spreads = higher yield differential = dollar strength. Central bank policy divergence is the key driver.</p>
-                    </div>
-                </div>
+
+            <!-- Time Range Controls (below chart) -->
+            <div class="time-range-controls" id="dxy-timeframe-buttons">
+                <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- AI Dollar Briefing -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-success">
-            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-chat-square-text-fill"></i> Daily Currency Briefing
-                </h5>
-                <small id="dollar-summary-timestamp" class="opacity-75"></small>
+        <!-- Right Column: Key Stats Panel (hidden on mobile, visible tablet+) -->
+        <aside class="key-stats-panel">
+            <h3 class="key-stats-panel__title">Key Metrics</h3>
+
+            <div class="stat-card stat-card--success">
+                <div class="stat-card__label">Dollar Index (DXY)</div>
+                <div class="stat-card__value" id="key-dxy-value">--</div>
+                <div class="stat-card__secondary" id="key-dxy-change">--</div>
             </div>
-            <div class="card-body">
+
+            <div class="stat-card stat-card--info">
+                <div class="stat-card__label">USD/JPY</div>
+                <div class="stat-card__value" id="key-usdjpy-value">--</div>
+                <div class="stat-card__secondary" id="key-usdjpy-change">--</div>
+            </div>
+
+            <div class="stat-card stat-card--neutral">
+                <div class="stat-card__label">EUR/USD</div>
+                <div class="stat-card__value" id="key-eurusd-value">--</div>
+                <div class="stat-card__secondary" id="key-eurusd-change">--</div>
+            </div>
+
+            <div class="stat-card stat-card--warning">
+                <div class="stat-card__label">US-Japan Spread</div>
+                <div class="stat-card__value" id="key-usjp-spread-value">-- bps</div>
+                <div class="stat-card__secondary">Rate differential</div>
+            </div>
+
+            <div class="stat-card stat-card--info">
+                <div class="stat-card__label">US-Germany Spread</div>
+                <div class="stat-card__value" id="key-usde-spread-value">-- bps</div>
+                <div class="stat-card__secondary">Rate differential</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Collapsible Section: AI Daily Briefing -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="ai-briefing">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-chat-square-text-fill"></i> Daily Currency Briefing (AI)</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="background: white; padding: var(--space-4); border-radius: 8px;">
                 <div id="dollar-summary-content" class="summary-text">
                     <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading daily briefing...</p>
                 </div>
                 <div id="dollar-summary-error" class="text-muted d-none">
                     <p class="mb-0"><i class="bi bi-info-circle"></i> No briefing available yet. Click "Reload Data" on the main dashboard to generate one.</p>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Key Metrics Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=dollar_index_price" class="metric-link">
-            <div class="card metric-card border-success">
-                <div class="card-body">
-                    <h6 class="text-muted">DOLLAR INDEX (DXY)</h6>
-                    <h2 class="mb-0 text-success" id="dxy-value">--</h2>
-                    <small class="text-muted">
-                        <span id="dxy-change-5d">--</span>% (5d) |
-                        <span id="dxy-change-30d">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="dxy-status">Loading</span>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=usdjpy_price" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">USD/JPY</h6>
-                    <h2 class="mb-0" id="usdjpy-value">--</h2>
-                    <small class="text-muted">
-                        <span id="usdjpy-change-5d">--</span>% (5d) |
-                        <span id="usdjpy-change-30d">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="usdjpy-status">Loading</span>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card metric-card">
-            <div class="card-body">
-                <h6 class="text-muted">DXY PERCENTILE</h6>
-                <h2 class="mb-0" id="dxy-percentile">--</h2>
-                <small class="text-muted">Historical ranking</small>
-                <div class="mt-2">
-                    <span class="badge" id="dxy-percentile-status">Loading</span>
-                </div>
+                <div id="dollar-summary-timestamp" style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);"></div>
             </div>
         </div>
     </div>
 
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card metric-card">
-            <div class="card-body">
-                <h6 class="text-muted">DOLLAR TREND</h6>
-                <h2 class="mb-0" id="dollar-trend">--</h2>
-                <small class="text-muted" id="dollar-trend-detail">Analyzing...</small>
-                <div class="mt-2">
-                    <span class="badge" id="dollar-trend-badge">Loading</span>
+    <!-- Collapsible Section: Market Statistics -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="market-stats">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title">Market Statistics</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-item__label">Dollar Index (DXY)</div>
+                    <div class="stat-item__value stat-item__value--large" id="dxy-value">--</div>
+                    <div class="stat-item__secondary">
+                        <span id="dxy-change-5d">--</span>% (5d) | <span id="dxy-change-30d">--</span>% (30d)
+                    </div>
+                    <div class="stat-item__secondary" id="dxy-status">Loading</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">USD/JPY</div>
+                    <div class="stat-item__value" id="usdjpy-value">--</div>
+                    <div class="stat-item__secondary">
+                        <span id="usdjpy-change-5d">--</span>% (5d) | <span id="usdjpy-change-30d">--</span>% (30d)
+                    </div>
+                    <div class="stat-item__secondary" id="usdjpy-status">Loading</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">EUR/USD</div>
+                    <div class="stat-item__value" id="eurusd-value">--</div>
+                    <div class="stat-item__secondary">
+                        <span id="eurusd-change-5d">--</span>% (5d) | <span id="eurusd-change-30d">--</span>% (30d)
+                    </div>
+                    <div class="stat-item__secondary" id="eurusd-status">Loading</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">DXY Percentile</div>
+                    <div class="stat-item__value" id="dxy-percentile">--</div>
+                    <div class="stat-item__secondary" id="dxy-percentile-status">Historical ranking</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Dollar Trend</div>
+                    <div class="stat-item__value" id="dollar-trend">--</div>
+                    <div class="stat-item__secondary" id="dollar-trend-detail">Analyzing...</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">US-Japan 10Y Spread</div>
+                    <div class="stat-item__value" id="usjp-spread-value">--</div>
+                    <div class="stat-item__secondary" id="usjp-spread-status">Rate differential</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">US-Germany 10Y Spread</div>
+                    <div class="stat-item__value" id="usde-spread-value">--</div>
+                    <div class="stat-item__secondary" id="usde-spread-status">Rate differential</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Carry Trade Indicator</div>
+                    <div class="stat-item__value" id="carry-indicator">--</div>
+                    <div class="stat-item__secondary" id="carry-detail">Analyzing...</div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Rate Differentials & EUR/USD Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=eurusd_price" class="metric-link">
-            <div class="card metric-card border-primary">
-                <div class="card-body">
-                    <h6 class="text-muted">EUR/USD</h6>
-                    <h2 class="mb-0 text-primary" id="eurusd-value">--</h2>
-                    <small class="text-muted">
-                        <span id="eurusd-change-5d">--</span>% (5d) |
-                        <span id="eurusd-change-30d">--</span>% (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="eurusd-status">Loading</span>
-                    </div>
+    <!-- Collapsible Section: Additional Charts -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="additional-charts">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-graph-up"></i> Additional Charts</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">USD/JPY (Carry Trade Indicator)</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="usdjpy-chart"></canvas>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=us_japan_10y_spread" class="metric-link">
-            <div class="card metric-card border-warning">
-                <div class="card-body">
-                    <h6 class="text-muted">US-JAPAN 10Y SPREAD</h6>
-                    <h2 class="mb-0 text-warning" id="usjp-spread-value">--</h2>
-                    <small class="text-muted">Rate differential (bps)</small>
-                    <div class="mt-2">
-                        <span class="badge" id="usjp-spread-status">Loading</span>
-                    </div>
+                <div class="time-range-controls" id="usdjpy-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=us_germany_10y_spread" class="metric-link">
-            <div class="card metric-card border-info">
-                <div class="card-body">
-                    <h6 class="text-muted">US-GERMANY 10Y SPREAD</h6>
-                    <h2 class="mb-0 text-info" id="usde-spread-value">--</h2>
-                    <small class="text-muted">Rate differential (bps)</small>
-                    <div class="mt-2">
-                        <span class="badge" id="usde-spread-status">Loading</span>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card metric-card">
-            <div class="card-body">
-                <h6 class="text-muted">CARRY TRADE INDICATOR</h6>
-                <h2 class="mb-0" id="carry-indicator">--</h2>
-                <small class="text-muted" id="carry-detail">Analyzing...</small>
-                <div class="mt-2">
-                    <span class="badge" id="carry-badge">Loading</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Dollar Index Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> Dollar Index (DXY)
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="dxy-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-success" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-success active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="0">All</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="dxy-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> DXY measures dollar strength vs major currencies. Above 100 = relatively strong dollar. Below 100 = relatively weak. Grey bands = recession periods.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- USD/JPY Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-currency-yen"></i> USD/JPY (Carry Trade Indicator)
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="usdjpy-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-success" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-success active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="0">All</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="usdjpy-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
+                <div style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);">
                     <i class="bi bi-info-circle"></i> Rising USD/JPY = yen weakening (carry trade favorable). Sharp drops = potential carry unwind, watch for broader risk-off. BOJ policy shifts can cause violent moves.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- EUR/USD Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-currency-euro"></i> EUR/USD Exchange Rate
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="eurusd-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
                 </div>
             </div>
-            <div class="card-body">
-                <canvas id="eurusd-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
+
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">EUR/USD Exchange Rate</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="eurusd-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="eurusd-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+                <div style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);">
                     <i class="bi bi-info-circle"></i> EUR/USD is the most traded currency pair. Above 1.10 = relatively strong euro. Parity (1.00) is a psychological level. Inversely related to DXY due to euro's 57.6% weight.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Rate Spreads Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up-arrow"></i> Rate Differentials (10Y Spreads)
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="spreads-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-warning" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-warning" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-warning" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-warning active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-warning" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-warning" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-warning" data-timeframe="0">All</button>
                 </div>
             </div>
-            <div class="card-body">
-                <canvas id="spreads-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
+
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">Rate Differentials (10Y Spreads)</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="spreads-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="spreads-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+                <div style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);">
                     <i class="bi bi-info-circle"></i> Rate differentials drive currency flows. Higher US-Japan spread = more attractive carry trade (borrow yen, buy USD). Higher US-Germany spread = dollar strength vs euro. Widening spreads = dollar tailwind.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Dollar vs Assets Comparison -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-arrow-left-right"></i> Dollar vs Other Assets
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="comparison-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-success" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-success active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-success" data-timeframe="0">All</button>
                 </div>
             </div>
-            <div class="card-body">
-                <canvas id="comparison-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
+
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">Dollar vs Other Assets</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="comparison-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="comparison-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+                <div style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);">
                     <i class="bi bi-info-circle"></i> Normalized to 100. Shows inverse relationship between dollar and gold/commodities. Divergences can signal turning points.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Yen Carry Trade -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-currency-yen"></i> Yen Carry Trade Monitor
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <a href="/explorer?metric=usdjpy_price" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">USD/JPY Exchange Rate</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="yen-carry-usdjpy-value">--</h3>
-                                        <small class="text-muted">
-                                            <span id="yen-carry-usdjpy-change-5d">--</span>% (5d) / <span id="yen-carry-usdjpy-change-30d">--</span>% (30d)
-                                        </small>
-                                        <span class="badge" id="yen-carry-usdjpy-percentile">--</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <a href="/explorer?metric=japan_10y_yield" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">Japan 10Y Government Bond Yield</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="yen-carry-japan-10y-value">--</h3>
-                                        <small class="text-muted">
-                                            <span id="yen-carry-japan-10y-change-5d">--</span>% (5d) / <span id="yen-carry-japan-10y-change-30d">--</span>% (30d)
-                                        </small>
-                                        <span class="badge" id="yen-carry-japan-10y-percentile">--</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Carry trade risk: Investors borrow cheap yen to invest in higher-yielding assets. Sharp yen strengthening (USD/JPY drop) or rising JGB yields can trigger violent unwinds.
-                    </small>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Educational Sections -->
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Warning Signs</h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0 small">
-                    <li><strong>Sharp yen strengthening</strong> - USD/JPY down 5%+ quickly can trigger carry unwind</li>
-                    <li><strong>DXY breaking 100</strong> - Psychological level, below can accelerate weakness</li>
-                    <li><strong>DXY above 110</strong> - Very strong dollar, pressures EM and commodities</li>
-                    <li><strong>Dollar diverging from rates</strong> - If yields rise but dollar falls, watch Fed credibility</li>
-                    <li><strong>Rapid spread compression</strong> - US-Japan spread narrowing fast = carry unwind risk</li>
-                    <li><strong>EUR/USD breaking parity</strong> - Euro below 1.00 signals severe dollar strength</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-info text-white">
-                <h6 class="mb-0"><i class="bi bi-bookmark-check"></i> Key Levels to Watch</h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0 small">
-                    <li><strong>DXY 100</strong> - Psychological pivot level</li>
-                    <li><strong>DXY 105</strong> - Strong dollar territory, EM/commodity headwinds</li>
-                    <li><strong>DXY 110+</strong> - Very strong, last seen 2022 (Fed aggressive tightening)</li>
-                    <li><strong>USD/JPY 150</strong> - BOJ intervention risk zone</li>
-                    <li><strong>USD/JPY 140</strong> - Key support, break below = carry unwind risk</li>
-                    <li><strong>EUR/USD 1.00</strong> - Parity level, psychological importance</li>
-                    <li><strong>US-JP Spread 350+ bps</strong> - Strong carry trade incentive</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Cross-Asset Impact -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-diagram-3"></i> Dollar Impact on Other Assets
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <h6>Commodities</h6>
-                        <p class="text-muted small mb-0">Strong dollar = headwind for oil, gold, copper. Most commodities priced in USD, so a stronger dollar makes them more expensive for foreign buyers.</p>
+    <!-- Collapsible Section: Understanding Dollar & Currency -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="understanding-dollar">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-lightbulb-fill"></i> Understanding Dollar & Currency Markets</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-globe text-success"></i> Dollar Index (DXY)</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Measures USD against a basket of 6 major currencies (EUR 57.6%, JPY 13.6%, GBP 11.9%, CAD 9.1%, SEK 4.2%, CHF 3.6%). A rising DXY = stronger dollar = headwind for commodities and EM.</p>
                     </div>
-                    <div class="col-md-3">
-                        <h6>Emerging Markets</h6>
-                        <p class="text-muted small mb-0">Strong dollar = pressure on EM. Many EM countries have USD-denominated debt, making servicing harder. Capital tends to flow back to US.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-arrow-repeat text-warning"></i> Dollar Smile Theory</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">The dollar strengthens in <strong>both</strong> risk-on (US growth outperformance) and risk-off (flight to safety) environments. It weakens when global growth is strong but US growth is moderate.</p>
                     </div>
-                    <div class="col-md-3">
-                        <h6>US Multinationals</h6>
-                        <p class="text-muted small mb-0">Strong dollar = earnings headwind. Foreign revenue translates to fewer dollars. ~40% of S&P 500 revenue comes from abroad.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-currency-yen text-danger"></i> Carry Trade & Yen</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Investors borrow in low-yield currencies (JPY) to invest in higher-yield assets. When USD/JPY falls sharply, carry trades unwind, causing broader deleveraging across risk assets.</p>
                     </div>
-                    <div class="col-md-3">
-                        <h6>Rate Differentials</h6>
-                        <p class="text-muted small mb-0">Dollar typically follows rate spreads. Higher US rates vs other countries = dollar strength. Fed hawkish vs other CBs = dollar bid.</p>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-graph-up-arrow text-info"></i> Rate Differentials</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">US-Japan and US-Germany 10Y spreads drive currency flows. Wider spreads = higher yield differential = dollar strength. Central bank policy divergence is the key driver.</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
+    <!-- Collapsible Section: Warning Signs -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="warning-signs">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-exclamation-triangle"></i> Warning Signs</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-card" style="border-left-color: var(--danger-600);">
+                <div class="info-card__content">
+                    <ul class="mb-0">
+                        <li><strong>Sharp yen strengthening</strong> - USD/JPY down 5%+ quickly can trigger carry unwind</li>
+                        <li><strong>DXY breaking 100</strong> - Psychological level, below can accelerate weakness</li>
+                        <li><strong>DXY above 110</strong> - Very strong dollar, pressures EM and commodities</li>
+                        <li><strong>Dollar diverging from rates</strong> - If yields rise but dollar falls, watch Fed credibility</li>
+                        <li><strong>Rapid spread compression</strong> - US-Japan spread narrowing fast = carry unwind risk</li>
+                        <li><strong>EUR/USD breaking parity</strong> - Euro below 1.00 signals severe dollar strength</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Section: Key Levels to Watch -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="key-levels">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-bookmark-check"></i> Key Levels to Watch</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-card" style="border-left-color: var(--info-600);">
+                <div class="info-card__content">
+                    <ul class="mb-0">
+                        <li><strong>DXY 100</strong> - Psychological pivot level</li>
+                        <li><strong>DXY 105</strong> - Strong dollar territory, EM/commodity headwinds</li>
+                        <li><strong>DXY 110+</strong> - Very strong, last seen 2022 (Fed aggressive tightening)</li>
+                        <li><strong>USD/JPY 150</strong> - BOJ intervention risk zone</li>
+                        <li><strong>USD/JPY 140</strong> - Key support, break below = carry unwind risk</li>
+                        <li><strong>EUR/USD 1.00</strong> - Parity level, psychological importance</li>
+                        <li><strong>US-JP Spread 350+ bps</strong> - Strong carry trade incentive</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Section: Cross-Asset Impact -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="cross-asset-impact">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-diagram-3"></i> Dollar Impact on Other Assets</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card__title">Commodities</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Strong dollar = headwind for oil, gold, copper. Most commodities priced in USD, so a stronger dollar makes them more expensive for foreign buyers.</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title">Emerging Markets</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Strong dollar = pressure on EM. Many EM countries have USD-denominated debt, making servicing harder. Capital tends to flow back to US.</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title">US Multinationals</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Strong dollar = earnings headwind. Foreign revenue translates to fewer dollars. ~40% of S&P 500 revenue comes from abroad.</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title">Rate Differentials</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Dollar typically follows rate spreads. Higher US rates vs other countries = dollar strength. Fed hawkish vs other CBs = dollar bid.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
 {% endblock %}
 
 {% block extra_js %}
@@ -506,10 +660,11 @@ fetch('/api/recessions')
     .then(response => response.json())
     .then(data => {
         recessionData = data;
-        // Re-render charts if data already loaded
         if (fullDxyData) {
             buildDxyChart();
             buildUsdjpyChart();
+            buildEurusdChart();
+            buildSpreadsChart();
             buildComparisonChart();
         }
     })
@@ -549,7 +704,7 @@ function getRecessionAnnotations(startDate, endDate) {
 
 // Filter data by timeframe
 function filterByTimeframe(dates, values, days) {
-    if (days === 0) return { dates, values }; // All data
+    if (days === 0) return { dates, values };
 
     const now = new Date();
     const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
@@ -616,6 +771,7 @@ async function loadDollarData() {
             fullDxyData = dxyData;
             const current = dxyData.values[dxyData.values.length - 1];
             document.getElementById('dxy-value').textContent = current.toFixed(2);
+            document.getElementById('key-dxy-value').textContent = current.toFixed(2);
 
             const change5d = calcPctChange(dxyData.values, 5);
             const change30d = calcPctChange(dxyData.values, 30);
@@ -625,49 +781,37 @@ async function loadDollarData() {
             }
             if (change30d !== null) {
                 document.getElementById('dxy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+                document.getElementById('key-dxy-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1) + '% (30d)';
             }
 
-            // Percentile calculation (used for both status badges)
             const percentile = calcPercentile(dxyData.values, current);
-
-            // DXY status - based on percentile since we're using UUP ETF data, not actual DXY
             const statusEl = document.getElementById('dxy-status');
             if (percentile !== null) {
                 if (percentile > 80) {
                     statusEl.textContent = 'STRONG';
-                    statusEl.className = 'badge bg-success';
                 } else if (percentile > 50) {
                     statusEl.textContent = 'FIRM';
-                    statusEl.className = 'badge bg-secondary';
                 } else if (percentile > 20) {
                     statusEl.textContent = 'NEUTRAL';
-                    statusEl.className = 'badge bg-warning';
                 } else {
                     statusEl.textContent = 'WEAK';
-                    statusEl.className = 'badge bg-danger';
                 }
             }
 
-            // Percentile display
             if (percentile !== null) {
                 document.getElementById('dxy-percentile').textContent = percentile.toFixed(1) + '%';
                 const percStatusEl = document.getElementById('dxy-percentile-status');
                 if (percentile > 80) {
                     percStatusEl.textContent = 'HIGH';
-                    percStatusEl.className = 'badge bg-success';
                 } else if (percentile > 50) {
                     percStatusEl.textContent = 'ABOVE AVG';
-                    percStatusEl.className = 'badge bg-secondary';
                 } else if (percentile > 20) {
                     percStatusEl.textContent = 'BELOW AVG';
-                    percStatusEl.className = 'badge bg-warning';
                 } else {
                     percStatusEl.textContent = 'LOW';
-                    percStatusEl.className = 'badge bg-danger';
                 }
             }
 
-            // Trend analysis
             updateDollarTrend(dxyData.values, change5d, change30d);
         }
 
@@ -679,6 +823,7 @@ async function loadDollarData() {
             fullUsdjpyData = usdjpyData;
             const current = usdjpyData.values[usdjpyData.values.length - 1];
             document.getElementById('usdjpy-value').textContent = current.toFixed(2);
+            document.getElementById('key-usdjpy-value').textContent = current.toFixed(2);
 
             const change5d = calcPctChange(usdjpyData.values, 5);
             const change30d = calcPctChange(usdjpyData.values, 30);
@@ -688,70 +833,18 @@ async function loadDollarData() {
             }
             if (change30d !== null) {
                 document.getElementById('usdjpy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+                document.getElementById('key-usdjpy-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1) + '% (30d)';
             }
 
-            // USD/JPY status
             const statusEl = document.getElementById('usdjpy-status');
             if (current > 150) {
                 statusEl.textContent = 'YEN VERY WEAK';
-                statusEl.className = 'badge bg-danger';
             } else if (current > 145) {
                 statusEl.textContent = 'YEN WEAK';
-                statusEl.className = 'badge bg-warning';
             } else if (current > 135) {
                 statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-secondary';
             } else {
                 statusEl.textContent = 'YEN STRONG';
-                statusEl.className = 'badge bg-success';
-            }
-
-            // Also populate Yen Carry Trade section
-            document.getElementById('yen-carry-usdjpy-value').textContent = current.toFixed(2);
-            if (change5d !== null) {
-                document.getElementById('yen-carry-usdjpy-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-            if (change30d !== null) {
-                document.getElementById('yen-carry-usdjpy-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
-            }
-
-            // Percentile for Yen Carry Trade section
-            const percentile = calcPercentile(usdjpyData.values, current);
-            if (percentile !== null) {
-                const usdjpyBadge = document.getElementById('yen-carry-usdjpy-percentile');
-                usdjpyBadge.textContent = `${percentile.toFixed(0)}%ile`;
-                // Lower USD/JPY (stronger yen) = more risk, so invert the warning logic
-                usdjpyBadge.className = percentile < 20 ? 'badge bg-danger' :
-                                        percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-        }
-
-        // Load Japan 10Y Yield for Yen Carry Trade section
-        const japan10yResponse = await fetch('/api/metrics/japan_10y_yield');
-        const japan10yData = await japan10yResponse.json();
-
-        if (japan10yData && japan10yData.values && japan10yData.values.length > 0) {
-            const current = japan10yData.values[japan10yData.values.length - 1];
-            document.getElementById('yen-carry-japan-10y-value').textContent = current.toFixed(2) + '%';
-
-            const change5d = calcPctChange(japan10yData.values, 5);
-            const change30d = calcPctChange(japan10yData.values, 30);
-
-            if (change5d !== null) {
-                document.getElementById('yen-carry-japan-10y-change-5d').textContent = (change5d >= 0 ? '+' : '') + change5d.toFixed(1);
-            }
-            if (change30d !== null) {
-                document.getElementById('yen-carry-japan-10y-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
-            }
-
-            // Percentile for Japan 10Y
-            const percentile = calcPercentile(japan10yData.values, current);
-            if (percentile !== null) {
-                const japan10yBadge = document.getElementById('yen-carry-japan-10y-percentile');
-                japan10yBadge.textContent = `${percentile.toFixed(0)}%ile`;
-                // Higher Japan yields = more risk (carry trade unwinding)
-                japan10yBadge.className = percentile > 80 ? 'badge bg-danger' :
-                                          percentile > 60 ? 'badge bg-warning' : 'badge bg-secondary';
             }
         }
 
@@ -763,6 +856,7 @@ async function loadDollarData() {
             fullEurusdData = eurusdData;
             const current = eurusdData.values[eurusdData.values.length - 1];
             document.getElementById('eurusd-value').textContent = current.toFixed(4);
+            document.getElementById('key-eurusd-value').textContent = current.toFixed(4);
 
             const change5d = calcPctChange(eurusdData.values, 5);
             const change30d = calcPctChange(eurusdData.values, 30);
@@ -772,22 +866,18 @@ async function loadDollarData() {
             }
             if (change30d !== null) {
                 document.getElementById('eurusd-change-30d').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1);
+                document.getElementById('key-eurusd-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(1) + '% (30d)';
             }
 
-            // EUR/USD status
             const statusEl = document.getElementById('eurusd-status');
             if (current > 1.15) {
                 statusEl.textContent = 'EURO STRONG';
-                statusEl.className = 'badge bg-success';
             } else if (current > 1.05) {
                 statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-secondary';
             } else if (current > 1.00) {
                 statusEl.textContent = 'EURO WEAK';
-                statusEl.className = 'badge bg-warning';
             } else {
                 statusEl.textContent = 'BELOW PARITY';
-                statusEl.className = 'badge bg-danger';
             }
         }
 
@@ -800,21 +890,17 @@ async function loadDollarData() {
             const current = usJapanSpreadData.values[usJapanSpreadData.values.length - 1];
             const bps = (current * 100).toFixed(0);
             document.getElementById('usjp-spread-value').textContent = bps + ' bps';
+            document.getElementById('key-usjp-spread-value').textContent = bps + ' bps';
 
-            // Status based on spread level
             const statusEl = document.getElementById('usjp-spread-status');
             if (current > 3.5) {
                 statusEl.textContent = 'WIDE';
-                statusEl.className = 'badge bg-success';
             } else if (current > 2.5) {
                 statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-secondary';
             } else if (current > 1.5) {
                 statusEl.textContent = 'NARROW';
-                statusEl.className = 'badge bg-warning';
             } else {
                 statusEl.textContent = 'VERY NARROW';
-                statusEl.className = 'badge bg-danger';
             }
         }
 
@@ -827,24 +913,19 @@ async function loadDollarData() {
             const current = usGermanySpreadData.values[usGermanySpreadData.values.length - 1];
             const bps = (current * 100).toFixed(0);
             document.getElementById('usde-spread-value').textContent = bps + ' bps';
+            document.getElementById('key-usde-spread-value').textContent = bps + ' bps';
 
-            // Status based on spread level
             const statusEl = document.getElementById('usde-spread-status');
             if (current > 2.0) {
                 statusEl.textContent = 'WIDE';
-                statusEl.className = 'badge bg-success';
             } else if (current > 1.0) {
                 statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-secondary';
             } else if (current > 0.5) {
                 statusEl.textContent = 'NARROW';
-                statusEl.className = 'badge bg-warning';
             } else {
                 statusEl.textContent = 'VERY NARROW';
-                statusEl.className = 'badge bg-danger';
             }
 
-            // Update carry trade indicator based on both spreads
             updateCarryIndicator(fullUsJapanSpreadData, fullUsGermanySpreadData);
         }
 
@@ -869,6 +950,10 @@ async function loadDollarData() {
         buildSpreadsChart();
         buildComparisonChart();
 
+        // Update last updated time
+        const now = new Date();
+        document.getElementById('last-updated-time').textContent = now.toLocaleString();
+
     } catch (error) {
         console.error('Error loading dollar data:', error);
     }
@@ -877,36 +962,57 @@ async function loadDollarData() {
 function updateDollarTrend(values, change5d, change30d) {
     const trendEl = document.getElementById('dollar-trend');
     const detailEl = document.getElementById('dollar-trend-detail');
-    const badgeEl = document.getElementById('dollar-trend-badge');
 
     if (change5d === null || change30d === null) return;
 
-    // Determine trend
     if (change5d > 1 && change30d > 2) {
         trendEl.textContent = 'Strengthening';
         detailEl.textContent = 'Dollar gaining on multiple timeframes';
-        badgeEl.textContent = 'BULLISH';
-        badgeEl.className = 'badge bg-success';
     } else if (change5d < -1 && change30d < -2) {
         trendEl.textContent = 'Weakening';
         detailEl.textContent = 'Dollar losing ground';
-        badgeEl.textContent = 'BEARISH';
-        badgeEl.className = 'badge bg-danger';
     } else if (Math.abs(change5d) < 0.5 && Math.abs(change30d) < 1) {
         trendEl.textContent = 'Ranging';
         detailEl.textContent = 'No clear direction';
-        badgeEl.textContent = 'NEUTRAL';
-        badgeEl.className = 'badge bg-secondary';
     } else if (change5d > 0 !== change30d > 0) {
         trendEl.textContent = 'Mixed';
         detailEl.textContent = 'Short vs long-term diverging';
-        badgeEl.textContent = 'WATCH';
-        badgeEl.className = 'badge bg-warning';
     } else {
         trendEl.textContent = 'Stable';
         detailEl.textContent = 'Minor moves only';
-        badgeEl.textContent = 'NEUTRAL';
-        badgeEl.className = 'badge bg-secondary';
+    }
+}
+
+function updateCarryIndicator(usJapanData, usGermanyData) {
+    const indicatorEl = document.getElementById('carry-indicator');
+    const detailEl = document.getElementById('carry-detail');
+
+    if (!usJapanData || !usJapanData.values || usJapanData.values.length < 30) {
+        return;
+    }
+
+    const currentSpread = usJapanData.values[usJapanData.values.length - 1];
+    const spread30dAgo = usJapanData.values[usJapanData.values.length - 30] || usJapanData.values[0];
+    const spreadChange = currentSpread - spread30dAgo;
+
+    if (currentSpread > 3.5) {
+        indicatorEl.textContent = 'Favorable';
+        detailEl.textContent = 'Wide US-JP spread supports carry';
+    } else if (currentSpread > 2.5 && spreadChange > 0.1) {
+        indicatorEl.textContent = 'Improving';
+        detailEl.textContent = 'Spreads widening, USD positive';
+    } else if (currentSpread > 2.5) {
+        indicatorEl.textContent = 'Neutral';
+        detailEl.textContent = 'Moderate carry trade environment';
+    } else if (spreadChange < -0.2) {
+        indicatorEl.textContent = 'Deteriorating';
+        detailEl.textContent = 'Spreads narrowing, watch for unwind';
+    } else if (currentSpread < 2.0) {
+        indicatorEl.textContent = 'Unfavorable';
+        detailEl.textContent = 'Narrow spreads, carry trade fragile';
+    } else {
+        indicatorEl.textContent = 'Mixed';
+        detailEl.textContent = 'No clear signal';
     }
 }
 
@@ -920,9 +1026,6 @@ function buildDxyChart() {
     const endDate = filtered.dates[filtered.dates.length - 1];
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
-
-    // Note: Using UUP ETF data (trades around $25-28), not the actual DXY index (trades around 100)
-    // No annotation line needed since UUP and DXY have different scales
 
     if (dxyChart) dxyChart.destroy();
 
@@ -944,6 +1047,7 @@ function buildDxyChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
@@ -980,7 +1084,6 @@ function buildUsdjpyChart() {
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Add intervention warning level
     recessionAnnotations['level150'] = {
         type: 'line',
         yMin: 150,
@@ -1018,6 +1121,7 @@ function buildUsdjpyChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
@@ -1054,7 +1158,6 @@ function buildEurusdChart() {
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Add parity level annotation
     recessionAnnotations['parity'] = {
         type: 'line',
         yMin: 1.0,
@@ -1092,6 +1195,7 @@ function buildEurusdChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
@@ -1120,7 +1224,6 @@ function buildEurusdChart() {
 function buildSpreadsChart() {
     if (!fullUsJapanSpreadData && !fullUsGermanySpreadData) return;
 
-    // Use US-Japan spread as primary date series if available
     const primaryData = fullUsJapanSpreadData || fullUsGermanySpreadData;
     const filtered = filterByTimeframe(primaryData.dates, primaryData.values, spreadsTimeframe);
     if (filtered.dates.length === 0) return;
@@ -1132,7 +1235,6 @@ function buildSpreadsChart() {
 
     const datasets = [];
 
-    // US-Japan spread (convert to basis points)
     if (fullUsJapanSpreadData) {
         const usJapanFiltered = filterByTimeframe(fullUsJapanSpreadData.dates, fullUsJapanSpreadData.values, spreadsTimeframe);
         const usJapanBps = usJapanFiltered.values.map(v => v * 100);
@@ -1149,7 +1251,6 @@ function buildSpreadsChart() {
         });
     }
 
-    // US-Germany spread (convert to basis points)
     if (fullUsGermanySpreadData) {
         const usGermanyFiltered = filterByTimeframe(fullUsGermanySpreadData.dates, fullUsGermanySpreadData.values, spreadsTimeframe);
         const alignedValues = alignDataByDate(filtered.dates, usGermanyFiltered.dates, usGermanyFiltered.values);
@@ -1178,6 +1279,7 @@ function buildSpreadsChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
@@ -1203,77 +1305,18 @@ function buildSpreadsChart() {
     });
 }
 
-function updateCarryIndicator(usJapanData, usGermanyData) {
-    const indicatorEl = document.getElementById('carry-indicator');
-    const detailEl = document.getElementById('carry-detail');
-    const badgeEl = document.getElementById('carry-badge');
-
-    if (!usJapanData || !usJapanData.values || usJapanData.values.length < 30) {
-        return;
-    }
-
-    const currentSpread = usJapanData.values[usJapanData.values.length - 1];
-    const spread30dAgo = usJapanData.values[usJapanData.values.length - 30] || usJapanData.values[0];
-    const spreadChange = currentSpread - spread30dAgo;
-
-    // Also check Germany spread for EUR strength
-    let usDeSpread = null;
-    let usDeChange = null;
-    if (usGermanyData && usGermanyData.values && usGermanyData.values.length >= 30) {
-        usDeSpread = usGermanyData.values[usGermanyData.values.length - 1];
-        const usDeSpread30dAgo = usGermanyData.values[usGermanyData.values.length - 30] || usGermanyData.values[0];
-        usDeChange = usDeSpread - usDeSpread30dAgo;
-    }
-
-    // Determine carry trade favorability
-    if (currentSpread > 3.5) {
-        indicatorEl.textContent = 'Favorable';
-        detailEl.textContent = 'Wide US-JP spread supports carry';
-        badgeEl.textContent = 'CARRY ON';
-        badgeEl.className = 'badge bg-success';
-    } else if (currentSpread > 2.5 && spreadChange > 0.1) {
-        indicatorEl.textContent = 'Improving';
-        detailEl.textContent = 'Spreads widening, USD positive';
-        badgeEl.textContent = 'BULLISH USD';
-        badgeEl.className = 'badge bg-success';
-    } else if (currentSpread > 2.5) {
-        indicatorEl.textContent = 'Neutral';
-        detailEl.textContent = 'Moderate carry trade environment';
-        badgeEl.textContent = 'STABLE';
-        badgeEl.className = 'badge bg-secondary';
-    } else if (spreadChange < -0.2) {
-        indicatorEl.textContent = 'Deteriorating';
-        detailEl.textContent = 'Spreads narrowing, watch for unwind';
-        badgeEl.textContent = 'RISK OFF';
-        badgeEl.className = 'badge bg-warning';
-    } else if (currentSpread < 2.0) {
-        indicatorEl.textContent = 'Unfavorable';
-        detailEl.textContent = 'Narrow spreads, carry trade fragile';
-        badgeEl.textContent = 'UNWIND RISK';
-        badgeEl.className = 'badge bg-danger';
-    } else {
-        indicatorEl.textContent = 'Mixed';
-        detailEl.textContent = 'No clear signal';
-        badgeEl.textContent = 'NEUTRAL';
-        badgeEl.className = 'badge bg-secondary';
-    }
-}
-
 function buildComparisonChart() {
     if (!fullDxyData) return;
 
     const filtered = filterByTimeframe(fullDxyData.dates, fullDxyData.values, comparisonTimeframe);
     if (filtered.dates.length === 0) return;
 
-    // Normalize DXY to 100
     const dxyBase = filtered.values[0];
     const dxyNormalized = filtered.values.map(v => (v / dxyBase) * 100);
 
-    // Align and normalize gold
     let goldNormalized = null;
     if (fullGoldData) {
         const goldAligned = alignDataByDate(filtered.dates, fullGoldData.dates, fullGoldData.values);
-        // Find first non-null value for base
         let goldBaseIdx = goldAligned.findIndex(v => v !== null);
         if (goldBaseIdx >= 0) {
             const goldBase = goldAligned[goldBaseIdx];
@@ -1281,7 +1324,6 @@ function buildComparisonChart() {
         }
     }
 
-    // Align and normalize oil
     let oilNormalized = null;
     if (fullOilData) {
         const oilAligned = alignDataByDate(filtered.dates, fullOilData.dates, fullOilData.values);
@@ -1342,6 +1384,7 @@ function buildComparisonChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
@@ -1368,7 +1411,7 @@ async function loadDollarSummary() {
 
         const contentDiv = document.getElementById('dollar-summary-content');
         const errorDiv = document.getElementById('dollar-summary-error');
-        const timestampSpan = document.getElementById('dollar-summary-timestamp');
+        const timestampDiv = document.getElementById('dollar-summary-timestamp');
 
         if (data.error) {
             contentDiv.classList.add('d-none');
@@ -1376,7 +1419,6 @@ async function loadDollarSummary() {
             return;
         }
 
-        // Use marked library for markdown rendering if available
         if (typeof marked !== 'undefined') {
             marked.setOptions({ breaks: true, gfm: true, sanitize: false });
             contentDiv.innerHTML = marked.parse(data.summary);
@@ -1391,7 +1433,7 @@ async function loadDollarSummary() {
             const genDate = new Date(data.generated_at);
             const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            timestampSpan.textContent = `${dateStr} at ${timeStr}`;
+            timestampDiv.textContent = `Generated: ${dateStr} at ${timeStr}`;
         }
 
     } catch (error) {
@@ -1401,12 +1443,33 @@ async function loadDollarSummary() {
     }
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadDollarSummary();
-    loadDollarData();
+// Initialize collapsible sections
+function initCollapsibleSections() {
+    const sections = document.querySelectorAll('.collapsible-section');
 
-    // DXY chart timeframe buttons
+    sections.forEach(section => {
+        const header = section.querySelector('.collapsible-section__header');
+        const content = section.querySelector('.collapsible-section__content');
+
+        header.addEventListener('click', () => {
+            const isExpanded = header.getAttribute('aria-expanded') === 'true';
+
+            header.setAttribute('aria-expanded', !isExpanded);
+            content.hidden = isExpanded;
+        });
+
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                header.click();
+            }
+        });
+    });
+}
+
+// Initialize time range controls
+function initTimeRangeControls() {
+    // DXY chart
     document.querySelectorAll('#dxy-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#dxy-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1416,7 +1479,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // USD/JPY chart timeframe buttons
+    // USD/JPY chart
     document.querySelectorAll('#usdjpy-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#usdjpy-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1426,17 +1489,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Comparison chart timeframe buttons
-    document.querySelectorAll('#comparison-timeframe-buttons button[data-timeframe]').forEach(button => {
-        button.addEventListener('click', function() {
-            document.querySelectorAll('#comparison-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            comparisonTimeframe = parseInt(this.getAttribute('data-timeframe'));
-            buildComparisonChart();
-        });
-    });
-
-    // EUR/USD chart timeframe buttons
+    // EUR/USD chart
     document.querySelectorAll('#eurusd-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#eurusd-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1446,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Rate spreads chart timeframe buttons
+    // Spreads chart
     document.querySelectorAll('#spreads-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#spreads-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1455,6 +1508,24 @@ document.addEventListener('DOMContentLoaded', function() {
             buildSpreadsChart();
         });
     });
+
+    // Comparison chart
+    document.querySelectorAll('#comparison-timeframe-buttons button[data-timeframe]').forEach(button => {
+        button.addEventListener('click', function() {
+            document.querySelectorAll('#comparison-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            comparisonTimeframe = parseInt(this.getAttribute('data-timeframe'));
+            buildComparisonChart();
+        });
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDollarSummary();
+    loadDollarData();
+    initCollapsibleSections();
+    initTimeRangeControls();
 });
 </script>
 {% endblock %}

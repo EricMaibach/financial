@@ -285,7 +285,15 @@ UI Designer created comprehensive spec and asked 5 implementation questions. PM 
 4. **Voice input**: Defer to post-MVP (significant complexity, not critical)
 5. **Conversation limits**: Soft limit at 30 messages with gentle performance nudge
 
-**Status:** ✅ Design spec approved (`docs/specs/feature-3.2-chatbot-mobile-redesign.md`), ready for engineering
+**Status:** ✅ Design spec approved, user stories created, ready for engineering
+
+**User Stories Created:**
+- US-3.2.1 (Issue #90): Build core chatbot widget (mobile bottom sheet)
+- US-3.2.2 (Issue #91): Implement message interaction and AI integration
+- US-3.2.3 (Issue #92): Add persistence, notifications, and polish features
+- US-3.2.4 (Issue #93): Implement responsive tablet/desktop layouts (completes feature)
+
+**Design Specification:** `docs/specs/feature-3.2-chatbot-mobile-redesign.md` (approved)
 
 ---
 
@@ -326,6 +334,8 @@ Items to address alongside feature work:
 | 2026-02-20 | Feature 3.2 design decisions: bottom sheet pattern, two-state toggle, full persistence, badge notifications | PM |
 | 2026-02-20 | Feature 3.2 design spec approved (docs/specs/feature-3.2-chatbot-mobile-redesign.md) - comprehensive, 1500+ line spec | PM |
 | 2026-02-20 | Feature 3.2 final decisions: X minimizes (not clears), context awareness if simple, 30 msg soft limit | PM |
+| 2026-02-21 | User stories created for Feature 3.2: US-3.2.1 (#90), US-3.2.2 (#91), US-3.2.3 (#92), US-3.2.4 (#93) | PM |
+| 2026-02-21 | All user stories linked as sub-issues to parent features (3.1 and 3.2) | PM |
 
 ---
 
