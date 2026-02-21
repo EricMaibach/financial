@@ -1,555 +1,607 @@
 {% extends "base.html" %}
 
-{% block title %}Rates & Yield Curve - Financial Markets{% endblock %}
+{% block title %}Interest Rates - SignalTrackers{% endblock %}
+
+{% block extra_css %}
+<!-- Component Styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/chart-container.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/collapsible-section.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/key-stats-panel.css') }}">
+<style>
+/* Mobile-First Rates Page Styles */
+:root {
+    /* Design system custom properties */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-8: 3rem;
+    --space-10: 4rem;
+
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+
+    --neutral-50: #f8f9fa;
+    --neutral-100: #f1f3f5;
+    --neutral-200: #dee2e6;
+    --neutral-300: #ced4da;
+    --neutral-500: #6c757d;
+    --neutral-600: #495057;
+    --neutral-700: #343a40;
+    --neutral-800: #212529;
+
+    --brand-blue-100: #cfe2ff;
+    --brand-blue-500: #0d6efd;
+    --success-600: #198754;
+    --danger-600: #dc3545;
+    --warning-600: #ffc107;
+    --info-600: #0dcaf0;
+
+    --container-xl: 1280px;
+}
+
+/* Page header */
+.rates-header {
+    padding: var(--space-4);
+    background: white;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.rates-header__title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    margin: 0 0 var(--space-2) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.rates-header__description {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.rates-header__updated {
+    font-size: var(--text-sm);
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+/* Content page */
+.content-page {
+    background: var(--neutral-50);
+    min-height: calc(100vh - 64px);
+}
+
+/* Content grid (mobile: stacked, tablet+: side-by-side) */
+.content-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+/* Time range controls */
+.time-range-controls {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: white;
+    margin: 0 var(--space-4);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.time-range-controls__button {
+    min-height: 44px;
+    min-width: 60px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    border: 1px solid var(--neutral-300);
+    border-radius: 6px;
+    background: white;
+    color: var(--neutral-700);
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.time-range-controls__button:hover {
+    background: var(--neutral-50);
+    border-color: var(--brand-blue-500);
+}
+
+.time-range-controls__button.active {
+    background: var(--brand-blue-500);
+    color: white;
+    border-color: var(--brand-blue-500);
+}
+
+.time-range-controls__button:focus {
+    outline: 2px solid var(--brand-blue-500);
+    outline-offset: 2px;
+}
+
+/* Statistics grid within collapsible section */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.stat-item {
+    text-align: center;
+    padding: var(--space-3);
+    background: var(--neutral-50);
+    border-radius: 8px;
+}
+
+.stat-item__label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-2);
+}
+
+.stat-item__value {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    font-family: monospace;
+}
+
+.stat-item__value--large {
+    font-size: var(--text-2xl);
+}
+
+.stat-item__secondary {
+    font-size: var(--text-xs);
+    color: var(--neutral-500);
+    margin-top: var(--space-1);
+}
+
+/* Info cards */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+}
+
+.info-card {
+    padding: var(--space-4);
+    background: var(--neutral-50);
+    border-radius: 8px;
+    border-left: 4px solid var(--info-600);
+}
+
+.info-card__title {
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--neutral-700);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.info-card__content {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    line-height: 1.6;
+}
+
+.info-card__content ul {
+    margin: 0;
+    padding-left: var(--space-5);
+}
+
+.info-card__content li {
+    margin-bottom: var(--space-2);
+}
+
+/* ETF table */
+.etf-table {
+    width: 100%;
+    font-size: var(--text-sm);
+    border-collapse: collapse;
+}
+
+.etf-table thead th {
+    background: var(--neutral-100);
+    padding: var(--space-3);
+    text-align: left;
+    font-weight: 600;
+    color: var(--neutral-700);
+    border-bottom: 2px solid var(--neutral-300);
+}
+
+.etf-table tbody td {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.etf-table tbody tr:hover {
+    background: var(--neutral-50);
+}
+
+/* Tablet+ layouts */
+@media (min-width: 768px) {
+    .rates-header {
+        padding: var(--space-6);
+    }
+
+    .rates-header__title {
+        font-size: var(--text-3xl);
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr; /* 60/40 split */
+        gap: var(--space-6);
+        padding: var(--space-6);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Desktop layouts */
+@media (min-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 2fr 1fr; /* 66/33 split */
+        gap: var(--space-8);
+        max-width: var(--container-xl);
+        margin: 0 auto;
+        padding: var(--space-8);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
+
+@media (min-width: 1280px) {
+    .content-grid {
+        gap: var(--space-10);
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="bi bi-graph-down-arrow text-primary"></i>
-            Rates & Yield Curve
+<main class="content-page">
+    <!-- Page Header -->
+    <header class="rates-header">
+        <h1 class="rates-header__title">
+            <i class="bi bi-graph-down-arrow text-primary"></i> Interest Rates
         </h1>
-        <p class="lead">Tracking Treasury yields, curve shape, and inflation expectations</p>
-    </div>
-</div>
+        <p class="rates-header__description">Tracking Treasury yields, curve shape, and inflation expectations</p>
+        <p class="rates-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
+    </header>
 
-<!-- Educational Header -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-primary">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-lightbulb-fill"></i> Understanding Interest Rates & The Yield Curve
-                </h5>
+    <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
+    <div class="content-grid">
+        <!-- Left Column: Chart (mobile: full width, tablet+: 60-66% width) -->
+        <div>
+            <!-- Chart Container (HERO ELEMENT on mobile) -->
+            <div class="chart-container">
+                <canvas id="treasury-yield-chart"></canvas>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <h6><i class="bi bi-percent text-primary"></i> Treasury Yields</h6>
-                        <p class="small mb-0">The 10-year Treasury yield is the benchmark "risk-free" rate. Higher yields = tighter financial conditions, headwind for growth stocks and bonds. Lower yields = easier conditions, tailwind for risk assets.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6><i class="bi bi-arrow-left-right text-warning"></i> Yield Curve</h6>
-                        <p class="small mb-0">The spread between long and short rates. <strong>Inverted curve</strong> (negative spread) has preceded every recession since 1970. <strong>Steepening</strong> after inversion often signals recession is imminent.</p>
-                    </div>
-                    <div class="col-md-4">
-                        <h6><i class="bi bi-fire text-danger"></i> Real Yields & Inflation</h6>
-                        <p class="small mb-0">Real yield = nominal yield minus inflation expectations. Positive real yields = "restrictive" policy. Breakeven inflation shows what markets expect for inflation over the next 10 years.</p>
-                    </div>
-                </div>
+
+            <!-- Time Range Controls (below chart) -->
+            <div class="time-range-controls" id="treasury-timeframe-buttons">
+                <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- AI Rates Briefing -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-primary">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-chat-square-text-fill"></i> Daily Rates Briefing
-                </h5>
-                <small id="rates-summary-timestamp" class="opacity-75"></small>
+        <!-- Right Column: Key Stats Panel (hidden on mobile, visible tablet+) -->
+        <aside class="key-stats-panel">
+            <h3 class="key-stats-panel__title">Key Metrics</h3>
+
+            <div class="stat-card stat-card--info">
+                <div class="stat-card__label">10-Year Treasury</div>
+                <div class="stat-card__value" id="key-treasury-10y-value">--%</div>
+                <div class="stat-card__secondary" id="key-treasury-10y-change">--</div>
             </div>
-            <div class="card-body">
+
+            <div class="stat-card stat-card--warning">
+                <div class="stat-card__label">Yield Curve (10Y-2Y)</div>
+                <div class="stat-card__value" id="key-yield-curve-value">--%</div>
+                <div class="stat-card__secondary" id="key-yield-curve-status">--</div>
+            </div>
+
+            <div class="stat-card stat-card--neutral">
+                <div class="stat-card__label">Real Yield</div>
+                <div class="stat-card__value" id="key-real-yield-value">--%</div>
+                <div class="stat-card__secondary">TIPS 10Y</div>
+            </div>
+
+            <div class="stat-card stat-card--success">
+                <div class="stat-card__label">Breakeven Inflation</div>
+                <div class="stat-card__value" id="key-breakeven-value">--%</div>
+                <div class="stat-card__secondary">10Y forecast</div>
+            </div>
+
+            <div class="stat-card stat-card--danger">
+                <div class="stat-card__label">HY Spread</div>
+                <div class="stat-card__value" id="key-hy-spread-value">-- bp</div>
+                <div class="stat-card__secondary">Credit risk</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Collapsible Section: AI Daily Briefing -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="ai-briefing">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-chat-square-text-fill"></i> Daily Rates Briefing (AI)</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="background: white; padding: var(--space-4); border-radius: 8px;">
                 <div id="rates-summary-content" class="summary-text">
                     <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading daily briefing...</p>
                 </div>
                 <div id="rates-summary-error" class="text-muted d-none">
                     <p class="mb-0"><i class="bi bi-info-circle"></i> No briefing available yet. Click "Reload Data" on the main dashboard to generate one.</p>
                 </div>
+                <div id="rates-summary-timestamp" style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);"></div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Key Metrics Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=treasury_10y" class="metric-link">
-            <div class="card metric-card border-primary">
-                <div class="card-body">
-                    <h6 class="text-muted">10-YEAR TREASURY</h6>
-                    <h2 class="mb-0 text-primary" id="treasury-10y-value">--%</h2>
-                    <small class="text-muted">
-                        <span id="treasury-10y-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="treasury-10y-status">Loading</span>
-                    </div>
+    <!-- Collapsible Section: Market Statistics -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="market-stats">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title">Market Statistics</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-item__label">10-Year Treasury</div>
+                    <div class="stat-item__value stat-item__value--large" id="treasury-10y-value">--%</div>
+                    <div class="stat-item__secondary" id="treasury-10y-change">--</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=yield_curve_10y2y" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">YIELD CURVE (10Y-2Y)</h6>
-                    <h2 class="mb-0" id="yield-curve-value">--%</h2>
-                    <small class="text-muted">
-                        <span id="yield-curve-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="yield-curve-status">Loading</span>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Yield Curve (10Y-2Y)</div>
+                    <div class="stat-item__value" id="yield-curve-value">--%</div>
+                    <div class="stat-item__secondary" id="yield-curve-status">--</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=real_yield_10y" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">REAL YIELD (10Y TIPS)</h6>
-                    <h2 class="mb-0" id="real-yield-value">--%</h2>
-                    <small class="text-muted">
-                        <span id="real-yield-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="real-yield-status">Loading</span>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Yield Curve (10Y-3M)</div>
+                    <div class="stat-item__value" id="yield-curve-3m-value">--%</div>
+                    <div class="stat-item__secondary" id="yield-curve-3m-status">--</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=breakeven_inflation_10y" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">BREAKEVEN INFLATION</h6>
-                    <h2 class="mb-0" id="breakeven-value">--%</h2>
-                    <small class="text-muted">
-                        <span id="breakeven-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="breakeven-status">Loading</span>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Real Yield (10Y TIPS)</div>
+                    <div class="stat-item__value" id="real-yield-value">--%</div>
+                    <div class="stat-item__secondary" id="real-yield-status">--</div>
                 </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<!-- Secondary Metrics Row -->
-<div class="row mb-4">
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=yield_curve_10y3m" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">YIELD CURVE (10Y-3M)</h6>
-                    <h2 class="mb-0" id="yield-curve-3m-value">--%</h2>
-                    <small class="text-muted">
-                        <span id="yield-curve-3m-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="yield-curve-3m-status">Loading</span>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Breakeven Inflation</div>
+                    <div class="stat-item__value" id="breakeven-value">--%</div>
+                    <div class="stat-item__secondary" id="breakeven-status">--</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=cpi_yoy" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">CPI (YoY)</h6>
-                    <h2 class="mb-0" id="cpi-value">--%</h2>
-                    <small class="text-muted">Latest reading</small>
-                    <div class="mt-2">
-                        <span class="badge" id="cpi-status">Loading</span>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">CPI (YoY)</div>
+                    <div class="stat-item__value" id="cpi-value">--%</div>
+                    <div class="stat-item__secondary" id="cpi-status">--</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <a href="/explorer?metric=fed_funds_rate" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">FED FUNDS RATE</h6>
-                    <h2 class="mb-0" id="fed-funds-value">--%</h2>
-                    <small class="text-muted">Upper bound</small>
-                    <div class="mt-2">
-                        <small class="text-muted">Policy rate</small>
-                    </div>
+                <div class="stat-item">
+                    <div class="stat-item__label">Fed Funds Rate</div>
+                    <div class="stat-item__value" id="fed-funds-value">--%</div>
+                    <div class="stat-item__secondary">Policy rate</div>
                 </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-3">
-        <div class="card metric-card">
-            <div class="card-body">
-                <h6 class="text-muted">CURVE STATUS</h6>
-                <h2 class="mb-0" id="curve-status-text">--</h2>
-                <small class="text-muted" id="curve-status-detail">Analyzing...</small>
-                <div class="mt-2">
-                    <span class="badge" id="curve-signal-badge">Loading</span>
+                <div class="stat-item">
+                    <div class="stat-item__label">Curve Status</div>
+                    <div class="stat-item__value" id="curve-status-text">--</div>
+                    <div class="stat-item__secondary" id="curve-status-detail">--</div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Credit Spreads Metrics Row -->
-<div class="row mb-4">
-    <div class="col-12">
-        <h5 class="text-muted mb-3">
-            <i class="bi bi-bank"></i> Credit Markets
-        </h5>
+    <!-- Collapsible Section: Additional Charts -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="additional-charts">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-graph-up"></i> Additional Charts</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">Yield Curve Spreads</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="yield-curve-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="curve-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">Real Yields & Inflation Expectations</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="real-yield-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="inflation-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: var(--space-6);">
+                <h4 style="margin: 0 0 var(--space-3) 0; font-size: var(--text-lg); font-weight: 600;">Credit Spreads</h4>
+                <div class="chart-container" style="height: 400px; margin: 0;">
+                    <canvas id="credit-spreads-chart"></canvas>
+                </div>
+                <div class="time-range-controls" id="credit-timeframe-buttons">
+                    <button type="button" class="time-range-controls__button" data-timeframe="30">1M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="90">3M</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="180">6M</button>
+                    <button type="button" class="time-range-controls__button active" data-timeframe="365">1Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="1825">5Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="3650">10Y</button>
+                    <button type="button" class="time-range-controls__button" data-timeframe="0">All</button>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="col-xl-4 col-md-6 mb-3">
-        <a href="/explorer?metric=hy_spread" class="metric-link">
-            <div class="card metric-card border-danger">
-                <div class="card-body">
-                    <h6 class="text-muted">HIGH-YIELD SPREAD</h6>
-                    <h2 class="mb-0 text-danger" id="hy-spread-value">-- bp</h2>
-                    <small class="text-muted">
-                        <span id="hy-spread-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="hy-spread-status">Loading</span>
+
+    <!-- Collapsible Section: Understanding Rates -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="understanding-rates">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-lightbulb-fill"></i> Understanding Interest Rates</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-grid">
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-percent text-primary"></i> Treasury Yields</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">The 10-year Treasury yield is the benchmark "risk-free" rate. Higher yields = tighter financial conditions, headwind for growth stocks and bonds. Lower yields = easier conditions, tailwind for risk assets.</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-arrow-left-right text-warning"></i> Yield Curve</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">The spread between long and short rates. <strong>Inverted curve</strong> (negative spread) has preceded every recession since 1970. <strong>Steepening</strong> after inversion often signals recession is imminent.</p>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="info-card__title"><i class="bi bi-fire text-danger"></i> Real Yields</div>
+                    <div class="info-card__content">
+                        <p class="mb-0">Real yield = nominal yield minus inflation expectations. Positive real yields = "restrictive" policy. Breakeven inflation shows what markets expect for inflation over the next 10 years.</p>
                     </div>
                 </div>
             </div>
-        </a>
+        </div>
     </div>
 
-    <div class="col-xl-4 col-md-6 mb-3">
-        <a href="/explorer?metric=ig_spread" class="metric-link">
-            <div class="card metric-card">
-                <div class="card-body">
-                    <h6 class="text-muted">INVESTMENT GRADE SPREAD</h6>
-                    <h2 class="mb-0" id="ig-spread-value">-- bp</h2>
-                    <small class="text-muted">
-                        <span id="ig-spread-change">--</span> bps (30d)
-                    </small>
-                    <div class="mt-2">
-                        <span class="badge" id="ig-spread-status">Loading</span>
-                    </div>
-                </div>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-xl-4 col-md-6 mb-3">
-        <div class="card metric-card">
-            <div class="card-body">
-                <h6 class="text-muted">CCC/HY RATIO</h6>
-                <h2 class="mb-0" id="ccc-hy-ratio-value">--x</h2>
-                <small class="text-muted">Distress indicator</small>
-                <div class="mt-2">
-                    <span class="badge" id="ccc-hy-ratio-status">Loading</span>
+    <!-- Collapsible Section: Warning Signs -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="warning-signs">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-exclamation-triangle"></i> Warning Signs</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-card" style="border-left-color: var(--danger-600);">
+                <div class="info-card__content">
+                    <ul class="mb-0">
+                        <li><strong>Yield curve inversion</strong> - When short rates exceed long rates, recession risk rises</li>
+                        <li><strong>Curve steepening after inversion</strong> - Often signals recession is beginning</li>
+                        <li><strong>Real yields rising sharply</strong> - Tightening financial conditions, equity headwind</li>
+                        <li><strong>Breakevens spiking</strong> - Inflation fears increasing, Fed may need to tighten more</li>
+                        <li><strong>10Y above 5%</strong> - Historically restrictive, pressures valuations</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Treasury Yields Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-graph-up"></i> 10-Year Treasury Yield
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="treasury-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
+    <!-- Collapsible Section: Key Levels to Watch -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="key-levels">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-bookmark-check"></i> Key Levels to Watch</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div class="info-card" style="border-left-color: var(--info-600);">
+                <div class="info-card__content">
+                    <ul class="mb-0">
+                        <li><strong>10Y at 4.0%</strong> - Psychologically important level, below = more accommodative</li>
+                        <li><strong>10Y at 5.0%</strong> - "Restrictive" territory, equity multiple compression</li>
+                        <li><strong>Curve at 0%</strong> - Inversion/un-inversion threshold</li>
+                        <li><strong>Real yield at 2%</strong> - Considered "tight" policy stance</li>
+                        <li><strong>Breakeven at 2.5%</strong> - Above Fed's 2% target = inflation concerns</li>
+                    </ul>
                 </div>
-            </div>
-            <div class="card-body">
-                <canvas id="treasury-yield-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> The 10-year Treasury yield is the benchmark for mortgage rates, corporate borrowing costs, and equity valuations. Grey bands = recession periods.
-                </small>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Yield Curve Spreads Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-arrow-left-right"></i> Yield Curve Spreads
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="curve-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="yield-curve-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Yield curve inversions (negative spreads) have preceded every U.S. recession since 1970. The 10Y-3M spread is Fed's preferred measure. Zero line = inversion threshold.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Real Yields & Inflation Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-fire"></i> Real Yields & Inflation Expectations
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="inflation-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="real-yield-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Real yield = nominal yield minus inflation expectations. Positive real yields mean policy is "restrictive." Breakeven inflation shows market's 10-year inflation forecast.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Credit Spreads Chart -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-bank"></i> Credit Spreads
-                </h5>
-                <div class="btn-group btn-group-sm" role="group" id="credit-timeframe-buttons">
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="30">1M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="90">3M</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="180">6M</button>
-                    <button type="button" class="btn btn-outline-primary active" data-timeframe="365">1Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="1825">5Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="3650">10Y</button>
-                    <button type="button" class="btn btn-outline-primary" data-timeframe="0">All</button>
-                </div>
-            </div>
-            <div class="card-body">
-                <canvas id="credit-spreads-chart"></canvas>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> Credit spreads measure risk premium over Treasuries. Tight spreads = complacency. Widening spreads = stress. HY at 300bp = first warning, 500bp = significant stress, 800bp+ = crisis.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Bond ETF Performance -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-bar-chart-line"></i> Treasury ETF Performance
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>ETF</th>
-                                <th>Name</th>
-                                <th>Price</th>
-                                <th>5-Day</th>
-                                <th>30-Day</th>
-                                <th>Duration</th>
-                            </tr>
-                        </thead>
-                        <tbody id="bond-etf-table">
-                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="card-footer">
-                <small class="text-muted">
+    <!-- Collapsible Section: ETF Performance -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="etf-performance">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-bar-chart-line"></i> Treasury ETF Performance</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="background: white; padding: var(--space-4); border-radius: 8px;">
+                <table class="etf-table">
+                    <thead>
+                        <tr>
+                            <th>ETF</th>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>5-Day</th>
+                            <th>30-Day</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bond-etf-table">
+                        <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+                    </tbody>
+                </table>
+                <div style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);">
                     <i class="bi bi-info-circle"></i> Bond prices move inversely to yields. TLT (long duration) is most sensitive to rate changes. SHY (short duration) is most stable.
-                </small>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Economic Indicators -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header bg-secondary text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-bar-chart-line-fill"></i> Economic Indicators
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <a href="/explorer?metric=consumer_confidence" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">Consumer Confidence</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="consumer-confidence-value">--</h3>
-                                        <span class="badge" id="consumer-confidence-percentile">--</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <span id="consumer-confidence-change">--</span>% (30d)
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="/explorer?metric=m2_money_supply" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">M2 Money Supply</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="m2-value">--</h3>
-                                        <span class="badge" id="m2-percentile">--</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <span id="m2-yoy-change">--</span>% YoY
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="/explorer?metric=cpi" class="text-decoration-none">
-                            <div class="card h-100 metric-card">
-                                <div class="card-body">
-                                    <h6 class="text-muted">CPI (Inflation)</h6>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h3 class="mb-0" id="cpi-value">--</h3>
-                                        <span class="badge" id="cpi-percentile">--</span>
-                                    </div>
-                                    <small class="text-muted">
-                                        <span id="cpi-yoy-change">--</span>% YoY
-                                    </small>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-                <div class="mt-2">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Key economic health indicators. Consumer Confidence leads spending. M2 tracks Fed liquidity. CPI measures inflation pressure.
-                    </small>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Educational Sections -->
-<div class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Warning Signs</h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0 small">
-                    <li><strong>Yield curve inversion</strong> - When short rates exceed long rates, recession risk rises</li>
-                    <li><strong>Curve steepening after inversion</strong> - Often signals recession is beginning</li>
-                    <li><strong>Real yields rising sharply</strong> - Tightening financial conditions, equity headwind</li>
-                    <li><strong>Breakevens spiking</strong> - Inflation fears increasing, Fed may need to tighten more</li>
-                    <li><strong>10Y above 5%</strong> - Historically restrictive, pressures valuations</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-info text-white">
-                <h6 class="mb-0"><i class="bi bi-bookmark-check"></i> Key Levels to Watch</h6>
-            </div>
-            <div class="card-body">
-                <ul class="mb-0 small">
-                    <li><strong>10Y at 4.0%</strong> - Psychologically important level, below = more accommodative</li>
-                    <li><strong>10Y at 5.0%</strong> - "Restrictive" territory, equity multiple compression</li>
-                    <li><strong>Curve at 0%</strong> - Inversion/un-inversion threshold</li>
-                    <li><strong>Real yield at 2%</strong> - Considered "tight" policy stance</li>
-                    <li><strong>Breakeven at 2.5%</strong> - Above Fed's 2% target = inflation concerns</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Historical Context -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-clock-history"></i> Rate Cycle Context
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <h6>Yield Curve as Predictor</h6>
-                        <p class="text-muted small mb-0">An inverted yield curve has preceded every U.S. recession since 1970 with a 6-18 month lead time. The 10Y-3M spread is the Fed's preferred measure.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6>Real Yields & Policy</h6>
-                        <p class="text-muted small mb-0">The Fed targets a "neutral" real rate around 0.5-1%. Above 2% is considered restrictive. Negative real yields (2020-2022) were extremely accommodative.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6>Duration Risk</h6>
-                        <p class="text-muted small mb-0">Long-duration bonds (TLT) can drop 20%+ when rates rise 1%. Short-duration (SHY) is safer but lower yielding. Duration = sensitivity to rate changes.</p>
-                    </div>
-                    <div class="col-md-3">
-                        <h6>Rates & Equities</h6>
-                        <p class="text-muted small mb-0">Rising rates compress equity multiples, especially for growth stocks. The "equity risk premium" (earnings yield minus 10Y) is key for valuations.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+</main>
 {% endblock %}
 
 {% block extra_js %}
@@ -676,22 +728,12 @@ async function loadRatesData() {
             fullTreasury10yData = treasury10yData;
             const current = treasury10yData.values[treasury10yData.values.length - 1];
             document.getElementById('treasury-10y-value').textContent = current.toFixed(2) + '%';
+            document.getElementById('key-treasury-10y-value').textContent = current.toFixed(2) + '%';
 
             if (treasury10yData.values.length > 30) {
                 const change30d = (current - treasury10yData.values[treasury10yData.values.length - 31]) * 100;
-                document.getElementById('treasury-10y-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-
-                const statusEl = document.getElementById('treasury-10y-status');
-                if (current > 4.5) {
-                    statusEl.textContent = 'ELEVATED';
-                    statusEl.className = 'badge bg-warning';
-                } else if (current > 3.5) {
-                    statusEl.textContent = 'NORMAL';
-                    statusEl.className = 'badge bg-secondary';
-                } else {
-                    statusEl.textContent = 'LOW';
-                    statusEl.className = 'badge bg-success';
-                }
+                document.getElementById('treasury-10y-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0) + ' bps (30d)';
+                document.getElementById('key-treasury-10y-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0) + ' bps (30d)';
             }
         }
 
@@ -703,23 +745,11 @@ async function loadRatesData() {
             fullYieldCurve10y2yData = yc10y2yData;
             const current = yc10y2yData.values[yc10y2yData.values.length - 1];
             document.getElementById('yield-curve-value').textContent = (current * 100).toFixed(0) + ' bps';
+            document.getElementById('key-yield-curve-value').textContent = (current * 100).toFixed(0) + ' bps';
 
-            if (yc10y2yData.values.length > 30) {
-                const change30d = (current - yc10y2yData.values[yc10y2yData.values.length - 31]) * 100;
-                document.getElementById('yield-curve-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-            }
-
-            const statusEl = document.getElementById('yield-curve-status');
-            if (current < 0) {
-                statusEl.textContent = 'INVERTED';
-                statusEl.className = 'badge bg-danger';
-            } else if (current < 0.5) {
-                statusEl.textContent = 'FLAT';
-                statusEl.className = 'badge bg-warning';
-            } else {
-                statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-success';
-            }
+            const statusText = current < 0 ? 'Inverted' : current < 0.5 ? 'Flat' : 'Normal';
+            document.getElementById('yield-curve-status').textContent = statusText;
+            document.getElementById('key-yield-curve-status').textContent = statusText;
         }
 
         // Load Yield Curve 10Y-3M
@@ -731,22 +761,8 @@ async function loadRatesData() {
             const current = yc10y3mData.values[yc10y3mData.values.length - 1];
             document.getElementById('yield-curve-3m-value').textContent = (current * 100).toFixed(0) + ' bps';
 
-            if (yc10y3mData.values.length > 30) {
-                const change30d = (current - yc10y3mData.values[yc10y3mData.values.length - 31]) * 100;
-                document.getElementById('yield-curve-3m-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-            }
-
-            const statusEl = document.getElementById('yield-curve-3m-status');
-            if (current < 0) {
-                statusEl.textContent = 'INVERTED';
-                statusEl.className = 'badge bg-danger';
-            } else if (current < 0.5) {
-                statusEl.textContent = 'FLAT';
-                statusEl.className = 'badge bg-warning';
-            } else {
-                statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-success';
-            }
+            const statusText = current < 0 ? 'Inverted' : current < 0.5 ? 'Flat' : 'Normal';
+            document.getElementById('yield-curve-3m-status').textContent = statusText;
 
             // Update curve status summary
             updateCurveStatus(yc10y2yData, yc10y3mData);
@@ -760,26 +776,10 @@ async function loadRatesData() {
             fullRealYieldData = realYieldData;
             const current = realYieldData.values[realYieldData.values.length - 1];
             document.getElementById('real-yield-value').textContent = current.toFixed(2) + '%';
+            document.getElementById('key-real-yield-value').textContent = current.toFixed(2) + '%';
 
-            if (realYieldData.values.length > 30) {
-                const change30d = (current - realYieldData.values[realYieldData.values.length - 31]) * 100;
-                document.getElementById('real-yield-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-            }
-
-            const statusEl = document.getElementById('real-yield-status');
-            if (current > 2) {
-                statusEl.textContent = 'RESTRICTIVE';
-                statusEl.className = 'badge bg-danger';
-            } else if (current > 0.5) {
-                statusEl.textContent = 'TIGHT';
-                statusEl.className = 'badge bg-warning';
-            } else if (current > 0) {
-                statusEl.textContent = 'NEUTRAL';
-                statusEl.className = 'badge bg-secondary';
-            } else {
-                statusEl.textContent = 'ACCOMMODATIVE';
-                statusEl.className = 'badge bg-success';
-            }
+            const statusText = current > 2 ? 'Restrictive' : current > 0.5 ? 'Tight' : current > 0 ? 'Neutral' : 'Accommodative';
+            document.getElementById('real-yield-status').textContent = statusText;
         }
 
         // Load Breakeven Inflation
@@ -790,23 +790,10 @@ async function loadRatesData() {
             fullBreakevenData = breakevenData;
             const current = breakevenData.values[breakevenData.values.length - 1];
             document.getElementById('breakeven-value').textContent = current.toFixed(2) + '%';
+            document.getElementById('key-breakeven-value').textContent = current.toFixed(2) + '%';
 
-            if (breakevenData.values.length > 30) {
-                const change30d = (current - breakevenData.values[breakevenData.values.length - 31]) * 100;
-                document.getElementById('breakeven-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-            }
-
-            const statusEl = document.getElementById('breakeven-status');
-            if (current > 2.5) {
-                statusEl.textContent = 'ELEVATED';
-                statusEl.className = 'badge bg-warning';
-            } else if (current >= 2.0) {
-                statusEl.textContent = 'AT TARGET';
-                statusEl.className = 'badge bg-success';
-            } else {
-                statusEl.textContent = 'BELOW TARGET';
-                statusEl.className = 'badge bg-info';
-            }
+            const statusText = current > 2.5 ? 'Elevated' : current >= 2.0 ? 'At Target' : 'Below Target';
+            document.getElementById('breakeven-status').textContent = statusText;
         }
 
         // Load CPI
@@ -817,17 +804,8 @@ async function loadRatesData() {
             const current = cpiData.values[cpiData.values.length - 1];
             document.getElementById('cpi-value').textContent = current.toFixed(1) + '%';
 
-            const statusEl = document.getElementById('cpi-status');
-            if (current > 3) {
-                statusEl.textContent = 'ABOVE TARGET';
-                statusEl.className = 'badge bg-warning';
-            } else if (current >= 1.5) {
-                statusEl.textContent = 'NEAR TARGET';
-                statusEl.className = 'badge bg-success';
-            } else {
-                statusEl.textContent = 'BELOW TARGET';
-                statusEl.className = 'badge bg-info';
-            }
+            const statusText = current > 3 ? 'Above Target' : current >= 1.5 ? 'Near Target' : 'Below Target';
+            document.getElementById('cpi-status').textContent = statusText;
         }
 
         // Load Fed Funds Rate
@@ -839,20 +817,21 @@ async function loadRatesData() {
             document.getElementById('fed-funds-value').textContent = current.toFixed(2) + '%';
         }
 
-        // Load Bond ETF data
-        await loadBondETFs();
-
         // Load Credit Spreads
         await loadCreditSpreads();
 
-        // Load Economic Indicators
-        await loadEconomicIndicators();
+        // Load Bond ETFs
+        await loadBondETFs();
 
         // Build charts
         buildTreasuryChart();
         buildYieldCurveChart();
         buildRealYieldChart();
         buildCreditSpreadsChart();
+
+        // Update last updated time
+        const now = new Date();
+        document.getElementById('last-updated-time').textContent = now.toLocaleString();
 
     } catch (error) {
         console.error('Error loading rates data:', error);
@@ -867,29 +846,8 @@ async function loadCreditSpreads() {
 
         if (hyData && hyData.values && hyData.values.length > 0) {
             fullHYSpreadData = hyData;
-            // FRED data is in percentage form (e.g., 3.5 = 350bp), convert to basis points
             const currentBps = hyData.values[hyData.values.length - 1] * 100;
-            document.getElementById('hy-spread-value').textContent = `${currentBps.toFixed(0)} bp`;
-
-            if (hyData.values.length > 30) {
-                const change30d = (hyData.values[hyData.values.length - 1] - hyData.values[hyData.values.length - 31]) * 100;
-                document.getElementById('hy-spread-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-            }
-
-            const statusEl = document.getElementById('hy-spread-status');
-            if (currentBps > 500) {
-                statusEl.textContent = 'STRESS';
-                statusEl.className = 'badge bg-danger';
-            } else if (currentBps > 350) {
-                statusEl.textContent = 'ELEVATED';
-                statusEl.className = 'badge bg-warning';
-            } else if (currentBps > 300) {
-                statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-secondary';
-            } else {
-                statusEl.textContent = 'TIGHT';
-                statusEl.className = 'badge bg-info';
-            }
+            document.getElementById('key-hy-spread-value').textContent = `${currentBps.toFixed(0)} bp`;
         }
 
         // Load IG Spread
@@ -898,110 +856,18 @@ async function loadCreditSpreads() {
 
         if (igData && igData.values && igData.values.length > 0) {
             fullIGSpreadData = igData;
-            // FRED data is in percentage form (e.g., 1.2 = 120bp), convert to basis points
-            const currentBps = igData.values[igData.values.length - 1] * 100;
-            document.getElementById('ig-spread-value').textContent = `${currentBps.toFixed(0)} bp`;
-
-            if (igData.values.length > 30) {
-                const change30d = (igData.values[igData.values.length - 1] - igData.values[igData.values.length - 31]) * 100;
-                document.getElementById('ig-spread-change').textContent = (change30d >= 0 ? '+' : '') + change30d.toFixed(0);
-            }
-
-            const statusEl = document.getElementById('ig-spread-status');
-            if (currentBps > 150) {
-                statusEl.textContent = 'STRESS';
-                statusEl.className = 'badge bg-danger';
-            } else if (currentBps > 120) {
-                statusEl.textContent = 'ELEVATED';
-                statusEl.className = 'badge bg-warning';
-            } else if (currentBps > 100) {
-                statusEl.textContent = 'NORMAL';
-                statusEl.className = 'badge bg-secondary';
-            } else {
-                statusEl.textContent = 'TIGHT';
-                statusEl.className = 'badge bg-info';
-            }
         }
 
-        // Load CCC Spread for ratio calculation
+        // Load CCC Spread
         const cccResponse = await fetch('/api/metrics/ccc_spread');
         const cccData = await cccResponse.json();
 
         if (cccData && cccData.values && cccData.values.length > 0) {
             fullCCCSpreadData = cccData;
-
-            // Calculate CCC/HY ratio
-            if (fullHYSpreadData && fullHYSpreadData.values.length > 0) {
-                const cccCurrent = cccData.values[cccData.values.length - 1];
-                const hyCurrent = fullHYSpreadData.values[fullHYSpreadData.values.length - 1];
-                const ratio = cccCurrent / hyCurrent;
-
-                document.getElementById('ccc-hy-ratio-value').textContent = ratio.toFixed(2) + 'x';
-
-                const statusEl = document.getElementById('ccc-hy-ratio-status');
-                if (ratio > 3.5) {
-                    statusEl.textContent = 'DISTRESS';
-                    statusEl.className = 'badge bg-danger';
-                } else if (ratio > 3.0) {
-                    statusEl.textContent = 'ELEVATED';
-                    statusEl.className = 'badge bg-warning';
-                } else {
-                    statusEl.textContent = 'NORMAL';
-                    statusEl.className = 'badge bg-secondary';
-                }
-            }
         }
 
     } catch (error) {
         console.error('Error loading credit spreads:', error);
-    }
-}
-
-async function loadEconomicIndicators() {
-    try {
-        const response = await fetch('/api/dashboard');
-        const data = await response.json();
-
-        // Update economic indicators
-        if (data.metrics.economic_indicators) {
-            const econ = data.metrics.economic_indicators;
-
-            if (econ.consumer_confidence) {
-                document.getElementById('consumer-confidence-value').textContent = econ.consumer_confidence.current.toFixed(1);
-                document.getElementById('consumer-confidence-change').textContent =
-                    (econ.consumer_confidence.change_30d >= 0 ? '+' : '') + econ.consumer_confidence.change_30d.toFixed(1);
-                const ccBadge = document.getElementById('consumer-confidence-percentile');
-                ccBadge.textContent = `${econ.consumer_confidence.percentile.toFixed(0)}%ile`;
-                // Lower confidence = more warning
-                ccBadge.className = econ.consumer_confidence.percentile < 20 ? 'badge bg-danger' :
-                                    econ.consumer_confidence.percentile < 40 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-
-            if (econ.m2_money_supply) {
-                document.getElementById('m2-value').textContent = '$' + econ.m2_money_supply.current.toFixed(1) + 'T';
-                document.getElementById('m2-yoy-change').textContent =
-                    (econ.m2_money_supply.yoy_change >= 0 ? '+' : '') + econ.m2_money_supply.yoy_change.toFixed(1);
-                const m2Badge = document.getElementById('m2-percentile');
-                m2Badge.textContent = `${econ.m2_money_supply.percentile.toFixed(0)}%ile`;
-                // YoY change is key - negative is very unusual
-                m2Badge.className = econ.m2_money_supply.yoy_change < 0 ? 'badge bg-danger' :
-                                    econ.m2_money_supply.yoy_change > 10 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-
-            if (econ.cpi) {
-                document.getElementById('cpi-value').textContent = econ.cpi.current.toFixed(1);
-                document.getElementById('cpi-yoy-change').textContent =
-                    (econ.cpi.yoy_change >= 0 ? '+' : '') + econ.cpi.yoy_change.toFixed(1);
-                const cpiBadge = document.getElementById('cpi-percentile');
-                cpiBadge.textContent = `${econ.cpi.percentile.toFixed(0)}%ile`;
-                // High inflation = warning
-                cpiBadge.className = econ.cpi.yoy_change > 5 ? 'badge bg-danger' :
-                                    econ.cpi.yoy_change > 3 ? 'badge bg-warning' : 'badge bg-secondary';
-            }
-        }
-
-    } catch (error) {
-        console.error('Error loading economic indicators:', error);
     }
 }
 
@@ -1011,32 +877,22 @@ function updateCurveStatus(yc10y2yData, yc10y3mData) {
 
     const statusText = document.getElementById('curve-status-text');
     const statusDetail = document.getElementById('curve-status-detail');
-    const signalBadge = document.getElementById('curve-signal-badge');
 
-    // Check for inversion
     const is10y2yInverted = current10y2y < 0;
     const is10y3mInverted = current10y3m < 0;
 
     if (is10y2yInverted && is10y3mInverted) {
         statusText.textContent = 'Inverted';
         statusDetail.textContent = 'Both spreads negative - recession risk elevated';
-        signalBadge.textContent = 'WARNING';
-        signalBadge.className = 'badge bg-danger';
     } else if (is10y2yInverted || is10y3mInverted) {
         statusText.textContent = 'Mixed';
         statusDetail.textContent = 'Partial inversion - monitor closely';
-        signalBadge.textContent = 'CAUTION';
-        signalBadge.className = 'badge bg-warning';
     } else if (current10y2y < 0.25 || current10y3m < 0.25) {
         statusText.textContent = 'Flat';
         statusDetail.textContent = 'Curve is relatively flat';
-        signalBadge.textContent = 'NEUTRAL';
-        signalBadge.className = 'badge bg-secondary';
     } else {
         statusText.textContent = 'Normal';
         statusDetail.textContent = 'Positively sloped curve';
-        signalBadge.textContent = 'HEALTHY';
-        signalBadge.className = 'badge bg-success';
     }
 }
 
@@ -1052,43 +908,6 @@ async function loadBondETFs() {
     const rows = [];
 
     for (const etf of etfs) {
-        try {
-            // Try to load ETF data - these may or may not exist
-            const response = await fetch(`/api/metrics/${etf.ticker.toLowerCase()}_price`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data && data.values && data.values.length > 0) {
-                    const current = data.values[data.values.length - 1];
-                    let change5d = '--';
-                    let change30d = '--';
-
-                    if (data.values.length > 5) {
-                        const pct5d = ((current / data.values[data.values.length - 6]) - 1) * 100;
-                        change5d = `<span class="${pct5d >= 0 ? 'text-success' : 'text-danger'}">${pct5d >= 0 ? '+' : ''}${pct5d.toFixed(1)}%</span>`;
-                    }
-                    if (data.values.length > 30) {
-                        const pct30d = ((current / data.values[data.values.length - 31]) - 1) * 100;
-                        change30d = `<span class="${pct30d >= 0 ? 'text-success' : 'text-danger'}">${pct30d >= 0 ? '+' : ''}${pct30d.toFixed(1)}%</span>`;
-                    }
-
-                    rows.push(`
-                        <tr>
-                            <td><strong>${etf.ticker}</strong></td>
-                            <td>${etf.name}</td>
-                            <td>$${current.toFixed(2)}</td>
-                            <td>${change5d}</td>
-                            <td>${change30d}</td>
-                            <td><small class="text-muted">${etf.duration}</small></td>
-                        </tr>
-                    `);
-                    continue;
-                }
-            }
-        } catch (e) {
-            // ETF data not available
-        }
-
-        // Fallback row
         rows.push(`
             <tr>
                 <td><strong>${etf.ticker}</strong></td>
@@ -1135,11 +954,14 @@ function buildTreasuryChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
                 annotation: { annotations: recessionAnnotations },
                 tooltip: {
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
@@ -1166,7 +988,6 @@ function buildYieldCurveChart() {
     const filtered10y2y = filterByTimeframe(fullYieldCurve10y2yData.dates, fullYieldCurve10y2yData.values, curveTimeframe);
     if (filtered10y2y.dates.length === 0) return;
 
-    // Align 10Y-3M data to 10Y-2Y dates
     let aligned10y3m = null;
     if (fullYieldCurve10y3mData) {
         aligned10y3m = alignDataByDate(filtered10y2y.dates, fullYieldCurve10y3mData.dates, fullYieldCurve10y3mData.values);
@@ -1177,7 +998,6 @@ function buildYieldCurveChart() {
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Add zero line annotation
     recessionAnnotations['zeroLine'] = {
         type: 'line',
         yMin: 0,
@@ -1199,7 +1019,7 @@ function buildYieldCurveChart() {
 
     const datasets = [{
         label: '10Y-2Y Spread',
-        data: filtered10y2y.values.map(v => v * 100), // Convert to bps
+        data: filtered10y2y.values.map(v => v * 100),
         borderColor: 'rgb(13, 110, 253)',
         backgroundColor: 'rgba(13, 110, 253, 0.1)',
         borderWidth: 2,
@@ -1211,7 +1031,7 @@ function buildYieldCurveChart() {
     if (aligned10y3m) {
         datasets.push({
             label: '10Y-3M Spread',
-            data: aligned10y3m.map(v => v != null ? v * 100 : null), // Convert to bps
+            data: aligned10y3m.map(v => v != null ? v * 100 : null),
             borderColor: 'rgb(255, 193, 7)',
             borderWidth: 2,
             fill: false,
@@ -1229,11 +1049,14 @@ function buildYieldCurveChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
                 annotation: { annotations: recessionAnnotations },
                 tooltip: {
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + context.parsed.y.toFixed(0) + ' bps';
@@ -1260,7 +1083,6 @@ function buildRealYieldChart() {
     const filteredReal = filterByTimeframe(fullRealYieldData.dates, fullRealYieldData.values, inflationTimeframe);
     if (filteredReal.dates.length === 0) return;
 
-    // Align breakeven data
     let alignedBreakeven = null;
     if (fullBreakevenData) {
         alignedBreakeven = alignDataByDate(filteredReal.dates, fullBreakevenData.dates, fullBreakevenData.values);
@@ -1271,7 +1093,6 @@ function buildRealYieldChart() {
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Add zero line for real yields
     recessionAnnotations['zeroLine'] = {
         type: 'line',
         yMin: 0,
@@ -1317,11 +1138,14 @@ function buildRealYieldChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
                 annotation: { annotations: recessionAnnotations },
                 tooltip: {
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
@@ -1358,10 +1182,8 @@ function buildCreditSpreadsChart() {
     const filteredHY = filterByTimeframe(fullHYSpreadData.dates, fullHYSpreadData.values, creditTimeframe);
     if (filteredHY.dates.length === 0) return;
 
-    // Convert HY values from percentage to basis points
     const hyBps = filteredHY.values.map(v => v * 100);
 
-    // Align IG and CCC data to HY dates and convert to basis points
     let alignedIGBps = null;
     let alignedCCCBps = null;
     if (fullIGSpreadData) {
@@ -1378,7 +1200,6 @@ function buildCreditSpreadsChart() {
     const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
     const timeUnit = getTimeUnit(startDate, endDate);
 
-    // Add warning level annotations
     recessionAnnotations['warningLine'] = {
         type: 'line',
         yMin: 300,
@@ -1392,22 +1213,6 @@ function buildCreditSpreadsChart() {
             position: 'end',
             backgroundColor: 'rgba(255, 193, 7, 0.8)',
             color: 'black',
-            font: { size: 9 }
-        }
-    };
-    recessionAnnotations['stressLine'] = {
-        type: 'line',
-        yMin: 500,
-        yMax: 500,
-        borderColor: 'rgba(220, 53, 69, 0.6)',
-        borderWidth: 1,
-        borderDash: [5, 5],
-        label: {
-            display: true,
-            content: 'Stress (500bp)',
-            position: 'end',
-            backgroundColor: 'rgba(220, 53, 69, 0.8)',
-            color: 'white',
             font: { size: 9 }
         }
     };
@@ -1458,11 +1263,14 @@ function buildCreditSpreadsChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { position: 'top' },
                 annotation: { annotations: recessionAnnotations },
                 tooltip: {
+                    mode: 'index',
+                    intersect: false,
                     callbacks: {
                         label: function(context) {
                             return context.dataset.label + ': ' + context.parsed.y.toFixed(0) + ' bp';
@@ -1491,7 +1299,7 @@ async function loadRatesSummary() {
 
         const contentDiv = document.getElementById('rates-summary-content');
         const errorDiv = document.getElementById('rates-summary-error');
-        const timestampSpan = document.getElementById('rates-summary-timestamp');
+        const timestampDiv = document.getElementById('rates-summary-timestamp');
 
         if (data.error) {
             contentDiv.classList.add('d-none');
@@ -1499,7 +1307,6 @@ async function loadRatesSummary() {
             return;
         }
 
-        // Use marked library for markdown rendering if available
         if (typeof marked !== 'undefined') {
             marked.setOptions({ breaks: true, gfm: true, sanitize: false });
             contentDiv.innerHTML = marked.parse(data.summary);
@@ -1514,7 +1321,7 @@ async function loadRatesSummary() {
             const genDate = new Date(data.generated_at);
             const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            timestampSpan.textContent = `${dateStr} at ${timeStr}`;
+            timestampDiv.textContent = `Generated: ${dateStr} at ${timeStr}`;
         }
 
     } catch (error) {
@@ -1524,12 +1331,33 @@ async function loadRatesSummary() {
     }
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadRatesSummary();
-    loadRatesData();
+// Initialize collapsible sections
+function initCollapsibleSections() {
+    const sections = document.querySelectorAll('.collapsible-section');
 
-    // Treasury chart timeframe buttons
+    sections.forEach(section => {
+        const header = section.querySelector('.collapsible-section__header');
+        const content = section.querySelector('.collapsible-section__content');
+
+        header.addEventListener('click', () => {
+            const isExpanded = header.getAttribute('aria-expanded') === 'true';
+
+            header.setAttribute('aria-expanded', !isExpanded);
+            content.hidden = isExpanded;
+        });
+
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                header.click();
+            }
+        });
+    });
+}
+
+// Initialize time range controls
+function initTimeRangeControls() {
+    // Treasury chart
     document.querySelectorAll('#treasury-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#treasury-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1539,7 +1367,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Curve chart timeframe buttons
+    // Curve chart
     document.querySelectorAll('#curve-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#curve-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1549,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Inflation chart timeframe buttons
+    // Inflation chart
     document.querySelectorAll('#inflation-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#inflation-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1559,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Credit spreads timeframe buttons
+    // Credit spreads
     document.querySelectorAll('#credit-timeframe-buttons button[data-timeframe]').forEach(button => {
         button.addEventListener('click', function() {
             document.querySelectorAll('#credit-timeframe-buttons button').forEach(btn => btn.classList.remove('active'));
@@ -1568,6 +1396,14 @@ document.addEventListener('DOMContentLoaded', function() {
             buildCreditSpreadsChart();
         });
     });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRatesSummary();
+    loadRatesData();
+    initCollapsibleSections();
+    initTimeRangeControls();
 });
 </script>
 {% endblock %}

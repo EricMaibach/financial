@@ -8,7 +8,6 @@ const viewports = [
 
 const pages = [
   '/',
-  '/credit',
   '/equities',
   '/rates',
   '/portfolio',
