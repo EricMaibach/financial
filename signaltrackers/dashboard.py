@@ -1396,8 +1396,8 @@ def index():
 
 @app.route('/credit')
 def credit():
-    """Credit markets page - redirects to rates (credit merged into rates)."""
-    return redirect('/rates')
+    """Credit markets page."""
+    return render_template('credit.html')
 
 
 @app.route('/equity')
