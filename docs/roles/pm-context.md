@@ -50,6 +50,32 @@ The product has been perceived as narrowly focused on gold/credit divergence. Th
 > - **View milestones:** https://github.com/EricMaibach/financial/milestones
 > - **View project board:** https://github.com/users/EricMaibach/projects/1
 
+### Phase 3: Mobile-First Redesign - 7/12 Complete (58%)
+
+**✅ COMPLETED (Feb 21, 2026):**
+- **Feature 3.1: Mobile-First Content Pages** (#81)
+  - All 7 content pages (Explorer + 6 asset classes) redesigned mobile-first
+  - Charts visible without scrolling on mobile
+  - 50%+ scroll reduction achieved on all pages
+  - Design review: 5/5 Excellent rating
+  - QA validation: 21/21 tests passed, 0 issues
+  - **Major milestone** - Product's analytical core now mobile-excellent
+
+**🔄 IN PROGRESS:**
+- **Feature 3.2: Chatbot Mobile-First Redesign** (#82)
+  - Status: Ready for engineering implementation
+  - Design spec: Approved (docs/specs/feature-3.2-chatbot-mobile-redesign.md)
+  - User stories: US-3.2.1 through US-3.2.4 created and approved
+  - Priority: P1 (critical mobile UX issue - chatbot blocks 90%+ of viewport)
+  - Next: Engineer to start US-3.2.1 implementation
+
+**📋 TECHNICAL DEBT (P2):**
+- Bug #55: Update deprecated Anthropic API parameter (thinking.type)
+- Bug #56: Verify Anthropic model name (claude-opus-4-6 validity)
+- Both: < 2 hours total effort, non-blocking
+
+**Priority recommendation:** Complete Feature 3.2 (mobile-first momentum), then address bugs.
+
 ---
 
 ## Backlog (Future Consideration)
@@ -95,66 +121,10 @@ Explicitly out of scope to maintain focus:
 
 ## Key Decisions
 
-### Feature 2.1: Remove Divergence Page, Don't Replace (Feb 2026)
-**Decision**: Kill the standalone divergence page entirely. Do NOT create a replacement "signals page."
-
-**Context**:
-- Original plan was to transform `/divergence` into comprehensive `/signals` page with 7+ indicators
-- PM analysis showed this would violate "synthesis over data dump" principle
-- Homepage already shows 3 key signal cards; asset class pages provide deep dives
-- Creating signals page risks becoming a "ghost page" that adds complexity without clear value
-
-**Rationale**:
-- Simpler information architecture: Homepage → Asset Classes → Explorer
-- Aligns with product vision (synthesis, not more dashboards)
-- De-emphasizes divergence without giving cross-market signals MORE prominence
-- Users who want signal details can use /explorer or asset class pages
-
-**Implementation**:
-- Remove `/divergence` route and navigation item
-- Redirect `/divergence` → `/credit` (backward compatibility)
-- Keep 3 signal cards on homepage (Yield Curve, VIX, Gold/Credit)
-- Each card links to /explorer for that specific metric
-- Update or remove "View All Indicators →" link on homepage
-
-### UX Pattern: Progressive Disclosure (Feb 2026)
-**Decision**: Establish divider/chevron expansion control as the standard pattern for progressive disclosure across the app.
-
-**Context**:
-- US-2.0.3 implemented a refined expansion control for Market Conditions section
-- Pattern uses horizontal divider lines with centered chevron/text: `─────────── ⌄ Show Details ───────────`
-- More subtle and elegant than traditional buttons
-
-**Impact**:
-- US-2.0.2 (What's Moving Today) updated to follow same pattern for consistency
-- Future sections using progressive disclosure should use this pattern
-- Engineers may extract to reusable CSS classes (`.expansion-control`, `.expansion-button`)
-
-**Rationale**:
-- Visual consistency across homepage sections
-- Reduces cognitive load (same interaction pattern everywhere)
-- Subtle styling doesn't compete with content
-- Establishes scalable design system
-
-### Feature 2.2: Portfolio Templates Cancelled (Feb 2026)
-**Decision**: Remove Feature 2.2 (Portfolio Templates) from roadmap entirely.
-
-**Context**:
-- Feature proposed "Start from Template" with 5 preset allocations (60/40, All-Weather, etc.)
-- Intended to help users with empty portfolio page
-- Target users are individual investors with $100K+ portfolios
-
-**Rationale**:
-- Templates assume uninvested capital needing allocation
-- Actual user scenario: existing portfolios seeking market intelligence on current holdings
-- Templates won't match users' existing allocations → low adoption likely
-- Feature solves theoretical problem, not actual user need
-- Better to focus resources on trial mode and onboarding (Phase 3) to reduce barriers to entry
-
-**Outcome**:
-- Feature 2.2 closed (Issue #6)
-- Phase 2 milestone now complete (13/13 issues closed)
-- Next priority: Phase 3 features (Hosted Trial Mode, Onboarding Wizard)
+### Completed Phase 2 Decisions (Feb 2026)
+**Feature 2.1**: Divergence page removed entirely (no replacement signals page) - Simpler IA, aligns with synthesis principle
+**Feature 2.2**: Portfolio Templates cancelled - Templates don't serve actual user needs (existing portfolios, not allocating new capital)
+**UX Pattern**: Divider/chevron established as standard progressive disclosure pattern - Visual consistency across app
 
 ### Phase 3 Pivot: Mobile-First, Pre-Launch Focus (Feb 2026)
 **Decision**: Rescope Phase 3 from "Onboarding & Trial" to "Mobile-First Redesign" with pre-launch quality focus.
@@ -299,43 +269,33 @@ UI Designer created comprehensive spec and asked 5 implementation questions. PM 
 
 ## Technical Debt & Cleanup
 
-Items to address alongside feature work:
+**Active Technical Debt:**
+- [ ] **Bug #55** (P2): Update deprecated `thinking.type=enabled` → `adaptive` in ai_summary.py - Affects AI performance
+- [ ] **Bug #56** (P2): Verify/update Anthropic model name `claude-opus-4-6` - Potential API errors
 
+**Deferred Cleanup:**
 - [ ] Remove/rename `README_DIVERGENCE.md` (reinforces old positioning)
 - [ ] Audit AI prompts for thesis-specific language
 - [ ] Review homepage template for divergence-heavy content
-- [ ] Update any marketing copy in templates
 
 ---
 
-## Changelog
+## Recent Changelog
 
 | Date | Change | Author |
 |------|--------|--------|
-| 2026-02-09 | Initial roadmap created | PM |
-| 2026-02-09 | Phase 1.1 Homepage Overhaul marked COMPLETE | PM |
-| 2026-02-10 | Migrated features to GitHub Issues; slimmed doc to strategy only | PM |
-| 2026-02-15 | Established divider/chevron as standard progressive disclosure pattern; updated US-2.0.2 | PM |
-| 2026-02-19 | Feature 2.0 Homepage Streamlining marked COMPLETE; homepage reduced from 10→5 sections | PM |
-| 2026-02-19 | Feature 2.1 rescoped: Remove divergence page entirely (don't replace with signals page) | PM |
-| 2026-02-19 | Updated "What We're NOT Building" - refined trade signals positioning for future features | PM |
-| 2026-02-19 | Added "Statistical Anomalies Dashboard" to backlog for future consideration (Phase 5+) | PM |
-| 2026-02-20 | Feature 2.2 Portfolio Templates cancelled - doesn't serve actual user needs (Issue #6 closed) | PM |
-| 2026-02-20 | Phase 2 milestone complete (13/13 issues closed) | PM |
-| 2026-02-20 | Phase 3 rescoped from "Onboarding & Trial" to "Mobile-First Redesign" - pre-launch focus | PM |
-| 2026-02-20 | Established mobile-first design philosophy (mobile-first, not mobile-only) | PM |
-| 2026-02-20 | Playwright screenshot analysis reveals content-heavy pages fail on mobile (chart burial) | PM |
-| 2026-02-20 | Feature 3.1 "Mobile-First Content Pages" created - one cohesive feature for 7 pages (Issue #81) | PM |
-| 2026-02-20 | Phase 3 milestone renamed from "Onboarding & Trial" to "Mobile-First Redesign" | PM |
-| 2026-02-20 | Feature 3.1 design decisions: stats collapsed by default, full interactivity, sticky selector, hybrid tablet | PM |
-| 2026-02-20 | Feature 3.2 "Chatbot Mobile-First Redesign" created after UI Designer identified critical UX issue (Issue #82) | PM |
-| 2026-02-20 | Feature 3.1 design spec approved (docs/specs/feature-3.1-mobile-content-pages.md) - comprehensive, ready for engineering | PM |
-| 2026-02-20 | User stories created for Feature 3.1: US-3.1.1 (#83), US-3.1.2 (#84), US-3.1.3 (#85), US-3.1.4 (#86) | PM |
-| 2026-02-20 | Feature 3.2 design decisions: bottom sheet pattern, two-state toggle, full persistence, badge notifications | PM |
-| 2026-02-20 | Feature 3.2 design spec approved (docs/specs/feature-3.2-chatbot-mobile-redesign.md) - comprehensive, 1500+ line spec | PM |
-| 2026-02-20 | Feature 3.2 final decisions: X minimizes (not clears), context awareness if simple, 30 msg soft limit | PM |
+| 2026-02-21 | **Feature 3.1 COMPLETE** - All 7 content pages mobile-first (5/5 design, 21/21 QA, 0 issues) - Major milestone | PM |
+| 2026-02-21 | Phase 3 progress: 7/12 complete (58%) - Feature 3.1 done, Feature 3.2 ready for engineering | PM |
+| 2026-02-21 | Bugs #55 and #56 identified (Anthropic API issues) - Triaged as P2, defer until after Feature 3.2 | PM |
 | 2026-02-21 | User stories created for Feature 3.2: US-3.2.1 (#90), US-3.2.2 (#91), US-3.2.3 (#92), US-3.2.4 (#93) | PM |
-| 2026-02-21 | All user stories linked as sub-issues to parent features (3.1 and 3.2) | PM |
+| 2026-02-20 | Feature 3.2 design spec approved - bottom sheet pattern, two-state toggle, full persistence | PM |
+| 2026-02-20 | Feature 3.1 design spec approved - stats collapsed by default, chart prominence on mobile | PM |
+| 2026-02-20 | Phase 3 rescoped to "Mobile-First Redesign" (was "Onboarding & Trial") - pre-launch focus shift | PM |
+| 2026-02-20 | Phase 2 complete (13/13 issues) - Feature 2.2 cancelled (templates don't serve user needs) | PM |
+| 2026-02-19 | Feature 2.0 Homepage Streamlining COMPLETE - homepage reduced from 10→5 sections | PM |
+| 2026-02-15 | Established divider/chevron as standard progressive disclosure pattern | PM |
+
+**Earlier milestones:** Phase 1 Complete (Feb 9), Phase 2 Complete (Feb 20), divergence page removed, portfolio templates cancelled
 
 ---
 
