@@ -36,11 +36,13 @@ for your instructions.
 
 **If YES - UI changes present:**
 - Adopt the UI Designer mindset. Read .claude/commands/ui-designer.md for your instructions.
-- Generate screenshots for review:
-  - Run Playwright screenshot script: `npx playwright test screenshots.spec.js`
-  - Or use existing screenshots from screenshots/ folder
-  - View screenshots at mobile (375px), tablet (768px), desktop (1920px)
-- Review implementation against design spec (docs/specs/)
+- Generate fresh screenshots:
+  - Start app: `docker compose up -d`
+  - Wait 8 seconds for Flask to start
+  - Run all screenshot scripts: `node screenshots.spec.js && node screenshot-explorer-interactive.js && node screenshots-chatbot.js`
+  - Stop app: `docker compose down`
+  - Screenshots saved to screenshots/ folder
+- Review screenshots (mobile 375px, tablet 768px, desktop 1920px) against design spec (docs/specs/)
 - Verify:
   - Visual compliance (colors, spacing, typography match design system)
   - Responsive behavior (mobile/tablet/desktop layouts correct)
