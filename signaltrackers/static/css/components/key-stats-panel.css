@@ -1,0 +1,224 @@
+/**
+ * KeyStatsPanel Component
+ *
+ * A sidebar panel for displaying 3-5 key statistics alongside the chart.
+ * Visible only on tablet+ viewports, hidden on mobile to prioritize chart.
+ *
+ * Uses design system metric cards with semantic left border color.
+ *
+ * Usage:
+ * <aside class="key-stats-panel">
+ *   <div class="stat-card">
+ *     <div class="stat-card__label">Current Value</div>
+ *     <div class="stat-card__value">$1,234.56</div>
+ *     <div class="stat-card__change stat-card__change--positive">+2.5%</div>
+ *   </div>
+ *   <!-- More stat cards -->
+ * </aside>
+ */
+
+.key-stats-panel {
+  display: none; /* Hidden on mobile */
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: white;
+  border: 1px solid var(--neutral-200);
+  border-radius: 8px;
+}
+
+/* Show on tablet+ */
+@media (min-width: 768px) {
+  .key-stats-panel {
+    display: flex;
+  }
+}
+
+/* Desktop: Increase spacing */
+@media (min-width: 1024px) {
+  .key-stats-panel {
+    padding: var(--space-6);
+    gap: var(--space-5);
+  }
+}
+
+/* Panel title (optional) */
+.key-stats-panel__title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin-bottom: var(--space-2);
+}
+
+/* Individual stat card */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: white;
+  border-left: 4px solid var(--info-600); /* Semantic color - can be customized */
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 150ms ease-out, border-left-width 150ms ease-out;
+}
+
+/* Stat card hover (if interactive) */
+.stat-card--interactive {
+  cursor: pointer;
+}
+
+.stat-card--interactive:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left-width: 6px;
+}
+
+/* Stat card label */
+.stat-card__label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Stat card value (primary) */
+.stat-card__value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--neutral-800);
+  font-family: var(--font-mono, monospace);
+  font-feature-settings: 'tnum'; /* Tabular numbers */
+  line-height: 1.2;
+}
+
+/* Stat card change indicator */
+.stat-card__change {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+}
+
+/* Positive change */
+.stat-card__change--positive {
+  color: var(--success-700);
+}
+
+.stat-card__change--positive::before {
+  content: '▲';
+  font-size: var(--text-xs);
+}
+
+/* Negative change */
+.stat-card__change--negative {
+  color: var(--danger-700);
+}
+
+.stat-card__change--negative::before {
+  content: '▼';
+  font-size: var(--text-xs);
+}
+
+/* Neutral change */
+.stat-card__change--neutral {
+  color: var(--neutral-600);
+}
+
+.stat-card__change--neutral::before {
+  content: '—';
+  font-size: var(--text-xs);
+}
+
+/* Stat card secondary info */
+.stat-card__secondary {
+  font-size: var(--text-xs);
+  color: var(--neutral-500);
+}
+
+/* Semantic border color variants */
+.stat-card--success {
+  border-left-color: var(--success-600);
+}
+
+.stat-card--danger {
+  border-left-color: var(--danger-600);
+}
+
+.stat-card--warning {
+  border-left-color: var(--warning-600);
+}
+
+.stat-card--info {
+  border-left-color: var(--info-600);
+}
+
+.stat-card--neutral {
+  border-left-color: var(--neutral-400);
+}
+
+/* Grid layout for stats (when there are many) */
+.key-stats-panel--grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 1024px) {
+  .key-stats-panel--grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Compact variant (smaller padding, tighter spacing) */
+.key-stats-panel--compact .stat-card {
+  padding: var(--space-3);
+  gap: var(--space-1);
+}
+
+.key-stats-panel--compact .stat-card__value {
+  font-size: var(--text-xl);
+}
+
+/* Loading skeleton */
+.stat-card--loading {
+  background: linear-gradient(
+    90deg,
+    var(--neutral-100) 25%,
+    var(--neutral-200) 50%,
+    var(--neutral-100) 75%
+  );
+  background-size: 200% 100%;
+  animation: stat-card-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes stat-card-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.stat-card--loading .stat-card__label,
+.stat-card--loading .stat-card__value,
+.stat-card--loading .stat-card__change {
+  color: transparent;
+  background: var(--neutral-200);
+  border-radius: 4px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .stat-card {
+    transition: none;
+  }
+
+  .stat-card--loading {
+    animation: none;
+    background: var(--neutral-100);
+  }
+}

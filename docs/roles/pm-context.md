@@ -189,6 +189,103 @@ Explicitly out of scope to maintain focus:
 - Phase 3 Features (Hosted Trial, Onboarding Wizard) moved to future consideration
 - Feature 4.1 (Mobile Experience Improvements) being rescoped into comprehensive mobile-first redesign
 - New Phase 3 will focus on mobile-first architecture before adding more features
+- Phase 3 milestone renamed from "Onboarding & Trial" to "Mobile-First Redesign"
+
+### Feature 3.1 Scope: One Feature for Content Pages (Feb 2026)
+**Decision**: Create one cohesive Feature 3.1 covering all content-heavy pages, rather than separate features per page type.
+
+**Context**:
+- Playwright screenshot analysis revealed content-heavy pages suffer from desktop-first information hierarchy
+- Explorer page: Chart buried at bottom after 15+ sections of statistics (poor mobile UX)
+- Asset class pages: Extremely long vertical scrolls, dense content stacked vertically
+- Homepage and simple pages are adequate; problem is specific to content-heavy analytical pages
+
+**Pages in scope:**
+- Explorer page (metric analysis with charts)
+- 6 Asset class pages (Credit, Rates, Dollar, Equities, Crypto, Safe Havens)
+
+**Pages out of scope:**
+- Homepage (already decent, recent streamlining work)
+- Portfolio/Login pages (simple forms work fine)
+
+**One Feature vs. Multiple:**
+- Considered separating Explorer vs. Asset pages as different features
+- Decided on ONE feature to ensure consistent mobile patterns across all content pages
+- Tracking granularity maintained via user stories (US-3.1.1 through US-3.1.4)
+
+**Rationale**:
+- All affected pages share the same problem: desktop-first hierarchy with buried charts
+- Solution requires consistent mobile-first patterns (chart prominence, progressive disclosure)
+- One feature enforces architectural coherence and prevents inconsistent mobile UX
+- User stories provide granular tracking while maintaining design system consistency
+
+**Outcome**:
+- Feature 3.1 "Mobile-First Content Pages" created (Issue #81, P0 priority)
+- Scope: 7 pages total (Explorer + 6 asset class pages)
+- Success metric: Charts visible within first screen on mobile, 50%+ scroll reduction
+- Will be broken into 4 user stories for incremental delivery
+
+### Feature 3.1 Design Decisions (Feb 2026)
+**Context**: UI Designer reviewed Feature 3.1 and asked clarifying questions about mobile UX patterns.
+
+**Decisions made:**
+1. **Statistics collapsed by default on mobile** - Chart gets prominence, stats accessible via expansion control
+2. **Full chart interactivity maintained** - Tap-based tooltips for mobile, no functionality removed
+3. **Sticky metric selector on Explorer** - Always accessible for quick metric switching
+4. **Hybrid tablet approach (768px)** - Chart + key stats visible, detailed metadata collapsed
+
+**Status**: ✅ Design spec approved, user stories created, ready for engineering
+
+**User Stories Created:**
+- US-3.1.1 (Issue #83): Build reusable mobile-first components
+- US-3.1.2 (Issue #84): Apply to Explorer page (validate pattern)
+- US-3.1.3 (Issue #85): Apply to Credit & Rates pages
+- US-3.1.4 (Issue #86): Apply to Dollar, Equities, Crypto, Safe Havens pages (completes feature)
+
+**Design Specification:** `docs/specs/feature-3.1-mobile-content-pages.md` (approved)
+
+### Feature 3.2: Chatbot Mobile UX (Feb 2026)
+**Decision**: Create separate feature for chatbot mobile-first redesign.
+
+**Context**:
+- UI Designer identified critical mobile UX issue during Feature 3.1 review
+- Chatbot currently takes 90%+ of mobile viewport when expanded
+- Completely obscures charts/data users are asking questions about
+- Users lose context - can't see data while using AI assistant
+
+**Rationale**:
+- Different component with different interaction patterns (overlay vs. page layout)
+- Can be designed/implemented independently from Feature 3.1
+- Potentially quick win to improve mobile chatbot usage
+- Both features part of Phase 3 mobile-first focus
+
+**Outcome**:
+- Feature 3.2 "Chatbot Mobile-First Redesign" created (Issue #82, P1 priority)
+- Success criteria: ≤50% viewport on mobile, users can see data while chatbot is open
+- Added to Phase 3 milestone
+
+**Design Decisions (Feb 2026):**
+UI Designer reviewed Feature 3.2 and asked 6 product questions. PM decisions:
+
+1. **Default state:** Floating button only (minimized, non-intrusive)
+2. **Panel pattern:** Two-state toggle (minimized ↔ half-screen) - simpler for MVP
+3. **Conversation persistence:** Full persistence (critical for AI value proposition)
+4. **Notifications:** Badge indicator on floating button when minimized
+5. **Input:** Text-only for MVP, quick suggestion chips for future
+6. **Multi-turn scroll:** Scrollable message area within fixed panel height
+
+**Pattern approved:** Bottom sheet (slides up from bottom, 40-50% viewport, page remains visible)
+
+**Final Product Decisions (Feb 2026):**
+UI Designer created comprehensive spec and asked 5 implementation questions. PM decisions:
+
+1. **Close button**: X minimizes (not clears), separate "Clear conversation" link with confirmation
+2. **Context awareness**: Include for MVP if technically simple (<1hr), else defer
+3. **Quick suggestions**: Defer to post-MVP (data-driven based on usage patterns)
+4. **Voice input**: Defer to post-MVP (significant complexity, not critical)
+5. **Conversation limits**: Soft limit at 30 messages with gentle performance nudge
+
+**Status:** ✅ Design spec approved (`docs/specs/feature-3.2-chatbot-mobile-redesign.md`), ready for engineering
 
 ---
 
@@ -219,6 +316,16 @@ Items to address alongside feature work:
 | 2026-02-20 | Phase 2 milestone complete (13/13 issues closed) | PM |
 | 2026-02-20 | Phase 3 rescoped from "Onboarding & Trial" to "Mobile-First Redesign" - pre-launch focus | PM |
 | 2026-02-20 | Established mobile-first design philosophy (mobile-first, not mobile-only) | PM |
+| 2026-02-20 | Playwright screenshot analysis reveals content-heavy pages fail on mobile (chart burial) | PM |
+| 2026-02-20 | Feature 3.1 "Mobile-First Content Pages" created - one cohesive feature for 7 pages (Issue #81) | PM |
+| 2026-02-20 | Phase 3 milestone renamed from "Onboarding & Trial" to "Mobile-First Redesign" | PM |
+| 2026-02-20 | Feature 3.1 design decisions: stats collapsed by default, full interactivity, sticky selector, hybrid tablet | PM |
+| 2026-02-20 | Feature 3.2 "Chatbot Mobile-First Redesign" created after UI Designer identified critical UX issue (Issue #82) | PM |
+| 2026-02-20 | Feature 3.1 design spec approved (docs/specs/feature-3.1-mobile-content-pages.md) - comprehensive, ready for engineering | PM |
+| 2026-02-20 | User stories created for Feature 3.1: US-3.1.1 (#83), US-3.1.2 (#84), US-3.1.3 (#85), US-3.1.4 (#86) | PM |
+| 2026-02-20 | Feature 3.2 design decisions: bottom sheet pattern, two-state toggle, full persistence, badge notifications | PM |
+| 2026-02-20 | Feature 3.2 design spec approved (docs/specs/feature-3.2-chatbot-mobile-redesign.md) - comprehensive, 1500+ line spec | PM |
+| 2026-02-20 | Feature 3.2 final decisions: X minimizes (not clears), context awareness if simple, 30 msg soft limit | PM |
 
 ---
 

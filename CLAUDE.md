@@ -64,6 +64,141 @@ When adding new features:
 1. If it's a new strategic direction or vision change → Update PRODUCT_ROADMAP.md
 2. If it's actionable work to implement → Create a GitHub Issue
 
+### Collaboration Workflow: PM → Designer → Engineer
+
+This project uses a structured handoff process between roles to ensure clear communication and quality deliverables.
+
+#### Phase 1: Feature Definition (Product Manager)
+
+**PM Responsibilities:**
+- Create GitHub issue with feature/user story
+- Include user story format: "As a [user], I want [goal], so that [benefit]"
+- Define acceptance criteria with checkboxes
+- Set priority and assign to milestone
+- Tag appropriately (`feature`, `user-story`, `bug`)
+
+**Outputs:**
+- GitHub issue with clear requirements
+- Acceptance criteria defined
+- Priority set
+
+#### Phase 2: Design Specification (UI Designer)
+
+**Designer Responsibilities:**
+- Review GitHub issue for design implications
+- Ask clarifying questions as issue comments
+- Create detailed design specification in `docs/specs/feature-name.md`
+- Comment on issue with link to spec file
+- Iterate with PM until design is approved
+
+**Design Spec Contains:**
+- Detailed wireframes (mobile/tablet/desktop)
+- Interaction patterns and behavior
+- Component specifications
+- Responsive breakpoint behavior
+- Design system references
+- Implementation notes for engineers
+- Accessibility requirements
+
+**Workflow:**
+```
+1. Designer comments: "Reviewing this feature, will create design spec"
+2. Designer asks PM questions if needed (in issue comments)
+3. Designer creates docs/specs/feature-name.md
+4. Designer comments: "Design spec ready: [link to spec]"
+5. PM reviews spec, provides feedback
+6. Designer updates spec based on feedback
+7. Designer comments: "Spec finalized and ready for engineering"
+```
+
+**Outputs:**
+- `docs/specs/feature-name.md` with comprehensive design specification
+- Issue comment linking to spec file
+- PM approval documented in issue
+
+#### Phase 3: Implementation (Engineer)
+
+**Engineer Responsibilities:**
+- Implement from design specification
+- Follow design system standards ([docs/design-system.md](docs/design-system.md))
+- Create PR that references both issue and spec file
+- Request design review before merging
+
+**Workflow:**
+```
+1. Engineer comments: "Starting implementation from [spec file]"
+2. Engineer builds according to spec
+3. Engineer creates PR:
+   - Title describes the change
+   - Body includes "Fixes #<number>"
+   - Body links to spec file: "Implements [docs/specs/feature-name.md]"
+4. Designer reviews PR for design compliance
+5. PM validates against acceptance criteria
+6. PR merged, issue auto-closes
+```
+
+**Outputs:**
+- Working implementation matching design spec
+- PR with issue and spec references
+- Designer and PM approval
+
+#### File Organization
+
+```
+docs/
+  specs/                           # Design specifications (Designer creates)
+    feature-name.md
+    component-name-spec.md
+  design-system.md                 # Design system reference
+  PRODUCT_ROADMAP.md               # Product vision and strategy
+  roles/                           # Role-specific context/memory
+    pm-context.md
+    ui-designer-context.md
+```
+
+#### Key Principles
+
+1. **PM owns WHAT and WHY** - Product decisions, priorities, business goals
+2. **Designer owns HOW (UX)** - User experience, interaction design, visual design
+3. **Engineer owns HOW (Technical)** - Implementation, architecture, code quality
+4. **GitHub Issues** - Discussion, questions, decisions, status tracking
+5. **Spec Files** - Detailed design documentation, versioned with code
+6. **Clear Handoffs** - Each role explicitly signals completion to next role
+
+#### Example Flow
+
+**Scenario: Explorer Mobile Redesign**
+
+1. **PM** creates issue #50: "Explorer page mobile-first redesign"
+   - User story with acceptance criteria
+   - Priority P1, assigned to current milestone
+
+2. **Designer** reviews and comments:
+   - "Will create design spec. Question: Should any stats be above chart?"
+
+3. **PM** responds:
+   - "Chart should be primary, all stats can be below/collapsible"
+
+4. **Designer** creates `docs/specs/explorer-mobile-redesign.md`
+   - Mobile wireframe with chart prominence
+   - Collapsible stats sections
+   - Links to design system patterns
+
+5. **Designer** comments on #50:
+   - "Design spec ready: docs/specs/explorer-mobile-redesign.md"
+   - "@pm please review"
+
+6. **PM** approves:
+   - "Design looks great, approved for engineering"
+
+7. **Engineer** implements and creates PR:
+   - "Fixes #50"
+   - "Implements docs/specs/explorer-mobile-redesign.md"
+
+8. **Designer** reviews PR for design compliance
+9. **PM** validates against acceptance criteria
+10. PR merged, #50 auto-closes
+
 ## Common Commands
 
 ```bash
