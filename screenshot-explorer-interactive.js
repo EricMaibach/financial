@@ -20,8 +20,8 @@ const { chromium } = require('playwright');
   await page.selectOption('#metricSelector', { index: 1 });
 
   // Wait for the chart to render
-  // The page shows metricDetails when content loads
-  await page.waitForSelector('#metricDetails', { state: 'visible', timeout: 10000 });
+  // The page shows metricContent when content loads
+  await page.waitForSelector('#metricContent', { state: 'visible', timeout: 10000 });
 
   // Wait a bit more for chart animation to complete
   await page.waitForTimeout(2000);
