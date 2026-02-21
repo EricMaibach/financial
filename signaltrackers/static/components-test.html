@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile-First Components Test</title>
+
+  <!-- Design System CSS Variables -->
+  <style>
+    :root {
+      /* Colors - Neutrals */
+      --neutral-50:   #FAFBFC;
+      --neutral-100:  #F4F6F8;
+      --neutral-200:  #E8ECEF;
+      --neutral-300:  #D1D8DD;
+      --neutral-400:  #9AA5B1;
+      --neutral-500:  #697386;
+      --neutral-600:  #4A5568;
+      --neutral-700:  #2D3748;
+      --neutral-800:  #1A202C;
+      --neutral-900:  #0F1419;
+
+      /* Brand */
+      --brand-blue-500:  #1E40AF;
+      --brand-blue-600:  #1E3A8A;
+      --brand-blue-100:  #DBEAFE;
+
+      /* Semantic */
+      --success-700:  #15803D;
+      --success-600:  #16A34A;
+      --danger-700:   #B91C1C;
+      --danger-600:   #DC2626;
+      --danger-100:   #FEE2E2;
+      --warning-600:  #CA8A04;
+      --info-600:     #0284C7;
+
+      /* Typography */
+      --text-xs:    0.75rem;
+      --text-sm:    0.875rem;
+      --text-base:  1rem;
+      --text-lg:    1.125rem;
+      --text-xl:    1.25rem;
+      --text-2xl:   1.5rem;
+      --text-3xl:   1.875rem;
+      --text-4xl:   2.25rem;
+
+      /* Spacing */
+      --space-1:  0.25rem;
+      --space-2:  0.5rem;
+      --space-3:  0.75rem;
+      --space-4:  1rem;
+      --space-5:  1.25rem;
+      --space-6:  1.5rem;
+      --space-8:  2rem;
+      --space-10: 2.5rem;
+    }
+
+    /* Base styles */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--neutral-50);
+      color: var(--neutral-600);
+      line-height: 1.6;
+    }
+
+    .test-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-8);
+    }
+
+    .test-section {
+      margin-bottom: var(--space-10);
+      padding: var(--space-6);
+      background: white;
+      border: 1px solid var(--neutral-200);
+      border-radius: 8px;
+    }
+
+    .test-section__title {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--neutral-800);
+      margin-bottom: var(--space-4);
+      border-bottom: 2px solid var(--brand-blue-500);
+      padding-bottom: var(--space-3);
+    }
+
+    .test-section__description {
+      font-size: var(--text-sm);
+      color: var(--neutral-500);
+      margin-bottom: var(--space-6);
+      background: var(--neutral-50);
+      padding: var(--space-4);
+      border-radius: 6px;
+    }
+
+    .test-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-6);
+    }
+
+    @media (max-width: 767px) {
+      .test-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <!-- Component CSS -->
+  <link rel="stylesheet" href="css/components/collapsible-section.css">
+  <link rel="stylesheet" href="css/components/sticky-selector.css">
+  <link rel="stylesheet" href="css/components/chart-container.css">
+  <link rel="stylesheet" href="css/components/key-stats-panel.css">
+</head>
+<body>
+  <div class="test-container">
+    <h1 style="font-size: var(--text-3xl); font-weight: 700; color: var(--neutral-800); margin-bottom: var(--space-8);">
+      Mobile-First Components Test Suite
+    </h1>
+
+    <!-- CollapsibleSection Test -->
+    <section class="test-section">
+      <h2 class="test-section__title">1. CollapsibleSection Component</h2>
+      <div class="test-section__description">
+        <strong>Test:</strong> Click headers to expand/collapse. Use Tab + Space/Enter for keyboard navigation.
+        <br><strong>Expected:</strong> Smooth animations, chevron rotation, proper ARIA attributes.
+      </div>
+
+      <div class="collapsible-section" data-section-id="test-section-1" data-persist-state="false">
+        <button class="collapsible-section__header" aria-expanded="false">
+          <h3 class="collapsible-section__title">Market Statistics</h3>
+          <svg class="collapsible-section__icon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+          <p>This is the content of the collapsible section. It contains statistics, detailed information, and other data that is initially hidden on mobile.</p>
+          <p>Multiple paragraphs can be included here to test animation with varying content heights.</p>
+        </div>
+      </div>
+
+      <div class="collapsible-section" data-section-id="test-section-2" data-persist-state="false">
+        <button class="collapsible-section__header" aria-expanded="false">
+          <h3 class="collapsible-section__title">About This Metric</h3>
+          <svg class="collapsible-section__icon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+          <p>Information about the metric goes here. This section describes what the metric measures, how it's calculated, and why it matters.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- StickyMetricSelector Test -->
+    <section class="test-section">
+      <h2 class="test-section__title">2. StickyMetricSelector Component</h2>
+      <div class="test-section__description">
+        <strong>Test:</strong> Scroll down the page - selector should stick to top with shadow effect.
+        <br><strong>Expected:</strong> Remains at top: 64px, shadow appears when stuck.
+      </div>
+
+      <div style="height: 200px; background: var(--neutral-50); border: 1px dashed var(--neutral-300); margin-bottom: var(--space-4); display: flex; align-items: center; justify-content: center; color: var(--neutral-500);">
+        Scroll down to see sticky behavior ↓
+      </div>
+
+      <div class="sticky-selector" data-stuck="false">
+        <label for="metricSelector" class="sticky-selector__label">
+          Select Metric:
+        </label>
+        <select id="metricSelector" class="sticky-selector__dropdown">
+          <option value="">-- Choose a metric --</option>
+          <option value="vix">VIX - Volatility Index</option>
+          <option value="dxy">DXY - US Dollar Index</option>
+          <option value="gold">Gold Price</option>
+          <option value="yields">10Y Treasury Yields</option>
+          <option value="sp500">S&P 500</option>
+        </select>
+      </div>
+
+      <div style="height: 800px; background: var(--neutral-50); border: 1px dashed var(--neutral-300); margin-top: var(--space-4); display: flex; align-items: center; justify-content: center; color: var(--neutral-500);">
+        Scroll area to test sticky behavior
+      </div>
+    </section>
+
+    <!-- ResponsiveChartContainer Test -->
+    <section class="test-section">
+      <h2 class="test-section__title">3. ResponsiveChartContainer Component</h2>
+      <div class="test-section__description">
+        <strong>Test:</strong> Resize browser to see height changes (Mobile: 50vh, Tablet: 400px, Desktop: 500px).
+        <br><strong>Expected:</strong> Container height adapts to viewport size.
+      </div>
+
+      <div class="chart-container">
+        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--brand-blue-100) 0%, var(--neutral-100) 100%); display: flex; align-items: center; justify-content: center; border-radius: 6px; color: var(--neutral-600);">
+          Chart Placeholder (Canvas/SVG goes here)
+        </div>
+      </div>
+
+      <h3 style="margin-top: var(--space-6); margin-bottom: var(--space-3);">Loading State:</h3>
+      <div class="chart-container chart-container--loading">
+        <div class="chart-container__loader"></div>
+      </div>
+
+      <h3 style="margin-top: var(--space-6); margin-bottom: var(--space-3);">Empty State:</h3>
+      <div class="chart-container chart-container--empty">
+        <div class="chart-container__empty-icon">📊</div>
+        <div class="chart-container__empty-text">No data available</div>
+      </div>
+
+      <h3 style="margin-top: var(--space-6); margin-bottom: var(--space-3);">Error State:</h3>
+      <div class="chart-container chart-container--error">
+        <div class="chart-container__error-icon">⚠️</div>
+        <div class="chart-container__error-text">Failed to load chart data</div>
+      </div>
+    </section>
+
+    <!-- KeyStatsPanel Test -->
+    <section class="test-section">
+      <h2 class="test-section__title">4. KeyStatsPanel Component</h2>
+      <div class="test-section__description">
+        <strong>Test:</strong> Hidden on mobile (< 768px), visible on tablet+. Resize browser to test.
+        <br><strong>Expected:</strong> Panel appears at tablet breakpoint (768px).
+      </div>
+
+      <div class="test-grid">
+        <div style="background: var(--neutral-50); padding: var(--space-4); border-radius: 8px; display: flex; align-items: center; justify-content: center; min-height: 300px; color: var(--neutral-500);">
+          Chart Area (60% width on tablet+)
+        </div>
+
+        <aside class="key-stats-panel">
+          <h3 class="key-stats-panel__title">Key Statistics</h3>
+
+          <div class="stat-card stat-card--success">
+            <div class="stat-card__label">Current Value</div>
+            <div class="stat-card__value">$1,234.56</div>
+            <div class="stat-card__change stat-card__change--positive">+2.5%</div>
+          </div>
+
+          <div class="stat-card stat-card--danger">
+            <div class="stat-card__label">24h Change</div>
+            <div class="stat-card__value">-$45.23</div>
+            <div class="stat-card__change stat-card__change--negative">-3.5%</div>
+          </div>
+
+          <div class="stat-card stat-card--info">
+            <div class="stat-card__label">Volume</div>
+            <div class="stat-card__value">1.2M</div>
+            <div class="stat-card__change stat-card__change--neutral">0.0%</div>
+          </div>
+
+          <div class="stat-card stat-card--warning">
+            <div class="stat-card__label">Market Cap</div>
+            <div class="stat-card__value">$10.5B</div>
+            <div class="stat-card__secondary">Updated 5 mins ago</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Full Integration Test -->
+    <section class="test-section">
+      <h2 class="test-section__title">5. Full Page Integration</h2>
+      <div class="test-section__description">
+        <strong>Test:</strong> All components working together as they would on a content page.
+        <br><strong>Expected:</strong> Mobile-first layout with progressive disclosure.
+      </div>
+
+      <div class="sticky-selector" data-stuck="false">
+        <label for="integratedSelector" class="sticky-selector__label">
+          Metric:
+        </label>
+        <select id="integratedSelector" class="sticky-selector__dropdown">
+          <option value="vix">VIX - Volatility Index</option>
+        </select>
+      </div>
+
+      <div class="test-grid" style="margin-top: var(--space-6);">
+        <div class="chart-container">
+          <div style="width: 100%; height: 100%; background: linear-gradient(135deg, var(--success-600) 0%, var(--info-600) 100%); display: flex; align-items: center; justify-content: center; border-radius: 6px; color: white; font-weight: 600;">
+            VIX Chart
+          </div>
+        </div>
+
+        <aside class="key-stats-panel">
+          <div class="stat-card stat-card--info">
+            <div class="stat-card__label">Current VIX</div>
+            <div class="stat-card__value">18.45</div>
+            <div class="stat-card__change stat-card__change--positive">+1.2%</div>
+          </div>
+
+          <div class="stat-card stat-card--success">
+            <div class="stat-card__label">Range (52w)</div>
+            <div class="stat-card__value">12-35</div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="collapsible-section" data-section-id="integrated-stats">
+        <button class="collapsible-section__header" aria-expanded="false">
+          <h3 class="collapsible-section__title">Market Statistics</h3>
+          <svg class="collapsible-section__icon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+          <p>Detailed statistics appear here when expanded on mobile.</p>
+        </div>
+      </div>
+
+      <div class="collapsible-section" data-section-id="integrated-about">
+        <button class="collapsible-section__header" aria-expanded="false">
+          <h3 class="collapsible-section__title">About VIX</h3>
+          <svg class="collapsible-section__icon" aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+          <p>The VIX measures market volatility and investor fear...</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Component JavaScript -->
+  <script src="js/components/collapsible-section.js"></script>
+  <script src="js/components/sticky-selector.js"></script>
+
+  <script>
+    // Test metric change callback
+    function onMetricChange(value) {
+      console.log('Metric changed to:', value);
+    }
+  </script>
+</body>
+</html>

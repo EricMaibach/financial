@@ -1,0 +1,131 @@
+/**
+ * CollapsibleSection Component
+ *
+ * A reusable progressive disclosure component for content-heavy pages.
+ * Mobile-first implementation with full accessibility support.
+ *
+ * Usage:
+ * <div class="collapsible-section" data-collapsed="true">
+ *   <button class="collapsible-section__header" aria-expanded="false">
+ *     <h3 class="collapsible-section__title">Section Title</h3>
+ *     <svg class="collapsible-section__icon" aria-hidden="true">...</svg>
+ *   </button>
+ *   <div class="collapsible-section__content" hidden>
+ *     <!-- Content -->
+ *   </div>
+ * </div>
+ */
+
+.collapsible-section {
+  width: 100%;
+  background: white;
+}
+
+/* Header (Clickable Toggle) */
+.collapsible-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 56px; /* Touch target - exceeds 44px minimum */
+  padding: var(--space-4);
+  background: var(--neutral-50);
+  border: none;
+  border-top: 1px solid var(--neutral-200);
+  border-bottom: 1px solid var(--neutral-200);
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+  text-align: left;
+}
+
+/* Hover state (desktop) */
+.collapsible-section__header:hover {
+  background: var(--neutral-100);
+}
+
+/* Focus state (keyboard navigation) */
+.collapsible-section__header:focus {
+  outline: 2px solid var(--brand-blue-500);
+  outline-offset: 2px;
+  z-index: 1; /* Ensure outline visible above adjacent elements */
+}
+
+/* Expanded state */
+.collapsible-section__header[aria-expanded="true"] {
+  border-bottom-color: var(--neutral-300);
+}
+
+/* Section Title */
+.collapsible-section__title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--neutral-700);
+  margin: 0;
+  flex: 1;
+}
+
+/* Chevron Icon */
+.collapsible-section__icon {
+  width: 20px;
+  height: 20px;
+  color: var(--neutral-500);
+  transition: transform 250ms ease-out;
+  flex-shrink: 0;
+  margin-left: var(--space-3);
+}
+
+/* Rotate chevron when expanded */
+.collapsible-section__header[aria-expanded="true"] .collapsible-section__icon {
+  transform: rotate(180deg);
+}
+
+/* Content Area */
+.collapsible-section__content {
+  padding: var(--space-4);
+  background: white;
+  overflow: hidden;
+  border-bottom: 1px solid var(--neutral-200);
+}
+
+/* Hidden state (collapsed) */
+.collapsible-section__content[hidden] {
+  display: none;
+}
+
+/*
+ * Animation handled in JavaScript with max-height transitions
+ * for smooth expand/collapse (CSS-only height: auto doesn't animate)
+ */
+
+/* Tablet+ adjustments */
+@media (min-width: 768px) {
+  .collapsible-section__header {
+    padding: var(--space-5);
+  }
+
+  .collapsible-section__content {
+    padding: var(--space-5);
+  }
+
+  .collapsible-section__title {
+    font-size: var(--text-xl);
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1024px) {
+  .collapsible-section__header {
+    padding: var(--space-6);
+  }
+
+  .collapsible-section__content {
+    padding: var(--space-6);
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .collapsible-section__icon {
+    transition: none;
+  }
+}

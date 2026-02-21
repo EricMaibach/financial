@@ -1,0 +1,128 @@
+/**
+ * StickyMetricSelector Component
+ *
+ * A sticky dropdown selector for the Explorer page that remains accessible
+ * at the top of the viewport when scrolling. Adds visual feedback (shadow)
+ * when in stuck state.
+ *
+ * Usage:
+ * <div class="sticky-selector" data-stuck="false">
+ *   <label for="metricSelector" class="sticky-selector__label">
+ *     Select Metric:
+ *   </label>
+ *   <select id="metricSelector" class="sticky-selector__dropdown">
+ *     <option value="">-- Choose a metric --</option>
+ *     <!-- Options -->
+ *   </select>
+ * </div>
+ */
+
+.sticky-selector {
+  position: sticky;
+  top: 64px; /* Below fixed nav - adjust if nav height changes */
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px; /* Touch target compliance */
+  padding: var(--space-3) var(--space-4);
+  background: white;
+  border-bottom: 1px solid var(--neutral-200);
+  transition: box-shadow 200ms ease-out;
+}
+
+/* Shadow effect when stuck (set via JavaScript) */
+.sticky-selector[data-stuck="true"] {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Label */
+.sticky-selector__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--neutral-700);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Dropdown */
+.sticky-selector__dropdown {
+  flex: 1;
+  min-height: 44px; /* Touch target minimum */
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-base);
+  color: var(--neutral-700);
+  background: white;
+  border: 1px solid var(--neutral-300);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+/* Dropdown hover state */
+.sticky-selector__dropdown:hover {
+  border-color: var(--brand-blue-500);
+}
+
+/* Dropdown focus state (keyboard navigation) */
+.sticky-selector__dropdown:focus {
+  outline: none;
+  border-color: var(--brand-blue-500);
+  box-shadow: 0 0 0 3px var(--brand-blue-100);
+}
+
+/* Dropdown disabled state */
+.sticky-selector__dropdown:disabled {
+  background: var(--neutral-100);
+  color: var(--neutral-400);
+  cursor: not-allowed;
+  border-color: var(--neutral-300);
+}
+
+/* Mobile: Stack label and dropdown on very small screens */
+@media (max-width: 480px) {
+  .sticky-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .sticky-selector__label {
+    font-size: var(--text-xs);
+  }
+
+  .sticky-selector__dropdown {
+    width: 100%;
+  }
+}
+
+/* Tablet+: Increase spacing */
+@media (min-width: 768px) {
+  .sticky-selector {
+    padding: var(--space-4) var(--space-6);
+    gap: var(--space-4);
+  }
+
+  .sticky-selector__label {
+    font-size: var(--text-base);
+  }
+}
+
+/* Desktop: Max width for dropdown */
+@media (min-width: 1024px) {
+  .sticky-selector__dropdown {
+    max-width: 400px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sticky-selector {
+    transition: none;
+  }
+
+  .sticky-selector__dropdown {
+    transition: none;
+  }
+}
