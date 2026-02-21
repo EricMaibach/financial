@@ -1,7 +1,17 @@
+# Work User Story Workflow (Archived)
+
+> **ARCHIVED** — This synchronous workflow was replaced by the async multi-agent system.
+> See `.claude/commands/work-pm.md`, `work-designer.md`, `work-engineer.md`, and `work-qa.md`
+> for the new autonomous role commands.
+>
+> Archived: 2026-02-21
+
+---
+
 # Work User Story Workflow
 
-You are a workflow orchestrator. Given a user story, you will execute 
-the following phases sequentially, adopting each role's perspective 
+You are a workflow orchestrator. Given a user story, you will execute
+the following phases sequentially, adopting each role's perspective
 as you go.
 
 ## Input
@@ -13,10 +23,10 @@ The user stories are in Github, ask the user what user story they would like you
 - Create a docs/test-plans/{story-id}-workflow-log.md file to be a running log.
 
 ## Phase 2: QA Test Planning
-Adopt the QA Test Engineer mindset. Read .claude/commands/qa.md for 
+Adopt the QA Test Engineer mindset. Read .claude/commands/qa.md for
 your instructions.
 - Review the user story and acceptance criteria
-- Write a test plan with specific test cases covering: happy path, 
+- Write a test plan with specific test cases covering: happy path,
   edge cases, error handling, security considerations
 - Save the test plan to the Github issue
 - Log: "✅ Phase 1 Complete: Test plan created"

@@ -3,6 +3,114 @@
 ## Project Overview
 SignalTrackers is a Python macro financial dashboard providing comprehensive market intelligence for individual investors.
 
+## Workflows Overview
+
+This project uses **two distinct async workflows**. Choose based on the type of work:
+
+### Feature Workflow (New Features)
+
+Use when adding new functionality. If the feature requires UI changes, include the design spec step. If backend-only, skip directly to breaking into user stories.
+
+**UI feature path:**
+```
+PM creates feature → Designer creates spec → PM approves → PM creates user stories → stories completed → PM closes feature
+```
+
+**Backend-only path:**
+```
+PM creates feature → PM creates user stories directly → stories completed → PM closes feature
+```
+
+| Step | Who | Label Transition |
+|------|-----|-----------------|
+| Create feature issue | PM | `feature` |
+| *If UI changes:* add to design queue | PM | + `needs-design-spec` |
+| Create design spec in `docs/specs/` | Designer | → `needs-pm-approval` |
+| Review and approve spec | PM | → `ready-for-stories` |
+| *If backend-only:* skip design steps | PM | — |
+| Break into user stories | PM | remove `ready-for-stories` (if set); each story → `user-story + needs-test-plan` |
+| Stories in progress | — | no feature label; GitHub sub-issue progress shows status |
+| All stories merged | PM (auto-detects on next `/work-pm` run) | close feature issue |
+
+### User Story Workflow (Implementation Pipeline)
+
+Use when implementing user stories, fixing bugs, or any code changes.
+
+**WIP Limit: 1 story at a time in the implementation pipeline.**
+
+```
+QA creates test plan → Engineer implements → Designer reviews → QA tests → Engineer creates PR → Human merges
+```
+
+| Step | Who | Label Transition |
+|------|-----|-----------------|
+| Create test plan | QA | `needs-test-plan` → `ready-for-implementation` |
+| Implement on `feature/US-X.X.X` branch | Engineer | → `needs-design-review` (UI) or `needs-qa-testing` |
+| Review implementation | Designer | → `needs-qa-testing` or `needs-design-changes` |
+| Fix design issues | Engineer | → back to `needs-design-review` |
+| Test against test plan | QA | → `ready-for-pr` or `needs-fixes` |
+| Fix QA bugs | Engineer | → back to `needs-qa-testing` |
+| Create PR (do NOT merge) | Engineer | PR created |
+| Review and merge | **Human** | Issue auto-closes |
+
+### Quick Reference
+
+| Situation | Workflow |
+|-----------|----------|
+| New feature with UI changes | Feature Workflow → User Story Workflow |
+| Backend-only new feature | Create issue → User Story Workflow |
+| Bug fix | User Story Workflow (skip to `needs-test-plan`) |
+| Design spec update | Feature Workflow (Designer commits to `main`) |
+| Documentation update | Direct commit to `main` |
+
+---
+
+## Roles Overview
+
+| Role | Command | Mode | When to Use |
+|------|---------|------|-------------|
+| Product Manager | `/pm` | Interactive | Strategy discussions, writing user stories, product decisions |
+| UI/UX Designer | `/ui-designer` | Interactive | Design discussions, spec review, UI feedback |
+| Engineer | `/engineer` | Interactive | Code questions, architecture decisions, implementation help |
+| QA | `/qa` | Interactive | Testing strategy, bug triage, quality questions |
+| PM (autonomous) | `/work-pm` | Autonomous | Process PM queue: approve specs, break features into stories, close completed features |
+| Designer (autonomous) | `/work-designer` | Autonomous | Process design queue: create specs, review implementations |
+| Engineer (autonomous) | `/work-engineer` | Autonomous | Process engineering queue: implement stories, create PRs |
+| QA (autonomous) | `/work-qa` | Autonomous | Process QA queue: create test plans, verify implementations |
+
+### Interactive vs Autonomous
+
+- **Interactive** (`/pm`, `/ui-designer`, `/engineer`, `/qa`) — Discuss, advise, answer questions. **Does NOT autonomously check for or pick up work from GitHub queues.**
+- **Autonomous** (`/work-pm`, `/work-designer`, `/work-engineer`, `/work-qa`) — Check GitHub label queues, pick up work, process it, and move the pipeline forward.
+
+---
+
+## Memory Management
+
+All roles store context **outside the repo** to prevent git conflicts.
+
+### Context File Locations
+
+```
+~/.claude/projects/financial/roles/
+├── pm-context.md           # Roadmap, active work, key decisions
+├── ui-designer-context.md  # Design system, active features, design decisions
+├── engineer-context.md     # Architecture, patterns, tech debt
+└── qa-context.md           # Test coverage, known issues, test decisions
+```
+
+These are working notes — **never committed to git**.
+
+### Rules for All Roles
+
+- Keep context files under 300 lines
+- Read your context file at the start of every session
+- Update your context file at the end of every session with key decisions
+- Archive old resolved items — keep only a one-line summary
+- Prioritize recent, actionable information over historical detail
+
+---
+
 ## Project Management
 
 This project uses GitHub for work management. Always check GitHub for open work and update issues as you complete tasks.
@@ -32,9 +140,37 @@ When breaking down a feature into implementable work:
 6. Order by implementation sequence (dependencies first)
 
 ### Issue Labels
-- `feature` - Product features from the roadmap
+
+#### Type Labels (Issue Classification)
+- `feature` - Strategic work requiring PM + Designer definition
+- `user-story` - Implementation work for QA → Engineer → Designer → QA pipeline
 - `bug` - Defects to fix
-- `user-story` - Granular user stories within a feature
+
+#### Feature Workflow States
+| Label | Meaning | Who Acts |
+|-------|---------|----------|
+| `needs-design-spec` | Feature needs design specification created | Designer |
+| `needs-pm-approval` | Designer completed spec — PM review needed | PM |
+| `ready-for-stories` | PM approved spec — break into user stories | PM |
+| *(no label)* | Stories in progress (or complete — PM auto-detects on next `/work-pm` run) | PM (auto) |
+
+#### User Story Workflow States
+| Label | Meaning | Who Acts |
+|-------|---------|----------|
+| `needs-test-plan` | QA must create a test plan | QA |
+| `ready-for-implementation` | Test plan done — Engineer can pick up (if no WIP) | Engineer |
+| `needs-design-review` | Implementation ready — Designer reviews | Designer |
+| `needs-design-changes` | Designer requested changes — Engineer fixes | Engineer |
+| `needs-qa-testing` | Ready for QA verification | QA |
+| `needs-fixes` | QA found bugs — Engineer fixes before re-test | Engineer |
+| `ready-for-pr` | QA approved — Engineer creates PR (do not merge) | Engineer |
+
+#### Blocking / Meta States
+| Label | Meaning | Who Acts |
+|-------|---------|----------|
+| `blocked` | Work is blocked, needs human intervention | Human |
+| `needs-clarification` | Requirements unclear, needs PM or human input | PM / Human |
+| `needs-human-decision` | Escalated — requires human decision to proceed | Human |
 
 ### Priority
 All bugs and user stories should be assigned a priority in the project board:
@@ -50,6 +186,40 @@ Features should have user stories as **sub-issues** (not just references):
 - Add user stories as sub-issues of the feature (see commands below)
 - When user stories are closed, the feature shows progress
 
+### Branch Strategy
+
+| Work Type | Branch | Who Commits | Push Strategy |
+|-----------|--------|-------------|---------------|
+| Feature specs | `main` | Designer only | Direct push to main |
+| Product roadmap | `main` | PM (rare) | Direct push to main |
+| Design system | `main` | Designer | Direct push to main |
+| User story | `feature/US-X.X.X` | Engineer, Designer, QA | Shared branch, all push |
+| Bug fixes | `fix/bug-description` | Engineer | Same as user story |
+
+#### Two Branch Patterns
+
+**1. Feature Documentation (main branch)**
+- WHO: Designer creates specs, PM updates roadmap (rarely)
+- BRANCH: `main`
+- PROCESS: Create/update file → commit directly to main → push
+- RATIONALE: Low-risk documentation, enables fast iteration without PR overhead
+
+**2. User Story Implementation (feature branch)**
+- WHO: Engineer creates branch, all agents contribute
+- BRANCH: `feature/US-X.X.X`
+- PROCESS: Engineer creates branch → Designer reviews/tweaks → QA tests → Engineer creates PR → Human merges
+- RATIONALE: All work for one story in one reviewable unit, with human approval gate
+
+#### Branch Workflow Steps
+
+1. **Engineer** creates `feature/US-X.X.X` from main, implements, pushes to origin
+2. **Designer** fetches, checks out the branch, reviews implementation, optionally commits spec clarifications, pushes
+3. **QA** fetches, checks out the branch, tests, optionally commits test files, pushes
+4. **Engineer** creates a single PR containing all commits from all agents
+5. **Human** reviews and merges the entire branch — issue auto-closes via "Fixes #X"
+
+See `docs/ASYNC-WORKFLOW-IMPLEMENTATION-PLAN.md` for detailed examples of both patterns.
+
 ### Documentation Split
 
 | What | Where | Purpose |
@@ -64,150 +234,12 @@ When adding new features:
 1. If it's a new strategic direction or vision change → Update PRODUCT_ROADMAP.md
 2. If it's actionable work to implement → Create a GitHub Issue
 
-### Collaboration Workflow: PM → Designer → Engineer
+### Role Communication
 
-This project uses a structured handoff process between roles to ensure clear communication and quality deliverables.
+#### Addressing Roles in Issue/PR Comments
 
-#### Phase 1: Feature Definition (Product Manager)
+When you need a specific role to act, prefix your comment with their role name — this makes it searchable:
 
-**PM Responsibilities:**
-- Create GitHub issue with feature/user story
-- Include user story format: "As a [user], I want [goal], so that [benefit]"
-- Define acceptance criteria with checkboxes
-- Set priority and assign to milestone
-- Tag appropriately (`feature`, `user-story`, `bug`)
-
-**Outputs:**
-- GitHub issue with clear requirements
-- Acceptance criteria defined
-- Priority set
-
-#### Phase 2: Design Specification (UI Designer)
-
-**Designer Responsibilities:**
-- Review GitHub issue for design implications
-- Ask clarifying questions as issue comments
-- Create detailed design specification in `docs/specs/feature-name.md`
-- Comment on issue with link to spec file
-- Iterate with PM until design is approved
-
-**Design Spec Contains:**
-- Detailed wireframes (mobile/tablet/desktop)
-- Interaction patterns and behavior
-- Component specifications
-- Responsive breakpoint behavior
-- Design system references
-- Implementation notes for engineers
-- Accessibility requirements
-
-**Workflow:**
-```
-1. Designer comments: "Reviewing this feature, will create design spec"
-2. Designer asks PM questions if needed (in issue comments)
-3. Designer creates docs/specs/feature-name.md
-4. Designer comments: "Design spec ready: [link to spec]"
-5. PM reviews spec, provides feedback
-6. Designer updates spec based on feedback
-7. Designer comments: "Spec finalized and ready for engineering"
-```
-
-**Outputs:**
-- `docs/specs/feature-name.md` with comprehensive design specification
-- Issue comment linking to spec file
-- PM approval documented in issue
-
-#### Phase 3: Implementation (Engineer)
-
-**Engineer Responsibilities:**
-- Implement from design specification
-- Follow design system standards ([docs/design-system.md](docs/design-system.md))
-- Create PR that references both issue and spec file
-- Request design review before merging
-
-**Workflow:**
-```
-1. Engineer comments: "Starting implementation from [spec file]"
-2. Engineer builds according to spec
-3. Engineer creates PR:
-   - Title describes the change
-   - Body includes "Fixes #<number>"
-   - Body links to spec file: "Implements [docs/specs/feature-name.md]"
-4. Designer reviews PR for design compliance
-5. PM validates against acceptance criteria
-6. PR merged, issue auto-closes
-```
-
-**Outputs:**
-- Working implementation matching design spec
-- PR with issue and spec references
-- Designer and PM approval
-
-#### File Organization
-
-```
-docs/
-  specs/                           # Design specifications (Designer creates)
-    feature-name.md
-    component-name-spec.md
-  design-system.md                 # Design system reference
-  PRODUCT_ROADMAP.md               # Product vision and strategy
-  roles/                           # Role-specific context/memory
-    pm-context.md
-    ui-designer-context.md
-```
-
-#### Key Principles
-
-1. **PM owns WHAT and WHY** - Product decisions, priorities, business goals
-2. **Designer owns HOW (UX)** - User experience, interaction design, visual design
-3. **Engineer owns HOW (Technical)** - Implementation, architecture, code quality
-4. **GitHub Issues** - Discussion, questions, decisions, status tracking
-5. **Spec Files** - Detailed design documentation, versioned with code
-6. **Clear Handoffs** - Each role explicitly signals completion to next role
-
-#### Example Flow
-
-**Scenario: Explorer Mobile Redesign**
-
-1. **PM** creates issue #50: "Explorer page mobile-first redesign"
-   - User story with acceptance criteria
-   - Priority P1, assigned to current milestone
-
-2. **Designer** reviews and comments:
-   - "Will create design spec. Question: Should any stats be above chart?"
-
-3. **PM** responds:
-   - "Chart should be primary, all stats can be below/collapsible"
-
-4. **Designer** creates `docs/specs/explorer-mobile-redesign.md`
-   - Mobile wireframe with chart prominence
-   - Collapsible stats sections
-   - Links to design system patterns
-
-5. **Designer** comments on #50:
-   - "Design spec ready: docs/specs/explorer-mobile-redesign.md"
-   - "@pm please review"
-
-6. **PM** approves:
-   - "Design looks great, approved for engineering"
-
-7. **Engineer** implements and creates PR:
-   - "Fixes #50"
-   - "Implements docs/specs/explorer-mobile-redesign.md"
-
-8. **Designer** reviews PR for design compliance
-9. **PM** validates against acceptance criteria
-10. PR merged, #50 auto-closes
-
-### Role-Based Collaboration Protocol
-
-This section defines how roles communicate and manage work autonomously in GitHub.
-
-#### Addressing Roles in GitHub
-
-When you need a specific role to review, respond, or take action, use clear role mentions:
-
-**In Issue/PR Comments:**
 ```
 Designer: Please review the mobile layout implementation
 PM: Should we include dark mode in this story or defer?
@@ -215,126 +247,125 @@ QA: Ready for testing, all acceptance criteria met
 Engineer: Implementation question about the API endpoint
 ```
 
-**Using GitHub Labels for Workflow States:**
-- `needs-design-spec` - Feature needs design specification created
-- `needs-design-review` - Implementation/PR ready for designer approval
-- `needs-pm-review` - Awaiting PM decision or approval
-- `needs-qa-testing` - Ready for QA verification
+#### Key Principles
 
-**Why This Works:**
-- Text mentions are searchable in GitHub (search for "Designer:" in comments)
-- Labels are filterable in GitHub UI and API (`gh issue list --label needs-design-review`)
-- Clear and unambiguous - no special syntax to remember
-- Works with existing GitHub features
+1. **PM owns WHAT and WHY** — Product decisions, priorities, business goals
+2. **Designer owns HOW (UX)** — User experience, interaction design, visual design
+3. **Engineer owns HOW (Technical)** — Implementation, architecture, code quality
+4. **QA owns QUALITY** — Test plans, verification, bug reporting
+5. **GitHub Issues** — Discussion, questions, decisions, status tracking
+6. **Spec Files** — Detailed design documentation, versioned with code
 
-#### Autonomous Role Behavior
+#### Repository Organization
 
-When a role is invoked via their skill command (e.g., `/ui-designer`, `/pm`, `/qa`), they should:
-
-1. **Check for active workflow context first**
-   - If there's a specific user story or feature being discussed in recent messages
-   - If the conversation is clearly focused on one task
-   - → **FOCUSED MODE**: Work only on that specific task, don't search for other work
-
-2. **If no specific context (starting fresh)**
-   - User invoked the role command without ongoing work
-   - → **AUTONOMOUS MODE**: Check for pending work assigned to that role and proactively address it
-
-**IMPORTANT:** When a role is invoked as part of a workflow command (e.g., `/work-story`), the role should focus ONLY on the specific task in the workflow context, not autonomously search for other work.
-
-#### Role-Specific Autonomous Checklists
-
-**UI Designer** (when in autonomous mode):
-1. Check for new features needing design specs (`gh issue list --label feature,needs-design-spec`)
-2. Check for comments addressed to designer (search for "Designer:" in recent issues)
-3. Check for new user stories under features already designed (tracked in `docs/roles/ui-designer-context.md`)
-4. Check for PRs ready for design review (`gh pr list --label needs-design-review`)
-
-**Product Manager** (when in autonomous mode):
-1. Check for features awaiting PM approval (`gh issue list --label needs-pm-review`)
-2. Check for comments addressed to PM (search for "PM:" in recent issues)
-3. Review and prioritize new feature requests
-4. Check for completed features needing product validation
-
-**QA** (when in autonomous mode):
-1. Check for user stories ready for testing (`gh issue list --label user-story,needs-qa-testing`)
-2. Check for comments addressed to QA (search for "QA:" in recent issues)
-3. Check for PRs ready for QA validation
-4. Review test plan coverage for new features
-
-**Engineer** (when in autonomous mode):
-1. Check for user stories ready for implementation (approved design specs, not in progress)
-2. Check for comments addressed to Engineer (search for "Engineer:" in recent issues)
-3. Check for PRs needing engineering review
-4. Address technical debt and bug fixes
-
-#### Example Autonomous Session
-
-**Scenario:** User invokes `/ui-designer` with no specific context
-
-Designer should:
 ```
-1. Check for new features needing design specs
-   → gh issue list --label feature,needs-design-spec --state open
-   → If found: Review feature, create design spec, comment on issue
-
-2. Check for comments addressed to designer
-   → Search recent comments on open issues for "Designer:"
-   → If found: Respond to questions with design guidance
-
-3. Check active features (from docs/roles/ui-designer-context.md)
-   → For each feature I've designed: Check for new user stories or PRs
-   → Review user stories for design compliance
-   → Review PRs for design implementation quality
-
-4. Check for PRs needing design review
-   → gh pr list --label needs-design-review --state open
-   → Review screenshots, provide approval or request changes
-
-5. Update role context with completed work
-   → Update docs/roles/ui-designer-context.md with progress
+docs/
+  specs/                    # Design specifications (Designer creates, on main)
+  design-system.md          # Design system reference
+  PRODUCT_ROADMAP.md        # Product vision and strategy
+signaltrackers/             # Application code (Engineer)
+tests/                      # Test files (QA)
 ```
 
-## Common Commands
+Agent context files live **outside the repo** at `~/.claude/projects/financial/roles/` — see Memory Management above.
+
+## GitHub Commands
+
+Authoritative command reference. Role command files reference this section.
+
+### Issues
 
 ```bash
 # List open issues
 gh issue list
 
+# List by label (use for queue processing)
+gh issue list --label needs-design-spec --state open
+gh issue list --label ready-for-implementation --state open
+gh issue list --label needs-qa-testing --state open
+
 # View issue details
 gh issue view <number>
 
-# Close an issue when done
-gh issue close <number> --comment "Fixed by..."
+# Create a new issue
+gh issue create --title "Title" --label "feature" --milestone "<milestone-name>"
 
-# Create a new issue (use --milestone to assign to a milestone)
-gh issue create --title "Title" --label "bug" --milestone "<milestone-name>"
+# Add/remove labels
+gh issue edit <number> --add-label needs-design-review
+gh issue edit <number> --remove-label needs-test-plan --add-label ready-for-implementation
 
-# Create PR that auto-closes issue on merge
-gh pr create --title "Title" --body "Fixes #<number>"
+# Comment on an issue
+gh issue comment <number> --body "Comment text here"
 
+# Close an issue
+gh issue close <number> --comment "Completed by..."
+```
+
+### Pull Requests
+
+```bash
+# Create a PR that auto-closes an issue on merge
+gh pr create \
+  --title "US-X.X.X: Story title" \
+  --base main \
+  --body "Fixes #<number>
+
+## Summary
+...
+
+## Testing
+- ✅ All tests passing
+- ✅ Design review approved
+- ✅ QA verification complete"
+
+# View PR
+gh pr view <number>
+
+# List open PRs
+gh pr list
+```
+
+### Project Board
+
+```bash
 # List milestones
 gh api repos/:owner/:repo/milestones | jq -r '.[].title'
 
-# Add issue to project
+# Add issue to project board
 gh project item-add 1 --owner @me --url <issue-url>
 
-# Set priority on a project item (requires item ID and option ID)
-# First get item ID: gh project item-list 1 --owner @me --format json | jq '.items[] | select(.content.number == <issue-number>)'
-# Priority option IDs: P0=feb8faa0, P1=2d29e952, P2=5a6e367a, P3=76b63ab5
+# Set priority on a project item
+# Step 1 — get item ID:
+gh project item-list 1 --owner @me --format json | jq '.items[] | select(.content.number == <issue-number>)'
+# Step 2 — set priority (option IDs: P0=feb8faa0, P1=2d29e952, P2=5a6e367a, P3=76b63ab5):
 gh project item-edit --project-id PVT_kwHOAFS-6M4BO0V5 --id <item-id> --field-id PVTSSF_lAHOAFS-6M4BO0V5zg9c5n0 --single-select-option-id <option-id>
+```
 
-# Add sub-issue to a parent feature (requires issue node IDs)
-# First get issue IDs: gh api graphql -f query='{ repository(owner: "EricMaibach", name: "financial") { issue(number: <num>) { id } } }'
+### Sub-Issues (Feature → User Story Hierarchy)
+
+```bash
+# Step 1 — get issue node IDs:
+gh api graphql -f query='{ repository(owner: "EricMaibach", name: "financial") { issue(number: <num>) { id } } }'
+
+# Step 2 — add user story as sub-issue of a feature:
 gh api graphql -f query='mutation { addSubIssue(input: { issueId: "<parent-id>", subIssueId: "<child-id>" }) { issue { id } } }'
+```
+
+### Labels
+
+```bash
+# List all labels
+gh label list
+
+# Create a label
+gh label create "label-name" --description "What it means" --color "RRGGBB"
 ```
 
 ## Technical Notes
 
 ### Running the Application
 ```bash
-cd signaltrackers
-python dashboard.py
+docker compose up
 ```
 
 ### Key Directories

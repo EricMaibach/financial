@@ -411,214 +411,160 @@ needs-human-decision   # Escalate to human for decision
   docs/test-plans/
   ```
 
-### Phase 2.5: Branch Strategy Documentation
-- [ ] **2.5.1** Document branch strategy in CLAUDE.md
+### Phase 2.5: Branch Strategy Documentation ✅
+- [x] **2.5.1** Document branch strategy in CLAUDE.md
   - Feature documentation: `main` branch, direct push (Designer)
   - User story work: `feature/US-X.X.X` shared branch (all agents)
   - Bug fixes: `fix/description` branch (Engineer)
   - Include branch strategy table
 
-- [ ] **2.5.2** Add branch workflow to role commands
+- [x] **2.5.2** Add branch workflow to role commands
   - **Designer:** When to commit to `main` (specs) vs `feature/US-X.X.X` (review tweaks)
   - **Engineer:** Always create `feature/US-X.X.X` for user stories, commit implementation
   - **QA:** Check out `feature/US-X.X.X` to test, optionally commit test files
   - **PM:** Rarely commits, stays on `main` if needed
 
-- [ ] **2.5.3** Create branch workflow examples
+- [x] **2.5.3** Create branch workflow examples
   - Example: Designer creates spec on main
   - Example: Engineer creates feature branch, Designer/QA contribute, PR created
-  - Add to implementation plan or CLAUDE.md
+  - Examples already in this plan (Examples 1, 2, 3); condensed version added to CLAUDE.md
 
-### Phase 3: GitHub Label Setup
-- [ ] **3.1** Create workflow state labels in GitHub
+### Phase 3: GitHub Label Setup ✅
+- [x] **3.1** Create workflow state labels in GitHub
   - Type labels: `feature`, `user-story`, `bug`
   - Feature states: `needs-design-spec`, `needs-pm-approval`, `ready-for-stories`
   - User story states: `needs-test-plan`, `ready-for-implementation`, `needs-design-review`, `needs-design-changes`, `needs-qa-testing`, `needs-fixes`, `ready-for-pr`
   - Meta states: `blocked`, `needs-clarification`, `needs-human-decision`
 
-- [ ] **3.2** Document label system in CLAUDE.md
+- [x] **3.2** Document label system in CLAUDE.md
 
-### Phase 4: Update CLAUDE.md
-- [ ] **4.1** Add "Workflows Overview" section
-  - Explain Feature workflow vs User Story workflow
-  - When to use each
-  - Visual diagrams
+### Phase 4: Update CLAUDE.md ✅
+- [x] **4.1** Add "Workflows Overview" section
+  - Feature Workflow (PM → Designer → PM → stories) with label transition table
+  - User Story Workflow (QA → Engineer → Designer → QA → PR → Human) with label transition table
+  - Quick reference table for "which workflow?"
 
-- [ ] **4.2** Add "Roles Overview" section
-  - List all roles (PM, Designer, Engineer, QA)
-  - When to invoke each
-  - Interactive vs Autonomous modes
+- [x] **4.2** Add "Roles Overview" section
+  - Table of all 8 commands (4 interactive + 4 autonomous)
+  - Interactive vs Autonomous explanation
 
-- [ ] **4.3** Consolidate "Memory Management" section
-  - Centralize memory management rules
-  - All roles reference this section
-  - Document context file location (~/.claude/projects/financial/roles/)
+- [x] **4.3** Consolidate "Memory Management" section
+  - Centralized section with context file locations
+  - Rules for all roles (read/update each session, 300 line limit)
+  - Context files live outside repo at ~/.claude/projects/financial/roles/
 
-- [ ] **4.4** Consolidate "GitHub Commands" section
-  - One authoritative command reference
-  - Role files reference specific commands they need
+- [x] **4.4** Consolidate "GitHub Commands" section
+  - Renamed to "## GitHub Commands" — authoritative reference
+  - Organized by: Issues, Pull Requests, Project Board, Sub-Issues, Labels
 
-- [ ] **4.5** Update "Collaboration Workflow" section
-  - Replace PM → Designer → Engineer with Feature Workflow
-  - Add User Story Workflow documentation
-  - Clarify relationship between the two
+- [x] **4.5** Update "Collaboration Workflow" section
+  - Removed old PM → Designer → Engineer 3-phase section
+  - Replaced with slim "Role Communication" section (role tagging + key principles + repo org)
+  - Full workflow detail lives in Workflows Overview section (4.1)
 
-- [ ] **4.6** Remove/archive "Role-Based Autonomous" section
-  - Move to individual work-* command files
+- [x] **4.6** Remove/archive "Role-Based Autonomous" section
+  - Removed autonomous checklists and example autonomous session from CLAUDE.md
+  - These will live in work-* command files (Phase 6)
 
-- [ ] **4.7** Update ".env Rules" (keep centralized)
+- [x] **4.7** Update ".env Rules" (keep centralized)
+  - Already well-documented under Technical Notes — no changes needed
 
-### Phase 5: Create Interactive Role Commands
-- [ ] **5.1** Update `pm.md`
-  - Add explicit "Interactive Mode" header
-  - State: "Do NOT autonomously check for work"
-  - Reference ~/.claude/projects/financial/roles/pm-context.md
-  - Reference CLAUDE.md for memory management
-  - Keep user story writing guidelines
+### Phase 5: Create Interactive Role Commands ✅
+- [x] **5.1** Update `pm.md`
+  - Added "# Product Manager — Interactive Mode" header
+  - Added "Do NOT autonomously check for work" statement
+  - Updated context path to ~/.claude/projects/financial/roles/pm-context.md
+  - Replaced inline memory rules with reference to CLAUDE.md Memory Management
+  - Kept user story writing guidelines
 
-- [ ] **5.2** Update `ui-designer.md`
-  - Add explicit "Interactive Mode" header
-  - Remove autonomous mode section (move to work-designer.md)
-  - Reference ~/.claude/projects/financial/roles/ui-designer-context.md
-  - Reference CLAUDE.md for memory management
-  - Keep design principles and guidelines
+- [x] **5.2** Update `ui-designer.md`
+  - Added "# UI/UX Designer — Interactive Mode" header
+  - Removed entire "## Invocation Context" section (Focused/Autonomous Mode content)
+  - Added "Do NOT autonomously check for work" statement
+  - Updated context path to ~/.claude/projects/financial/roles/ui-designer-context.md
+  - Replaced inline memory rules with reference to CLAUDE.md Memory Management
+  - Kept all design principles, guidelines, and Branch Workflow
 
-- [ ] **5.3** Update `engineer.md`
-  - Add explicit "Interactive Mode" header
-  - State: "Do NOT autonomously check for work"
-  - Reference ~/.claude/projects/financial/roles/engineer-context.md
-  - Reference CLAUDE.md for memory management
-  - Keep code quality and security guidelines
+- [x] **5.3** Update `engineer.md`
+  - Added "# Engineer — Interactive Mode" header
+  - Added "Do NOT autonomously check for work" statement
+  - Updated context path to ~/.claude/projects/financial/roles/engineer-context.md
+  - Fixed memory management section (was incorrectly referencing qa-context.md)
+  - Replaced inline memory rules with reference to CLAUDE.md Memory Management
+  - Cleaned up formatting in Branch Workflow section
+  - Kept all code quality and security guidelines
 
-- [ ] **5.4** Update `qa.md`
-  - Add explicit "Interactive Mode" header
-  - State: "Do NOT autonomously check for work"
-  - Reference ~/.claude/projects/financial/roles/qa-context.md
-  - Reference CLAUDE.md for memory management
-  - Keep test strategy guidelines
+- [x] **5.4** Update `qa.md`
+  - Added "# QA Test Engineer — Interactive Mode" header
+  - Added "Do NOT autonomously check for work" statement
+  - Updated context path to ~/.claude/projects/financial/roles/qa-context.md
+  - Replaced inline memory rules with reference to CLAUDE.md Memory Management
+  - Added proper markdown formatting throughout
+  - Fixed Session Wrap-Up to reference correct outside-repo context path
+  - Kept all test strategy guidelines
 
-### Phase 5.5: Add File Permissions to Role Commands
-- [ ] **5.5.1** Add file permissions section to `pm.md`
-  ```markdown
-  ## File Permissions - CRITICAL
+### Phase 5.5: Add File Permissions to Role Commands ✅
+- [x] **5.5.1** Added file permissions section to `pm.md`
+  - Can commit: docs/PRODUCT_ROADMAP.md only (rare)
+  - Cannot commit: code, specs, config, tests
 
-  You should RARELY commit files directly. Your work is primarily:
-  - Creating/updating GitHub issues
-  - Reviewing and approving design specs (via comments)
-  - Breaking features into user stories
+- [x] **5.5.2** Added file permissions section to `ui-designer.md`
+  - Can modify: docs/specs/, docs/design-system.md, static/css/
+  - Cannot modify: Python code, HTML templates, config, tests
 
-  If you must commit (rare), only modify:
-  ✅ docs/PRODUCT_ROADMAP.md
+- [x] **5.5.3** Added file permissions section to `engineer.md`
+  - Can modify: signaltrackers/, templates/, static/js/, tests/, requirements.txt
+  - Coordinate: docs/specs/, design-system.md, static/css/
+  - Cannot modify: PRODUCT_ROADMAP.md, .env
 
-  You must NEVER modify:
-  ❌ Code (signaltrackers/)
-  ❌ Design specs (docs/specs/ - Designer creates these)
-  ❌ Configuration
-  ❌ Anything else
+- [x] **5.5.4** Added file permissions section to `qa.md`
+  - Can modify: tests/, docs/test-plans/, *_test.py
+  - Cannot modify: non-test code, templates, specs, config
 
-  VIOLATION: If you commit unauthorized files, your commit will be rejected.
-  ```
-
-- [ ] **5.5.2** Add file permissions section to `ui-designer.md`
-  ```markdown
-  ## File Permissions - CRITICAL
-
-  You are ONLY authorized to modify:
-  ✅ docs/specs/ (design specifications)
-  ✅ docs/design-system.md (design system documentation)
-  ✅ static/css/ (stylesheets - minor tweaks only)
-
-  You must NEVER modify:
-  ❌ signaltrackers/*.py (Python code - Engineer's domain)
-  ❌ templates/*.html (HTML structure - Engineer's domain, you review only)
-  ❌ Configuration files (.env, requirements.txt)
-  ❌ Test files (tests/ - QA's domain)
-
-  If you need code changes:
-  1. Document requirements in issue comment
-  2. Update label to needs-design-changes or needs-fixes
-  3. Let Engineer implement
-
-  VIOLATION: If you commit unauthorized files, your commit will be rejected.
-  ```
-
-- [ ] **5.5.3** Add file permissions section to `engineer.md`
-  ```markdown
-  ## File Permissions
-
-  You can modify most files for implementation:
-  ✅ signaltrackers/ (code)
-  ✅ templates/ (HTML)
-  ✅ static/js/ (JavaScript)
-  ✅ tests/ (test files)
-  ✅ requirements.txt (dependencies)
-
-  Be careful with:
-  ⚠️ docs/specs/ - Ask Designer before modifying specs
-  ⚠️ docs/design-system.md - Follow it, don't modify it
-  ⚠️ static/css/ - Follow design system, coordinate with Designer
-
-  You must NEVER modify:
-  ❌ docs/PRODUCT_ROADMAP.md (PM's domain)
-  ❌ .env (see CLAUDE.md - NEVER edit .env)
-  ```
-
-- [ ] **5.5.4** Add file permissions section to `qa.md`
-  ```markdown
-  ## File Permissions
-
-  You can modify:
-  ✅ tests/ (test files)
-  ✅ docs/test-plans/ (test documentation)
-
-  You can create test files:
-  ✅ signaltrackers/*_test.py (test files alongside code)
-
-  You must NEVER modify:
-  ❌ signaltrackers/*.py (non-test code - Engineer's domain)
-  ❌ templates/ (HTML - Engineer's domain)
-  ❌ docs/specs/ (design specs - Designer's domain)
-  ❌ Configuration files
-  ```
-
-### Phase 6: Create Autonomous Work Commands
-- [ ] **6.1** Create `work-pm.md`
-  - Autonomous mode behavior
+### Phase 6: Create Autonomous Work Commands ✅
+- [x] **6.1** Create `work-pm.md`
+  - "# Product Manager — Autonomous Mode" header
   - Working directory: ~/projects/financial-pm/
-  - Queue checks (needs-pm-approval, needs-clarification)
-  - Work processing logic
-  - Error handling
+  - Queue 1: needs-pm-approval → review spec → approve (ready-for-stories) or request changes
+  - Queue 2: ready-for-stories → break into user stories with sub-issue links
+  - Queue 3: needs-clarification → resolve or escalate
+  - Error handling table
 
-- [ ] **6.2** Create `work-designer.md`
-  - Autonomous mode behavior
+- [x] **6.2** Create `work-designer.md`
+  - "# UI/UX Designer — Autonomous Mode" header
   - Working directory: ~/projects/financial-designer/
-  - Queue checks (needs-design-spec, needs-design-review)
-  - Work processing logic
-  - Screenshot generation and review
-  - Error handling
+  - Queue 1 (priority): needs-design-review → checkout feature branch, review, approve or request changes
+  - Queue 2: needs-design-spec → checkout main, create spec, push, update label
+  - Queue 3: respond to "Designer:" comments
+  - Design spec template included
+  - 3-iteration limit with needs-human-decision escalation
+  - Error handling table
 
-- [ ] **6.3** Create `work-engineer.md`
-  - Autonomous mode behavior
+- [x] **6.3** Create `work-engineer.md`
+  - "# Engineer — Autonomous Mode" header
   - Working directory: ~/projects/financial-engineer/
-  - **WIP Limit: 1 story** enforcement
-  - Queue checks (ready-for-implementation, needs-design-changes, needs-fixes)
-  - Implementation workflow
-  - PR creation (DO NOT MERGE)
-  - Error handling
+  - WIP limit check command (jq query) before any new story pickup
+  - Queue 1: needs-design-changes → fix design issues, back to needs-design-review
+  - Queue 2: needs-fixes → fix QA bugs, back to needs-qa-testing
+  - Queue 3: ready-for-pr → pull all commits, create PR (DO NOT MERGE)
+  - Queue 4: ready-for-implementation → only if no WIP, implement, push, route to review
+  - Error handling table
 
-- [ ] **6.4** Create `work-qa.md`
-  - Autonomous mode behavior
+- [x] **6.4** Create `work-qa.md`
+  - "# QA Test Engineer — Autonomous Mode" header
   - Working directory: ~/projects/financial-qa/
-  - Queue checks (needs-test-plan, needs-qa-testing)
-  - Test plan creation
-  - Test execution and verification
-  - Error handling
+  - Queue 1 (priority): needs-qa-testing → checkout branch, run tests, approve (ready-for-pr) or file bugs (needs-fixes)
+  - Queue 2: needs-test-plan → create test plan as issue comment, advance to ready-for-implementation
+  - Queue 3: triage new bug reports
+  - Bug creation template included
+  - Error handling table
 
-### Phase 7: Remove Synchronous Workflow
-- [ ] **7.1** Archive or delete `work-story.md`
-  - Optionally keep in `docs/archive/` for reference
+### Phase 7: Remove Synchronous Workflow ✅
+- [x] **7.1** Archive or delete `work-story.md`
+  - Archived to `docs/archive/work-story.md` for reference
 
-- [ ] **7.2** Update skills list if work-story was registered
+- [x] **7.2** Update skills list if work-story was registered
+  - Removed by deleting `.claude/commands/work-story.md` (skills auto-discovered from commands/)
 
 ### Phase 8: Testing & Validation
 - [ ] **8.1** Test Feature Workflow
