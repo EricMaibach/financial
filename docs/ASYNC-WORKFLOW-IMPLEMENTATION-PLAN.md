@@ -384,7 +384,7 @@ needs-human-decision   # Escalate to human for decision
 - [x] Create implementation plan (this document)
 
 ### Phase 2: Repository Setup
-- [ ] **2.1** Create multiple repo checkouts
+- [x] **2.1** Create multiple repo checkouts
   ```bash
   cd ~/projects
   git clone git@github.com:EricMaibach/financial.git financial-pm
@@ -393,13 +393,13 @@ needs-human-decision   # Escalate to human for decision
   git clone git@github.com:EricMaibach/financial.git financial-qa
   ```
 
-- [ ] **2.2** Create agent context directory structure
+- [x] **2.2** Create agent context directory structure
   ```bash
   mkdir -p ~/.claude/projects/financial/roles
   mkdir -p ~/.claude/projects/financial/logs
   ```
 
-- [ ] **2.3** Move existing context files (if any)
+- [x] **2.3** Move existing context files (if any)
   ```bash
   mv ~/projects/financial/docs/roles/*.md ~/.claude/projects/financial/roles/ 2>/dev/null || true
   ```

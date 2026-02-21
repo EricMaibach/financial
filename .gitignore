@@ -34,3 +34,6 @@ package-lock.json
 screenshots/
 test-results/
 playwright-report/
+
+docs/roles/
+docs/test-plans/
