@@ -1,0 +1,28 @@
+{
+  "name": "financial",
+  "version": "1.0.0",
+  "description": "**Comprehensive macro intelligence for individual investors**",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "screenshots": "playwright test screenshots.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EricMaibach/financial.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EricMaibach/financial/issues"
+  },
+  "homepage": "https://github.com/EricMaibach/financial#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}
