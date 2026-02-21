@@ -1394,12 +1394,6 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/credit')
-def credit():
-    """Credit markets page."""
-    return render_template('credit.html')
-
-
 @app.route('/equity')
 def equity():
     """Equity markets page."""
