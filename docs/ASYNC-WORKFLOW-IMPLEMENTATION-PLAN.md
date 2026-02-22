@@ -567,13 +567,13 @@ needs-human-decision   # Escalate to human for decision
   - Removed by deleting `.claude/commands/work-story.md` (skills auto-discovered from commands/)
 
 ### Phase 8: Testing & Validation
-- [ ] **8.1** Test Feature Workflow
+- [x] **8.1** Test Feature Workflow
   - PM creates feature
   - Designer creates spec
   - PM approves
   - Verify labels update correctly
 
-- [ ] **8.2** Test User Story Workflow (Happy Path)
+- [x] **8.2** Test User Story Workflow (Happy Path)
   - QA creates test plan
   - Engineer implements
   - Designer reviews (if UI)
@@ -582,24 +582,24 @@ needs-human-decision   # Escalate to human for decision
   - Human merges
   - Issue auto-closes
 
-- [ ] **8.3** Test User Story Workflow (Iteration)
+- [x] **8.3** Test User Story Workflow (Iteration)
   - Designer requests changes
   - Engineer fixes
   - Back to design review
   - Verify loop works
 
-- [ ] **8.4** Test WIP Limit Enforcement
+- [x] **8.4** Test WIP Limit Enforcement
   - Start story A
   - Try to start story B (should be blocked)
   - Merge story A
   - Verify story B can now start
 
-- [ ] **8.5** Test Interactive Mode
+- [x] **8.5** Test Interactive Mode
   - Invoke /ui-designer
   - Ask questions
   - Verify it doesn't autonomously check for work
 
-- [ ] **8.6** Test Autonomous Mode
+- [x] **8.6** Test Autonomous Mode
   - Invoke /work-designer
   - Verify it checks queues and processes work
 
