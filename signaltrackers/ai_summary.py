@@ -276,7 +276,7 @@ def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, l
             "system": system_prompt,
             "messages": messages,
             "thinking": {
-                "type": "enabled",
+                "type": "adaptive",
                 "budget_tokens": thinking_budget
             }
         }
