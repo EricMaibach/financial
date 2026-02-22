@@ -5,7 +5,7 @@ SignalTrackers is a Python macro financial dashboard providing comprehensive mar
 
 ## Workflows Overview
 
-This project uses **two distinct async workflows**. Choose based on the type of work:
+This project uses **three async workflows**. Choose based on the type of work:
 
 ### Feature Workflow (New Features)
 
@@ -53,12 +53,31 @@ QA creates test plan → Engineer implements → Designer reviews → QA tests �
 | Create PR (do NOT merge) | Engineer | PR created |
 | Review and merge | **Human** | Issue auto-closes |
 
+### Council Workflow (Ideation)
+
+Runs on a schedule. Surfaces new ideas and product refinements, funnels approved ones into the Feature Workflow as Feature Issues. See `docs/COUNCIL-WORKFLOW.md` for full design.
+
+```
+Researcher/Designer post findings → CEO approves/dismisses → PM creates Feature Issue
+                                                                        ↓
+                                                            Feature Workflow picks it up
+```
+
+| Agent | Schedule | Role |
+|-------|----------|------|
+| Researcher | Daily (8am) | Looks outward — new models, data sources, competitor gaps |
+| Designer Council | Daily (9am) | Looks inward — UX debt, design gaps, refinements |
+| CEO | Weekly (Mon 10am) | Reviews all council inputs, makes go/no-go decisions |
+| PM Council | Weekly (Mon 11am) | Translates CEO approvals into Feature Issues |
+
 ### Quick Reference
 
 | Situation | Workflow |
 |-----------|----------|
+| New idea from research or market insight | Council Workflow → Feature Workflow |
+| UX refinement or design debt | Council Workflow → Feature Workflow |
 | New feature with UI changes | Feature Workflow → User Story Workflow |
-| Backend-only new feature | Create issue → User Story Workflow |
+| Backend-only new feature | Feature Workflow → User Story Workflow |
 | Bug fix | User Story Workflow (skip to `needs-test-plan`) |
 | Design spec update | Feature Workflow (Designer commits to `main`) |
 | Documentation update | Direct commit to `main` |
@@ -66,6 +85,8 @@ QA creates test plan → Engineer implements → Designer reviews → QA tests �
 ---
 
 ## Roles Overview
+
+#### Implementation Roles
 
 | Role | Command | Mode | When to Use |
 |------|---------|------|-------------|
@@ -78,10 +99,20 @@ QA creates test plan → Engineer implements → Designer reviews → QA tests �
 | Engineer (autonomous) | `/work-engineer` | Autonomous | Process engineering queue: implement stories, create PRs |
 | QA (autonomous) | `/work-qa` | Autonomous | Process QA queue: create test plans, verify implementations |
 
-### Interactive vs Autonomous
+#### Council Roles (Scheduled — run via scripts, not manually)
 
-- **Interactive** (`/pm`, `/ui-designer`, `/engineer`, `/qa`) — Discuss, advise, answer questions. **Does NOT autonomously check for or pick up work from GitHub queues.**
-- **Autonomous** (`/work-pm`, `/work-designer`, `/work-engineer`, `/work-qa`) — Check GitHub label queues, pick up work, process it, and move the pipeline forward.
+| Role | Command | Schedule | When to Use |
+|------|---------|----------|-------------|
+| Researcher | `/work-researcher` | Daily 8am | Surface new opportunities: models, data sources, competitor gaps |
+| Designer Council | `/work-designer-council` | Daily 9am | Surface UX debt and product refinements |
+| CEO | `/work-ceo` | Weekly Mon 10am | Review all council inputs, approve or dismiss ideas |
+| PM Council | `/work-pm-council` | Weekly Mon 11am | Translate CEO approvals into Feature Issues |
+
+### Interactive vs Autonomous vs Scheduled
+
+- **Interactive** (`/pm`, `/ui-designer`, `/engineer`, `/qa`) — Discuss, advise, answer questions. Does NOT pick up work from queues.
+- **Autonomous** (`/work-pm`, `/work-designer`, `/work-engineer`, `/work-qa`) — Check GitHub label queues, pick up work, move the pipeline forward. Run on-demand.
+- **Scheduled** (`/work-researcher`, `/work-designer-council`, `/work-ceo`, `/work-pm-council`) — Run automatically via cron. Do not run manually except for testing.
 
 ---
 
@@ -93,10 +124,17 @@ All roles store context **outside the repo** to prevent git conflicts.
 
 ```
 ~/.claude/projects/financial/roles/
-├── pm-context.md           # Roadmap, active work, key decisions
-├── ui-designer-context.md  # Design system, active features, design decisions
-├── engineer-context.md     # Architecture, patterns, tech debt
-└── qa-context.md           # Test coverage, known issues, test decisions
+├── pm-context.md              # Roadmap, active work, key decisions
+├── ui-designer-context.md     # Design system, active features, design decisions
+├── engineer-context.md        # Architecture, patterns, tech debt
+├── qa-context.md              # Test coverage, known issues, test decisions
+├── researcher-context.md      # Topics researched, open CEO questions (council)
+└── ceo-context.md             # Strategic priorities, decisions, dismissed directions (council)
+```
+
+Council config (repo IDs, Discussion category IDs, GraphQL snippets):
+```
+~/.claude/projects/financial/council-config.md
 ```
 
 These are working notes — **never committed to git**.
@@ -374,6 +412,27 @@ docker compose up
 - `signaltrackers/static/` - CSS, JS, images
 - `signaltrackers/data/` - CSV data files for metrics
 - `docs/` - Documentation and specifications
+
+### Council Workflow Scripts
+
+```bash
+# One-time setup — installs cron jobs for all council agents
+bash scripts/setup-council-cron.sh
+
+# Check installed cron jobs
+crontab -l
+
+# View logs
+tail -f ~/.claude/projects/financial/logs/researcher-council.log
+tail -f ~/.claude/projects/financial/logs/designer-council.log
+tail -f ~/.claude/projects/financial/logs/council-weekly.log
+
+# Run manually for testing (do not run on schedule)
+claude --dangerously-skip-permissions -p "/work-researcher"
+claude --dangerously-skip-permissions -p "/work-ceo"
+```
+
+See `docs/COUNCIL-WORKFLOW.md` for full design, state machine, and implementation details.
 
 ### Data Collection
 ```bash
