@@ -205,6 +205,34 @@ class TestChatbotJSMessageInteraction(unittest.TestCase):
         self.assertIn('csrf-token', self.chatbot_js)
         self.assertIn('X-CSRFToken', self.chatbot_js)
 
+    def test_enter_key_dispatches_cancelable_submit(self):
+        """Regression for bug #102: Enter key must dispatch a cancelable submit event.
+
+        Without { cancelable: true }, e.preventDefault() in sendMessage() has no effect
+        and the browser's default form submission fires, navigating the page and closing
+        the chatbot panel.
+        """
+        # Verify the Enter-key handler dispatches a cancelable event
+        self.assertIn(
+            "new Event('submit', { cancelable: true })",
+            self.chatbot_js,
+            "Enter key handler must dispatch submit with { cancelable: true } to allow "
+            "sendMessage() to call e.preventDefault() and suppress page navigation."
+        )
+
+    def test_retry_dispatches_cancelable_submit(self):
+        """Regression for bug #102: retryLastMessage must dispatch a cancelable submit event.
+
+        Same root cause as the Enter key bug — non-cancelable event bypasses preventDefault.
+        """
+        # Count occurrences: both Enter handler and retryLastMessage must use cancelable: true
+        count = self.chatbot_js.count("new Event('submit', { cancelable: true })")
+        self.assertGreaterEqual(
+            count, 2,
+            "Both Enter key handler and retryLastMessage() must dispatch submit with "
+            "{ cancelable: true }. Found only %d occurrence(s)." % count
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

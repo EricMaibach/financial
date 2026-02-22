@@ -61,7 +61,7 @@ class ChatbotWidget {
             this.input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    this.form.dispatchEvent(new Event('submit'));
+                    this.form.dispatchEvent(new Event('submit', { cancelable: true }));
                 }
             });
         }
@@ -324,7 +324,7 @@ class ChatbotWidget {
 
         // Put message back in input and submit
         this.input.value = this.lastUserMessage;
-        this.form.dispatchEvent(new Event('submit'));
+        this.form.dispatchEvent(new Event('submit', { cancelable: true }));
     }
 
     showPerformanceBanner() {
