@@ -51,6 +51,8 @@
 
 .chatbot-fab[aria-expanded="true"] {
     transform: scale(0.9);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .chatbot-fab-icon {
