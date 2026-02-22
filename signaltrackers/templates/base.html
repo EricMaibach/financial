@@ -9,6 +9,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/chatbot.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -134,28 +135,91 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- AI Chat Window -->
-    <div id="ai-chat-container" class="ai-chat-hidden">
-        <div id="ai-chat-header">
-            <h6 class="mb-0">
-                <i class="bi bi-chat-dots-fill"></i> Market AI Assistant
-            </h6>
-            <button id="ai-chat-close" class="btn-close btn-close-white" aria-label="Close"></button>
+    <!-- Chatbot Widget: Floating Action Button (Minimized State) -->
+    <button
+        id="chatbot-fab"
+        class="chatbot-fab"
+        aria-label="Open AI chatbot"
+        aria-expanded="false">
+        <span class="chatbot-fab-icon" aria-hidden="true"><i class="bi bi-robot"></i></span>
+        <span class="chatbot-badge" aria-label=""></span>
+    </button>
+
+    <!-- Chatbot Widget: Panel (Expanded State) -->
+    <aside
+        id="chatbot-panel"
+        class="chatbot-panel"
+        role="complementary"
+        aria-labelledby="chatbot-title"
+        aria-hidden="true">
+
+        <!-- Header -->
+        <header class="chatbot-header">
+            <h2 id="chatbot-title" class="chatbot-title">AI Chatbot</h2>
+            <div class="chatbot-header-actions">
+                <button
+                    class="chatbot-minimize"
+                    aria-label="Minimize chatbot"
+                    aria-controls="chatbot-panel">
+                    <span aria-hidden="true">−</span>
+                </button>
+                <button
+                    class="chatbot-close"
+                    aria-label="Close chatbot"
+                    aria-controls="chatbot-panel">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Message Area -->
+        <div
+            class="chatbot-messages"
+            role="log"
+            aria-live="polite"
+            aria-atomic="false"
+            aria-label="Chat messages">
+
+            <!-- Clear Conversation Link (shown when messages exist) -->
+            <button
+                class="chatbot-clear-link"
+                aria-label="Clear conversation">
+                Clear conversation
+            </button>
+
+            <!-- Empty State -->
+            <div class="chatbot-empty-state">
+                <p class="chatbot-empty-text">Hello! How can I help you understand the markets today?</p>
+            </div>
         </div>
-        <div id="ai-chat-messages"></div>
-        <div id="ai-chat-input-container">
-            <textarea id="ai-chat-input" placeholder="Ask about market data..." rows="2"></textarea>
-            <button id="ai-chat-send" class="btn btn-primary btn-sm">
-                <i class="bi bi-send-fill"></i> Send
+
+        <!-- Performance Banner (appears at 30+ messages) -->
+        <div class="chatbot-performance-banner" role="status" aria-live="polite" hidden>
+            <span class="chatbot-performance-icon" aria-hidden="true">ℹ️</span>
+            <p class="chatbot-performance-text">Long conversation may affect performance. Consider clearing chat to continue.</p>
+            <button class="chatbot-performance-dismiss" aria-label="Dismiss performance notice">
+                <span aria-hidden="true">×</span>
             </button>
         </div>
-    </div>
 
-    <!-- Floating Chat Button -->
-    <button id="ai-chat-button" class="ai-chat-float-btn">
-        <i class="bi bi-robot"></i>
-        <span class="badge bg-danger" id="ai-chat-badge" style="display: none;">!</span>
-    </button>
+        <!-- Input Area -->
+        <form class="chatbot-input-form" aria-label="Send message to AI">
+            <label for="chatbot-input" class="sr-only">Ask about this chart</label>
+            <textarea
+                id="chatbot-input"
+                class="chatbot-input"
+                placeholder="Ask about this chart..."
+                rows="1"
+                aria-describedby="chatbot-input-hint"></textarea>
+            <span id="chatbot-input-hint" class="sr-only">Type your question and press Enter or tap send</span>
+            <button
+                type="submit"
+                class="chatbot-submit"
+                aria-label="Send message">
+                <span aria-hidden="true">↑</span>
+            </button>
+        </form>
+    </aside>
 
     <!-- Refresh Progress Toast -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -183,6 +247,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/chatbot.js') }}"></script>
 
     <!-- Refresh Data Handler -->
     <script>
