@@ -178,7 +178,12 @@ class ChatbotWidget {
 
         } catch (error) {
             this.hideTypingIndicator();
-            this.showError('Could not reach the AI. Check your connection.', true);
+            if (error.message === 'AI_UNAVAILABLE') {
+                this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
+            } else {
+                // Network errors (fetch threw) or other server errors — show retry option
+                this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
+            }
         } finally {
             if (this.form.querySelector('.chatbot-submit')) {
                 this.form.querySelector('.chatbot-submit').disabled = false;
@@ -202,7 +207,8 @@ class ChatbotWidget {
             })
         });
 
-        if (!response.ok) throw new Error('AI request failed');
+        if (response.status === 503) throw new Error('AI_UNAVAILABLE');
+        if (!response.ok) throw new Error('AI_REQUEST_FAILED');
 
         const data = await response.json();
         return data.response;
@@ -282,14 +288,14 @@ class ChatbotWidget {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
-    showError(errorMessage, canRetry = false) {
+    showError(errorMessage, canRetry = false, icon = '⚠️') {
         const errorEl = document.createElement('div');
         errorEl.className = 'chatbot-message chatbot-message--error';
         errorEl.innerHTML = `
-            <span aria-hidden="true">⚠️</span>
+            <span aria-hidden="true">${icon}</span>
             <div>
                 <p style="margin:0">${this.escapeHTML(errorMessage)}</p>
-                ${canRetry ? '<button class="chatbot-retry-btn" style="margin-top:8px;padding:6px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Try Again</button>' : ''}
+                ${canRetry ? '<button class="chatbot-retry-btn">Try Again</button>' : ''}
             </div>
         `;
 
