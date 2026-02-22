@@ -30,6 +30,7 @@ class ChatbotWidget {
         this.conversation = [];
         this.messageCount = 0;
         this.performanceBannerDismissed = false;
+        this.lastUserMessage = null;
 
         if (!this.fab || !this.panel) {
             console.warn('ChatbotWidget: Required elements not found in DOM');
@@ -53,6 +54,16 @@ class ChatbotWidget {
         // Message form
         if (this.form) {
             this.form.addEventListener('submit', (e) => this.sendMessage(e));
+        }
+
+        // Enter key sends message; Shift+Enter creates newline
+        if (this.input) {
+            this.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.form.dispatchEvent(new Event('submit'));
+                }
+            });
         }
 
         // Performance banner dismiss
@@ -131,6 +142,7 @@ class ChatbotWidget {
         this.addMessage('user', message);
         this.conversation.push({ role: 'user', content: message });
         this.messageCount++;
+        this.lastUserMessage = message;
         this.input.value = '';
 
         // Show clear link once messages exist
@@ -166,7 +178,7 @@ class ChatbotWidget {
 
         } catch (error) {
             this.hideTypingIndicator();
-            this.showError('Could not reach the AI. Please try again.');
+            this.showError('Could not reach the AI. Check your connection.', true);
         } finally {
             if (this.form.querySelector('.chatbot-submit')) {
                 this.form.querySelector('.chatbot-submit').disabled = false;
@@ -270,16 +282,43 @@ class ChatbotWidget {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
-    showError(errorMessage) {
+    showError(errorMessage, canRetry = false) {
         const errorEl = document.createElement('div');
         errorEl.className = 'chatbot-message chatbot-message--error';
         errorEl.innerHTML = `
             <span aria-hidden="true">⚠️</span>
-            <p>${this.escapeHTML(errorMessage)}</p>
+            <div>
+                <p style="margin:0">${this.escapeHTML(errorMessage)}</p>
+                ${canRetry ? '<button class="chatbot-retry-btn" style="margin-top:8px;padding:6px 12px;background:#6366F1;color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer;">Try Again</button>' : ''}
+            </div>
         `;
+
+        if (canRetry) {
+            const retryBtn = errorEl.querySelector('.chatbot-retry-btn');
+            retryBtn.addEventListener('click', () => {
+                errorEl.remove();
+                this.retryLastMessage();
+            });
+        }
+
         this.messages.appendChild(errorEl);
         this.scrollToBottom();
         this.announce(`Error: ${errorMessage}`, 'assertive');
+    }
+
+    async retryLastMessage() {
+        if (!this.lastUserMessage) return;
+
+        // Remove last user message from conversation history (will be re-added on send)
+        const lastIdx = this.conversation.findLastIndex(m => m.role === 'user' && m.content === this.lastUserMessage);
+        if (lastIdx !== -1) {
+            this.conversation.splice(lastIdx, 1);
+            this.messageCount--;
+        }
+
+        // Put message back in input and submit
+        this.input.value = this.lastUserMessage;
+        this.form.dispatchEvent(new Event('submit'));
     }
 
     showPerformanceBanner() {
