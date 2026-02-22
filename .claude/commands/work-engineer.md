@@ -34,6 +34,19 @@ For memory management rules, see [CLAUDE.md — Memory Management](../../CLAUDE.
 
 ---
 
+## Open PR Check
+
+**First**, check if any PRs are already open. If so, stop immediately — do not process any queues.
+
+```bash
+gh pr list --state open --json number,title,headRefName
+```
+
+- **If any open PRs exist:** Stop. Comment nothing. Wait for the human to merge before the next session.
+- **If no open PRs:** Proceed to the WIP check below.
+
+---
+
 ## WIP Limit Enforcement
 
 **Before picking up any new story**, check if a story is already in-flight:
@@ -216,6 +229,7 @@ Implements #<issue-number> per design spec."
 
 | Situation | Action |
 |-----------|--------|
+| Open PR exists | Stop immediately. Do not process any queues. Wait for human to merge. |
 | No design spec found for a story | Comment "Designer: No spec found for this story. Please create before implementation." Add `needs-design-spec` to the parent feature if applicable. Keep story at `ready-for-implementation`. |
 | Unclear acceptance criteria | Add `needs-clarification`, comment with specific questions for PM |
 | Merge conflict on feature branch | Resolve with `git rebase main`, force-push if necessary |
