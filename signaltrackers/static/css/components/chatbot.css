@@ -175,6 +175,7 @@
 .chatbot-messages {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior-y: contain; /* prevent scroll chaining to page body */
     padding: 16px; /* space-4 */
     background-color: white;
     display: flex;
@@ -186,6 +187,7 @@
 .chatbot-clear-link {
     align-self: center;
     padding: 8px 16px; /* space-2 space-4 */
+    min-height: 44px; /* touch target minimum */
     background: none;
     border: 1px solid #D1D5DB; /* neutral-300 */
     border-radius: 6px;
@@ -413,6 +415,98 @@
 .chatbot-submit:disabled {
     background-color: #D1D5DB; /* neutral-300 */
     cursor: not-allowed;
+}
+
+/* ============================================
+   Clear Conversation Confirmation Dialog
+   ============================================ */
+.chatbot-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chatbot-dialog-overlay[hidden] {
+    display: none;
+}
+
+.chatbot-dialog {
+    background-color: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 320px;
+    width: calc(100% - 32px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.chatbot-dialog-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1F2937; /* neutral-800 */
+    margin: 0 0 8px 0;
+}
+
+.chatbot-dialog-body {
+    font-size: 14px;
+    color: #6B7280; /* neutral-500 */
+    margin: 0 0 20px 0;
+    line-height: 1.5;
+}
+
+.chatbot-dialog-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Cancel: outlined neutral-600 (default focus — safer choice) */
+.chatbot-dialog-cancel {
+    padding: 10px 16px;
+    background: none;
+    border: 1px solid #4B5563; /* neutral-600 */
+    border-radius: 6px;
+    color: #4B5563; /* neutral-600 */
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background-color 150ms ease;
+}
+
+.chatbot-dialog-cancel:hover {
+    background-color: #F9FAFB; /* neutral-50 */
+}
+
+.chatbot-dialog-cancel:focus {
+    outline: 2px solid #6366F1; /* brand-indigo-500 */
+    outline-offset: 2px;
+}
+
+/* Clear Chat: danger-600 background, white text */
+.chatbot-dialog-confirm {
+    padding: 10px 16px;
+    background-color: #DC2626; /* danger-600 */
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    min-height: 44px;
+    transition: background-color 150ms ease;
+}
+
+.chatbot-dialog-confirm:hover {
+    background-color: #B91C1C; /* danger-700 */
+}
+
+.chatbot-dialog-confirm:focus {
+    outline: 2px solid #6366F1; /* brand-indigo-500 */
+    outline-offset: 2px;
 }
 
 /* Retry Button (Error State) — 44px min touch target */
