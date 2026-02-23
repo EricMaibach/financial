@@ -2,12 +2,12 @@
  * Chatbot Widget
  * Feature 3.2: Chatbot Mobile-First Redesign
  * US-3.2.1: Core Widget Structure & Interaction
+ * US-3.2.2: Message Interaction and AI Integration
+ * US-3.2.3: Conversation Persistence, Notifications, and Polish Features
  *
  * Implements the two-state (minimized / expanded) chatbot widget
  * using a bottom sheet pattern on mobile (< 768px).
  *
- * Message sending/AI integration is added in US-3.2.2.
- * Conversation persistence and badges are added in US-3.2.3.
  * Tablet/desktop layouts are added in US-3.2.4.
  */
 
@@ -24,11 +24,13 @@ class ChatbotWidget {
         this.badge = document.querySelector('.chatbot-badge');
         this.performanceBanner = document.querySelector('.chatbot-performance-banner');
         this.performanceDismiss = document.querySelector('.chatbot-performance-dismiss');
+        this.clearDialog = document.getElementById('chatbot-clear-dialog');
 
         this.isOpen = false;
         this.isAnimating = false;
         this.conversation = [];
         this.messageCount = 0;
+        this.unreadCount = 0;
         this.performanceBannerDismissed = false;
         this.lastUserMessage = null;
 
@@ -71,9 +73,45 @@ class ChatbotWidget {
             this.performanceDismiss.addEventListener('click', () => this.dismissPerformanceBanner());
         }
 
-        // Keyboard shortcut: Escape minimizes panel
+        // Clear dialog buttons
+        if (this.clearDialog) {
+            const cancelBtn = this.clearDialog.querySelector('.chatbot-dialog-cancel');
+            const confirmBtn = this.clearDialog.querySelector('.chatbot-dialog-confirm');
+            if (cancelBtn) cancelBtn.addEventListener('click', () => this.hideClearDialog());
+            if (confirmBtn) confirmBtn.addEventListener('click', () => this.executeClearConversation());
+
+            // Close dialog on overlay click (click outside dialog box)
+            this.clearDialog.addEventListener('click', (e) => {
+                if (e.target === this.clearDialog) this.hideClearDialog();
+            });
+
+            // Trap focus within dialog and handle Escape
+            this.clearDialog.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.hideClearDialog();
+                    return;
+                }
+                if (e.key === 'Tab') {
+                    const focusable = Array.from(
+                        this.clearDialog.querySelectorAll('button:not([disabled])')
+                    );
+                    if (focusable.length === 0) return;
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (e.shiftKey && document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    } else if (!e.shiftKey && document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
+            });
+        }
+
+        // Keyboard shortcut: Escape minimizes panel (when dialog not open)
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isOpen) {
+            if (e.key === 'Escape' && this.isOpen && (!this.clearDialog || this.clearDialog.hasAttribute('hidden'))) {
                 this.close();
             }
         });
@@ -272,13 +310,16 @@ class ChatbotWidget {
 
     showBadge() {
         if (this.badge) {
-            this.badge.textContent = '1';
-            this.badge.setAttribute('aria-label', '1 new message');
+            this.unreadCount++;
+            this.badge.textContent = String(this.unreadCount);
+            const label = `${this.unreadCount} new message${this.unreadCount > 1 ? 's' : ''}`;
+            this.badge.setAttribute('aria-label', label);
         }
     }
 
     clearBadge() {
         if (this.badge) {
+            this.unreadCount = 0;
             this.badge.textContent = '';
             this.badge.removeAttribute('aria-label');
         }
@@ -343,8 +384,26 @@ class ChatbotWidget {
     }
 
     clearConversation() {
-        const confirmed = confirm('Clear conversation? This will delete your chat history.');
-        if (!confirmed) return;
+        this.showClearDialog();
+    }
+
+    showClearDialog() {
+        if (!this.clearDialog) return;
+        this.clearDialog.removeAttribute('hidden');
+        // Default focus on Cancel (safer choice per spec)
+        const cancelBtn = this.clearDialog.querySelector('.chatbot-dialog-cancel');
+        if (cancelBtn) cancelBtn.focus();
+    }
+
+    hideClearDialog() {
+        if (!this.clearDialog) return;
+        this.clearDialog.setAttribute('hidden', '');
+        // Return focus to the clear link
+        if (this.clearBtn) this.clearBtn.focus();
+    }
+
+    executeClearConversation() {
+        this.hideClearDialog();
 
         this.conversation = [];
         this.messageCount = 0;

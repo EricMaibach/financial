@@ -221,6 +221,24 @@
         </form>
     </aside>
 
+    <!-- Clear Conversation Confirmation Dialog -->
+    <div
+        id="chatbot-clear-dialog"
+        class="chatbot-dialog-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="chatbot-dialog-title"
+        hidden>
+        <div class="chatbot-dialog">
+            <h3 id="chatbot-dialog-title" class="chatbot-dialog-title">Clear conversation?</h3>
+            <p class="chatbot-dialog-body">This will delete your chat history.</p>
+            <div class="chatbot-dialog-actions">
+                <button type="button" class="chatbot-dialog-cancel">Cancel</button>
+                <button type="button" class="chatbot-dialog-confirm">Clear Chat</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Refresh Progress Toast -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
         <div id="refresh-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
