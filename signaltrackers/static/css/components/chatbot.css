@@ -175,6 +175,7 @@
 .chatbot-messages {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior-y: contain; /* prevent scroll chaining to page body */
     padding: 16px; /* space-4 */
     background-color: white;
     display: flex;
