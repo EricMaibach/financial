@@ -2285,6 +2285,84 @@ def api_generate_dollar_summary():
 
 
 # ============================================================================
+# Chatbot API Endpoint (Feature 3.2, US-3.2.2)
+# ============================================================================
+
+@app.route('/api/chatbot', methods=['POST'])
+@csrf.exempt  # API endpoint uses login_required for auth
+@login_required
+def api_chatbot():
+    """Handle AI chatbot conversation requests using the user's API key."""
+    from services.ai_service import get_user_ai_client, get_user_ai_model, AIServiceError
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    user_message = data.get('message', '').strip()
+    if not user_message:
+        return jsonify({'error': 'No message provided'}), 400
+
+    conversation_history = data.get('conversation', [])
+    context = data.get('context', {})
+    page = context.get('page', '/')
+
+    try:
+        client, provider = get_user_ai_client()
+    except AIServiceError as e:
+        return jsonify({'error': str(e)}), 400
+
+    model = get_user_ai_model()
+
+    system_prompt = (
+        "You are an AI assistant helping an individual investor understand macro financial markets. "
+        "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
+        f"The user is currently viewing the dashboard page: {page}. "
+        "Be helpful, accurate, and focused on the investor's understanding needs. "
+        "Keep responses concise (2-4 paragraphs) unless more detail is clearly needed."
+    )
+
+    try:
+        if provider == 'anthropic':
+            messages = []
+            for msg in conversation_history:
+                role = 'user' if msg.get('role') == 'user' else 'assistant'
+                messages.append({'role': role, 'content': msg.get('content', '')})
+            messages.append({'role': 'user', 'content': user_message})
+
+            response = client.messages.create(
+                model=model,
+                max_tokens=1024,
+                system=system_prompt,
+                messages=messages
+            )
+            ai_response = response.content[0].text
+
+        else:  # OpenAI (default)
+            messages = [{'role': 'system', 'content': system_prompt}]
+            for msg in conversation_history:
+                role = 'user' if msg.get('role') == 'user' else 'assistant'
+                messages.append({'role': role, 'content': msg.get('content', '')})
+            messages.append({'role': 'user', 'content': user_message})
+
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                max_tokens=1024
+            )
+            ai_response = response.choices[0].message.content
+
+        return jsonify({
+            'response': ai_response,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        app.logger.error(f'Chatbot AI error: {e}')
+        return jsonify({'error': 'AI service unavailable'}), 503
+
+
+# ============================================================================
 # Market Conditions Synthesis API (US-1.2.2)
 # ============================================================================
 

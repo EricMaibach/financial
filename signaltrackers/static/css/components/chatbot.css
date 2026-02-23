@@ -367,7 +367,7 @@
     padding: 12px; /* space-3 */
     border: 1px solid #D1D5DB; /* neutral-300 */
     border-radius: 8px;
-    font-size: 14px; /* text-sm */
+    font-size: 16px; /* ≥16px prevents iOS Safari zoom on focus */
     font-family: inherit;
     resize: none;
     max-height: 44px;
@@ -413,4 +413,29 @@
 .chatbot-submit:disabled {
     background-color: #D1D5DB; /* neutral-300 */
     cursor: not-allowed;
+}
+
+/* Retry Button (Error State) — 44px min touch target */
+.chatbot-retry-btn {
+    margin-top: 8px; /* space-2 */
+    padding: 10px 16px; /* ≥44px height with line-height */
+    min-height: 44px;
+    background-color: #6366F1; /* brand-indigo-500 */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px; /* text-sm */
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 150ms ease;
+}
+
+.chatbot-retry-btn:hover {
+    background-color: #4F46E5; /* brand-indigo-600 */
+}
+
+.chatbot-retry-btn:focus {
+    outline: 2px solid #6366F1; /* brand-indigo-500 */
+    outline-offset: 2px;
 }
