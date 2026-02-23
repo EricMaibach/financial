@@ -186,6 +186,7 @@
 .chatbot-clear-link {
     align-self: center;
     padding: 8px 16px; /* space-2 space-4 */
+    min-height: 44px; /* touch target minimum */
     background: none;
     border: 1px solid #D1D5DB; /* neutral-300 */
     border-radius: 6px;
