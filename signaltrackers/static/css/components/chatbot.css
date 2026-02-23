@@ -533,3 +533,97 @@
     outline: 2px solid #6366F1; /* brand-indigo-500 */
     outline-offset: 2px;
 }
+
+/* ============================================
+   Tablet + Desktop Layout (768px+)
+   Side panel slides in from right edge
+   ============================================ */
+@media (min-width: 768px) {
+
+    /* Panel: right-side sliding panel (full viewport height) */
+    .chatbot-panel {
+        bottom: auto;
+        top: 0;
+        left: auto;
+        right: 0;
+        width: 360px;
+        height: 100vh;
+        border-radius: 0;
+        border-top: none;
+        border-left: 1px solid #E5E7EB; /* neutral-200 */
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        transform: translateX(100%); /* Hidden off right edge */
+    }
+
+    .chatbot-panel[aria-hidden="false"] {
+        transform: translateX(0);
+    }
+
+    /* Header: remove top border-radius (panel corners are square) */
+    .chatbot-header {
+        border-radius: 0;
+    }
+
+    /* FAB: add right-shift transition for smooth repositioning */
+    .chatbot-fab {
+        transition: right 250ms cubic-bezier(0.4, 0.0, 0.2, 1),
+                    box-shadow 150ms ease,
+                    transform 150ms ease;
+    }
+
+    /* FAB shifts left when panel open — stays visible (not hidden like mobile) */
+    .chatbot-fab[aria-expanded="true"] {
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
+        right: 376px; /* 360px panel + 16px margin */
+    }
+
+    .chatbot-fab[aria-expanded="true"]:hover {
+        transform: scale(1.05);
+    }
+}
+
+/* ============================================
+   Desktop Layout (1024px+)
+   Wider side panel + hover enhancements
+   ============================================ */
+@media (min-width: 1024px) {
+
+    /* Panel: wider than tablet */
+    .chatbot-panel {
+        width: 440px;
+    }
+
+    /* FAB shifts further left for wider panel */
+    .chatbot-fab[aria-expanded="true"] {
+        right: 456px; /* 440px panel + 16px margin */
+    }
+
+    /* Enhanced hover scale on desktop (mouse precision) */
+    .chatbot-fab:hover {
+        transform: scale(1.08);
+    }
+
+    /* Tooltip — shows to left of FAB on hover (panel closed only) */
+    .chatbot-fab::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        right: 72px; /* To left of FAB */
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: #1F2937; /* neutral-800 */
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 150ms ease;
+    }
+
+    .chatbot-fab:not([aria-expanded="true"]):hover::after {
+        opacity: 1;
+    }
+}
