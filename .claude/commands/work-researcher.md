@@ -7,7 +7,7 @@ You are acting as the Researcher for SignalTrackers, processing your work queue 
 ## Working Directory
 
 ```bash
-cd ~/projects/financial-pm
+cd ~/Documents/repos/financialproject/financial-pm
 git checkout main
 git pull origin main
 ```

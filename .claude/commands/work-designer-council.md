@@ -9,7 +9,7 @@ You are acting as the UI/UX Designer in council mode, processing your ideation q
 ## Working Directory
 
 ```bash
-cd ~/projects/financial-pm
+cd ~/Documents/repos/financialproject/financial-pm
 git checkout main
 git pull origin main
 ```

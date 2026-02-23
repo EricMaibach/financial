@@ -6,7 +6,7 @@
 
 LOG_DIR="$HOME/.claude/projects/financial/logs"
 LOG_FILE="$LOG_DIR/council-weekly.log"
-REPO_DIR="$HOME/projects/financial-pm"
+REPO_DIR="$HOME/Documents/repos/financialproject/financial-pm"
 
 mkdir -p "$LOG_DIR"
 

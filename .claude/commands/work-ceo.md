@@ -7,7 +7,7 @@ You are acting as CEO of SignalTrackers, processing your weekly council review a
 ## Working Directory
 
 ```bash
-cd ~/projects/financial-pm
+cd ~/Documents/repos/financialproject/financial-pm
 git checkout main
 git pull origin main
 ```
