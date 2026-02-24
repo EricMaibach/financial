@@ -9,6 +9,78 @@
   Do NOT wrap sections in Bootstrap grid (row/col) — this adds gutters
   and breaks alignment. Cards may be used inside sections freely.
 #}
+<!-- Section 0: Current Macro Regime (US-4.1.2) -->
+{% if macro_regime %}
+<section aria-label="Current Macro Regime" id="macro-regime-section" class="mb-4">
+    <div class="section-header mb-3">
+        <h3 class="section-title">
+            <i class="bi bi-globe2 me-2"></i>Current Macro Regime
+        </h3>
+    </div>
+
+    <div class="regime-card {{ macro_regime.css_class }}">
+
+        {# ── State header row ─────────────────────────────── #}
+        <div class="regime-state-row">
+            <div class="regime-state-left">
+                <span class="regime-dot" aria-hidden="true"></span>
+                <i class="bi {{ macro_regime.icon }} regime-icon" aria-hidden="true"></i>
+                <span class="regime-state-name" aria-live="polite">
+                    {{ macro_regime.state | upper }} REGIME
+                </span>
+            </div>
+            {# Date shown inline on mobile only; hidden on tablet+ via CSS #}
+            {% if macro_regime.updated_display %}
+            <span class="regime-updated-inline">Updated {{ macro_regime.updated_display }}</span>
+            {% endif %}
+        </div>
+
+        {# ── Tablet+ 2-col body (state panel | summary) ───── #}
+        <div class="regime-body-2col">
+            <div class="regime-state-panel">
+                {% if macro_regime.updated_display %}
+                <div class="regime-updated-panel">{{ macro_regime.updated_display }}</div>
+                {% endif %}
+                {% if macro_regime.confidence %}
+                <div class="regime-confidence regime-confidence-{{ macro_regime.confidence | lower }}">
+                    Confidence: {{ macro_regime.confidence }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="regime-summary-panel">
+                <p class="regime-summary">{{ macro_regime.summary }}</p>
+            </div>
+        </div>
+
+        {# ── Mobile-only summary (hidden on tablet+ via CSS) ─ #}
+        <div class="regime-summary-mobile">
+            <hr class="regime-divider">
+            <p class="regime-summary">{{ macro_regime.summary }}</p>
+        </div>
+
+        <hr class="regime-divider-lg">
+
+        {# ── Regime-Highlighted Signals ───────────────────── #}
+        <div class="regime-signals-label">Regime-Highlighted Signals</div>
+        <div class="regime-signal-chips" role="list">
+            {% for signal in macro_regime.highlighted_signals %}
+            <a href="{{ signal.link }}"
+               class="regime-signal-chip"
+               role="listitem"
+               aria-label="{{ signal.name }}: loading, {{ signal.annotation }}">
+                <div class="regime-signal-name">{{ signal.name }}</div>
+                <div class="regime-signal-value"
+                     id="regime-chip-{{ signal.key }}"
+                     data-signal="{{ signal.key }}">--</div>
+                <div class="regime-signal-annotation">{{ signal.annotation }}</div>
+            </a>
+            {% endfor %}
+        </div>
+
+    </div>{# /.regime-card #}
+</section>
+{% endif %}{# /macro_regime #}
+
 <!-- Section 1: Market Conditions at a Glance -->
 <section class="market-conditions-section mb-4" id="market-conditions">
     <!-- Section header -->
@@ -876,6 +948,66 @@ function updateMarketConditionsGrid(data) {
 
     // Update Badge Statuses (US-2.0.3)
     updateBadgeStatuses(statuses);
+
+    // Update Regime Signal Chip Values (US-4.1.2)
+    updateRegimeSignals(data);
+}
+
+// ========================================
+// Macro Regime Signal Chip Values (US-4.1.2)
+// ========================================
+
+// Maps each regime signal key to an extractor that reads the dashboard API response.
+// Returns a formatted string or null if data is unavailable.
+const regimeSignalValueExtractors = {
+    high_yield_spread: function(d) {
+        const v = d.metrics && d.metrics.hy_spread && d.metrics.hy_spread.current;
+        return v != null ? v + ' bps' : null;
+    },
+    vix: function(d) {
+        const v = d.metrics && d.metrics.vix && d.metrics.vix.current;
+        return v != null ? v.toFixed(1) : null;
+    },
+    gold: function(d) {
+        const v = d.metrics && d.metrics.gold && d.metrics.gold.price;
+        return v != null ? '$' + v.toLocaleString(undefined, {maximumFractionDigits: 0}) : null;
+    },
+    sp500: function(d) {
+        const v = d.metrics && d.metrics.spy && d.metrics.spy.price;
+        return v != null ? '$' + v.toLocaleString(undefined, {maximumFractionDigits: 0}) : null;
+    },
+    yield_curve_10y2y: function(d) {
+        const v = d.market_grid && d.market_grid.rates && d.market_grid.rates.curve && d.market_grid.rates.curve.value;
+        if (v == null) return null;
+        return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+    },
+    initial_claims: function() { return null; },
+    nfci: function() { return null; },
+};
+
+function updateRegimeSignals(dashboardData) {
+    const chips = document.querySelectorAll('[id^="regime-chip-"]');
+    chips.forEach(function(el) {
+        const signalKey = el.getAttribute('data-signal');
+        if (!signalKey) return;
+        const extractor = regimeSignalValueExtractors[signalKey];
+        if (!extractor) return;
+        const value = extractor(dashboardData);
+        if (value != null) {
+            el.textContent = value;
+            // Update parent chip's aria-label with actual value
+            const chip = el.closest('.regime-signal-chip');
+            if (chip) {
+                const name = chip.querySelector('.regime-signal-name');
+                const annotation = chip.querySelector('.regime-signal-annotation');
+                if (name && annotation) {
+                    chip.setAttribute('aria-label',
+                        name.textContent.trim() + ': ' + value + ', ' + annotation.textContent.trim()
+                    );
+                }
+            }
+        }
+    });
 }
 
 // ========================================

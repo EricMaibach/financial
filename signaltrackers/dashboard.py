@@ -48,6 +48,29 @@ from extensions import init_extensions, db, limiter, csrf
 from models import User, UserSettings
 from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
 from regime_detection import get_macro_regime, update_macro_regime
+from regime_config import (
+    REGIME_METADATA,
+    SIGNAL_REGIME_ANNOTATIONS,
+    REGIME_CATEGORY_RELEVANCE,
+)
+
+# Display names and deep-link URLs for highlighted signals (US-4.1.2)
+_SIGNAL_DISPLAY = {
+    'high_yield_spread':       ('HY Spread',          '/explorer?metric=high_yield_spread'),
+    'investment_grade_spread': ('IG Spread',           '/explorer?metric=investment_grade_spread'),
+    'vix':                     ('VIX',                 '/explorer?metric=vix_price'),
+    'gold':                    ('Gold',                '/explorer?metric=gold_price'),
+    'sp500':                   ('S&P 500',             '/explorer?metric=sp500_price'),
+    'yield_curve_10y2y':       ('10Y-2Y Curve',        '/explorer?metric=yield_curve_10y2y'),
+    'initial_claims':          ('Initial Claims',      '/explorer?metric=initial_claims'),
+    'nfci':                    ('NFCI',                '/explorer?metric=nfci'),
+    'fed_funds_rate':          ('Fed Funds Rate',      '/explorer?metric=fed_funds_rate'),
+    'treasury_10y':            ('10Y Treasury',        '/explorer?metric=treasury_10y'),
+    'real_yield_10y':          ('Real Yield 10Y',      '/explorer?metric=real_yield_10y'),
+    'breakeven_inflation_10y': ('Breakeven 10Y',       '/explorer?metric=breakeven_inflation_10y'),
+    'dollar_index':            ('Dollar Index',        '/explorer?metric=dollar_index_price'),
+    'consumer_confidence':     ('Consumer Confidence', '/explorer?metric=consumer_confidence'),
+}
 
 app = Flask(__name__)
 
@@ -141,9 +164,42 @@ def inject_unread_alerts():
 
 @app.context_processor
 def inject_macro_regime():
-    """Inject current macro regime state into all templates."""
+    """Inject enriched macro regime state into all templates (US-4.1.2)."""
     try:
         regime = get_macro_regime()
+        if regime:
+            state = regime['state']
+            meta = REGIME_METADATA[state]
+
+            # Format updated_at as "Feb 24, 2026"
+            from datetime import datetime as _dt
+            try:
+                dt = _dt.fromisoformat(regime['updated_at'])
+                regime['updated_display'] = dt.strftime('%b %-d, %Y')
+            except (ValueError, KeyError):
+                regime['updated_display'] = ''
+
+            # Enrich with static config data
+            regime['icon'] = meta['icon']
+            regime['css_class'] = meta['css_class']
+            regime['summary'] = meta['summary']
+            regime['category_relevance'] = REGIME_CATEGORY_RELEVANCE.get(state, [])
+
+            # Build highlighted signal list with name, annotation, link
+            signals = []
+            for sig_key in meta['highlighted_signals']:
+                annotation = SIGNAL_REGIME_ANNOTATIONS.get(sig_key, {}).get(state, '')
+                display_name, link = _SIGNAL_DISPLAY.get(
+                    sig_key,
+                    (sig_key.replace('_', ' ').title(), '/explorer?metric=' + sig_key),
+                )
+                signals.append({
+                    'key': sig_key,
+                    'name': display_name,
+                    'annotation': annotation,
+                    'link': link,
+                })
+            regime['highlighted_signals'] = signals
     except Exception:
         regime = None
     return {'macro_regime': regime}
