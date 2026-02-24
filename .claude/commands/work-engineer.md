@@ -166,8 +166,16 @@ gh issue list --label ready-for-pr --state open
 ## Design Spec
 Implements [docs/specs/relevant-spec.md](docs/specs/relevant-spec.md)"
    ```
-5. **DO NOT MERGE** — human responsibility
-6. Comment on issue: "✅ PR #[number] created. All agent reviews complete. Awaiting human merge to unblock the pipeline."
+5. Build and push preview Docker image to GHCR:
+   ```bash
+   echo $(gh auth token) | docker login ghcr.io -u EricMaibach --password-stdin
+   docker build -t ghcr.io/ericmaibach/financial:preview .
+   docker push ghcr.io/ericmaibach/financial:preview
+   ```
+   - If Docker is not available or the push fails, log the error but **do not block the PR** — continue to step 6.
+   - *(Future: once Portainer preview stack webhook is configured, trigger redeploy here)*
+6. **DO NOT MERGE** — human responsibility
+7. Comment on issue: "✅ PR #[number] created. Preview image pushed to `ghcr.io/ericmaibach/financial:preview`. All agent reviews complete. Awaiting human merge to unblock the pipeline."
 
 ### 4. Pick Up New Stories (Only If No WIP)
 
