@@ -148,6 +148,11 @@
 .regime-confidence-medium { color: #A16207; }  /* warning-700 */
 .regime-confidence-low    { color: #B91C1C; }  /* danger-700 */
 
+/* 2-col layout container: hidden on mobile, shown as flex on tablet+ */
+.regime-body-2col {
+  display: none;
+}
+
 /* --- Highlighted Signals --- */
 .regime-signals-label {
   font-size: 0.75rem;
