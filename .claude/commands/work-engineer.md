@@ -204,10 +204,21 @@ gh issue list --label ready-for-implementation --state open
    - Keep changes focused on the story
 8. Run tests before committing:
    ```bash
-   docker compose up -d  # verify app starts
-   python -m pytest tests/ -v               # run test suite
+   docker compose up --build -d  # rebuild image with changes, run detached
+   python -m pytest tests/ -v    # run test suite
    ```
-9. Commit:
+9. **If this story includes UI changes**, update and run all screenshot scripts:
+   - Review each script (`screenshots.spec.js`, `screenshots-chatbot.js`, `screenshot-explorer-interactive.js`) and fix anything your changes would break (updated selectors, changed routes, removed elements, etc.)
+   - If you added new pages or routes, add them to `screenshots.spec.js`
+   - If you added new interactive areas or components, add coverage to the appropriate script or create a new one following the existing pattern
+   - Run all scripts against the running app (screenshots overwrite existing files):
+     ```bash
+     npx playwright test screenshots.spec.js --reporter=line
+     node screenshots-chatbot.js
+     node screenshot-explorer-interactive.js
+     ```
+   - Screenshots are included in the implementation commit below
+10. Commit:
    ```bash
    git add [specific files — never git add .]
    git commit -m "Implement [story title]
@@ -218,8 +229,8 @@ gh issue list --label ready-for-implementation --state open
 Implements #<issue-number> per design spec."
    git push origin feature/US-X.X.X
    ```
-10. Comment on issue: "✅ Implementation complete on branch `feature/US-X.X.X`. [Brief summary of what was built]."
-11. Route to the next stage:
+11. Comment on issue: "✅ Implementation complete on branch `feature/US-X.X.X`. [Brief summary of what was built]."
+12. Route to the next stage:
     - **UI changes present**: `gh issue edit <number> --remove-label ready-for-implementation --add-label needs-design-review`
     - **Backend/non-UI only**: `gh issue edit <number> --remove-label ready-for-implementation --add-label needs-qa-testing`
 
