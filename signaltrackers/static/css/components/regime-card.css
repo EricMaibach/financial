@@ -1,0 +1,257 @@
+/* =============================================================
+   Macro Regime Card — Feature 4.1 / US-4.1.2
+   Homepage Section 0: Current Macro Regime
+   ============================================================= */
+
+/* --- Regime CSS Design Tokens --- */
+:root {
+  /* Bull regime — success palette */
+  --regime-bull-bg:          #DCFCE7;  /* success-100 */
+  --regime-bull-border:      #16A34A;  /* success-600 */
+  --regime-bull-text:        #15803D;  /* success-700 */
+
+  /* Neutral regime — brand-blue palette */
+  --regime-neutral-bg:       #DBEAFE;  /* brand-blue-100 */
+  --regime-neutral-border:   #1E40AF;  /* brand-blue-500 */
+  --regime-neutral-text:     #1D4ED8;  /* brand-blue-700 */
+
+  /* Bear regime — warning palette (NOT red — reserve red for Recession Watch) */
+  --regime-bear-bg:          #FEF3C7;  /* warning-100 */
+  --regime-bear-border:      #CA8A04;  /* warning-600 */
+  --regime-bear-text:        #A16207;  /* warning-700 */
+
+  /* Recession Watch regime — danger palette */
+  --regime-recession-bg:     #FEE2E2;  /* danger-100 */
+  --regime-recession-border: #DC2626;  /* danger-600 */
+  --regime-recession-text:   #B91C1C;  /* danger-700 */
+}
+
+/* --- Regime Card Container --- */
+.regime-card {
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid;
+  box-shadow: none;
+}
+
+.regime-card.regime-bull {
+  background-color: var(--regime-bull-bg);
+  border-color: var(--regime-bull-border);
+}
+
+.regime-card.regime-neutral {
+  background-color: var(--regime-neutral-bg);
+  border-color: var(--regime-neutral-border);
+}
+
+.regime-card.regime-bear {
+  background-color: var(--regime-bear-bg);
+  border-color: var(--regime-bear-border);
+}
+
+.regime-card.regime-recession {
+  background-color: var(--regime-recession-bg);
+  border-color: var(--regime-recession-border);
+}
+
+/* --- State Header Row --- */
+.regime-state-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.regime-state-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 12px colored dot */
+.regime-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.regime-bull .regime-dot     { background-color: var(--regime-bull-border); }
+.regime-neutral .regime-dot  { background-color: var(--regime-neutral-border); }
+.regime-bear .regime-dot     { background-color: var(--regime-bear-border); }
+.regime-recession .regime-dot { background-color: var(--regime-recession-border); }
+
+/* Regime state icon */
+.regime-icon {
+  font-size: 1.125rem;
+}
+
+.regime-bull .regime-icon     { color: var(--regime-bull-border); }
+.regime-neutral .regime-icon  { color: var(--regime-neutral-border); }
+.regime-bear .regime-icon     { color: var(--regime-bear-border); }
+.regime-recession .regime-icon { color: var(--regime-recession-border); }
+
+/* Regime state name (ALL CAPS, 18px, bold) */
+.regime-state-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1c2526;  /* neutral-800 */
+  letter-spacing: 0.01em;
+}
+
+/* "Updated [date]" — shown inline on mobile, inside panel on tablet+ */
+.regime-updated-inline {
+  font-size: 0.75rem;
+  color: #6b7280;  /* neutral-500 */
+  white-space: nowrap;
+}
+
+.regime-updated-panel {
+  display: none;  /* hidden on mobile; shown on tablet+ */
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+/* --- Hairline Dividers --- */
+.regime-divider {
+  border: 0;
+  border-top: 1px solid #e5e7eb;  /* neutral-200 */
+  margin: 12px 0;
+}
+
+.regime-divider-lg {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 16px 0;
+}
+
+/* --- Plain-Language Summary (italic, neutral-700) --- */
+.regime-summary {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #374151;  /* neutral-700 */
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+/* --- Confidence Indicator --- */
+.regime-confidence {
+  display: none;  /* hidden on mobile; shown on tablet+ */
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+.regime-confidence-high   { color: #15803D; }  /* success-700 */
+.regime-confidence-medium { color: #A16207; }  /* warning-700 */
+.regime-confidence-low    { color: #B91C1C; }  /* danger-700 */
+
+/* --- Highlighted Signals --- */
+.regime-signals-label {
+  font-size: 0.75rem;
+  color: #6b7280;  /* neutral-500 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* 2-col grid on mobile */
+.regime-signal-chips {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* --- Individual Signal Chip --- */
+.regime-signal-chip {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;  /* neutral-200 */
+  border-radius: 6px;
+  padding: 12px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  min-height: 44px;  /* accessibility: minimum touch target */
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.regime-signal-chip:hover {
+  text-decoration: none;
+  color: inherit;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.regime-signal-chip:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.regime-signal-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;  /* neutral-700 */
+  margin-bottom: 2px;
+}
+
+.regime-signal-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;  /* neutral-800 */
+  font-family: 'Courier New', Courier, monospace;
+  margin-bottom: 2px;
+}
+
+.regime-signal-annotation {
+  font-size: 0.75rem;
+  color: #4b5563;  /* neutral-600 */
+  line-height: 1.4;
+}
+
+/* =============================================================
+   Responsive — Tablet (768px+)
+   ============================================================= */
+
+@media (min-width: 768px) {
+  .regime-card {
+    padding: 24px;
+  }
+
+  /* Show updated date inside panel, hide from inline header */
+  .regime-updated-inline { display: none; }
+  .regime-updated-panel  { display: block; }
+
+  /* Show confidence indicator */
+  .regime-confidence { display: block; }
+
+  /* 2-column body: state panel (left) + summary (right) */
+  .regime-body-2col {
+    display: flex;
+    gap: 0;
+    align-items: flex-start;
+    margin: 12px 0 0;
+  }
+
+  .regime-state-panel {
+    min-width: 160px;
+    flex-shrink: 0;
+    padding-right: 20px;
+    border-right: 1px solid #e5e7eb;  /* neutral-200 vertical separator */
+    margin-right: 20px;
+  }
+
+  .regime-summary-panel {
+    flex: 1;
+  }
+
+  /* Hide mobile-only summary block */
+  .regime-summary-mobile { display: none !important; }
+
+  /* 3-col signal chips on tablet+ */
+  .regime-signal-chips {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
