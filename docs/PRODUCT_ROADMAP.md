@@ -43,6 +43,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 Planned work:
 - General mobile polish
+- **Fix chatbot close vs. minimize button behavior** — give − (minimize) and × (close) distinct, predictable behaviors; × dismisses chatbot to floating trigger state, − collapses to bottom bar (#124, approved from council: discussion #118, 2026-02-24)
+- **Replace native alert() dialogs in portfolio page with inline/toast error patterns** — 6 callsites in portfolio.html replaced with design-system-consistent inline field errors (validation) and modal error banners (API failures); no backend changes (#125, approved from council: discussion #122, 2026-02-24)
 
 ### Phase 5: Macro Intelligence Layer
 **Milestone goal:** Establish SignalTrackers as the leading macro regime tool for retail investors.
@@ -60,6 +62,7 @@ These ideas are approved for exploration but do not have a milestone yet:
 | Idea | Origin | Notes |
 |------|--------|-------|
 | PCR + GEX regime-conditioned indicators | Dismissed in council #104, reconsidering after macro regime foundation | Prerequisite: complete Phase 5 macro regime work first. Only using free OCC/Barchart data. |
+| **Sector Management Tone Panel** — quarterly GICS sector-level earnings call sentiment from SEC EDGAR 8-K filings + FinBERT (open-source); 11 sectors, one score per sector per quarter, interpreted alongside macro regime state (#123, approved from council: discussion #121, 2026-02-24) | Research discussion #121 | Prerequisite: Phase 5 macro regime work must be in production. Significant NLP pipeline project (more complex than regime detection). Phase 6. |
 
 ---
 
