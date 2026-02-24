@@ -289,6 +289,7 @@
 </style>
 {% endblock %}
 
+{% from '_macros.html' import regime_annotation %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -299,6 +300,10 @@
         <p class="rates-header__description">Tracking Treasury yields, curve shape, and inflation expectations</p>
         <p class="rates-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
     </header>
+
+    <!-- Compact Regime Strip -->
+    {% set page_category = 'Rates' %}
+    {% include '_regime_strip.html' %}
 
     <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
     <div class="content-grid">
@@ -392,26 +397,31 @@
                     <div class="stat-item__label">10-Year Treasury</div>
                     <div class="stat-item__value stat-item__value--large" id="treasury-10y-value">--%</div>
                     <div class="stat-item__secondary" id="treasury-10y-change">--</div>
+                    {{ regime_annotation('treasury_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Yield Curve (10Y-2Y)</div>
                     <div class="stat-item__value" id="yield-curve-value">--%</div>
                     <div class="stat-item__secondary" id="yield-curve-status">--</div>
+                    {{ regime_annotation('yield_curve_10y2y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Yield Curve (10Y-3M)</div>
                     <div class="stat-item__value" id="yield-curve-3m-value">--%</div>
                     <div class="stat-item__secondary" id="yield-curve-3m-status">--</div>
+                    {{ regime_annotation('yield_curve_10y3m') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Real Yield (10Y TIPS)</div>
                     <div class="stat-item__value" id="real-yield-value">--%</div>
                     <div class="stat-item__secondary" id="real-yield-status">--</div>
+                    {{ regime_annotation('real_yield_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Breakeven Inflation</div>
                     <div class="stat-item__value" id="breakeven-value">--%</div>
                     <div class="stat-item__secondary" id="breakeven-status">--</div>
+                    {{ regime_annotation('breakeven_inflation_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">CPI (YoY)</div>
@@ -422,6 +432,7 @@
                     <div class="stat-item__label">Fed Funds Rate</div>
                     <div class="stat-item__value" id="fed-funds-value">--%</div>
                     <div class="stat-item__secondary">Policy rate</div>
+                    {{ regime_annotation('fed_funds_rate') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Curve Status</div>

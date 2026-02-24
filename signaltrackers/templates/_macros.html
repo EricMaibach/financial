@@ -1,0 +1,17 @@
+{% macro regime_annotation(signal_key) %}
+{% if macro_regime and signal_regime_annotations %}
+{% set _text = signal_regime_annotations.get(signal_key, {}).get(macro_regime.state, '') %}
+{% if _text %}
+<div class="regime-annotation {{ macro_regime.css_class }}">
+    <button class="regime-annotation__toggle" aria-expanded="false" type="button">
+        <i class="bi bi-info-circle regime-annotation__icon" aria-hidden="true"></i>
+        <span class="regime-annotation__label">Regime Context</span>
+        <svg class="regime-annotation__chevron" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+    </button>
+    <p class="regime-annotation__text">{{ _text }}</p>
+</div>
+{% endif %}
+{% endif %}
+{% endmacro %}
