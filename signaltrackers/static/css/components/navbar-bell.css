@@ -5,7 +5,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 10px 12px; /* Ensures ≥44×44px touch target */
+    padding: 10px 14px; /* Ensures ≥44×44px touch target (icon ~18px + 28px h-padding = 46px) */
     color: rgba(255, 255, 255, 0.75); /* 75% opacity at rest (0 unread) */
     transition: color 150ms ease, opacity 150ms ease;
     text-decoration: none;
