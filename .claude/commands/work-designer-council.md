@@ -59,7 +59,75 @@ gh api graphql \
 *Designer follow-up posted on [date]*"
 ```
 
-### 2. Identify a Refinement Worth Raising
+### 2. Process Human-Seeded Ideas (Priority over new refinements)
+
+Check for open Refinements discussions posted by the human (not by you) that have not yet been analyzed:
+
+```bash
+gh api graphql \
+  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xz", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
+  | jq '.data.repository.discussions.nodes[] | select(
+      (.body | contains("Posted by Designer") | not) and
+      (.comments.nodes | map(.body) | any(startswith("## Designer Analysis")) | not) and
+      (.comments.nodes | map(.body) | any(startswith("## CEO Decision:")) | not)
+    ) | {id, number, title, body}'
+```
+
+**For each human-seeded discussion found:**
+1. Read the full idea in the discussion body
+2. Investigate it — check the design system, templates, specs, and comparable patterns as relevant
+3. Post your analysis as a comment:
+
+**If worth CEO consideration:**
+```bash
+gh api graphql \
+  -f query='mutation AddComment($discussionId: ID!, $body: String!) { addDiscussionComment(input: { discussionId: $discussionId, body: $body }) { comment { id } } }' \
+  -f discussionId="<discussion-id>" \
+  -f body="## Designer Analysis
+
+[What you found after investigating — reference specific components, pages, or patterns]
+
+## User Impact
+[How this affects the user experience]
+
+## Proposed Direction
+[What improvement looks like — rough direction, not a full spec]
+
+## Effort Estimate
+[Quick win / Medium / Large]
+
+---
+*Designer analysis posted on [date]*"
+```
+Leave the discussion open — the CEO will pick it up on the next weekly run.
+
+**If not worth pursuing (already addressed, out of scope, too minor):**
+```bash
+gh api graphql \
+  -f query='mutation AddComment($discussionId: ID!, $body: String!) { addDiscussionComment(input: { discussionId: $discussionId, body: $body }) { comment { id } } }' \
+  -f discussionId="<discussion-id>" \
+  -f body="## Designer Analysis: NOT RECOMMENDED
+
+[What you investigated and what you found]
+
+## Why Not Pursuing
+[Specific reason: already addressed in #X / too minor / not a UX problem / out of scope / etc.]
+
+[Optional: what would change this assessment]
+
+---
+*Designer analysis posted on [date]*"
+```
+Then close the discussion:
+```bash
+gh api graphql \
+  -f query='mutation CloseDiscussion($discussionId: ID!) { closeDiscussion(input: { discussionId: $discussionId }) { discussion { id } } }' \
+  -f discussionId="<discussion-id>"
+```
+
+Update your context file: `[date] — Human idea: [title] — [Forwarded to CEO / Not recommended: reason]`
+
+### 3. Identify a Refinement Worth Raising
 
 Review the current product state to identify genuine UX debt or improvement opportunities:
 
@@ -83,7 +151,7 @@ ls signaltrackers/templates/
 
 **Rate limit yourself.** Only post if you have identified something genuinely worth the CEO's attention. Aim for 2–4 posts per week across all your council runs, not one per run. If nothing significant stands out, skip posting and record that in your context file.
 
-### 3. Check for Duplicates Before Posting
+### 4. Check for Duplicates Before Posting
 
 Before creating a new discussion, scan open Refinements discussions to avoid duplicates:
 
@@ -95,7 +163,7 @@ gh api graphql \
 
 If a similar refinement is already open, add a comment to it with any new supporting evidence instead of creating a duplicate.
 
-### 4. Post Refinement (If Warranted)
+### 5. Post Refinement (If Warranted)
 
 ```bash
 gh api graphql \
@@ -139,4 +207,4 @@ Update `~/.claude/projects/financial/roles/ui-designer-context.md`:
 - Add any posted discussions: `[date] — [topic] — [discussion #]`
 - Note if nothing was posted and why
 
-Report: "Council run complete. Answered X CEO questions. Posted Y refinement discussions."
+Report: "Council run complete. Answered X CEO questions. Processed Y human-seeded ideas (Z forwarded to CEO, W not recommended). Posted V refinement discussions."

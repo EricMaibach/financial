@@ -142,6 +142,23 @@ gh api graphql \
   -f discussionId="<discussion-id>"
 ```
 
+**Step f — Update PRODUCT_ROADMAP.md:**
+
+Read `docs/PRODUCT_ROADMAP.md` and add the new feature to the appropriate section:
+
+- **If the milestone matches an existing "Upcoming Priorities" phase:** Add a bullet point under that phase's "Planned work" list in the same format as existing entries:
+  `- **[Feature title]** — [one-sentence description synthesized from discussion and CEO rationale] (#[issue-number], approved from council: discussion #[discussion-number], [date])`
+- **If no matching phase exists:** Add a row to the "Strategic Backlog" table instead:
+  `| [Feature title] | Council discussion #[number] | [One-sentence notes] |`
+- Update the `**Last updated:**` date at the top of the file.
+
+Commit and push:
+```bash
+git add docs/PRODUCT_ROADMAP.md
+git commit -m "Update roadmap: add [feature title] to [phase/backlog]"
+git push origin main
+```
+
 > **Important:** Do NOT break this feature into user stories here. That is the job of `/work-pm` in the existing Feature Workflow, once a design spec exists (or directly for backend-only features). Your job here is only to create the well-formed feature issue.
 
 ---
@@ -154,6 +171,7 @@ gh api graphql \
 | No milestone exists that fits the approved idea | Create the feature issue without a milestone. Comment on the discussion: `PM: No suitable milestone found. Feature issue #X created — human should assign milestone.` |
 | Discussion body is too thin to write a meaningful feature issue | Add a `needs-clarification` label to the created issue and comment asking PM (interactive mode) to flesh it out |
 | GraphQL API error on close | Note the error. The feature issue was already created. The discussion will be picked up and re-processed next week — but PM will detect the existing feature issue as a duplicate and close cleanly then. |
+| Roadmap phase is ambiguous — milestone name doesn't clearly map to a phase | Use your best judgement. If uncertain, add to Strategic Backlog rather than the wrong phase. |
 
 ---
 

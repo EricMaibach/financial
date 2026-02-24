@@ -125,6 +125,16 @@ gh issue list --label feature --state open --json number,title,labels \
    - Verify all acceptance criteria from the original feature issue are met
    - Comment: "✅ All user stories complete. Feature verified against acceptance criteria. Closing."
    - `gh issue close <number> --comment "All [N] user stories implemented and merged. Feature complete."`
+   - **Update PRODUCT_ROADMAP.md:** Read the file and find the feature by title. Then:
+     - If it appears in a `| Feature | Status |` table: change its status cell to `Complete`
+     - If it appears as a bullet point in an Upcoming Priorities section: add `✅ ` prefix to the bullet
+     - Update the `**Last updated:**` date at the top
+     - Commit and push:
+       ```bash
+       git add docs/PRODUCT_ROADMAP.md
+       git commit -m "Update roadmap: [feature title] complete"
+       git push origin main
+       ```
 
 ### 4. Handle Issues Needing Clarification
 
@@ -155,4 +165,4 @@ gh issue list --label needs-clarification --state open
 ## Session Wrap-Up
 
 1. Update `~/.claude/projects/financial/roles/pm-context.md` with key decisions
-2. Report what was processed: "Reviewed X specs, created Y user stories across Z features, closed N completed features"
+2. Report what was processed: "Reviewed X specs, created Y user stories across Z features, closed N completed features, updated roadmap for [features]"

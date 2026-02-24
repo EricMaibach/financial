@@ -62,7 +62,75 @@ gh api graphql \
 
 4. Update your context file: mark the question as answered
 
-### 2. Research New Topics
+### 2. Process Human-Seeded Ideas (Priority over new research)
+
+Check for open Research discussions posted by the human (not by you) that have not yet been analyzed:
+
+```bash
+gh api graphql \
+  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xy", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
+  | jq '.data.repository.discussions.nodes[] | select(
+      (.body | contains("Posted by Researcher") | not) and
+      (.comments.nodes | map(.body) | any(startswith("## Researcher Analysis")) | not) and
+      (.comments.nodes | map(.body) | any(startswith("## CEO Decision:")) | not)
+    ) | {id, number, title, body}'
+```
+
+**For each human-seeded discussion found:**
+1. Read the full idea in the discussion body
+2. Research it using web search — treat it the same as any other research topic
+3. Post your analysis as a comment:
+
+**If worth CEO consideration:**
+```bash
+gh api graphql \
+  -f query='mutation AddComment($discussionId: ID!, $body: String!) { addDiscussionComment(input: { discussionId: $discussionId, body: $body }) { comment { id } } }' \
+  -f discussionId="<discussion-id>" \
+  -f body="## Researcher Analysis
+
+[2-3 sentence summary of what you found]
+
+## Evidence
+[Links, data, sources]
+
+## Why This Matters for SignalTrackers
+[Specific relevance to our product and users — be concrete]
+
+## Suggested Direction
+[Starting point for CEO consideration — not a prescription]
+
+---
+*Researcher analysis posted on [date]*"
+```
+Leave the discussion open — the CEO will pick it up on the next weekly run.
+
+**If not worth pursuing (low signal, already covered, out of scope):**
+```bash
+gh api graphql \
+  -f query='mutation AddComment($discussionId: ID!, $body: String!) { addDiscussionComment(input: { discussionId: $discussionId, body: $body }) { comment { id } } }' \
+  -f discussionId="<discussion-id>" \
+  -f body="## Researcher Analysis: NOT RECOMMENDED
+
+[What you investigated and what you found]
+
+## Why Not Pursuing
+[Specific reason: already covered by #X / low signal / out of scope / insufficient data / etc.]
+
+[Optional: what would change this assessment]
+
+---
+*Researcher analysis posted on [date]*"
+```
+Then close the discussion:
+```bash
+gh api graphql \
+  -f query='mutation CloseDiscussion($discussionId: ID!) { closeDiscussion(input: { discussionId: $discussionId }) { discussion { id } } }' \
+  -f discussionId="<discussion-id>"
+```
+
+Update your context file: `[date] — Human idea: [title] — [Forwarded to CEO / Not recommended: reason]`
+
+### 3. Research New Topics
 
 **Before researching**, read these to understand what is already covered:
 - `docs/PRODUCT_ROADMAP.md` — what is already planned
@@ -87,7 +155,7 @@ gh api graphql \
 
 **Check for duplicates** before posting: scan open discussion titles for similar topics. If a very similar discussion is already open, add a comment to it with your new findings instead of creating a new discussion.
 
-### 3. Post Findings
+### 4. Post Findings
 
 For each new topic worth posting, create a Discussion in the Research category:
 
@@ -133,4 +201,4 @@ Update `~/.claude/projects/financial/roles/researcher-context.md`:
 - Remove answered questions from "Open CEO Questions"
 - Note any new CEO questions added
 
-Report: "Answered X CEO questions. Posted Y new research discussions: [titles]."
+Report: "Answered X CEO questions. Processed Y human-seeded ideas (Z forwarded to CEO, W not recommended). Posted V new research discussions: [titles]."
