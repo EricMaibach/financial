@@ -165,6 +165,10 @@ For any new bug issues without priority set:
 - Assess severity (P0=blocking, P1=major, P2=standard, P3=minor)
 - Set priority on the project board
 - Comment with initial triage: risk assessment and suggested fix approach
+- Add `needs-test-plan` to inject the bug into the implementation pipeline:
+  ```bash
+  gh issue edit <number> --add-label needs-test-plan
+  ```
 
 ---
 
