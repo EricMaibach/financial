@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-23
+**Last updated:** 2026-02-24
 
 ---
 
@@ -31,7 +31,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | Feature | Status |
 |---------|--------|
 | 3.1 — Mobile-first content pages (Credit, Rates, Dollar, Equities, Crypto, Safe Havens, Explorer) | Complete |
-| 3.2 — Chatbot mobile-first redesign | In progress (US-3.2.3, US-3.2.4 remaining) |
+| 3.2 — Chatbot mobile-first redesign (bottom sheet, ≤50% viewport, full persistence) | Complete |
+| 3.4 — Visible alert indicator in navbar (bell icon + unread badge, mobile + desktop) | Complete |
 
 ---
 
@@ -41,8 +42,6 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 **Milestone goal:** Finish the mobile foundation; address UX debt before adding new features.
 
 Planned work:
-- Complete Feature 3.2 (chatbot redesign) — US-3.2.3 and US-3.2.4
-- **Visible Alert Indicator in Navbar** — bell icon in top-level nav, visible without expanding dropdowns (approved from council: discussion #106, 2026-02-23)
 - General mobile polish
 
 ### Phase 5: Macro Intelligence Layer
