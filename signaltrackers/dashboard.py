@@ -47,6 +47,7 @@ from config import get_config
 from extensions import init_extensions, db, limiter, csrf
 from models import User, UserSettings
 from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
+from regime_detection import get_macro_regime, update_macro_regime
 
 app = Flask(__name__)
 
@@ -136,6 +137,16 @@ def inject_unread_alerts():
         pass
 
     return {'unread_alert_count': 0}
+
+
+@app.context_processor
+def inject_macro_regime():
+    """Inject current macro regime state into all templates."""
+    try:
+        regime = get_macro_regime()
+    except Exception:
+        regime = None
+    return {'macro_regime': regime}
 
 
 def init_scheduler():
@@ -2032,6 +2043,14 @@ def run_data_collection():
                 print(f"Market synthesis generation failed: {synthesis_result['error']}")
         except Exception as synthesis_error:
             print(f"Market synthesis error (non-fatal): {synthesis_error}")
+
+        # Update macro regime state (runs after market data is refreshed)
+        reload_status['status'] = 'Updating macro regime state...'
+        print("Updating macro regime state...")
+        try:
+            update_macro_regime()
+        except Exception as regime_error:
+            print(f"Macro regime update error (non-fatal): {regime_error}")
 
         # Mark as successful
         reload_status['success'] = True
