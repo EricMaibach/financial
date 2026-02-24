@@ -1,0 +1,41 @@
+/* Navbar Bell Icon — US-3.4.1: Visible Alert Indicator */
+
+.navbar-bell-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px; /* Ensures ≥44×44px touch target */
+    color: rgba(255, 255, 255, 0.75); /* 75% opacity at rest (0 unread) */
+    transition: color 150ms ease, opacity 150ms ease;
+    text-decoration: none;
+}
+
+.navbar-bell-btn:hover,
+.navbar-bell-btn.active,
+.navbar-bell-btn--unread {
+    color: #ffffff; /* 100% opacity on hover, active page, or when unread > 0 */
+}
+
+.navbar-bell-btn i {
+    font-size: 1.1rem;
+}
+
+.navbar-bell-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 3px;
+    background-color: #DC2626; /* danger-600 */
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    border-radius: 50px;
+    border: 2px solid #212529; /* matches Bootstrap bg-dark navbar background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
