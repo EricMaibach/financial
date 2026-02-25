@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-24
+**Last updated:** 2026-02-25
 
 ---
 
@@ -44,7 +44,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | Feature | Status |
 |---------|--------|
 | 4.1 — Macro Regime Detection: regime-conditional signal weighting (Bull/Neutral/Bear/Recession Watch, FRED-MD) | Complete |
-| 4.2 — Fix chatbot close vs. minimize button behavior (− minimizes, × dismisses to floating trigger) | In Progress |
+| 4.2 — Fix chatbot close vs. minimize button behavior (− minimizes, × dismisses to floating trigger) | Complete |
 | 4.3 — Replace native alert() dialogs in portfolio page with inline/toast error patterns | In Progress |
 
 ### Phase 5: Macro Intelligence Layer
