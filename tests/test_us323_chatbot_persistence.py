@@ -107,8 +107,9 @@ class TestBadgeNotifications(unittest.TestCase):
 
     def test_show_badge_sets_accessible_aria_label(self):
         """showBadge() must set aria-label with message count."""
+        # US-4.2.1: aria-label appears deeper in the method body (~320+ chars)
         idx = self.js.find('showBadge() {')
-        func_body = self.js[idx:idx + 300]
+        func_body = self.js[idx:idx + 700]
         self.assertIn('aria-label', func_body)
 
     def test_clear_badge_resets_unread_count(self):
@@ -126,20 +127,19 @@ class TestBadgeNotifications(unittest.TestCase):
 
     def test_badge_cleared_on_open(self):
         """Opening chatbot must clear badge (user has seen messages)."""
-        idx = self.js.find('open()')
+        # US-4.2.1: open() renamed to expand() in three-state model; method is long (~1000 chars)
+        idx = self.js.find('expand() {')
         self.assertGreater(idx, 0)
-        func_body = self.js[idx:idx + 300]
+        func_body = self.js[idx:idx + 1200]
         self.assertIn('clearBadge()', func_body)
 
     def test_badge_shown_only_when_minimized(self):
-        """Badge must only show when chatbot is minimized (not open)."""
-        # Check that showBadge() is called inside an `if (!this.isOpen)` guard
-        pattern = r'if\s*\(\s*!\s*this\.isOpen\s*\)'
-        self.assertRegex(self.js, pattern)
-        # And showBadge is called nearby
-        idx = re.search(pattern, self.js).start()
-        nearby = self.js[idx:idx + 100]
-        self.assertIn('showBadge()', nearby)
+        """Badge must only show when chatbot is not expanded (minimized or closed)."""
+        # US-4.2.1: showBadge() is guarded by state check; look backwards from the call
+        idx = self.js.find('showBadge()')
+        self.assertGreater(idx, 0)
+        context = self.js[max(0, idx - 200):idx + 50]
+        self.assertIn("this.state !== 'expanded'", context)
 
     def test_badge_element_in_html(self):
         """FAB must include badge span element."""
@@ -367,18 +367,19 @@ class TestPerformanceBanner(unittest.TestCase):
 
 
 class TestXButtonBehavior(unittest.TestCase):
-    """Verify X button minimizes (does not clear) the conversation."""
+    """Verify X button closes to FAB (does not clear) the conversation."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
         self.html = read_file(BASE_HTML_PATH)
 
     def test_close_button_calls_close_not_clear(self):
-        """Close button (X) must call close() which minimizes, not clear conversation."""
+        """Close button (X) must call closeChatbot() (closes to FAB), not clear conversation."""
+        # US-4.2.1: × now calls closeChatbot() (closes to FAB only, not minimizes to strip)
         idx = self.js.find('closeBtn.addEventListener')
         self.assertGreater(idx, 0)
         handler = self.js[idx:idx + 150]
-        self.assertIn('this.close()', handler)
+        self.assertIn('this.closeChatbot()', handler)
         self.assertNotIn('clearConversation', handler)
 
     def test_close_button_in_html(self):
@@ -386,10 +387,11 @@ class TestXButtonBehavior(unittest.TestCase):
         self.assertIn('class="chatbot-close"', self.html)
 
     def test_close_method_does_not_clear_conversation(self):
-        """close() method must not touch conversation data."""
-        idx = self.js.find('close() {')
+        """closeChatbot() method must not touch conversation data."""
+        # US-4.2.1: close() renamed to closeChatbot() in three-state model
+        idx = self.js.find('closeChatbot() {')
         self.assertGreater(idx, 0)
-        # Find end of close() method (next method definition)
+        # Find end of closeChatbot() method (next method definition)
         next_method = self.js.find('\n    async sendMessage', idx)
         func_body = self.js[idx:next_method]
         self.assertNotIn('this.conversation', func_body)
