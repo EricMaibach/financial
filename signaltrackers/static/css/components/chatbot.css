@@ -627,3 +627,126 @@
         opacity: 1;
     }
 }
+
+/* ============================================
+   FAB: Hidden state (Minimized — strip is the trigger)
+   Feature 4.2: US-4.2.1 Three-State Model
+   ============================================ */
+.chatbot-fab[data-chatbot-hidden] {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+}
+
+/* ============================================
+   Bottom Strip (Minimized State)
+   Feature 4.2: US-4.2.1 Three-State Model
+   ============================================ */
+.chatbot-strip {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background-color: #1F2937; /* neutral-800 */
+    border-top: 1px solid #4B5563; /* neutral-600 */
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    padding: 0 16px; /* space-4 */
+    gap: 8px; /* space-2 */
+    cursor: pointer;
+    font-family: inherit;
+    color: white;
+    text-align: left;
+    /* Fade-in animation: starts invisible, transitions to visible via JS class */
+    opacity: 0;
+    transition: opacity 200ms ease 50ms; /* 50ms delay per spec */
+}
+
+.chatbot-strip[hidden] {
+    display: none;
+}
+
+/* Strip visible state (class added by JS after removing hidden) */
+.chatbot-strip.chatbot-strip--visible {
+    opacity: 1;
+}
+
+.chatbot-strip:hover {
+    background-color: #374151; /* neutral-700 — subtle hover */
+}
+
+.chatbot-strip:focus {
+    outline: 2px solid #6366F1; /* brand-indigo-500 */
+    outline-offset: -2px; /* inset since strip is full-width */
+}
+
+/* Strip icon (chat icon, 20px, white) */
+.chatbot-strip-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    color: white;
+}
+
+/* Strip label: "AI Chatbot", text-sm, weight 500 */
+.chatbot-strip-label {
+    font-size: 14px; /* text-sm */
+    font-weight: 500;
+    color: white;
+    flex: 1;
+}
+
+/* Strip unread badge (same spec as FAB badge) */
+.chatbot-strip-badge {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background-color: #DC2626; /* danger-600 */
+    color: white;
+    font-size: 12px; /* text-xs */
+    font-weight: 700;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.chatbot-strip-badge[hidden] {
+    display: none;
+}
+
+/* Strip expand chevron (▲, rightmost) */
+.chatbot-strip-chevron {
+    font-size: 20px;
+    flex-shrink: 0;
+    color: white;
+    margin-left: auto;
+}
+
+/* ============================================
+   Bottom Strip: Tablet (768px+)
+   Strip aligns with panel width (right side)
+   ============================================ */
+@media (min-width: 768px) {
+    .chatbot-strip {
+        left: auto;
+        right: 0;
+        width: 360px; /* matches panel width */
+    }
+}
+
+/* ============================================
+   Bottom Strip: Desktop (1024px+)
+   Strip aligns with wider panel width
+   ============================================ */
+@media (min-width: 1024px) {
+    .chatbot-strip {
+        width: 440px; /* matches panel width */
+    }
+}
