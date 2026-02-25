@@ -39,8 +39,7 @@
         {% if macro_regime.trend %}
         <div class="regime-trend-row regime-trend-mobile"
              aria-label="Trend: {{ macro_regime.trend | title }}">
-            <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}"
-                  aria-hidden="true">
+            <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}">
                 <i class="bi bi-arrow-{{ 'up-right' if macro_regime.trend == 'improving' else ('right' if macro_regime.trend == 'stable' else 'down-right') }}"
                    aria-hidden="true"></i>
                 {{ macro_regime.trend | title }}
@@ -63,8 +62,7 @@
                 {% if macro_regime.trend %}
                 <div class="regime-trend-row regime-trend-panel"
                      aria-label="Trend: {{ macro_regime.trend | title }}">
-                    <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}"
-                          aria-hidden="true">
+                    <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}">
                         <i class="bi bi-arrow-{{ 'up-right' if macro_regime.trend == 'improving' else ('right' if macro_regime.trend == 'stable' else 'down-right') }}"
                            aria-hidden="true"></i>
                         {{ macro_regime.trend | title }}
