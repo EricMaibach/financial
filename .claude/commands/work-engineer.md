@@ -173,7 +173,6 @@ Implements [docs/specs/relevant-spec.md](docs/specs/relevant-spec.md)"
    docker push ghcr.io/ericmaibach/financial:preview
    ```
    - If Docker is not available or the push fails, log the error but **do not block the PR** — continue to step 6.
-   - *(Future: once Portainer preview stack webhook is configured, trigger redeploy here)*
 6. **DO NOT MERGE** — human responsibility
 7. Comment on issue: "✅ PR #[number] created. Preview image pushed to `ghcr.io/ericmaibach/financial:preview`. All agent reviews complete. Awaiting human merge to unblock the pipeline."
 
