@@ -41,17 +41,17 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ### Phase 4: Mobile Polish + Core UX Wins
 **Milestone goal:** Finish the mobile foundation; address UX debt before adding new features.
 
-Planned work:
-- General mobile polish
-- **Fix chatbot close vs. minimize button behavior** — give − (minimize) and × (close) distinct, predictable behaviors; × dismisses chatbot to floating trigger state, − collapses to bottom bar (#124, approved from council: discussion #118, 2026-02-24)
-- **Replace native alert() dialogs in portfolio page with inline/toast error patterns** — 6 callsites in portfolio.html replaced with design-system-consistent inline field errors (validation) and modal error banners (API failures); no backend changes (#125, approved from council: discussion #122, 2026-02-24)
+| Feature | Status |
+|---------|--------|
+| 4.1 — Macro Regime Detection: regime-conditional signal weighting (Bull/Neutral/Bear/Recession Watch, FRED-MD) | Complete |
+| 4.2 — Fix chatbot close vs. minimize button behavior (− minimizes, × dismisses to floating trigger) | In Progress |
+| 4.3 — Replace native alert() dialogs in portfolio page with inline/toast error patterns | In Progress |
 
 ### Phase 5: Macro Intelligence Layer
 **Milestone goal:** Establish SignalTrackers as the leading macro regime tool for retail investors.
 
 Planned work (ordered by dependency):
-1. **Macro Regime Detection: Regime-Conditional Signal Weighting** — weight existing signals by current regime state (Bull/Neutral/Bear/Recession Watch). Uses FRED-MD data and published methodology (arXiv 2503.11499). No new data pipelines required to start. (Approved from council: discussion #105, 2026-02-23)
-2. **Macro Regime Score Panel** — synthesized headline regime indicator updated daily, visible on dashboard. Logical follow-on once signal weighting validates the approach.
+1. **Macro Regime Score Panel** — synthesized headline regime indicator updated daily, visible on dashboard. Logical follow-on now that signal weighting (Phase 4) has validated the approach.
 
 ---
 
