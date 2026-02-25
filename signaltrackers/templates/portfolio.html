@@ -191,7 +191,7 @@
                     <input type="hidden" id="holding-id">
                     <div class="mb-3">
                         <label for="asset-type" class="form-label">Asset Type</label>
-                        <select class="form-select" id="asset-type" required>
+                        <select class="form-select" id="asset-type" aria-describedby="asset-type-error" required>
                             <option value="">Select type...</option>
                             <option value="stock">Stock</option>
                             <option value="etf">ETF</option>
@@ -203,28 +203,32 @@
                             <option value="money_market">Money Market</option>
                             <option value="other">Other</option>
                         </select>
+                        <span id="asset-type-error" class="form-error-message" role="alert" hidden><span aria-hidden="true">⚠ </span>Please fill in all required fields</span>
                     </div>
                     <div class="mb-3" id="symbol-group">
                         <label for="holding-symbol" class="form-label">Symbol</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="holding-symbol" placeholder="e.g., AAPL, SPY">
+                            <input type="text" class="form-control" id="holding-symbol" aria-describedby="symbol-error" placeholder="e.g., AAPL, SPY">
                             <button class="btn btn-outline-secondary" type="button" onclick="lookupSymbol()">
                                 <i class="bi bi-search"></i> Lookup
                             </button>
                         </div>
                         <div id="symbol-feedback" class="form-text"></div>
+                        <span id="symbol-error" class="form-error-message" role="alert" hidden><span aria-hidden="true">⚠ </span>Symbol is required for this asset type</span>
                     </div>
                     <div class="mb-3">
                         <label for="holding-name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="holding-name" placeholder="e.g., Apple Inc" required>
+                        <input type="text" class="form-control" id="holding-name" aria-describedby="name-error" placeholder="e.g., Apple Inc" required>
+                        <span id="name-error" class="form-error-message" role="alert" hidden><span aria-hidden="true">⚠ </span>Please fill in all required fields</span>
                     </div>
                     <div class="mb-3">
                         <label for="holding-percentage" class="form-label">Allocation Percentage</label>
                         <div class="input-group">
-                            <input type="number" class="form-control" id="holding-percentage" min="0.01" max="100" step="0.01" required>
+                            <input type="number" class="form-control" id="holding-percentage" aria-describedby="percentage-error" min="0.01" max="100" step="0.01" required>
                             <span class="input-group-text">%</span>
                         </div>
                         <div id="percentage-feedback" class="form-text"></div>
+                        <span id="percentage-error" class="form-error-message" role="alert" hidden><span aria-hidden="true">⚠ </span>Please fill in all required fields</span>
                     </div>
                 </form>
             </div>
@@ -282,11 +286,19 @@ document.addEventListener('DOMContentLoaded', function() {
     holdingModal = new bootstrap.Modal(document.getElementById('holdingModal'));
     deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 
+    // Clear validation errors when modal closes
+    document.getElementById('holdingModal').addEventListener('hidden.bs.modal', function() {
+        clearValidationErrors();
+    });
+
     // Asset type change handler
     document.getElementById('asset-type').addEventListener('change', function() {
         const symbolGroup = document.getElementById('symbol-group');
         const symbolInput = document.getElementById('holding-symbol');
         const nameInput = document.getElementById('holding-name');
+
+        // Clear asset-type error when user selects a value
+        if (this.value) clearFieldError('asset-type-error', 'asset-type');
 
         if (SYMBOL_REQUIRED.includes(this.value)) {
             symbolGroup.style.display = 'block';
@@ -295,6 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
             symbolGroup.style.display = 'none';
             symbolInput.required = false;
             symbolInput.value = '';
+            clearFieldError('symbol-error', 'holding-symbol');
 
             // Pre-fill name for known types
             if (this.value === 'crypto') {
@@ -309,6 +322,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 nameInput.value = '';
             }
         }
+    });
+
+    // Re-validate on input after a failed submit attempt
+    document.getElementById('holding-name').addEventListener('input', function() {
+        if (this.value.trim()) clearFieldError('name-error', 'holding-name');
+    });
+    document.getElementById('holding-percentage').addEventListener('input', function() {
+        if (!isNaN(parseFloat(this.value))) clearFieldError('percentage-error', 'holding-percentage');
+    });
+    document.getElementById('holding-symbol').addEventListener('input', function() {
+        if (this.value.trim()) clearFieldError('symbol-error', 'holding-symbol');
     });
 
     loadPortfolioData();
@@ -549,6 +573,7 @@ function showAddModal() {
     document.getElementById('symbol-group').style.display = 'none';
     document.getElementById('symbol-feedback').textContent = '';
     document.getElementById('percentage-feedback').textContent = '';
+    clearValidationErrors();
     holdingModal.show();
 }
 
@@ -572,6 +597,7 @@ function editHolding(id) {
         symbolGroup.style.display = 'none';
     }
 
+    clearValidationErrors();
     holdingModal.show();
 }
 
@@ -608,6 +634,34 @@ async function lookupSymbol() {
     }
 }
 
+// Validation helpers
+function showFieldError(errorId, inputId) {
+    const errorEl = document.getElementById(errorId);
+    const inputEl = document.getElementById(inputId);
+    if (errorEl) errorEl.hidden = false;
+    if (inputEl) {
+        inputEl.classList.add('form-control--error');
+        inputEl.setAttribute('aria-invalid', 'true');
+    }
+}
+
+function clearFieldError(errorId, inputId) {
+    const errorEl = document.getElementById(errorId);
+    const inputEl = document.getElementById(inputId);
+    if (errorEl) errorEl.hidden = true;
+    if (inputEl) {
+        inputEl.classList.remove('form-control--error');
+        inputEl.removeAttribute('aria-invalid');
+    }
+}
+
+function clearValidationErrors() {
+    clearFieldError('asset-type-error', 'asset-type');
+    clearFieldError('name-error', 'holding-name');
+    clearFieldError('percentage-error', 'holding-percentage');
+    clearFieldError('symbol-error', 'holding-symbol');
+}
+
 // Save holding
 async function saveHolding() {
     const id = document.getElementById('holding-id').value;
@@ -616,16 +670,28 @@ async function saveHolding() {
     const name = document.getElementById('holding-name').value.trim();
     const percentage = parseFloat(document.getElementById('holding-percentage').value);
 
-    // Validation
-    if (!assetType || !name || isNaN(percentage)) {
-        alert('Please fill in all required fields');
-        return;
+    // Inline validation — replace alert() with per-field inline errors
+    clearValidationErrors();
+    let hasErrors = false;
+
+    if (!assetType) {
+        showFieldError('asset-type-error', 'asset-type');
+        hasErrors = true;
+    }
+    if (!name) {
+        showFieldError('name-error', 'holding-name');
+        hasErrors = true;
+    }
+    if (isNaN(percentage)) {
+        showFieldError('percentage-error', 'holding-percentage');
+        hasErrors = true;
+    }
+    if (SYMBOL_REQUIRED.includes(assetType) && !symbol) {
+        showFieldError('symbol-error', 'holding-symbol');
+        hasErrors = true;
     }
 
-    if (SYMBOL_REQUIRED.includes(assetType) && !symbol) {
-        alert('Symbol is required for this asset type');
-        return;
-    }
+    if (hasErrors) return;
 
     const payload = {
         asset_type: assetType,

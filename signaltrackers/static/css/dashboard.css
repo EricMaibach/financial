@@ -1642,3 +1642,22 @@ footer {
         opacity: 0;
     }
 }
+
+/* =============================================
+   Form Validation Error Styles (US-4.3.x)
+   ============================================= */
+
+.form-error-message {
+    display: block;
+    color: #DC2626; /* danger-600 */
+    font-size: 14px; /* text-sm */
+    font-weight: 400;
+    margin-top: 4px; /* space-1 */
+    line-height: 1.4;
+}
+
+.form-control.form-control--error,
+.form-select.form-control--error {
+    border-color: #DC2626; /* danger-600 */
+    border-width: 2px;
+}
