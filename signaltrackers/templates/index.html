@@ -89,33 +89,43 @@
     </div>
 
     <!-- Compact badges (default state) -->
+    {# US-4.1.4: Regime-relevance dots — derive variables once for all 6 cards #}
+    {% set _relevance = macro_regime.category_relevance if macro_regime else [] %}
+    {% set _regime_css = macro_regime.css_class if macro_regime else '' %}
+    {% set _regime_state = macro_regime.state if macro_regime else '' %}
     <div class="market-badges-grid" id="market-badges">
-        <div class="badge-card" data-category="credit">
+        <div class="badge-card{% if 'Credit' in _relevance %} regime-highlighted{% endif %}" data-category="credit"{% if 'Credit' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="CREDIT — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
+            {% if 'Credit' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
             <i class="bi bi-bank2 badge-icon"></i>
             <div class="badge-label">CREDIT</div>
             <div class="badge-status" id="badge-credit-status">--</div>
         </div>
-        <div class="badge-card" data-category="equities">
+        <div class="badge-card{% if 'Equities' in _relevance %} regime-highlighted{% endif %}" data-category="equities"{% if 'Equities' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="EQUITIES — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
+            {% if 'Equities' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
             <i class="bi bi-graph-up badge-icon"></i>
             <div class="badge-label">EQUITIES</div>
             <div class="badge-status" id="badge-equities-status">--</div>
         </div>
-        <div class="badge-card" data-category="rates">
+        <div class="badge-card{% if 'Rates' in _relevance %} regime-highlighted{% endif %}" data-category="rates"{% if 'Rates' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="RATES — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
+            {% if 'Rates' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
             <i class="bi bi-graph-up-arrow badge-icon"></i>
             <div class="badge-label">RATES</div>
             <div class="badge-status" id="badge-rates-status">--</div>
         </div>
-        <div class="badge-card" data-category="havens">
+        <div class="badge-card{% if 'Safe Havens' in _relevance %} regime-highlighted{% endif %}" data-category="havens"{% if 'Safe Havens' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="SAFE HAVENS — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
+            {% if 'Safe Havens' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
             <i class="bi bi-shield-check badge-icon"></i>
             <div class="badge-label">SAFE HAVENS</div>
             <div class="badge-status" id="badge-havens-status">--</div>
         </div>
-        <div class="badge-card" data-category="crypto">
+        <div class="badge-card{% if 'Crypto' in _relevance %} regime-highlighted{% endif %}" data-category="crypto"{% if 'Crypto' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="CRYPTO — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
+            {% if 'Crypto' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
             <i class="bi bi-currency-bitcoin badge-icon"></i>
             <div class="badge-label">CRYPTO</div>
             <div class="badge-status" id="badge-crypto-status">--</div>
         </div>
-        <div class="badge-card" data-category="dollar">
+        <div class="badge-card{% if 'Dollar' in _relevance %} regime-highlighted{% endif %}" data-category="dollar"{% if 'Dollar' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="DOLLAR — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
+            {% if 'Dollar' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
             <i class="bi bi-currency-dollar badge-icon"></i>
             <div class="badge-label">DOLLAR</div>
             <div class="badge-status" id="badge-dollar-status">--</div>

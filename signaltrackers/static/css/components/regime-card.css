@@ -436,3 +436,29 @@
   .regime-annotation__text { transition: none; }
   .regime-annotation__chevron { transition: none; }
 }
+
+/* =============================================================
+   Category Badge-Card Regime Dot — US-4.1.4
+   6px dot in top-right corner of regime-highlighted badge-cards
+   ============================================================= */
+
+/* Badge-card needs relative positioning to anchor the absolute dot */
+.badge-card.regime-highlighted {
+  position: relative;
+}
+
+/* Dot: override base .regime-dot (12px flexbox) → 6px absolute top-right */
+.badge-card .regime-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  flex-shrink: unset;
+}
+
+/* Color by regime class applied directly to the dot element */
+.regime-dot.regime-bull      { background-color: var(--regime-bull-border); }
+.regime-dot.regime-neutral   { background-color: var(--regime-neutral-border); }
+.regime-dot.regime-bear      { background-color: var(--regime-bear-border); }
+.regime-dot.regime-recession { background-color: var(--regime-recession-border); }
