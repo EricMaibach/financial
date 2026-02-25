@@ -263,6 +263,7 @@
 </style>
 {% endblock %}
 
+{% from '_macros.html' import regime_annotation %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -273,6 +274,10 @@
         <p class="equity-header__description">Market structure, rotation signals, and key sector leadership</p>
         <p class="equity-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
     </header>
+
+    <!-- Compact Regime Strip -->
+    {% set page_category = 'Equities' %}
+    {% include '_regime_strip.html' %}
 
     <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
     <div class="content-grid">
@@ -369,6 +374,7 @@
                         <span id="sp500-change-5d">--</span>% (5d) | <span id="sp500-change-30d">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="sp500-percentile">Loading</div>
+                    {{ regime_annotation('sp500') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Nasdaq 100</div>
@@ -393,6 +399,7 @@
                         <span id="vix-change-5d">--</span>% (5d)
                     </div>
                     <div class="stat-item__secondary" id="vix-status">Loading</div>
+                    {{ regime_annotation('vix') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Market Breadth</div>

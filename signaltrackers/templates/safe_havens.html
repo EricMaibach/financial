@@ -263,6 +263,7 @@
 </style>
 {% endblock %}
 
+{% from '_macros.html' import regime_annotation %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -273,6 +274,10 @@
         <p class="safe-havens-header__description">Key drivers and indicators for gold and silver</p>
         <p class="safe-havens-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
     </header>
+
+    <!-- Compact Regime Strip -->
+    {% set page_category = 'Safe Havens' %}
+    {% include '_regime_strip.html' %}
 
     <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
     <div class="content-grid">
@@ -363,6 +368,7 @@
                         <span id="gold-change-5d">--</span>% (5d) | <span id="gold-change-30d">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="gold-status">Loading</div>
+                    {{ regime_annotation('gold') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Silver Price</div>
@@ -379,6 +385,7 @@
                         <span id="real-yield-change">--</span> bps (30d)
                     </div>
                     <div class="stat-item__secondary" id="real-yield-status">Loading</div>
+                    {{ regime_annotation('real_yield_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Breakeven Inflation</div>
@@ -387,6 +394,7 @@
                         <span id="breakeven-change">--</span> bps (30d)
                     </div>
                     <div class="stat-item__secondary" id="breakeven-status">Loading</div>
+                    {{ regime_annotation('breakeven_inflation_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Dollar Index (DXY)</div>

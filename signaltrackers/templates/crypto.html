@@ -263,6 +263,7 @@
 </style>
 {% endblock %}
 
+{% from '_macros.html' import regime_annotation %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -273,6 +274,10 @@
         <p class="crypto-header__description">Macro liquidity indicators and sentiment metrics for Bitcoin</p>
         <p class="crypto-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
     </header>
+
+    <!-- Compact Regime Strip -->
+    {% set page_category = 'Crypto' %}
+    {% include '_regime_strip.html' %}
 
     <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
     <div class="content-grid">
@@ -382,6 +387,7 @@
                         <span id="fed-balance-change">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="fed-balance-status">Loading</div>
+                    {{ regime_annotation('fed_balance_sheet') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Reverse Repo (RRP)</div>
@@ -398,6 +404,7 @@
                         <span id="nfci-change">--</span> (30d)
                     </div>
                     <div class="stat-item__secondary" id="nfci-status">Loading</div>
+                    {{ regime_annotation('nfci') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">M2 Money Supply</div>
@@ -405,6 +412,7 @@
                     <div class="stat-item__secondary">
                         <span id="m2-change">--</span>% YoY
                     </div>
+                    {{ regime_annotation('m2_money_supply') }}
                 </div>
             </div>
         </div>

@@ -263,6 +263,7 @@
 </style>
 {% endblock %}
 
+{% from '_macros.html' import regime_annotation %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -273,6 +274,10 @@
         <p class="dollar-header__description">Tracking the US Dollar Index, major currency pairs, and global FX dynamics</p>
         <p class="dollar-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
     </header>
+
+    <!-- Compact Regime Strip -->
+    {% set page_category = 'Dollar' %}
+    {% include '_regime_strip.html' %}
 
     <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
     <div class="content-grid">
@@ -369,6 +374,7 @@
                         <span id="dxy-change-5d">--</span>% (5d) | <span id="dxy-change-30d">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="dxy-status">Loading</div>
+                    {{ regime_annotation('dollar_index') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">USD/JPY</div>

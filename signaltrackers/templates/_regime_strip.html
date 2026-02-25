@@ -1,0 +1,12 @@
+{% if macro_regime %}
+{% set _state = macro_regime.state %}
+{% set _sentence = category_regime_context.get(page_category, {}).get(_state, '') %}
+<div class="regime-strip {{ macro_regime.css_class }}" role="complementary" aria-label="Macro regime context for this page">
+    <div class="regime-strip__badge">
+        <span class="regime-strip__dot" aria-hidden="true"></span>
+        <span class="regime-strip__name">{{ _state | upper }}</span>
+    </div>
+    <div class="regime-strip__separator" aria-hidden="true"></div>
+    <p class="regime-strip__context">{{ _sentence }}</p>
+</div>
+{% endif %}

@@ -52,6 +52,7 @@ from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
     REGIME_CATEGORY_RELEVANCE,
+    CATEGORY_REGIME_CONTEXT,
 )
 
 # Display names and deep-link URLs for highlighted signals (US-4.1.2)
@@ -202,7 +203,11 @@ def inject_macro_regime():
             regime['highlighted_signals'] = signals
     except Exception:
         regime = None
-    return {'macro_regime': regime}
+    return {
+        'macro_regime': regime,
+        'category_regime_context': CATEGORY_REGIME_CONTEXT,
+        'signal_regime_annotations': SIGNAL_REGIME_ANNOTATIONS,
+    }
 
 
 def init_scheduler():
