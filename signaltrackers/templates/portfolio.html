@@ -187,6 +187,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="holding-error-banner" class="modal-error-banner" role="alert" hidden>
+                    <span class="modal-error-icon" aria-hidden="true">⚠</span>
+                    <p class="modal-error-text" id="holding-error-text"></p>
+                </div>
                 <form id="holding-form">
                     <input type="hidden" id="holding-id">
                     <div class="mb-3">
@@ -249,6 +253,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                <div id="delete-error-banner" class="modal-error-banner" role="alert" hidden>
+                    <span class="modal-error-icon" aria-hidden="true">⚠</span>
+                    <p class="modal-error-text" id="delete-error-text"></p>
+                </div>
                 <p>Are you sure you want to delete <strong id="delete-holding-name"></strong>?</p>
             </div>
             <div class="modal-footer">
@@ -286,9 +294,13 @@ document.addEventListener('DOMContentLoaded', function() {
     holdingModal = new bootstrap.Modal(document.getElementById('holdingModal'));
     deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 
-    // Clear validation errors when modal closes
+    // Clear validation errors and banners when modal closes
     document.getElementById('holdingModal').addEventListener('hidden.bs.modal', function() {
         clearValidationErrors();
+        clearModalError('holding-error-banner');
+    });
+    document.getElementById('deleteModal').addEventListener('hidden.bs.modal', function() {
+        clearModalError('delete-error-banner');
     });
 
     // Asset type change handler
@@ -662,6 +674,19 @@ function clearValidationErrors() {
     clearFieldError('symbol-error', 'holding-symbol');
 }
 
+// Modal error banner helpers
+function showModalError(bannerId, textId, message) {
+    const banner = document.getElementById(bannerId);
+    const text = document.getElementById(textId);
+    if (text) text.textContent = message;
+    if (banner) banner.hidden = false;
+}
+
+function clearModalError(bannerId) {
+    const banner = document.getElementById(bannerId);
+    if (banner) banner.hidden = true;
+}
+
 // Save holding
 async function saveHolding() {
     const id = document.getElementById('holding-id').value;
@@ -721,15 +746,16 @@ async function saveHolding() {
         const data = await response.json();
 
         if (data.error) {
-            alert('Error: ' + data.error);
+            showModalError('holding-error-banner', 'holding-error-text', 'Could not save holding \u2014 please try again');
             return;
         }
 
+        clearModalError('holding-error-banner');
         holdingModal.hide();
         loadPortfolioData();
     } catch (error) {
         console.error('Error saving holding:', error);
-        alert('Failed to save holding');
+        showModalError('holding-error-banner', 'holding-error-text', 'Could not save holding \u2014 check your connection');
     }
 }
 
@@ -752,16 +778,17 @@ async function confirmDelete() {
         const data = await response.json();
 
         if (data.error) {
-            alert('Error: ' + data.error);
+            showModalError('delete-error-banner', 'delete-error-text', 'Could not delete holding \u2014 please try again');
             return;
         }
 
+        clearModalError('delete-error-banner');
         deleteModal.hide();
         deleteId = null;
         loadPortfolioData();
     } catch (error) {
         console.error('Error deleting holding:', error);
-        alert('Failed to delete holding');
+        showModalError('delete-error-banner', 'delete-error-text', 'Could not delete holding \u2014 check your connection');
     }
 }
 

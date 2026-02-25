@@ -198,15 +198,15 @@ class TestAlertRemoval(unittest.TestCase):
         self.assertNotIn("alert('Symbol is required for this asset type')", self.html)
         self.assertNotIn('alert("Symbol is required for this asset type")', self.html)
 
-    def test_api_error_alerts_still_present(self):
-        """API/network error alerts must remain (US-4.3.2 scope, not this story)."""
-        self.assertIn("alert('Error: '", self.html.replace('"Error: " + ', "'Error: '"))
-        # Check at least one API alert exists
-        self.assertTrue(
-            "alert('Failed to save holding')" in self.html or
-            'alert("Failed to save holding")' in self.html,
-            "US-4.3.2 API error alerts should still be present at this stage"
-        )
+    def test_api_error_alerts_removed(self):
+        """API/network error alerts must be removed (completed in US-4.3.2)."""
+        # US-4.3.2 replaced these with modal error banners
+        self.assertNotIn("alert('Error: '", self.html)
+        self.assertNotIn('alert("Error: "', self.html)
+        self.assertNotIn("alert('Failed to save holding')", self.html)
+        self.assertNotIn('alert("Failed to save holding")', self.html)
+        self.assertNotIn("alert('Failed to delete holding')", self.html)
+        self.assertNotIn('alert("Failed to delete holding")', self.html)
 
 
 # ============================================
