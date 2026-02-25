@@ -23,6 +23,7 @@ import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import mean
 from typing import Optional
 
 import numpy as np
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 CACHE_FILE = Path(__file__).parent / 'data' / 'macro_regime_cache.json'
+CONFIDENCE_HISTORY_FILE = Path(__file__).parent / 'data' / 'confidence_history.json'
 DATA_DIR = Path(__file__).parent / 'data'
 
 # Number of months of history to use for k-means fitting
@@ -50,6 +52,15 @@ HISTORY_MONTHS = 60  # 5 years
 
 # Feature column names used in the model (order matters for centroid mapping)
 _FEATURES = list(REGIME_CLASSIFICATION_FEATURES.keys())
+
+# Trend direction threshold: 3-day vs 10-day rolling confidence delta
+TREND_DELTA_THRESHOLD = 0.05
+
+# Maximum number of daily confidence history entries to retain
+_MAX_HISTORY_DAYS = 14
+
+# Map categorical confidence labels to normalised float scores (0.0–1.0)
+_CONFIDENCE_FLOAT_MAP = {'High': 0.9, 'Medium': 0.5, 'Low': 0.2}
 
 # ---------------------------------------------------------------------------
 # Cache helpers
@@ -75,6 +86,89 @@ def _save_cache(regime_dict: dict) -> None:
             json.dump(regime_dict, f, default=str, indent=2)
     except Exception as exc:
         logger.warning('Failed to write regime cache: %s', exc)
+
+
+def _load_confidence_history() -> dict:
+    """
+    Load the daily confidence history dict from file.
+
+    Returns a dict mapping ISO date strings ('YYYY-MM-DD') to float
+    confidence scores. Returns an empty dict if the file doesn't exist.
+    """
+    try:
+        if CONFIDENCE_HISTORY_FILE.exists():
+            with open(CONFIDENCE_HISTORY_FILE, 'r') as f:
+                data = json.load(f)
+            return {k: float(v) for k, v in data.items() if isinstance(v, (int, float))}
+    except Exception as exc:
+        logger.warning('Failed to read confidence history: %s', exc)
+    return {}
+
+
+def _save_confidence_history(history: dict) -> None:
+    """Persist the daily confidence history dict to file."""
+    try:
+        CONFIDENCE_HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(CONFIDENCE_HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+    except Exception as exc:
+        logger.warning('Failed to write confidence history: %s', exc)
+
+
+# ---------------------------------------------------------------------------
+# Trend and sparkline helpers
+# ---------------------------------------------------------------------------
+
+
+def compute_trend(confidence_history: list) -> str:
+    """
+    Compute trend direction from a list of daily confidence floats.
+
+    Returns 'improving', 'stable', or 'deteriorating'.
+
+    Requires at least 4 data points; returns 'stable' for shorter history.
+    Uses a 3-day rolling average vs. 10-day rolling average comparison with
+    TREND_DELTA_THRESHOLD (0.05) as the significance cutoff.
+    """
+    if len(confidence_history) < 4:
+        return 'stable'
+    avg_3day = mean(confidence_history[-3:])
+    if len(confidence_history) >= 10:
+        avg_10day = mean(confidence_history[-10:])
+    else:
+        avg_10day = mean(confidence_history)
+    delta = avg_3day - avg_10day
+    if delta > TREND_DELTA_THRESHOLD:
+        return 'improving'
+    elif delta < -TREND_DELTA_THRESHOLD:
+        return 'deteriorating'
+    return 'stable'
+
+
+def compute_sparkline_points(
+    history: list,
+    viewbox_width: int = 100,
+    viewbox_height: int = 32,
+) -> str:
+    """
+    Pre-compute SVG polyline points for a confidence history list.
+
+    Normalises points to fit viewBox '0 0 {viewbox_width} {viewbox_height}'.
+    X runs left-to-right (oldest to newest); Y is inverted so that high
+    confidence (1.0) maps to the top (y=0) and low confidence (0.0) to the
+    bottom (y=viewbox_height).
+
+    Returns an empty string when fewer than 3 history points are provided.
+    """
+    n = len(history)
+    if n < 3:
+        return ''
+    points = []
+    for i, val in enumerate(history):
+        x = (i / (n - 1)) * viewbox_width
+        y = viewbox_height - (val * viewbox_height)
+        points.append(f'{x:.1f},{y:.1f}')
+    return ' '.join(points)
 
 
 # ---------------------------------------------------------------------------
@@ -396,13 +490,49 @@ def update_macro_regime() -> Optional[dict]:
 
         assert regime_name in VALID_REGIMES, f'Invalid regime: {regime_name}'
 
+        # ------------------------------------------------------------------
+        # Confidence history: accumulate one float per day
+        # ------------------------------------------------------------------
+        confidence_float = _CONFIDENCE_FLOAT_MAP.get(confidence) if confidence else None
+
+        history_dict = _load_confidence_history()
+        today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+        if confidence_float is not None and today_str not in history_dict:
+            history_dict[today_str] = confidence_float
+
+        # Retain only the most recent _MAX_HISTORY_DAYS entries
+        sorted_dates = sorted(history_dict.keys())
+        if len(sorted_dates) > _MAX_HISTORY_DAYS:
+            for old_date in sorted_dates[:-_MAX_HISTORY_DAYS]:
+                del history_dict[old_date]
+            sorted_dates = sorted_dates[-_MAX_HISTORY_DAYS:]
+
+        _save_confidence_history(history_dict)
+
+        # Build ordered history list (oldest first)
+        full_history = [history_dict[d] for d in sorted(history_dict.keys())]
+
+        # Fewer than 3 points → return empty list (sparkline/trend hidden)
+        confidence_history = full_history if len(full_history) >= 3 else []
+
+        trend = compute_trend(full_history)
+        sparkline_points = compute_sparkline_points(full_history)
+
+        # ------------------------------------------------------------------
         regime_dict = {
             'state': regime_name,
             'updated_at': datetime.now(timezone.utc).isoformat(),
             'confidence': confidence,
+            'trend': trend,
+            'confidence_history': confidence_history,
+            'confidence_sparkline_points': sparkline_points,
         }
         _save_cache(regime_dict)
-        logger.info('Macro regime updated: %s (confidence: %s)', regime_name, confidence)
+        logger.info(
+            'Macro regime updated: %s (confidence: %s, trend: %s, history: %d days)',
+            regime_name, confidence, trend, len(full_history),
+        )
         return regime_dict
 
     except Exception as exc:
