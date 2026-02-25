@@ -1,10 +1,17 @@
 """
-Tests for Bug #55 — Deprecated thinking.type parameter fix.
+Tests for Bug #55 and Bug #131 — thinking.type parameter history.
 
-Verifies the static code fix without requiring live Anthropic API calls.
+Bug #55 (Feb 21, 2026): Changed thinking.type from "enabled" to "adaptive" to fix a
+deprecation warning.
+
+Bug #131 (Feb 24, 2026): Reverted thinking.type from "adaptive" back to "enabled" because
+the Anthropic API's "adaptive" type does NOT accept a budget_tokens field. The combination
+caused a 400 error on every AI summary call, silently falling back to no thinking mode.
+
+Current correct state: thinking.type="enabled" with budget_tokens.
+See tests/test_bug131_thinking_type.py for the comprehensive test suite.
 """
-import ast
-import textwrap
+import re
 
 
 AI_SUMMARY_PATH = "signaltrackers/ai_summary.py"
@@ -15,32 +22,29 @@ def _load_source():
         return f.read()
 
 
-class TestThinkingTypeFixed:
-    """Verify the deprecated thinking.type=enabled has been replaced."""
+class TestThinkingTypeCorrect:
+    """Verify thinking.type is 'enabled' (reverted from Bug #131 fix)."""
 
-    def test_no_enabled_in_thinking_block(self):
-        """'enabled' must not appear as thinking type anywhere in ai_summary.py."""
+    def test_enabled_in_thinking_block(self):
+        """'enabled' must be used as thinking type (reverted from adaptive per Bug #131)."""
         source = _load_source()
-        # Check for the exact deprecated pattern
-        assert '"type": "enabled"' not in source, (
-            "Deprecated thinking.type='enabled' still present in ai_summary.py"
-        )
-        assert "'type': 'enabled'" not in source, (
-            "Deprecated thinking.type='enabled' still present in ai_summary.py"
+        assert '"type": "enabled"' in source, (
+            "thinking.type='enabled' not found in ai_summary.py — Bug #131 fix may be missing"
         )
 
-    def test_adaptive_type_present(self):
-        """'adaptive' must be used as thinking type."""
+    def test_no_adaptive_type(self):
+        """'adaptive' must NOT appear as thinking type — adaptive rejects budget_tokens."""
         source = _load_source()
-        assert '"type": "adaptive"' in source, (
-            "thinking.type='adaptive' not found in ai_summary.py"
+        assert '"type": "adaptive"' not in source, (
+            "thinking.type='adaptive' still present in ai_summary.py — causes 400 error with budget_tokens"
+        )
+        assert "'type': 'adaptive'" not in source, (
+            "thinking.type='adaptive' still present in ai_summary.py — causes 400 error with budget_tokens"
         )
 
     def test_exactly_one_thinking_call_site(self):
         """Confirm there is exactly one call site defining the thinking parameter block."""
         source = _load_source()
-        import re
-        # Match the thinking dict definition (not the del statement)
         definitions = re.findall(r'"thinking"\s*:\s*\{', source)
         assert len(definitions) == 1, (
             f"Expected exactly 1 thinking block definition, found {len(definitions)}"
@@ -49,10 +53,8 @@ class TestThinkingTypeFixed:
     def test_budget_tokens_preserved(self):
         """budget_tokens must still be passed alongside the type."""
         source = _load_source()
-        # Find the thinking block and confirm budget_tokens is nearby
         thinking_idx = source.index('"thinking"')
-        # Look for budget_tokens within the next 200 characters (the block)
-        context = source[thinking_idx : thinking_idx + 200]
+        context = source[thinking_idx: thinking_idx + 200]
         assert "budget_tokens" in context, (
             "budget_tokens not found near the thinking block — may have been lost"
         )
@@ -60,8 +62,6 @@ class TestThinkingTypeFixed:
     def test_budget_tokens_values_in_range(self):
         """All thinking budget values must be within Anthropic-recommended limits (1–32768)."""
         source = _load_source()
-        # Parse effort_budgets dict values from source
-        import re
         matches = re.findall(r"effort_budgets\s*=\s*\{([^}]+)\}", source, re.DOTALL)
         assert matches, "effort_budgets dict not found in ai_summary.py"
         budget_block = matches[0]
