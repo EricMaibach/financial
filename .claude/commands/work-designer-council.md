@@ -22,8 +22,8 @@ Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial
 
 ## GitHub Discussions IDs
 
-- Repository ID: `R_kgDORDsXzA`
-- Refinements category ID: `DIC_kwDORDsXzM4C2_Xz`
+- Repository ID: `R_kgDORXrB_g`
+- Refinements category ID: `DIC_kwDORXrB_s4C3HGA`
 
 ---
 
@@ -35,7 +35,7 @@ Check for open Refinements discussions where the CEO asked for more information:
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xz", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGA", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: NEEDS-MORE-INFO"))) and
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: APPROVED") or startswith("## CEO Decision: DISMISSED")) | not)
@@ -65,7 +65,7 @@ Check for open Refinements discussions posted by the human (not by you) that hav
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xz", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGA", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.body | contains("Posted by Designer") | not) and
       (.comments.nodes | map(.body) | any(startswith("## Designer Analysis")) | not) and
@@ -157,7 +157,7 @@ Before creating a new discussion, scan open Refinements discussions to avoid dup
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xz", states: [OPEN]) { nodes { number title } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGA", states: [OPEN]) { nodes { number title } } } }' \
   | jq '.data.repository.discussions.nodes[] | {number, title}'
 ```
 
@@ -168,8 +168,8 @@ If a similar refinement is already open, add a comment to it with any new suppor
 ```bash
 gh api graphql \
   -f query='mutation CreateDiscussion($repoId: ID!, $catId: ID!, $title: String!, $body: String!) { createDiscussion(input: { repositoryId: $repoId, categoryId: $catId, title: $title, body: $body }) { discussion { id number url } } }' \
-  -f repoId="R_kgDORDsXzA" \
-  -f catId="DIC_kwDORDsXzM4C2_Xz" \
+  -f repoId="R_kgDORXrB_g" \
+  -f catId="DIC_kwDORXrB_s4C3HGA" \
   -f title="[Concise description of the refinement]" \
   -f body="## Problem
 [What is currently wrong or suboptimal — be specific. Reference the component, page, or pattern.]

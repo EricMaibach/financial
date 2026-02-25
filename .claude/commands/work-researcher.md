@@ -20,8 +20,8 @@ Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial
 
 ## GitHub Discussions IDs
 
-- Repository ID: `R_kgDORDsXzA`
-- Research category ID: `DIC_kwDORDsXzM4C2_Xy`
+- Repository ID: `R_kgDORXrB_g`
+- Research category ID: `DIC_kwDORXrB_s4C3HGH`
 
 ---
 
@@ -33,7 +33,7 @@ Check for open Research discussions where the CEO asked for more information but
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xy", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGH", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: NEEDS-MORE-INFO"))) and
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: APPROVED") or startswith("## CEO Decision: DISMISSED")) | not)
@@ -68,7 +68,7 @@ Check for open Research discussions posted by the human (not by you) that have n
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xy", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGH", states: [OPEN]) { nodes { id number title body comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.body | contains("Posted by Researcher") | not) and
       (.comments.nodes | map(.body) | any(startswith("## Researcher Analysis")) | not) and
@@ -139,7 +139,7 @@ Update your context file: `[date] — Human idea: [title] — [Forwarded to CEO 
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xy", states: [OPEN]) { nodes { number title } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGH", states: [OPEN]) { nodes { number title } } } }' \
   | jq '.data.repository.discussions.nodes[] | {number, title}'
 ```
 
@@ -162,8 +162,8 @@ For each new topic worth posting, create a Discussion in the Research category:
 ```bash
 gh api graphql \
   -f query='mutation CreateDiscussion($repoId: ID!, $catId: ID!, $title: String!, $body: String!) { createDiscussion(input: { repositoryId: $repoId, categoryId: $catId, title: $title, body: $body }) { discussion { id number url } } }' \
-  -f repoId="R_kgDORDsXzA" \
-  -f catId="DIC_kwDORDsXzM4C2_Xy" \
+  -f repoId="R_kgDORXrB_g" \
+  -f catId="DIC_kwDORXrB_s4C3HGH" \
   -f title="[Descriptive title of the finding]" \
   -f body="## Summary
 [2-3 sentence summary of the finding]

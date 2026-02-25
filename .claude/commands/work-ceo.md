@@ -20,9 +20,9 @@ Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial
 
 ## GitHub Discussions IDs
 
-- Repository ID: `R_kgDORDsXzA`
-- Research category ID: `DIC_kwDORDsXzM4C2_Xy`
-- Refinements category ID: `DIC_kwDORDsXzM4C2_Xz`
+- Repository ID: `R_kgDORXrB_g`
+- Research category ID: `DIC_kwDORXrB_s4C3HGH`
+- Refinements category ID: `DIC_kwDORXrB_s4C3HGA`
 
 ---
 
@@ -45,7 +45,7 @@ Find open Research discussions that have no CEO decision comment yet:
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xy", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGH", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       .comments.nodes | map(.body) | any(startswith("## CEO Decision:")) | not
     ) | {id, number, title, body}'
@@ -59,7 +59,7 @@ Find open Refinements discussions with no CEO decision comment yet:
 
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "financial") { discussions(first: 30, categoryId: "DIC_kwDORDsXzM4C2_Xz", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGA", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       .comments.nodes | map(.body) | any(startswith("## CEO Decision:")) | not
     ) | {id, number, title, body}'
