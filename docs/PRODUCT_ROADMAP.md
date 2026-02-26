@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-25 (Feature 4.3 complete)
+**Last updated:** 2026-02-25 (PM Council: Feature #144 and #145 created from council approvals)
 
 ---
 
@@ -46,12 +46,14 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | 4.1 — Macro Regime Detection: regime-conditional signal weighting (Bull/Neutral/Bear/Recession Watch, FRED-MD) | Complete |
 | 4.2 — Fix chatbot close vs. minimize button behavior (− minimizes, × dismisses to floating trigger) | Complete |
 | 4.3 — Replace native alert() dialogs in portfolio page with inline/toast error patterns | Complete |
+| **4.4 — Chatbot: simplify to single minimize button (remove bottom-strip behavior)** — one button minimizes chatbot to floating trigger icon on mobile and desktop; no bottom-strip (#144, approved from council: discussion #1, 2026-02-25) | Planned |
 
 ### Phase 5: Macro Intelligence Layer
 **Milestone goal:** Establish SignalTrackers as the leading macro regime tool for retail investors.
 
 Planned work (ordered by dependency):
 1. **Macro Regime Score Panel** — synthesized headline regime indicator updated daily, visible on dashboard. Logical follow-on now that signal weighting (Phase 4) has validated the approach.
+   - *Recession probability sub-panel design guidance (council discussion #4, 2026-02-25):* Implement multi-model panel — NY Fed 12-month leading, Chauvet-Piger coincident, Richmond SOS weekly — with confidence bands on the NY Fed estimate. Label as "Prospective Risk" vs. "Current Activity". Most epistemically honest recession display available to retail investors. All data free via FRED + Richmond Fed.
 
 ---
 
@@ -63,6 +65,7 @@ These ideas are approved for exploration but do not have a milestone yet:
 |------|--------|-------|
 | PCR + GEX regime-conditioned indicators | Dismissed in council #104, reconsidering after macro regime foundation | Prerequisite: complete Phase 5 macro regime work first. Only using free OCC/Barchart data. |
 | **Sector Management Tone Panel** — quarterly GICS sector-level earnings call sentiment from SEC EDGAR 8-K filings + FinBERT (open-source); 11 sectors, one score per sector per quarter, interpreted alongside macro regime state (#123, approved from council: discussion #121, 2026-02-24) | Research discussion #121 | Prerequisite: Phase 5 macro regime work must be in production. Significant NLP pipeline project (more complex than regime detection). Phase 6. |
+| **Regime Implications Panel** — given current FRED-MD macro regime (Bull/Neutral/Bear/Recession Watch), show which sectors and asset classes have historically outperformed/underperformed with plain-language interpretation (#145, approved from council: discussion #5, 2026-02-25) | Research discussion #5 | Prerequisite: Phase 5 Macro Regime Score Panel (#138) must be live. No Phase 6 milestone yet — schedule when Phase 5 is complete. Research-backed: 23% of investors disengage from macro because no tool translates regime into portfolio action. Retail equivalent of Fidelity's institutional Business Cycle Update. |
 
 ---
 
