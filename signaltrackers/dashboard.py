@@ -48,6 +48,7 @@ from extensions import init_extensions, db, limiter, csrf
 from models import User, UserSettings
 from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
 from regime_detection import get_macro_regime, update_macro_regime
+from recession_probability import get_recession_probability, update_recession_probability
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -208,6 +209,16 @@ def inject_macro_regime():
         'category_regime_context': CATEGORY_REGIME_CONTEXT,
         'signal_regime_annotations': SIGNAL_REGIME_ANNOTATIONS,
     }
+
+
+@app.context_processor
+def inject_recession_probability():
+    """Inject recession probability data into all templates (US-146.1)."""
+    try:
+        data = get_recession_probability()
+    except Exception:
+        data = None
+    return {'recession_probability': data}
 
 
 def init_scheduler():
@@ -2112,6 +2123,14 @@ def run_data_collection():
             update_macro_regime()
         except Exception as regime_error:
             print(f"Macro regime update error (non-fatal): {regime_error}")
+
+        # Update recession probability panel data (US-146.1)
+        reload_status['status'] = 'Updating recession probability data...'
+        print("Updating recession probability data...")
+        try:
+            update_recession_probability()
+        except Exception as recession_error:
+            print(f"Recession probability update error (non-fatal): {recession_error}")
 
         # Mark as successful
         reload_status['success'] = True
