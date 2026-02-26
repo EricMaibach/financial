@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-25 (PM: Feature 5.2 #146 created; Phase 5 planned work updated)
+**Last updated:** 2026-02-26 (PM: Feature 5.1 #138 complete; Feature 5.2 spec approved, 2 stories created; Feature 4.4 story created)
 
 ---
 
@@ -46,14 +46,14 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | 4.1 — Macro Regime Detection: regime-conditional signal weighting (Bull/Neutral/Bear/Recession Watch, FRED-MD) | Complete |
 | 4.2 — Fix chatbot close vs. minimize button behavior (− minimizes, × dismisses to floating trigger) | Complete |
 | 4.3 — Replace native alert() dialogs in portfolio page with inline/toast error patterns | Complete |
-| **4.4 — Chatbot: simplify to single minimize button (remove bottom-strip behavior)** — one button minimizes chatbot to floating trigger icon on mobile and desktop; no bottom-strip (#144, approved from council: discussion #1, 2026-02-25) | Planned |
+| **4.4 — Chatbot: simplify to single minimize button (remove bottom-strip behavior)** — one button minimizes chatbot to floating trigger icon on mobile and desktop; no bottom-strip (#144, approved from council: discussion #1, 2026-02-25) | In Progress — US-144.1 (#150) at needs-test-plan |
 
 ### Phase 5: Macro Intelligence Layer
 **Milestone goal:** Establish SignalTrackers as the leading macro regime tool for retail investors.
 
 Planned work (ordered by dependency):
-1. **Feature 5.1: Macro Regime Score Panel** (#138) — synthesized headline regime indicator updated daily, visible on dashboard. In progress: US-5.1.3 (confidence sparkline) remaining.
-2. **Feature 5.2: Multi-Model Recession Probability Sub-Panel** (#146, needs-design-spec) — three labeled models (NY Fed 12-month leading, Chauvet-Piger coincident, Richmond SOS weekly) with confidence bands. "Prospective Risk" vs. "Current Activity" labeling. No competitor does this. All data free via FRED + Richmond Fed. Integrates visually with Feature 5.1 panel. (CEO approved from council discussion #4, 2026-02-25)
+1. **Feature 5.1: Macro Regime Score Panel** (#138) — synthesized headline regime indicator updated daily, visible on dashboard. ✅ **Complete** — all 3 stories merged (2026-02-26).
+2. **Feature 5.2: Multi-Model Recession Probability Sub-Panel** (#146) — three labeled models (NY Fed 12-month leading, Chauvet-Piger coincident, Richmond SOS weekly) with confidence bands. "Prospective Risk" vs. "Current Activity" labeling. No competitor does this. All data free via FRED + Richmond Fed. Integrates visually with Feature 5.1 panel. (CEO approved from council discussion #4, 2026-02-25) — **In Progress**: US-146.1 (#148, P1, needs-test-plan) → US-146.2 (#149, P2, needs-test-plan)
 
 ---
 
