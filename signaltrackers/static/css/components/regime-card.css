@@ -456,13 +456,15 @@
   max-height: 200px;
 }
 
-/* Tablet+: toggle hidden, text always visible */
+/* Tablet+: toggle hidden, text always visible; sparkline mobile block hidden */
 @media (min-width: 768px) {
   .regime-annotation__toggle { display: none; }
   .regime-annotation__text {
     max-height: none;
     margin-top: 4px;
   }
+  .regime-sparkline-mobile { display: none; }
+  .regime-sparkline { height: 36px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -495,3 +497,39 @@
 .regime-dot.regime-neutral   { background-color: var(--regime-neutral-border); }
 .regime-dot.regime-bear      { background-color: var(--regime-bear-border); }
 .regime-dot.regime-recession { background-color: var(--regime-recession-border); }
+
+/* =============================================================
+   14-Day Confidence Sparkline — US-5.1.3
+   ============================================================= */
+
+/* Mobile-only wrapper — hidden on tablet+ */
+.regime-sparkline-mobile {
+  /* visible by default on mobile */
+}
+
+/* Sparkline section: label + SVG container */
+.regime-sparkline-section {
+  padding: 12px 0;
+}
+
+/* Section label: "14-DAY CONFIDENCE TREND" */
+.regime-sparkline-label {
+  font-size: 0.75rem;
+  color: #6b7280;  /* neutral-500 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+/* Sparkline SVG — fills container width, fixed height on mobile */
+.regime-sparkline {
+  display: block;
+  width: 100%;
+  height: 32px;
+}
+
+/* Stroke color follows regime border token via stroke="currentColor" */
+.regime-bull .regime-sparkline      { color: var(--regime-bull-border); }
+.regime-neutral .regime-sparkline   { color: var(--regime-neutral-border); }
+.regime-bear .regime-sparkline      { color: var(--regime-bear-border); }
+.regime-recession .regime-sparkline { color: var(--regime-recession-border); }
