@@ -50,14 +50,7 @@ gh issue list --label needs-design-review --state open
    git pull origin feature/US-X.X.X
    ```
 4. Read the relevant design spec: `docs/specs/[feature-slug].md`
-5. Start the app and generate screenshots:
-   ```bash
-   docker compose up -d
-   npm run screenshots
-   node screenshot-explorer-interactive.js
-   node screenshots-chatbot.js
-   docker compose down
-   ```
+5. If the change involved any UI changes (and changes that impact the appearance of the website in any way) make sure the engineer regenerated new screenshots in the feature branch with the changes.  If the engineer did not reject it and do not approve, and leave a commit to the engineer that they must generate screenshots.
 6. Review screenshots against the spec:
    - Check information hierarchy and layout
    - Verify responsive behavior (mobile-first)

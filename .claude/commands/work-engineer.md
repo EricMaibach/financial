@@ -225,7 +225,11 @@ gh issue list --label ready-for-implementation --state open
      node screenshot-explorer-interactive.js
      ```
    - Screenshots are included in the implementation commit below
-10. Commit:
+10. Stop Docker:
+   ```bash
+   docker compose down
+   ```
+11. Commit:
    ```bash
    git add [specific files — never git add .]
    git commit -m "Implement [story title]
@@ -236,8 +240,8 @@ gh issue list --label ready-for-implementation --state open
 Implements #<issue-number> per design spec."
    git push origin feature/US-X.X.X
    ```
-11. Comment on issue: "✅ Implementation complete on branch `feature/US-X.X.X`. [Brief summary of what was built]."
-12. Route to the next stage:
+12. Comment on issue: "✅ Implementation complete on branch `feature/US-X.X.X`. [Brief summary of what was built]."
+13. Route to the next stage:
     - **UI changes present**: `gh issue edit <number> --remove-label ready-for-implementation --add-label needs-design-review`
     - **Backend/non-UI only**: `gh issue edit <number> --remove-label ready-for-implementation --add-label needs-qa-testing`
 
