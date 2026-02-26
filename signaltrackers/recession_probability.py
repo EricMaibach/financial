@@ -2,12 +2,12 @@
 Recession Probability Module — US-146.1
 
 Fetches and processes three institutional recession probability models:
-1. NY Fed 12-month leading model (yield-curve based, FRED RECPROUSM156N)
-2. Chauvet-Piger coincident model (FRED RECPROUSM156N companion series)
-3. Richmond Fed SOS Indicator (direct from Richmond Fed website)
+1. NY Fed 12-month leading model (yield-curve based, direct XLS from newyorkfed.org)
+2. Chauvet-Piger coincident model (FRED RECPROUSM156N)
+3. Richmond Fed SOS Indicator (direct XLSX from richmondfed.org)
 
-NOTE: FRED series IDs below are per the design spec (feature-5.2-recession-probability-panel.md).
-The exact Chauvet-Piger series ID should be confirmed — spec open question #1.
+NOTE: NY Fed yield-curve model is NOT on FRED — it is fetched directly from the NY Fed
+as an XLS file. See Bug #153 for the fix to add _fetch_ny_fed_direct().
 
 Caching:
 - Results stored in data/recession_probability_cache.json
@@ -24,7 +24,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -48,12 +48,9 @@ _FRED_API_KEY = os.environ.get('FRED_API_KEY')
 NY_FED_SERIES = 'RECPROUSM156N'    # NY Fed 12-month leading (spec recommendation — confirm)
 CHAUVET_PIGER_SERIES = 'RECPROUSM156N'  # Chauvet-Piger coincident (same series per spec; update when confirmed)
 
-# Richmond Fed SOS Indicator public data URL
-# NOTE: Confirm the exact Richmond Fed SOS download URL. The URL below is a placeholder
-# based on Richmond Fed's public data publishing patterns; update to confirmed URL.
+# Richmond Fed SOS Indicator public data URL (confirmed live, HTTP 200 — Bug #154 fix)
 _RICHMOND_SOS_URL = (
-    'https://www.richmondfed.org/-/media/richmondfedorg/research/regional_economy/'
-    'surveys_of_business_activity/survey_of_manufacturing_activity/2024/sos_indicator.xlsx'
+    'https://www.richmondfed.org/-/media/RichmondFedOrg/assets/data/sos_recession_indicator.xlsx'
 )
 
 # Confidence interval: NY Fed applies ±13pp at moderate readings (per NY Fed methodology docs)
@@ -137,12 +134,12 @@ def _fetch_richmond_sos() -> tuple[Optional[float], Optional[str]]:
     """
     Fetch the latest Richmond Fed SOS Indicator value.
 
-    The Richmond Fed SOS (Survey of Occupancy and Slack, or Survey of Special Subjects)
-    is a weekly labor/stress indicator. This function fetches from the public Richmond Fed
-    data URL and extracts the most recent probability value.
+    The Richmond Fed SOS is a weekly labor/stress indicator published as an XLSX file.
 
-    NOTE: The exact URL and data format must be confirmed with the Richmond Fed
-    (spec open question #1). This is a best-effort implementation with graceful degradation.
+    File layout (Bug #154 confirmed):
+        Column 0: Date (Excel serial integer — e.g. 46060 → 2026-02-07)
+        Column 1: SOS indicator (float, the actual value to use)
+        Column 2: Recession Threshold (constant 0.2 — do NOT use this column)
 
     Returns:
         (value, date_str) — or (None, None) on failure.
@@ -151,32 +148,21 @@ def _fetch_richmond_sos() -> tuple[Optional[float], Optional[str]]:
         resp = requests.get(_RICHMOND_SOS_URL, timeout=10)
         resp.raise_for_status()
 
-        # Attempt to parse as Excel; fallback to CSV if needed
         try:
             import pandas as pd
             from io import BytesIO
             df = pd.read_excel(BytesIO(resp.content), header=0)
-            # Expect columns: date, value (or similar)
+            # File has 3 columns: Date (serial int), SOS indicator, Recession Threshold
             if df.empty:
                 return None, None
-            df = df.dropna(subset=[df.columns[-1]])
-            last_row = df.iloc[-1]
-            date_val = str(last_row.iloc[0])[:10]  # YYYY-MM-DD
-            prob_val = float(last_row.iloc[-1])
-            return prob_val, date_val
-        except Exception:
-            pass
-
-        # Try CSV if Excel parse failed
-        try:
-            import pandas as pd
-            from io import StringIO
-            df = pd.read_csv(StringIO(resp.text))
+            df = df.dropna(subset=[df.columns[1]])  # Drop rows where SOS indicator is null
             if df.empty:
                 return None, None
             last_row = df.iloc[-1]
-            date_val = str(last_row.iloc[0])[:10]
-            prob_val = float(last_row.iloc[-1])
+            # Column 0 is an Excel serial integer — convert to ISO date string
+            date_serial = int(last_row.iloc[0])
+            date_val = (datetime(1899, 12, 31) + timedelta(days=date_serial - 1)).strftime('%Y-%m-%d')
+            prob_val = float(last_row.iloc[1])  # SOS indicator (not Recession Threshold constant)
             return prob_val, date_val
         except Exception:
             pass

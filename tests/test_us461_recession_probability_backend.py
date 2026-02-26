@@ -707,5 +707,202 @@ class TestPerModelDates(unittest.TestCase):
         self.assertGreater(len(data['updated']), 0)
 
 
+# ---------------------------------------------------------------------------
+# Bug #154: Richmond Fed SOS — URL, column, and date parsing fixes
+# ---------------------------------------------------------------------------
+
+
+def _make_richmond_df(date_serial, sos_val, threshold=0.2):
+    """Create a mock DataFrame matching the confirmed Richmond Fed file layout.
+
+    Column 0: Date (Excel serial integer)
+    Column 1: SOS indicator (float)
+    Column 2: Recession Threshold (constant, always 0.2)
+    """
+    import pandas as pd
+    return pd.DataFrame({0: [date_serial], 1: [sos_val], 2: [threshold]})
+
+
+def _call_fetch_richmond_sos_with_df(mock_df):
+    """Call _fetch_richmond_sos() with mocked HTTP response and pandas read_excel."""
+    from unittest.mock import MagicMock
+    mock_resp = MagicMock()
+    mock_resp.content = b'fake xlsx bytes'
+    with patch('recession_probability.requests.get', return_value=mock_resp):
+        with patch('pandas.read_excel', return_value=mock_df):
+            from recession_probability import _fetch_richmond_sos
+            return _fetch_richmond_sos()
+
+
+class TestBug154RichmondSosUrl(unittest.TestCase):
+    """Bug #154 Fix 1: URL must be updated to the confirmed working endpoint."""
+
+    def setUp(self):
+        self.src = read_source('recession_probability.py')
+
+    def test_correct_url_in_source(self):
+        self.assertIn('RichmondFedOrg/assets/data/sos_recession_indicator.xlsx', self.src)
+
+    def test_old_broken_url_removed(self):
+        self.assertNotIn('survey_of_manufacturing_activity/2024/sos_indicator.xlsx', self.src)
+
+    def test_fetch_makes_get_to_correct_url(self):
+        mock_df = _make_richmond_df(46060, 0.058)
+        with patch('recession_probability.requests.get') as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.content = b'fake xlsx bytes'
+            mock_get.return_value = mock_resp
+            with patch('pandas.read_excel', return_value=mock_df):
+                from recession_probability import _fetch_richmond_sos
+                _fetch_richmond_sos()
+        call_url = mock_get.call_args[0][0]
+        self.assertIn('sos_recession_indicator.xlsx', call_url)
+        self.assertNotIn('sos_indicator.xlsx', call_url.replace('sos_recession_indicator.xlsx', ''))
+
+
+class TestBug154RichmondSosColumn(unittest.TestCase):
+    """Bug #154 Fix 2: Must read column 1 (SOS indicator), not column -1 (Threshold constant)."""
+
+    def test_returns_sos_value_not_threshold_constant(self):
+        # SOS=0.058, Threshold=0.2 — must return 0.058, not 0.2
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.058, places=3)
+
+    def test_does_not_return_threshold_constant(self):
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        self.assertIsNotNone(val)
+        self.assertNotAlmostEqual(val, 0.2, places=3)
+
+    def test_sos_value_0_point_3_high_risk(self):
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.3))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.3, places=3)
+
+    def test_sos_value_0_point_1_low_risk(self):
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.1))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.1, places=3)
+
+    def test_sos_value_exactly_0_point_2_not_confused_with_threshold(self):
+        # SOS of 0.2 is valid data (at recession threshold) — not the Threshold column
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.2, threshold=0.2))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.2, places=3)
+
+    def test_iloc_1_in_source_for_prob_val(self):
+        src = read_source('recession_probability.py')
+        # Confirm the column-1 read is present in source
+        self.assertIn('iloc[1]', src)
+
+
+class TestBug154RichmondSosDateParsing(unittest.TestCase):
+    """Bug #154 Fix 3: Date column is Excel serial integer — must convert to ISO string."""
+
+    def test_serial_46060_converts_to_2026_02_07(self):
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        self.assertEqual(date_str, '2026-02-07')
+
+    def test_serial_44927_converts_to_2023_01_01(self):
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(44927, 0.1))
+        self.assertEqual(date_str, '2023-01-01')
+
+    def test_date_not_raw_serial_string(self):
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        self.assertIsNotNone(date_str)
+        # Must not return the raw integer as a string
+        self.assertNotEqual(date_str, '46060')
+        self.assertNotEqual(date_str, '46059')
+
+    def test_date_format_is_yyyy_mm_dd(self):
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        self.assertIsNotNone(date_str)
+        import re
+        self.assertRegex(date_str, r'^\d{4}-\d{2}-\d{2}$')
+
+    def test_datetime_timedelta_in_source(self):
+        src = read_source('recession_probability.py')
+        self.assertIn('timedelta', src)
+        self.assertIn('1899', src)
+
+
+class TestBug154RichmondSosGracefulDegradation(unittest.TestCase):
+    """Graceful degradation must still work after the Bug #154 fixes."""
+
+    def test_network_error_returns_none_none(self):
+        with patch('recession_probability.requests.get',
+                   side_effect=Exception('network error')):
+            from recession_probability import _fetch_richmond_sos
+            val, date_str = _fetch_richmond_sos()
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_http_error_returns_none_none(self):
+        import requests as req_lib
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = req_lib.exceptions.HTTPError('404')
+        with patch('recession_probability.requests.get', return_value=mock_resp):
+            from recession_probability import _fetch_richmond_sos
+            val, date_str = _fetch_richmond_sos()
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_empty_dataframe_returns_none_none(self):
+        import pandas as pd
+        empty_df = pd.DataFrame({0: [], 1: [], 2: []})
+        val, date_str = _call_fetch_richmond_sos_with_df(empty_df)
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_parsing_exception_returns_none_none(self):
+        mock_resp = MagicMock()
+        mock_resp.content = b'not a valid xlsx file'
+        with patch('recession_probability.requests.get', return_value=mock_resp):
+            with patch('pandas.read_excel', side_effect=Exception('parse error')):
+                from recession_probability import _fetch_richmond_sos
+                val, date_str = _fetch_richmond_sos()
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_nan_sos_rows_skipped(self):
+        # Last row has NaN in SOS — should use second-to-last non-null row
+        import pandas as pd
+        import numpy as np
+        df = pd.DataFrame({
+            0: [44927, 46060],
+            1: [0.1, np.nan],
+            2: [0.2, 0.2],
+        })
+        val, date_str = _call_fetch_richmond_sos_with_df(df)
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.1, places=3)
+
+    def test_single_row_returns_correctly(self):
+        import pandas as pd
+        df = pd.DataFrame({0: [44927], 1: [0.07], 2: [0.2]})
+        val, date_str = _call_fetch_richmond_sos_with_df(df)
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.07, places=3)
+
+
+class TestBug154SecurityAndPerformance(unittest.TestCase):
+    """Security and performance checks for Bug #154 fixes."""
+
+    def setUp(self):
+        self.src = read_source('recession_probability.py')
+
+    def test_url_is_string_constant_not_user_input(self):
+        # The URL must be a module-level constant, not built from external input
+        self.assertIn('_RICHMOND_SOS_URL', self.src)
+        # Constant must be a literal string definition
+        self.assertIn("_RICHMOND_SOS_URL = (", self.src)
+
+    def test_timeout_set_on_request(self):
+        self.assertIn('timeout=', self.src)
+
+    def test_read_excel_uses_header_0(self):
+        self.assertIn('header=0', self.src)
+
+
 if __name__ == '__main__':
     unittest.main()
