@@ -4,33 +4,28 @@
  * US-3.2.1: Core Widget Structure & Interaction
  * US-3.2.2: Message Interaction and AI Integration
  * US-3.2.3: Conversation Persistence, Notifications, and Polish Features
- * Feature 4.2: Three-State Close Behavior
- * US-4.2.1: Three-State Model (closed → expanded → minimized → expanded)
+ * US-144.1: Simplified binary state model (closed ↔ expanded)
  *
- * Three states:
- *   closed    — FAB visible, panel hidden, strip hidden
- *   expanded  — Panel visible, FAB hidden (mobile) or shifted (tablet/desktop), strip hidden
- *   minimized — Strip visible, FAB hidden, panel hidden
+ * Binary state model:
+ *   closed   — FAB visible, panel hidden
+ *   expanded — Panel visible, FAB hidden (mobile) or shifted (tablet/desktop)
  */
 
 class ChatbotWidget {
     constructor() {
         this.fab = document.getElementById('chatbot-fab');
         this.panel = document.getElementById('chatbot-panel');
-        this.strip = document.getElementById('chatbot-strip');
         this.minimizeBtn = document.querySelector('.chatbot-minimize');
-        this.closeBtn = document.querySelector('.chatbot-close');
         this.clearBtn = document.querySelector('.chatbot-clear-link');
         this.form = document.querySelector('.chatbot-input-form');
         this.input = document.getElementById('chatbot-input');
         this.messages = document.querySelector('.chatbot-messages');
         this.badge = document.querySelector('.chatbot-badge');
-        this.stripBadge = document.querySelector('.chatbot-strip-badge');
         this.performanceBanner = document.querySelector('.chatbot-performance-banner');
         this.performanceDismiss = document.querySelector('.chatbot-performance-dismiss');
         this.clearDialog = document.getElementById('chatbot-clear-dialog');
 
-        // Three-state model: 'closed' | 'minimized' | 'expanded'
+        // Binary state model: 'closed' | 'expanded'
         this.state = 'closed';
         this.isAnimating = false;
         this.conversation = [];
@@ -50,8 +45,7 @@ class ChatbotWidget {
     init() {
         // Core toggle events
         this.fab.addEventListener('click', () => this.expand());
-        this.minimizeBtn.addEventListener('click', () => this.minimize()); // − → minimized (bottom strip)
-        this.closeBtn.addEventListener('click', () => this.closeChatbot()); // × → closed (FAB only)
+        this.minimizeBtn.addEventListener('click', () => this.closeChatbot()); // × → closed (FAB only)
 
         // Clear conversation
         if (this.clearBtn) {
@@ -114,15 +108,10 @@ class ChatbotWidget {
             });
         }
 
-        // Strip tap: expand from minimized state
-        if (this.strip) {
-            this.strip.addEventListener('click', () => this.expand());
-        }
-
-        // Keyboard shortcut: Escape when expanded → minimized (bottom strip), per spec
+        // Keyboard shortcut: Escape when expanded → closed (FAB only)
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.state === 'expanded' && (!this.clearDialog || this.clearDialog.hasAttribute('hidden'))) {
-                this.minimize();
+                this.closeChatbot();
             }
         });
 
@@ -132,32 +121,23 @@ class ChatbotWidget {
     }
 
     /**
-     * Expand to full panel (from closed or minimized state).
-     * Transitions: closed → expanded, minimized → expanded
+     * Expand to full panel (from closed state).
+     * Transition: closed → expanded
      */
     expand() {
         if (this.isAnimating) return;
         if (this.state === 'expanded') return;
         this.isAnimating = true;
 
-        const fromMinimized = this.state === 'minimized';
         this.state = 'expanded';
 
-        // Hide strip (if visible from minimized state)
-        if (fromMinimized && this.strip) {
-            this.strip.classList.remove('chatbot-strip--visible');
-            // After strip fade-out, add hidden attribute to remove from DOM flow
-            setTimeout(() => this.strip.setAttribute('hidden', ''), 150);
-        }
-
-        // Remove FAB hidden state; set aria-expanded (mobile: FAB hides, tablet/desktop: shifts)
-        this.fab.removeAttribute('data-chatbot-hidden');
+        // Set aria-expanded (mobile: FAB hides via CSS, tablet/desktop: shifts)
         this.fab.setAttribute('aria-expanded', 'true');
 
         // Show panel
         this.panel.setAttribute('aria-hidden', 'false');
 
-        // Clear badge (both FAB and strip badges)
+        // Clear badge
         this.clearBadge();
 
         // Focus input after animation completes
@@ -169,38 +149,6 @@ class ChatbotWidget {
         }, 250);
 
         this.announce('AI Chatbot opened');
-    }
-
-    /**
-     * Minimize to bottom strip (from expanded state).
-     * Transition: expanded → minimized
-     */
-    minimize() {
-        if (this.isAnimating) return;
-        if (this.state !== 'expanded') return;
-        this.isAnimating = true;
-        this.state = 'minimized';
-
-        // Hide panel (slides down via CSS transition)
-        this.panel.setAttribute('aria-hidden', 'true');
-        this.fab.setAttribute('aria-expanded', 'false');
-
-        // Hide FAB (fade out via CSS, then force it hidden for all breakpoints)
-        this.fab.setAttribute('data-chatbot-hidden', '');
-
-        // Show strip: remove hidden, then next frame add visible class for fade-in
-        if (this.strip) {
-            this.strip.removeAttribute('hidden');
-            requestAnimationFrame(() => {
-                this.strip.classList.add('chatbot-strip--visible');
-            });
-        }
-
-        setTimeout(() => {
-            this.isAnimating = false;
-        }, 250);
-
-        this.announce('AI Chatbot minimized');
     }
 
     /**
@@ -216,15 +164,6 @@ class ChatbotWidget {
         // Hide panel (slides down via CSS transition)
         this.panel.setAttribute('aria-hidden', 'true');
         this.fab.setAttribute('aria-expanded', 'false');
-
-        // Restore FAB (remove hidden state, make visible)
-        this.fab.removeAttribute('data-chatbot-hidden');
-
-        // Ensure strip stays hidden
-        if (this.strip) {
-            this.strip.classList.remove('chatbot-strip--visible');
-            this.strip.setAttribute('hidden', '');
-        }
 
         // Return focus to FAB after animation
         setTimeout(() => {
@@ -272,7 +211,7 @@ class ChatbotWidget {
             this.addMessage('ai', response);
             this.conversation.push({ role: 'ai', content: response });
 
-            // If not expanded (minimized or closed), show badge on appropriate element
+            // If not expanded (closed), show badge on FAB
             if (this.state !== 'expanded') {
                 this.showBadge();
             }
@@ -378,19 +317,10 @@ class ChatbotWidget {
         const count = String(this.unreadCount);
         const label = `${this.unreadCount} new message${this.unreadCount > 1 ? 's' : ''}`;
 
-        if (this.state === 'minimized') {
-            // Show badge on the bottom strip
-            if (this.stripBadge) {
-                this.stripBadge.textContent = count;
-                this.stripBadge.setAttribute('aria-label', label);
-                this.stripBadge.removeAttribute('hidden');
-            }
-        } else {
-            // Show badge on the FAB (closed state)
-            if (this.badge) {
-                this.badge.textContent = count;
-                this.badge.setAttribute('aria-label', label);
-            }
+        // Always show badge on the FAB
+        if (this.badge) {
+            this.badge.textContent = count;
+            this.badge.setAttribute('aria-label', label);
         }
     }
 
@@ -400,12 +330,6 @@ class ChatbotWidget {
         if (this.badge) {
             this.badge.textContent = '';
             this.badge.removeAttribute('aria-label');
-        }
-        // Clear strip badge
-        if (this.stripBadge) {
-            this.stripBadge.textContent = '';
-            this.stripBadge.removeAttribute('aria-label');
-            this.stripBadge.setAttribute('hidden', '');
         }
     }
 

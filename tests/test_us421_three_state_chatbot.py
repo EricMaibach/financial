@@ -1,13 +1,15 @@
 """
-Static verification tests for US-4.2.1: Implement three-state chatbot model with bottom strip.
+Static verification tests for US-144.1: Remove bottom-strip state and simplify chatbot
+to binary expand/FAB model.
 
 These tests verify the implementation without requiring a live browser or Flask server.
 They inspect source files directly to confirm required HTML, CSS, and JS patterns are present.
 
-Three-state model:
-  closed    — FAB visible, panel hidden, strip hidden
-  expanded  — Panel visible, FAB hidden (mobile) or shifted (tablet/desktop), strip hidden
-  minimized — Strip visible, FAB hidden, panel hidden
+Binary state model:
+  closed   — FAB visible, panel hidden
+  expanded — Panel visible, FAB hidden (mobile) or shifted (tablet/desktop)
+
+These tests also verify the strip has been fully removed (no strip HTML, CSS, or JS).
 """
 
 import os
@@ -26,228 +28,185 @@ def read_file(path):
 
 
 # ============================================
-# HTML Structure Tests
+# Strip Removal Tests — HTML
 # ============================================
 
-class TestStripHTML(unittest.TestCase):
-    """Verify the bottom strip element is present in base.html."""
+class TestStripRemovedFromHTML(unittest.TestCase):
+    """Verify the bottom strip element has been removed from base.html."""
 
     def setUp(self):
         self.html = read_file(BASE_HTML_PATH)
 
-    def test_strip_element_in_html(self):
-        """base.html must include the chatbot-strip button element."""
-        self.assertIn('id="chatbot-strip"', self.html)
+    def test_strip_element_not_in_html(self):
+        """base.html must NOT include chatbot-strip button element."""
+        self.assertNotIn('id="chatbot-strip"', self.html)
 
-    def test_strip_has_chatbot_strip_class(self):
-        """Strip button must have class chatbot-strip."""
-        self.assertIn('class="chatbot-strip"', self.html)
+    def test_strip_class_not_in_html(self):
+        """base.html must NOT reference class chatbot-strip."""
+        self.assertNotIn('class="chatbot-strip"', self.html)
 
-    def test_strip_has_aria_label(self):
-        """Strip button must have an accessible aria-label."""
-        idx = self.html.find('id="chatbot-strip"')
-        self.assertGreater(idx, 0)
-        surrounding = self.html[idx:idx + 300]
-        self.assertIn('aria-label=', surrounding)
-        self.assertIn('expand', surrounding.lower())
+    def test_strip_label_not_in_html(self):
+        """base.html must NOT include chatbot-strip-label span."""
+        self.assertNotIn('chatbot-strip-label', self.html)
 
-    def test_strip_has_aria_expanded_false(self):
-        """Strip button must start with aria-expanded='false'."""
-        idx = self.html.find('id="chatbot-strip"')
-        surrounding = self.html[idx:idx + 300]
-        self.assertIn('aria-expanded="false"', surrounding)
+    def test_strip_badge_not_in_html(self):
+        """base.html must NOT include chatbot-strip-badge span."""
+        self.assertNotIn('chatbot-strip-badge', self.html)
 
-    def test_strip_starts_hidden(self):
-        """Strip button must start hidden (minimized state not active on load)."""
-        idx = self.html.find('id="chatbot-strip"')
-        surrounding = self.html[idx:idx + 300]
-        self.assertIn('hidden', surrounding)
+    def test_strip_chevron_not_in_html(self):
+        """base.html must NOT include chatbot-strip-chevron element."""
+        self.assertNotIn('chatbot-strip-chevron', self.html)
 
-    def test_strip_has_label_span(self):
-        """Strip must contain chatbot-strip-label span."""
-        self.assertIn('chatbot-strip-label', self.html)
-
-    def test_strip_has_badge_span(self):
-        """Strip must contain chatbot-strip-badge span for unread notifications."""
-        self.assertIn('chatbot-strip-badge', self.html)
-
-    def test_strip_badge_starts_hidden(self):
-        """Strip badge must start hidden (no unread messages on load)."""
-        idx = self.html.find('chatbot-strip-badge')
-        self.assertGreater(idx, 0)
-        surrounding = self.html[idx:idx + 100]
-        self.assertIn('hidden', surrounding)
-
-    def test_strip_has_chevron(self):
-        """Strip must contain chatbot-strip-chevron for expand affordance."""
-        self.assertIn('chatbot-strip-chevron', self.html)
-
-    def test_fab_element_still_in_html(self):
+    def test_fab_still_in_html(self):
         """FAB must still be present (used in closed state)."""
         self.assertIn('id="chatbot-fab"', self.html)
 
-    def test_panel_element_still_in_html(self):
+    def test_panel_still_in_html(self):
         """Panel must still be present (used in expanded state)."""
         self.assertIn('id="chatbot-panel"', self.html)
 
 
 # ============================================
-# CSS Tests — Bottom Strip Styles
+# Single-Button Tests — HTML
 # ============================================
 
-class TestStripCSS(unittest.TestCase):
-    """Verify chatbot-strip CSS is correct per spec."""
+class TestSingleButtonHTML(unittest.TestCase):
+    """Verify panel header has exactly one button (the minimize/close button)."""
+
+    def setUp(self):
+        self.html = read_file(BASE_HTML_PATH)
+
+    def test_minimize_button_still_present(self):
+        """The single close button must still have class chatbot-minimize."""
+        self.assertIn('class="chatbot-minimize"', self.html)
+
+    def test_close_button_removed(self):
+        """The separate × close button (chatbot-close class) must be removed."""
+        self.assertNotIn('class="chatbot-close"', self.html)
+
+    def test_single_header_button_closes_to_fab(self):
+        """The single header button must have accessible label referencing close."""
+        idx = self.html.find('class="chatbot-minimize"')
+        self.assertGreater(idx, 0)
+        surrounding = self.html[idx:idx + 200]
+        self.assertIn('aria-label=', surrounding)
+        # Must indicate closing, not minimizing to strip
+        label_match = re.search(r'aria-label="([^"]+)"', surrounding)
+        self.assertIsNotNone(label_match)
+        label = label_match.group(1).lower()
+        self.assertIn('close', label)
+
+
+# ============================================
+# Strip Removal Tests — CSS
+# ============================================
+
+class TestStripRemovedFromCSS(unittest.TestCase):
+    """Verify all strip CSS has been removed from chatbot.css."""
 
     def setUp(self):
         self.css = read_file(CHATBOT_CSS_PATH)
 
-    def test_strip_class_declared(self):
-        """.chatbot-strip CSS rule must be declared."""
-        self.assertIn('.chatbot-strip', self.css)
+    def test_strip_class_not_in_css(self):
+        """chatbot.css must NOT contain .chatbot-strip rule."""
+        self.assertNotIn('.chatbot-strip', self.css)
 
-    def test_strip_is_fixed_positioned(self):
-        """Strip must use fixed positioning (stays at viewport bottom)."""
-        idx = self.css.find('.chatbot-strip {')
-        self.assertGreater(idx, 0)
-        rule = self.css[idx:idx + 500]
-        self.assertIn('position: fixed', rule)
+    def test_strip_label_not_in_css(self):
+        """chatbot.css must NOT contain .chatbot-strip-label rule."""
+        self.assertNotIn('.chatbot-strip-label', self.css)
 
-    def test_strip_anchors_to_bottom(self):
-        """Strip must be anchored to viewport bottom."""
-        idx = self.css.find('.chatbot-strip {')
-        rule = self.css[idx:idx + 500]
-        self.assertIn('bottom: 0', rule)
+    def test_strip_badge_not_in_css(self):
+        """chatbot.css must NOT contain .chatbot-strip-badge rule."""
+        self.assertNotIn('.chatbot-strip-badge', self.css)
 
-    def test_strip_height_48px(self):
-        """Strip must be exactly 48px (touch-safe per spec)."""
-        idx = self.css.find('.chatbot-strip {')
-        rule = self.css[idx:idx + 500]
-        self.assertIn('height: 48px', rule)
+    def test_strip_chevron_not_in_css(self):
+        """chatbot.css must NOT contain .chatbot-strip-chevron rule."""
+        self.assertNotIn('.chatbot-strip-chevron', self.css)
 
-    def test_strip_background_neutral_800(self):
-        """Strip must use neutral-800 (#1F2937) background."""
-        idx = self.css.find('.chatbot-strip {')
-        rule = self.css[idx:idx + 500]
-        self.assertIn('#1F2937', rule)
+    def test_strip_visible_class_not_in_css(self):
+        """chatbot.css must NOT contain chatbot-strip--visible class."""
+        self.assertNotIn('chatbot-strip--visible', self.css)
 
-    def test_strip_top_border_neutral_600(self):
-        """Strip must have neutral-600 (#4B5563) top border."""
-        idx = self.css.find('.chatbot-strip {')
-        rule = self.css[idx:idx + 500]
-        self.assertIn('#4B5563', rule)
+    def test_fab_data_chatbot_hidden_not_in_css(self):
+        """chatbot.css must NOT contain [data-chatbot-hidden] rule (strip-only concept)."""
+        self.assertNotIn('data-chatbot-hidden', self.css)
 
-    def test_strip_full_width_mobile(self):
-        """Strip must span full width on mobile (left:0, right:0)."""
-        idx = self.css.find('.chatbot-strip {')
-        rule = self.css[idx:idx + 500]
-        self.assertIn('left: 0', rule)
-        self.assertIn('right: 0', rule)
-
-    def test_strip_hidden_attribute_display_none(self):
-        """Strip [hidden] must be display:none."""
-        self.assertIn('.chatbot-strip[hidden]', self.css)
-        idx = self.css.find('.chatbot-strip[hidden]')
-        rule = self.css[idx:idx + 80]
-        self.assertIn('none', rule)
-
-    def test_strip_visible_class_opacity_1(self):
-        """chatbot-strip--visible class must set opacity:1 to enable fade-in."""
-        self.assertIn('chatbot-strip--visible', self.css)
-        idx = self.css.find('chatbot-strip--visible')
-        rule = self.css[idx:idx + 80]
-        self.assertIn('opacity: 1', rule)
-
-    def test_strip_fade_in_transition(self):
-        """Strip must have an opacity transition for fade-in animation."""
-        idx = self.css.find('.chatbot-strip {')
-        rule = self.css[idx:idx + 800]
-        self.assertIn('transition:', rule)
-        self.assertIn('opacity', rule)
-
-    def test_strip_label_text_sm(self):
-        """Strip label must be 14px (text-sm) per spec."""
-        self.assertIn('.chatbot-strip-label', self.css)
-        idx = self.css.find('.chatbot-strip-label')
-        rule = self.css[idx:idx + 200]
-        self.assertIn('14px', rule)
-
-    def test_strip_label_weight_500(self):
-        """Strip label must be font-weight 500 per spec."""
-        idx = self.css.find('.chatbot-strip-label')
-        rule = self.css[idx:idx + 200]
-        self.assertIn('font-weight: 500', rule)
-
-    def test_strip_badge_danger_600(self):
-        """Strip badge must use danger-600 (#DC2626) background (same as FAB badge)."""
-        self.assertIn('.chatbot-strip-badge', self.css)
-        idx = self.css.find('.chatbot-strip-badge')
-        rule = self.css[idx:idx + 200]
-        self.assertIn('#DC2626', rule)
-
-    def test_strip_badge_hidden_attribute(self):
-        """Strip badge [hidden] must be display:none."""
-        self.assertIn('.chatbot-strip-badge[hidden]', self.css)
-        idx = self.css.find('.chatbot-strip-badge[hidden]')
-        rule = self.css[idx:idx + 80]
-        self.assertIn('none', rule)
-
-    def test_strip_tablet_width_360px(self):
-        """Strip must be 360px wide on tablet (aligns with panel)."""
-        # Use rfind to get the LAST 768px block (strip's block, not panel's block)
-        idx = self.css.rfind('@media (min-width: 768px)')
-        self.assertGreater(idx, 0)
-        last_tablet_block = self.css[idx:]
-        self.assertIn('.chatbot-strip', last_tablet_block)
-        self.assertIn('width: 360px', last_tablet_block)
-
-    def test_strip_desktop_width_440px(self):
-        """Strip must be 440px wide on desktop (aligns with panel)."""
-        idx = self.css.find('@media (min-width: 1024px)')
-        self.assertGreater(idx, 0)
-        remaining = self.css[idx:]
-        strip_440_idx = remaining.find('width: 440px')
-        self.assertGreater(strip_440_idx, 0)
-
-    def test_strip_tablet_right_aligned(self):
-        """Strip must be right-aligned on tablet (left: auto)."""
-        # Use rfind to get the LAST 768px block (strip's block, not panel's block)
-        idx = self.css.rfind('@media (min-width: 768px)')
-        last_tablet_block = self.css[idx:]
-        chatbot_strip_idx = last_tablet_block.find('.chatbot-strip')
-        self.assertGreater(chatbot_strip_idx, 0)
-        block = last_tablet_block[chatbot_strip_idx:chatbot_strip_idx + 200]
-        self.assertIn('left: auto', block)
+    def test_close_class_not_in_css(self):
+        """chatbot.css must NOT contain .chatbot-close rule (button removed)."""
+        self.assertNotIn('.chatbot-close', self.css)
 
 
-class TestFABHiddenState(unittest.TestCase):
-    """Verify FAB can be hidden in minimized state via data-chatbot-hidden attribute."""
+# ============================================
+# Binary State Model Tests — CSS
+# ============================================
+
+class TestBinaryModelCSS(unittest.TestCase):
+    """Verify CSS correctly supports binary closed/expanded state."""
 
     def setUp(self):
         self.css = read_file(CHATBOT_CSS_PATH)
 
-    def test_fab_hidden_attribute_rule_exists(self):
-        """CSS must include rule to hide FAB via data-chatbot-hidden attribute."""
-        self.assertIn('.chatbot-fab[data-chatbot-hidden]', self.css)
-
-    def test_fab_hidden_sets_opacity_zero(self):
-        """FAB [data-chatbot-hidden] must set opacity:0."""
-        idx = self.css.find('.chatbot-fab[data-chatbot-hidden]')
-        rule = self.css[idx:idx + 150]
+    def test_fab_hidden_on_mobile_when_expanded(self):
+        """FAB [aria-expanded='true'] must hide on mobile (opacity:0, pointer-events:none)."""
+        idx = self.css.find('.chatbot-fab[aria-expanded="true"]')
+        self.assertGreater(idx, 0)
+        rule = self.css[idx:idx + 200]
         self.assertIn('opacity: 0', rule)
-
-    def test_fab_hidden_sets_pointer_events_none(self):
-        """FAB [data-chatbot-hidden] must prevent pointer events."""
-        idx = self.css.find('.chatbot-fab[data-chatbot-hidden]')
-        rule = self.css[idx:idx + 150]
         self.assertIn('pointer-events: none', rule)
 
+    def test_fab_shifts_right_on_tablet(self):
+        """FAB [aria-expanded='true'] on tablet must shift left to accommodate panel."""
+        idx = self.css.find('@media (min-width: 768px)')
+        self.assertGreater(idx, 0)
+        block = self.css[idx:idx + 2000]
+        self.assertIn('.chatbot-fab[aria-expanded="true"]', block)
+        fab_expanded_idx = block.find('.chatbot-fab[aria-expanded="true"]')
+        rule = block[fab_expanded_idx:fab_expanded_idx + 200]
+        self.assertIn('opacity: 1', rule)
+        self.assertIn('pointer-events: auto', rule)
+
+    def test_panel_slides_down_when_hidden(self):
+        """Panel must start with translateY(100%) to be hidden below viewport."""
+        idx = self.css.find('.chatbot-panel {')
+        self.assertGreater(idx, 0)
+        rule = self.css[idx:idx + 600]
+        self.assertIn('translateY(100%)', rule)
+
+    def test_panel_visible_when_aria_hidden_false(self):
+        """Panel [aria-hidden='false'] must translate to 0 (visible)."""
+        self.assertIn('.chatbot-panel[aria-hidden="false"]', self.css)
+        idx = self.css.find('.chatbot-panel[aria-hidden="false"]')
+        rule = self.css[idx:idx + 100]
+        self.assertIn('translateY(0)', rule)
+
+    def test_single_minimize_button_style_exists(self):
+        """chatbot.css must still have .chatbot-minimize style rule."""
+        self.assertIn('.chatbot-minimize', self.css)
+
+    def test_tablet_panel_uses_translatex(self):
+        """Tablet side-panel must use translateX(100%) to slide from right."""
+        idx = self.css.find('@media (min-width: 768px)')
+        self.assertGreater(idx, 0)
+        block = self.css[idx:idx + 2000]
+        self.assertIn('translateX(100%)', block)
+
+    def test_desktop_panel_width_440px(self):
+        """Desktop panel must still be 440px wide."""
+        idx = self.css.find('@media (min-width: 1024px)')
+        self.assertGreater(idx, 0)
+        block = self.css[idx:idx + 2000]
+        panel_idx = block.find('.chatbot-panel')
+        self.assertGreater(panel_idx, 0)
+        panel_rule = block[panel_idx:panel_idx + 100]
+        self.assertIn('width: 440px', panel_rule)
+
 
 # ============================================
-# JS State Machine Tests
+# Binary State Model Tests — JS
 # ============================================
 
-class TestThreeStateModel(unittest.TestCase):
-    """Verify three-state model is implemented in chatbot.js."""
+class TestBinaryStateModelJS(unittest.TestCase):
+    """Verify binary state model is implemented in chatbot.js."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
@@ -256,17 +215,21 @@ class TestThreeStateModel(unittest.TestCase):
         """Widget must initialize with state = 'closed'."""
         self.assertIn("this.state = 'closed'", self.js)
 
+    def test_no_minimized_state_in_js(self):
+        """JS must not reference 'minimized' state (strip removed)."""
+        self.assertNotIn("this.state = 'minimized'", self.js)
+
     def test_expand_method_exists(self):
-        """expand() method must exist (replaces binary open())."""
+        """expand() method must exist (open from closed state)."""
         self.assertIn('expand() {', self.js)
 
-    def test_minimize_method_exists(self):
-        """minimize() method must exist (new state: collapsed to bottom strip)."""
-        self.assertIn('minimize() {', self.js)
-
     def test_close_chatbot_method_exists(self):
-        """closeChatbot() method must exist (× button → FAB only)."""
+        """closeChatbot() method must exist (single close transition → FAB)."""
         self.assertIn('closeChatbot() {', self.js)
+
+    def test_minimize_method_removed(self):
+        """minimize() method must be removed (three-state model gone)."""
+        self.assertNotIn('minimize() {', self.js)
 
     def test_fab_click_calls_expand(self):
         """FAB click must call expand() to open from closed state."""
@@ -275,43 +238,41 @@ class TestThreeStateModel(unittest.TestCase):
         handler = self.js[idx:idx + 100]
         self.assertIn('this.expand()', handler)
 
-    def test_minimize_btn_calls_minimize(self):
-        """Minimize button (−) must call minimize() → bottom strip state."""
+    def test_minimize_btn_calls_close_chatbot(self):
+        """Single header button must call closeChatbot() to collapse to FAB."""
         idx = self.js.find('minimizeBtn.addEventListener')
-        self.assertGreater(idx, 0)
-        handler = self.js[idx:idx + 100]
-        self.assertIn('this.minimize()', handler)
-
-    def test_close_btn_calls_close_chatbot(self):
-        """Close button (×) must call closeChatbot() → FAB only state."""
-        idx = self.js.find('closeBtn.addEventListener')
         self.assertGreater(idx, 0)
         handler = self.js[idx:idx + 100]
         self.assertIn('this.closeChatbot()', handler)
 
-    def test_strip_click_calls_expand(self):
-        """Strip tap must call expand() to reopen from minimized state."""
-        idx = self.js.find('this.strip.addEventListener')
-        self.assertGreater(idx, 0)
-        handler = self.js[idx:idx + 100]
-        self.assertIn('this.expand()', handler)
+    def test_no_close_btn_listener(self):
+        """closeBtn event listener must be removed (no second button)."""
+        self.assertNotIn('closeBtn.addEventListener', self.js)
 
-    def test_strip_referenced_in_constructor(self):
-        """Widget constructor must reference chatbot-strip element."""
-        self.assertIn("'chatbot-strip'", self.js)
+    def test_no_strip_reference_in_constructor(self):
+        """Constructor must not reference chatbot-strip element."""
+        self.assertNotIn("'chatbot-strip'", self.js)
 
-    def test_strip_badge_referenced_in_constructor(self):
-        """Widget constructor must reference .chatbot-strip-badge element."""
-        self.assertIn('chatbot-strip-badge', self.js)
+    def test_no_strip_badge_reference_in_constructor(self):
+        """Constructor must not reference .chatbot-strip-badge element."""
+        self.assertNotIn('chatbot-strip-badge', self.js)
+
+    def test_no_data_chatbot_hidden_in_js(self):
+        """JS must not use data-chatbot-hidden attribute (strip-only concept)."""
+        self.assertNotIn('data-chatbot-hidden', self.js)
 
 
-class TestStateTransitions(unittest.TestCase):
-    """Verify correct DOM manipulation in each state transition."""
+# ============================================
+# State Transition Tests — JS
+# ============================================
+
+class TestBinaryStateTransitions(unittest.TestCase):
+    """Verify correct DOM manipulation in each binary state transition."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
 
-    def _get_method_body(self, method_name, char_limit=1200):
+    def _get_method_body(self, method_name, char_limit=800):
         idx = self.js.find(f'{method_name}() {{')
         self.assertGreater(idx, 0, f'{method_name}() method not found')
         return self.js[idx:idx + char_limit]
@@ -327,17 +288,12 @@ class TestStateTransitions(unittest.TestCase):
         self.assertIn("aria-hidden', 'false'", body)
 
     def test_expand_sets_fab_aria_expanded_true(self):
-        """expand() must set fab aria-expanded='true' (mobile hides, tablet/desktop shifts)."""
+        """expand() must set fab aria-expanded='true'."""
         body = self._get_method_body('expand')
         self.assertIn("aria-expanded', 'true'", body)
 
-    def test_expand_removes_fab_data_hidden(self):
-        """expand() must remove data-chatbot-hidden from FAB."""
-        body = self._get_method_body('expand')
-        self.assertIn("removeAttribute('data-chatbot-hidden')", body)
-
     def test_expand_clears_badge(self):
-        """expand() must clear badges (user is now viewing messages)."""
+        """expand() must clear badges."""
         body = self._get_method_body('expand')
         self.assertIn('clearBadge()', body)
 
@@ -351,35 +307,12 @@ class TestStateTransitions(unittest.TestCase):
         body = self._get_method_body('expand')
         self.assertIn('AI Chatbot opened', body)
 
-    def test_minimize_sets_state_to_minimized(self):
-        """minimize() must set state to 'minimized'."""
-        body = self._get_method_body('minimize')
-        self.assertIn("this.state = 'minimized'", body)
-
-    def test_minimize_hides_panel(self):
-        """minimize() must set panel aria-hidden='true'."""
-        body = self._get_method_body('minimize')
-        self.assertIn("aria-hidden', 'true'", body)
-
-    def test_minimize_sets_fab_data_hidden(self):
-        """minimize() must set data-chatbot-hidden on FAB to hide it."""
-        body = self._get_method_body('minimize')
-        self.assertIn("setAttribute('data-chatbot-hidden', '')", body)
-
-    def test_minimize_removes_hidden_from_strip(self):
-        """minimize() must remove hidden attribute from strip."""
-        body = self._get_method_body('minimize')
-        self.assertIn("removeAttribute('hidden')", body)
-
-    def test_minimize_adds_visible_class_to_strip(self):
-        """minimize() must add chatbot-strip--visible class for fade-in animation."""
-        body = self._get_method_body('minimize')
-        self.assertIn('chatbot-strip--visible', body)
-
-    def test_minimize_announces_minimized(self):
-        """minimize() must announce 'AI Chatbot minimized' to screen readers."""
-        body = self._get_method_body('minimize')
-        self.assertIn('AI Chatbot minimized', body)
+    def test_expand_does_not_reference_strip(self):
+        """expand() must not reference the strip (removed)."""
+        body = self._get_method_body('expand')
+        self.assertNotIn('strip', body.lower().replace('chatbot-strip-badge', ''))
+        # More specific: no this.strip usage
+        self.assertNotIn('this.strip', body)
 
     def test_close_chatbot_sets_state_to_closed(self):
         """closeChatbot() must set state to 'closed'."""
@@ -395,16 +328,6 @@ class TestStateTransitions(unittest.TestCase):
         """closeChatbot() must set fab aria-expanded='false'."""
         body = self._get_method_body('closeChatbot')
         self.assertIn("aria-expanded', 'false'", body)
-
-    def test_close_chatbot_removes_fab_data_hidden(self):
-        """closeChatbot() must remove data-chatbot-hidden so FAB becomes visible."""
-        body = self._get_method_body('closeChatbot')
-        self.assertIn("removeAttribute('data-chatbot-hidden')", body)
-
-    def test_close_chatbot_keeps_strip_hidden(self):
-        """closeChatbot() must ensure strip stays hidden (add hidden attribute)."""
-        body = self._get_method_body('closeChatbot')
-        self.assertIn("setAttribute('hidden', '')", body)
 
     def test_close_chatbot_focuses_fab(self):
         """closeChatbot() must return focus to FAB after animation."""
@@ -425,91 +348,92 @@ class TestStateTransitions(unittest.TestCase):
         self.assertNotIn('this.conversation', func_body)
         self.assertNotIn('sessionStorage.removeItem', func_body)
 
+    def test_close_chatbot_does_not_reference_strip(self):
+        """closeChatbot() must not reference the strip (removed)."""
+        body = self._get_method_body('closeChatbot')
+        self.assertNotIn('this.strip', body)
+
+
+# ============================================
+# Escape Key Tests
+# ============================================
 
 class TestEscapeKeyBehavior(unittest.TestCase):
-    """Verify Escape key goes to minimized (bottom strip) state per spec."""
+    """Verify Escape key collapses to FAB (closed state) per binary model."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
 
-    def test_escape_calls_minimize_when_expanded(self):
-        """Escape key when expanded must call minimize() (→ bottom strip), not close()."""
-        # Find the global keydown handler
-        idx = self.js.find("'Escape'")
-        self.assertGreater(idx, 0)
-        # Look near the global Escape handler (document.addEventListener)
-        # The escape handler for the panel should call minimize()
-        # Find the document.addEventListener('keydown') block
+    def test_escape_calls_close_chatbot_when_expanded(self):
+        """Escape key when expanded must call closeChatbot() (collapse to FAB)."""
         doc_keydown_idx = self.js.find("document.addEventListener('keydown'")
         self.assertGreater(doc_keydown_idx, 0)
         handler_block = self.js[doc_keydown_idx:doc_keydown_idx + 300]
-        self.assertIn('this.minimize()', handler_block)
+        self.assertIn('this.closeChatbot()', handler_block)
+
+    def test_escape_does_not_call_minimize(self):
+        """Escape handler must NOT call minimize() (method removed)."""
+        doc_keydown_idx = self.js.find("document.addEventListener('keydown'")
+        handler_block = self.js[doc_keydown_idx:doc_keydown_idx + 300]
+        self.assertNotIn('this.minimize()', handler_block)
 
     def test_escape_checks_expanded_state(self):
-        """Escape handler must check state === 'expanded' before minimizing."""
+        """Escape handler must check state === 'expanded' before closing."""
         doc_keydown_idx = self.js.find("document.addEventListener('keydown'")
         handler_block = self.js[doc_keydown_idx:doc_keydown_idx + 300]
         self.assertIn("this.state === 'expanded'", handler_block)
 
 
 # ============================================
-# Badge State Tests
+# Badge Tests
 # ============================================
 
-class TestBadgeStateRouting(unittest.TestCase):
-    """Verify badge appears on correct element based on chatbot state."""
+class TestBadgeAlwaysOnFAB(unittest.TestCase):
+    """Verify badge always goes to FAB (no strip badge routing)."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
 
-    def test_show_badge_checks_minimized_state(self):
-        """showBadge() must check if state is 'minimized' to route to strip badge."""
+    def test_show_badge_no_minimized_check(self):
+        """showBadge() must NOT check for 'minimized' state (no strip)."""
         idx = self.js.find('showBadge() {')
         self.assertGreater(idx, 0)
         func_body = self.js[idx:idx + 400]
-        self.assertIn("this.state === 'minimized'", func_body)
+        self.assertNotIn("this.state === 'minimized'", func_body)
 
-    def test_show_badge_shows_strip_badge_when_minimized(self):
-        """showBadge() must update stripBadge when state is minimized."""
+    def test_show_badge_always_updates_fab_badge(self):
+        """showBadge() must always update the FAB badge."""
         idx = self.js.find('showBadge() {')
         func_body = self.js[idx:idx + 400]
-        self.assertIn('this.stripBadge', func_body)
-
-    def test_show_badge_shows_fab_badge_when_closed(self):
-        """showBadge() must update FAB badge when state is not minimized (closed)."""
-        idx = self.js.find('showBadge() {')
-        func_body = self.js[idx:idx + 700]
         self.assertIn('this.badge', func_body)
 
-    def test_strip_badge_unhidden_in_show_badge(self):
-        """showBadge() must remove hidden from strip badge to make it visible."""
+    def test_show_badge_no_strip_badge_reference(self):
+        """showBadge() must not reference strip badge (removed)."""
         idx = self.js.find('showBadge() {')
-        func_body = self.js[idx:idx + 500]
-        self.assertIn("removeAttribute('hidden')", func_body)
+        func_body = self.js[idx:idx + 400]
+        self.assertNotIn('this.stripBadge', func_body)
 
-    def test_clear_badge_clears_strip_badge(self):
-        """clearBadge() must clear and re-hide the strip badge."""
+    def test_clear_badge_no_strip_badge(self):
+        """clearBadge() must not reference strip badge (removed)."""
         idx = self.js.find('clearBadge() {')
         self.assertGreater(idx, 0)
-        func_body = self.js[idx:idx + 500]
-        self.assertIn('this.stripBadge', func_body)
-        # Must re-hide badge on clear
-        self.assertIn("setAttribute('hidden', '')", func_body)
+        func_body = self.js[idx:idx + 300]
+        self.assertNotIn('this.stripBadge', func_body)
 
-    def test_clear_badge_clears_both_badges(self):
-        """clearBadge() must clear both FAB badge and strip badge."""
-        idx = self.js.find('clearBadge() {')
-        func_body = self.js[idx:idx + 500]
-        self.assertIn('this.badge', func_body)
-        self.assertIn('this.stripBadge', func_body)
+    def test_show_badge_guards_not_expanded(self):
+        """Badge display must still be guarded: only when state !== expanded."""
+        idx = self.js.find('showBadge()')
+        self.assertGreater(idx, 0)
+        context = self.js[max(0, idx - 200):idx + 50]
+        self.assertIn("this.state !== 'expanded'", context)
 
 
 # ============================================
-# Regression Tests — Prior US-3.2.x Features
+# Regression Tests — Prior Features
 # ============================================
 
 class TestRegressionGuards(unittest.TestCase):
-    """Verify prior US-3.2.x features are not broken by the three-state model."""
+    """Verify prior US-3.2.x features are not broken by the binary model."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
@@ -544,7 +468,6 @@ class TestRegressionGuards(unittest.TestCase):
         idx = self.css.find('@media (min-width: 1024px)')
         self.assertGreater(idx, 0)
         block = self.css[idx:idx + 2000]
-        # Find the chatbot-panel rule in the 1024px block
         panel_idx = block.find('.chatbot-panel')
         self.assertGreater(panel_idx, 0)
         panel_rule = block[panel_idx:panel_idx + 100]
@@ -557,14 +480,6 @@ class TestRegressionGuards(unittest.TestCase):
     def test_panel_still_in_html(self):
         """Panel must still be in base.html."""
         self.assertIn('id="chatbot-panel"', self.html)
-
-    def test_minimize_btn_still_in_html(self):
-        """Minimize (−) button must still be in base.html."""
-        self.assertIn('class="chatbot-minimize"', self.html)
-
-    def test_close_btn_still_in_html(self):
-        """Close (×) button must still be in base.html."""
-        self.assertIn('class="chatbot-close"', self.html)
 
     def test_enter_key_handler_still_present(self):
         """Enter key to send message must still work."""
@@ -582,6 +497,18 @@ class TestRegressionGuards(unittest.TestCase):
     def test_animations_still_250ms(self):
         """Panel animation must still be 250ms ease-in-out."""
         self.assertIn('250ms', self.css)
+
+    def test_ai_api_endpoint_still_referenced(self):
+        """fetchAIResponse must still call /api/chatbot endpoint."""
+        self.assertIn("'/api/chatbot'", self.js)
+
+    def test_escape_key_in_clear_dialog_still_works(self):
+        """Escape key in clear dialog must still dismiss dialog."""
+        idx = self.js.find('clearDialog.addEventListener')
+        self.assertGreater(idx, 0)
+        block = self.js[idx:idx + 400]
+        self.assertIn("'Escape'", block)
+        self.assertIn('hideClearDialog()', block)
 
 
 if __name__ == '__main__':
