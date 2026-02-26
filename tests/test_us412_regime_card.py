@@ -117,13 +117,11 @@ class TestRegimeCardCSSComponents(unittest.TestCase):
         chip_block = chip_match.group(0)
         self.assertIn('44px', chip_block, "Signal chip must have 44px touch target")
 
-    def test_confidence_hidden_on_mobile(self):
-        """Confidence indicator must be hidden on mobile."""
-        conf_match = re.search(r'\.regime-confidence\s*\{[^}]+\}', self.css, re.DOTALL)
-        self.assertIsNotNone(conf_match, "Could not find .regime-confidence rule")
-        conf_block = conf_match.group(0)
-        self.assertIn('display: none', conf_block,
-                      "Confidence must be display:none on mobile")
+    def test_confidence_color_classes_defined(self):
+        """Confidence level color classes must exist in CSS (US-5.1.2: confidence visible on all breakpoints)."""
+        self.assertIn('.regime-confidence-high', self.css)
+        self.assertIn('.regime-confidence-medium', self.css)
+        self.assertIn('.regime-confidence-low', self.css)
 
     def test_signal_chips_2col_mobile(self):
         """Signal chips grid must be 2-column on mobile."""
@@ -246,8 +244,8 @@ class TestIndexHTMLSection0Structure(unittest.TestCase):
         )
 
     def test_section_aria_label(self):
-        """Section must have aria-label='Current Macro Regime'."""
-        self.assertIn('aria-label="Current Macro Regime"', self.html)
+        """Section must have aria-label='Macro Regime Score' (updated by US-5.1.2)."""
+        self.assertIn('aria-label="Macro Regime Score"', self.html)
 
     def test_section_id(self):
         """Section must have id='macro-regime-section'."""

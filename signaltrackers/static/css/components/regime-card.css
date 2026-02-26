@@ -136,17 +136,49 @@
   margin-bottom: 0;
 }
 
-/* --- Confidence Indicator --- */
-.regime-confidence {
-  display: none;  /* hidden on mobile; shown on tablet+ */
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 6px;
-}
-
+/* --- Confidence color classes (used by .regime-trend-confidence, US-5.1.2) --- */
 .regime-confidence-high   { color: #15803D; }  /* success-700 */
 .regime-confidence-medium { color: #A16207; }  /* warning-700 */
 .regime-confidence-low    { color: #B91C1C; }  /* danger-700 */
+
+/* --- Trend Direction Row (US-5.1.2) --- */
+/* Shared layout for both mobile and tablet+ variants */
+.regime-trend-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+/* Trend arrow: icon + label text */
+.regime-trend-arrow {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;  /* neutral-700 default (overridden by modifier) */
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.regime-trend-arrow--improving    { color: #16A34A; }  /* success-600 */
+.regime-trend-arrow--stable       { color: #6b7280; }  /* neutral-500 */
+.regime-trend-arrow--deteriorating { color: #DC2626; }  /* danger-600 */
+
+/* Confidence label — inline in trend row, visible on all breakpoints */
+.regime-trend-confidence {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Mobile-only variant: visible by default, hidden on tablet+ */
+.regime-trend-mobile {
+  /* inherits .regime-trend-row display:flex */
+}
+
+/* Tablet+-only variant: hidden on mobile, shown on tablet+ */
+.regime-trend-panel {
+  display: none;
+}
 
 /* 2-col layout container: hidden on mobile, shown as flex on tablet+ */
 .regime-body-2col {
@@ -229,8 +261,9 @@
   .regime-updated-inline { display: none; }
   .regime-updated-panel  { display: block; }
 
-  /* Show confidence indicator */
-  .regime-confidence { display: block; }
+  /* Trend row: hide mobile variant, show tablet+ panel variant (US-5.1.2) */
+  .regime-trend-mobile { display: none; }
+  .regime-trend-panel  { display: flex; }
 
   /* 2-column body: state panel (left) + summary (right) */
   .regime-body-2col {

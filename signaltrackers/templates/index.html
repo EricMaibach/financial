@@ -9,12 +9,12 @@
   Do NOT wrap sections in Bootstrap grid (row/col) — this adds gutters
   and breaks alignment. Cards may be used inside sections freely.
 #}
-<!-- Section 0: Current Macro Regime (US-4.1.2) -->
+<!-- Section 0: Macro Regime Score (US-4.1.2, US-5.1.2) -->
 {% if macro_regime %}
-<section aria-label="Current Macro Regime" id="macro-regime-section" class="mb-4">
+<section aria-label="Macro Regime Score" id="macro-regime-section" class="mb-4">
     <div class="section-header mb-3">
         <h3 class="section-title">
-            <i class="bi bi-globe2 me-2"></i>Current Macro Regime
+            <i class="bi bi-globe2 me-2"></i>Macro Regime Score
         </h3>
     </div>
 
@@ -35,15 +35,43 @@
             {% endif %}
         </div>
 
+        {# ── Trend direction + confidence row — mobile only (US-5.1.2) ── #}
+        {% if macro_regime.trend %}
+        <div class="regime-trend-row regime-trend-mobile"
+             aria-label="Trend: {{ macro_regime.trend | title }}">
+            <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}">
+                <i class="bi bi-arrow-{{ 'up-right' if macro_regime.trend == 'improving' else ('right' if macro_regime.trend == 'stable' else 'down-right') }}"
+                   aria-hidden="true"></i>
+                {{ macro_regime.trend | title }}
+            </span>
+            {% if macro_regime.confidence %}
+            <span class="regime-trend-confidence regime-confidence-{{ macro_regime.confidence | lower }}">
+                Confidence: {{ macro_regime.confidence }}
+            </span>
+            {% endif %}
+        </div>
+        {% endif %}
+
         {# ── Tablet+ 2-col body (state panel | summary) ───── #}
         <div class="regime-body-2col">
             <div class="regime-state-panel">
                 {% if macro_regime.updated_display %}
                 <div class="regime-updated-panel">{{ macro_regime.updated_display }}</div>
                 {% endif %}
-                {% if macro_regime.confidence %}
-                <div class="regime-confidence regime-confidence-{{ macro_regime.confidence | lower }}">
-                    Confidence: {{ macro_regime.confidence }}
+                {# ── Trend direction + confidence — tablet+ (US-5.1.2) ── #}
+                {% if macro_regime.trend %}
+                <div class="regime-trend-row regime-trend-panel"
+                     aria-label="Trend: {{ macro_regime.trend | title }}">
+                    <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}">
+                        <i class="bi bi-arrow-{{ 'up-right' if macro_regime.trend == 'improving' else ('right' if macro_regime.trend == 'stable' else 'down-right') }}"
+                           aria-hidden="true"></i>
+                        {{ macro_regime.trend | title }}
+                    </span>
+                    {% if macro_regime.confidence %}
+                    <span class="regime-trend-confidence regime-confidence-{{ macro_regime.confidence | lower }}">
+                        Confidence: {{ macro_regime.confidence }}
+                    </span>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
