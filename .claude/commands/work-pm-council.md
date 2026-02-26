@@ -35,12 +35,12 @@ Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial
 
 ### 1. Find CEO-Approved Discussions Without a Feature Issue
 
-Check all three categories for discussions (open OR closed) that have an APPROVED decision but no feature issue yet. Querying both states is a safety net for cases where the CEO accidentally closed an approved discussion before PM Council ran.
+Check all three categories for open discussions that have an APPROVED decision but no feature issue yet.
 
 **Research category:**
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGH", states: [OPEN, CLOSED]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGH", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: APPROVED"))) and
       (.comments.nodes | map(.body) | any(startswith("PM: Feature issue created")) | not)
@@ -50,7 +50,7 @@ gh api graphql \
 **Refinements category:**
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGA", states: [OPEN, CLOSED]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3HGA", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: APPROVED"))) and
       (.comments.nodes | map(.body) | any(startswith("PM: Feature issue created")) | not)
@@ -60,7 +60,7 @@ gh api graphql \
 **Technical category:**
 ```bash
 gh api graphql \
-  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3Oge", states: [OPEN, CLOSED]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3Oge", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
   | jq '.data.repository.discussions.nodes[] | select(
       (.comments.nodes | map(.body) | any(startswith("## CEO Decision: APPROVED"))) and
       (.comments.nodes | map(.body) | any(startswith("PM: Feature issue created")) | not)
