@@ -101,6 +101,8 @@ PM: Please create a feature issue for \"[working title]\".
 - Key outcome to achieve: [one sentence]"
 ```
 
+> **Do NOT close APPROVED discussions.** Leave them open — PM Council will read them, create the feature issue, and then close them. Closing an approved discussion before PM Council runs will cause it to be skipped entirely.
+
 **DISMISSED** — not pursuing this:
 ```bash
 gh api graphql \
@@ -113,7 +115,7 @@ Not pursuing this. Reason: [out of scope / timing / already covered by #X / low 
 [Optional: what would change this decision]"
 ```
 
-Then close the discussion:
+Then close the dismissed discussion (DISMISSED only — do NOT close APPROVED discussions):
 ```bash
 gh api graphql \
   -f query='mutation CloseDiscussion($discussionId: ID!) { closeDiscussion(input: { discussionId: $discussionId }) { discussion { id } } }' \
