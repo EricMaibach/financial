@@ -151,7 +151,7 @@ gh api graphql \
 - User pain points in retail investing (Reddit, Twitter, finance forums)
 - Emerging AI/ML approaches to market analysis and prediction
 
-**Research 1–2 topics** using web search. Focus on depth over breadth — one well-researched finding is more valuable than three shallow ones.
+**Research 1 topic** using web search. Focus on depth over breadth — one well-researched finding is more valuable than three shallow ones.
 
 **Check for duplicates** before posting: scan open discussion titles for similar topics. If a very similar discussion is already open, add a comment to it with your new findings instead of creating a new discussion.
 
