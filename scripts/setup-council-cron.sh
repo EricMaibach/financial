@@ -7,10 +7,11 @@ SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 RESEARCHER_SCRIPT="$SCRIPTS_DIR/run-researcher-council.sh"
 DESIGNER_SCRIPT="$SCRIPTS_DIR/run-designer-council.sh"
+ENGINEER_SCRIPT="$SCRIPTS_DIR/run-engineer-council.sh"
 WEEKLY_SCRIPT="$SCRIPTS_DIR/run-council-weekly.sh"
 
 # Verify scripts exist
-for script in "$RESEARCHER_SCRIPT" "$DESIGNER_SCRIPT" "$WEEKLY_SCRIPT"; do
+for script in "$RESEARCHER_SCRIPT" "$DESIGNER_SCRIPT" "$ENGINEER_SCRIPT" "$WEEKLY_SCRIPT"; do
   if [ ! -f "$script" ]; then
     echo "ERROR: Script not found: $script"
     exit 1
@@ -20,6 +21,7 @@ done
 # Cron entries
 RESEARCHER_CRON="0 8 * * * $RESEARCHER_SCRIPT"
 DESIGNER_CRON="0 9 * * * $DESIGNER_SCRIPT"
+ENGINEER_CRON="30 10 * * * $ENGINEER_SCRIPT"
 WEEKLY_CRON="0 10 * * 1 $WEEKLY_SCRIPT"
 
 # Add each entry only if not already present
@@ -39,6 +41,7 @@ add_if_missing() {
 
 add_if_missing "$RESEARCHER_CRON"  "$RESEARCHER_SCRIPT"
 add_if_missing "$DESIGNER_CRON"    "$DESIGNER_SCRIPT"
+add_if_missing "$ENGINEER_CRON"    "$ENGINEER_SCRIPT"
 add_if_missing "$WEEKLY_CRON"      "$WEEKLY_SCRIPT"
 
 echo "$NEW_CRONTAB" | crontab -

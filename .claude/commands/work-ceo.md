@@ -23,6 +23,7 @@ Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial
 - Repository ID: `R_kgDORXrB_g`
 - Research category ID: `DIC_kwDORXrB_s4C3HGH`
 - Refinements category ID: `DIC_kwDORXrB_s4C3HGA`
+- Technical category ID: `DIC_kwDORXrB_s4C3Oge`
 
 ---
 
@@ -67,7 +68,21 @@ gh api graphql \
 
 Process each the same way as Research discussions.
 
-### 4. Post a Decision on Each Pending Discussion
+### 4. Review Pending Technical Discussions
+
+Find open Technical discussions with no CEO decision comment yet:
+
+```bash
+gh api graphql \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "DIC_kwDORXrB_s4C3Oge", states: [OPEN]) { nodes { id number title body url comments(first: 20) { nodes { body } } } } } }' \
+  | jq '.data.repository.discussions.nodes[] | select(
+      .comments.nodes | map(.body) | any(startswith("## CEO Decision:")) | not
+    ) | {id, number, title, body}'
+```
+
+Process each the same way as Research and Refinements discussions.
+
+### 5. Post a Decision on Each Pending Discussion
 
 For each unreviewed discussion, post one of three decision formats:
 
@@ -123,7 +138,7 @@ Before deciding, I need to understand: [specific question]
 > `## CEO Decision: ESCALATE — This needs a human decision. Tagging for review.`
 > and leave the discussion open.
 
-### 5. Update Product Roadmap (If Needed)
+### 6. Update Product Roadmap (If Needed)
 
 After reviewing all discussions: if the pattern of approvals and dismissals indicates a meaningful shift in strategic direction, update `docs/PRODUCT_ROADMAP.md` to reflect it.
 

@@ -50,7 +50,7 @@ gh issue list --label needs-design-review --state open
    git pull origin feature/US-X.X.X
    ```
 4. Read the relevant design spec: `docs/specs/[feature-slug].md`
-5. If the change involved any UI changes (and changes that impact the appearance of the website in any way) make sure the engineer regenerated new screenshots in the feature branch with the changes.  If the engineer did not reject it and do not approve, and leave a commit to the engineer that they must generate screenshots.
+5. If the change involved any UI changes (and changes that impact the appearance of the website in any way) make sure the engineer has provided updated screenshots in the feature branch. If screenshots are missing or stale, do not approve — treat this as **changes needed** and go directly to step 8: leave a comment telling the engineer they must generate screenshots, then change the label to `needs-design-changes`.
 6. Review screenshots against the spec:
    - Check information hierarchy and layout
    - Verify responsive behavior (mobile-first)

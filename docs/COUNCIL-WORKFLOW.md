@@ -22,12 +22,13 @@ User Story Workflow (implementation)
 
 | Agent | Schedule | Role |
 |-------|----------|------|
-| Researcher | Daily | Looks outward — new financial models, competitor gaps, market research, alternative data sources |
-| Designer (Council) | Daily | Looks inward — UX refinements, design debt, interaction improvements |
-| CEO | Weekly (Monday) | Reads all council inputs, approves or dismisses ideas |
-| PM (Council) | Weekly (Monday, after CEO) | Translates CEO-approved ideas into Feature Issues with proper context |
+| Researcher | Daily (8am) | Looks outward — new financial models, competitor gaps, market research, alternative data sources |
+| Designer (Council) | Daily (9am) | Looks inward — UX refinements, design debt, interaction improvements |
+| Engineer (Council) | Daily (10:30am) | Looks inward — core functionality, algorithms, AI data feed quality, technical debt |
+| CEO | Weekly (Monday 10am) | Reads all council inputs, approves or dismisses ideas |
+| PM (Council) | Weekly (Monday 11am, after CEO) | Translates CEO-approved ideas into Feature Issues with proper context |
 
-> **Important:** Designer Council mode is separate from Designer Implementation mode (`/work-designer`). They have different schedules and different goals.
+> **Important:** Council modes are separate from Implementation modes. `/work-designer-council` ≠ `/work-designer`. `/work-engineer-council` ≠ `/work-engineer`. Different schedules, different goals.
 
 ---
 
@@ -35,19 +36,20 @@ User Story Workflow (implementation)
 
 ### Categories
 
-Create two categories in GitHub Discussions (Settings → Discussions):
+Three categories in GitHub Discussions (Settings → Discussions):
 
 | Category | Purpose | Who Posts |
 |----------|---------|-----------|
 | **Research** | New opportunities — models, data sources, market insights, transformative ideas | Researcher |
-| **Refinements** | Improvements to what exists — UX debt, design gaps, product polish | Designer (+ future: Security, Data Scientist) |
+| **Refinements** | UX improvements — design debt, interaction gaps, product polish | Designer |
+| **Technical** | Engineering improvements — algorithm quality, AI data feed gaps, core functionality, technical debt | Engineer Council |
 
 ### State Machine
 
 State is tracked via **structured comment prefixes** in the discussion thread. This avoids complex GraphQL label mutations and creates a clear audit trail.
 
 ```
-[Researcher/Designer creates Discussion]
+[Researcher/Designer/Engineer creates Discussion]
          │
          ▼
    OPEN, no CEO decision comment
@@ -63,7 +65,7 @@ CEO posts:              CEO posts:            CEO posts:
 APPROVED"               DISMISSED"            NEEDS-MORE-INFO"
 Discussion stays OPEN.  CEO closes            Discussion stays OPEN.
     │                   discussion.               │
-    ▼                                             ▼ (Researcher/Designer daily run)
+    ▼                                             ▼ (Researcher/Designer/Engineer daily run)
 PM runs (after CEO):                     Agent posts follow-up
 Finds open discussions                   research/response
 with APPROVED comment,                         │
@@ -83,7 +85,7 @@ PM closes discussion.
 |-------|-------------|---------------|
 | Open, no CEO comment | New idea, pending review | CEO (weekly) |
 | Open, `## CEO Decision: APPROVED` | Approved, awaiting feature creation | PM (weekly, same day as CEO) |
-| Open, `## CEO Decision: NEEDS-MORE-INFO` | CEO asked a question | Researcher or Designer (next daily run) |
+| Open, `## CEO Decision: NEEDS-MORE-INFO` | CEO asked a question | Researcher, Designer, or Engineer Council (next daily run) |
 | Closed by CEO | Dismissed, reason in comment | Nobody — done |
 | Closed by PM | Feature created, link in comment | Nobody — continues in Feature Workflow |
 
@@ -165,6 +167,51 @@ PM closes discussion.
 
 ---
 
+### Engineer — Council Mode (Daily — 10:30am)
+
+**Goal:** Look inward at the application's core functionality — algorithmic correctness, data pipeline health, how data is fed to AI systems, and technical debt.
+
+**Review domains** (rotate — one per session):
+- **AI Briefing Data Feed** — Are all metrics and calculations included in briefing inputs? Are new additions reflected?
+- **AI Chatbot Tool Coverage** — Does the chatbot's tool set expose all available data?
+- **AI Prompt Quality** — Are system prompts and data formatting well-optimized for AI output quality?
+- **Algorithm & Calculation Correctness** — Are core calculations (regime engine, divergence gap, market signals) sound?
+- **Data Pipeline Reliability** — Is `market_signals.py` handling errors and stale data correctly?
+- **Technical Debt** — Is there meaningful duplication or fragility accumulating in core code?
+
+**Each run:**
+1. Read `~/.claude/projects/financial/roles/engineer-council-context.md`
+2. **First priority:** Check for open Technical discussions with `## CEO Decision: NEEDS-MORE-INFO`
+3. **Second priority:** Pick one review domain, investigate by reading relevant source files
+4. Before posting, check open Technical discussions and open GitHub issues for duplicates
+5. If a meaningful finding is found, post to **Technical** category
+6. Update context file: domain reviewed, date, what was posted
+
+> **Rate limit yourself:** Only post if there's something genuinely worth the CEO's attention. Aim for 2–4 posts per week, not daily.
+
+**Discussion post format:**
+```
+## Problem
+[What is currently wrong, missing, or suboptimal — reference specific files]
+
+## Impact
+[Effect on AI output quality, reliability, maintainability, or user experience]
+
+## Evidence
+[Specific observations from reading the code]
+
+## Proposed Direction
+[What a fix looks like — rough direction, not a full spec]
+
+## Effort Estimate
+[Quick win / Medium / Large]
+
+---
+*Posted by Engineer Council on [date]*
+```
+
+---
+
 ### CEO (Weekly — Monday)
 
 **Goal:** Read all pending council inputs, make strategic go/no-go decisions, maintain product direction.
@@ -176,6 +223,7 @@ PM closes discussion.
 4. Process all open Discussions with no CEO decision comment:
    - Research category discussions
    - Refinements category discussions
+   - Technical category discussions
 5. For each unreviewed discussion, post one of three structured decisions (see formats below)
 6. Update context file: key decisions made, dismissed directions, strategic priorities
 
@@ -292,10 +340,11 @@ New files needed (follow the same rules as existing role context files):
 
 ```
 ~/.claude/projects/financial/roles/
-├── researcher-context.md    # Topics researched, dates, findings log (new)
-├── ceo-context.md           # Strategic priorities, recent decisions, dismissed directions (new)
-├── pm-context.md            # Existing — also updated by PM council runs
-└── ui-designer-context.md  # Existing — also updated by Designer council runs
+├── researcher-context.md         # Topics researched, dates, findings log
+├── ceo-context.md                # Strategic priorities, recent decisions, dismissed directions
+├── engineer-council-context.md   # Domains reviewed, findings posted, recently covered domains
+├── pm-context.md                 # Existing — also updated by PM council runs
+└── ui-designer-context.md        # Existing — also updated by Designer council runs
 ```
 
 ### researcher-context.md starter template
@@ -345,6 +394,7 @@ Council agents require far less filesystem access than implementation agents. No
 |-------|-------------|-------------------|----------|
 | Researcher | Read-only | `~/projects/financial-pm/` — reads `PRODUCT_ROADMAP.md` to avoid proposing already-planned work | Never |
 | Designer Council | Read-only | `~/projects/financial-pm/` — reads `docs/design-system.md`, `docs/specs/`, and templates to identify real gaps | Never |
+| Engineer Council | Read-only | `~/projects/financial-pm/` — reads source files in `signaltrackers/` and `data/` to audit AI data feed coverage, algorithms, and technical debt | Never |
 | CEO | Read + write | `~/projects/financial-pm/` — reads roadmap, may update `PRODUCT_ROADMAP.md` on main | Rarely (roadmap only) |
 | PM Council | Read-only | `~/projects/financial-pm/` — `gh` CLI only, no file changes | Never |
 
@@ -357,16 +407,19 @@ Compare to implementation agents (Engineer, Designer impl, QA) who each need the
 ## Scripts
 
 ### scripts/run-researcher-council.sh
-Runs daily. Invokes the `/work-researcher` command.
+Runs daily at 8am. Invokes the `/work-researcher` command.
 
 ### scripts/run-designer-council.sh
-Runs daily. Invokes the `/work-designer-council` command.
+Runs daily at 9am. Invokes the `/work-designer-council` command.
+
+### scripts/run-engineer-council.sh
+Runs daily at 10:30am. Invokes the `/work-engineer-council` command.
 
 ### scripts/run-council-weekly.sh
-Runs weekly (Monday). Invokes CEO then PM sequentially — order is critical.
+Runs weekly (Monday at 10am). Invokes CEO then PM sequentially — order is critical.
 
 ### scripts/setup-council-cron.sh
-One-time setup: installs the cron jobs.
+One-time setup: installs the cron jobs for all council agents.
 
 Script contents are defined in the Implementation Plan below and created during implementation.
 
@@ -376,10 +429,11 @@ Script contents are defined in the Implementation Plan below and created during 
 
 ```
 .claude/commands/
-├── work-researcher.md        # Researcher autonomous mode (new)
-├── work-ceo.md               # CEO autonomous mode (new)
-├── work-designer-council.md  # Designer council mode (new, separate from work-designer.md)
-└── work-pm-council.md        # PM council mode (new, separate from work-pm.md)
+├── work-researcher.md         # Researcher autonomous mode
+├── work-ceo.md                # CEO autonomous mode
+├── work-designer-council.md   # Designer council mode (separate from work-designer.md)
+├── work-engineer-council.md   # Engineer council mode (separate from work-engineer.md)
+└── work-pm-council.md         # PM council mode (separate from work-pm.md)
 ```
 
 ---
@@ -404,9 +458,10 @@ Script contents are defined in the Implementation Plan below and created during 
 Council Workflow                    Existing Workflows
 ──────────────────                  ──────────────────
 Researcher (daily)  ─┐
-Designer Council    ─┼→ Discussion → CEO approves → PM creates Feature Issue
-(daily)             ─┘                                      │
-                                                            ▼
+Designer Council    ─┤
+(daily)              ├→ Discussion → CEO approves → PM creates Feature Issue
+Engineer Council    ─┘                                      │
+(daily)                                                     ▼
                                               Feature Workflow (/work-pm, /work-designer)
                                                             │
                                                             ▼
@@ -422,11 +477,13 @@ The Council Workflow only outputs **Feature Issues**. Everything downstream is u
 ### Phase 1 — GitHub Setup
 - [x] Create "Research" Discussion category in GitHub (Settings → Discussions → New category)
 - [x] Create "Refinements" Discussion category in GitHub
+- [x] Create "Technical" Discussion category in GitHub
 - [x] Verify gh CLI can list and create Discussions via GraphQL (`gh api graphql`)
 - [x] Get repository node ID: `R_kgDORDsXzA`
 - [x] Get category IDs:
-  - Research: `DIC_kwDORDsXzM4C2_Xy`
-  - Refinements: `DIC_kwDORDsXzM4C2_Xz`
+  - Research: `DIC_kwDORXrB_s4C3HGH`
+  - Refinements: `DIC_kwDORXrB_s4C3HGA`
+  - Technical: `DIC_kwDORXrB_s4C3Oge`
 - [x] Record repo ID and category IDs in `~/.claude/projects/financial/council-config.md`
 
 ### Phase 2 — Context Files
@@ -437,11 +494,13 @@ The Council Workflow only outputs **Feature Issues**. Everything downstream is u
 - [x] Create `.claude/commands/work-researcher.md`
 - [x] Create `.claude/commands/work-ceo.md`
 - [x] Create `.claude/commands/work-designer-council.md`
+- [x] Create `.claude/commands/work-engineer-council.md`
 - [x] Create `.claude/commands/work-pm-council.md`
 
 ### Phase 4 — Scripts
 - [x] Create `scripts/run-researcher-council.sh`
 - [x] Create `scripts/run-designer-council.sh`
+- [x] Create `scripts/run-engineer-council.sh`
 - [x] Create `scripts/run-council-weekly.sh` (runs CEO then PM in sequence)
 - [x] Create `scripts/setup-council-cron.sh`
 - [x] Make all scripts executable (`chmod +x`)
