@@ -1,0 +1,277 @@
+/* =============================================================
+   Recession Probability Panel — Feature 5.2 / US-146.2
+   Homepage Section 0.5: Recession Probability
+   ============================================================= */
+
+/* --- Section Wrapper --- */
+.recession-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;   /* neutral-200 */
+  border-left-width: 4px;
+  border-left-color: #d1d5db;  /* neutral-300 default (no regime) */
+}
+
+/* Regime-aware left border color — matches Section 0 regime card */
+.recession-panel.regime-bull      { border-left-color: var(--regime-bull-border); }
+.recession-panel.regime-neutral   { border-left-color: var(--regime-neutral-border); }
+.recession-panel.regime-bear      { border-left-color: var(--regime-bear-border); }
+.recession-panel.regime-recession { border-left-color: var(--regime-recession-border); }
+
+/* --- Mobile Toggle Button (hidden on tablet+) --- */
+.recession-panel__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid #e5e7eb;  /* visual separator from h3 */
+  cursor: pointer;
+  text-align: left;
+}
+
+.recession-panel__toggle:focus {
+  outline: 2px solid #1E40AF;
+  outline-offset: 2px;
+}
+
+.recession-panel__summary {
+  font-size: 0.875rem;  /* text-sm */
+  color: #4b5563;       /* neutral-600 */
+  flex: 1;
+}
+
+.recession-panel__chevron {
+  color: #6b7280;  /* neutral-500 */
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* Chevron rotates 180° when expanded */
+.recession-panel__toggle[aria-expanded="true"] .recession-panel__chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Collapsible Content (mobile: collapsed by default) --- */
+.recession-panel__content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease-in-out;
+}
+
+.recession-panel__content--expanded {
+  max-height: 2000px;
+}
+
+/* --- Model Rows (mobile only, hidden on tablet+) --- */
+.recession-model-rows {
+  display: block;
+}
+
+.recession-model-row {
+  padding: 8px 0;
+}
+
+.recession-model-row-body {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+}
+
+/* --- Tablet+ Card Grid (hidden on mobile) --- */
+.recession-card-grid {
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.recession-card {
+  border: 1px solid #e5e7eb;  /* neutral-200 */
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* --- Model Name (shared mobile + tablet) --- */
+.recession-model-name {
+  font-size: 0.75rem;   /* text-xs */
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #6b7280;       /* neutral-500 */
+  margin-bottom: 2px;
+}
+
+/* --- Model Description (shared) --- */
+.recession-model-desc {
+  font-size: 0.875rem;  /* text-sm */
+  color: #6b7280;       /* neutral-500 */
+  font-style: italic;
+  flex: 1;
+}
+
+/* --- Probability Value (shared) --- */
+.recession-model-value {
+  font-size: 1.25rem;   /* text-xl */
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Tablet+ card: larger value */
+.recession-card .recession-model-value {
+  font-size: 1.875rem;  /* text-3xl */
+  display: block;
+  margin: 8px 0 2px;
+}
+
+/* Color thresholds per design spec */
+.recession-model-value--low      { color: #15803D; }  /* success-700 */
+.recession-model-value--elevated { color: #B45309; }  /* warning-700 */
+.recession-model-value--high     { color: #B91C1C; }  /* danger-700 */
+
+/* --- Risk Label (shared) --- */
+.recession-model-risk-label {
+  font-size: 0.75rem;   /* text-xs */
+  font-weight: 600;
+}
+
+.recession-card .recession-model-risk-label {
+  font-size: 0.875rem;  /* text-sm */
+  display: block;
+}
+
+/* --- Confidence Range (NY Fed only) --- */
+.recession-model-range {
+  font-size: 0.75rem;   /* text-xs */
+  color: #6b7280;       /* neutral-500 */
+  margin-top: 4px;
+}
+
+/* --- Per-Model Update Date --- */
+.recession-model-date {
+  font-size: 0.75rem;   /* text-xs */
+  color: #9ca3af;       /* neutral-400 */
+  margin-top: 4px;
+}
+
+/* --- Confidence/Probability Bar Track (tablet+ only) --- */
+.recession-bar-track {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #f3f4f6;  /* neutral-100 */
+  border-radius: 4px;
+  margin: 10px 0 8px;
+  overflow: visible;
+}
+
+/* Filled region (point fill: from 0 to value, neutral-300 default) */
+.recession-bar-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: #d1d5db;  /* neutral-300 */
+  border-radius: 4px;
+}
+
+/* NY Fed confidence band: regime border color at 30% opacity */
+.recession-bar-fill--band {
+  background: rgba(202, 138, 4, 0.30);  /* fallback: bear amber */
+}
+
+.recession-panel.regime-bull .recession-bar-fill--band {
+  background: color-mix(in srgb, var(--regime-bull-border) 30%, transparent);
+}
+.recession-panel.regime-neutral .recession-bar-fill--band {
+  background: color-mix(in srgb, var(--regime-neutral-border) 30%, transparent);
+}
+.recession-panel.regime-bear .recession-bar-fill--band {
+  background: color-mix(in srgb, var(--regime-bear-border) 30%, transparent);
+}
+.recession-panel.regime-recession .recession-bar-fill--band {
+  background: color-mix(in srgb, var(--regime-recession-border) 30%, transparent);
+}
+
+/* Point estimate marker circle */
+.recession-bar-marker {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  background: #6b7280;  /* neutral-500 default */
+}
+
+.recession-panel.regime-bull .recession-bar-marker     { background: var(--regime-bull-border); }
+.recession-panel.regime-neutral .recession-bar-marker  { background: var(--regime-neutral-border); }
+.recession-panel.regime-bear .recession-bar-marker     { background: var(--regime-bear-border); }
+.recession-panel.regime-recession .recession-bar-marker { background: var(--regime-recession-border); }
+
+/* --- Divergence Alert --- */
+.recession-divergence-alert {
+  background: #FEF3C7;           /* warning-100 */
+  border: 1px solid #FDE68A;     /* warning-200 */
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 12px 0;
+  font-size: 0.875rem;           /* text-sm */
+  color: #B45309;                /* warning-700 */
+}
+
+.recession-divergence-alert .bi {
+  margin-right: 6px;
+}
+
+/* --- Plain-Language Footer --- */
+.recession-footer {
+  font-size: 0.875rem;  /* text-sm */
+  color: #4b5563;       /* neutral-600 */
+  line-height: 1.6;
+  margin: 12px 0 8px;
+}
+
+/* --- Data Source Credit --- */
+.recession-source {
+  font-size: 0.75rem;   /* text-xs */
+  color: #9ca3af;       /* neutral-400 */
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Tablet+ overrides (768px+)
+   ============================================================ */
+@media (min-width: 768px) {
+  /* Hide mobile-only toggle */
+  .recession-panel__toggle {
+    display: none;
+  }
+
+  /* Always show content on tablet+ — override collapsed state */
+  .recession-panel__content {
+    max-height: none !important;
+    overflow: visible;
+  }
+
+  /* Hide stacked mobile rows */
+  .recession-model-rows {
+    display: none;
+  }
+
+  /* Show 3-column card grid */
+  .recession-card-grid {
+    display: grid;
+  }
+
+  /* Source credit right-aligned on tablet+ */
+  .recession-source {
+    text-align: right;
+  }
+}

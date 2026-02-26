@@ -153,6 +153,177 @@
 </section>
 {% endif %}{# /macro_regime #}
 
+<!-- Section 0.5: Recession Probability Panel (US-146.2) -->
+{% if recession_probability %}
+<section aria-label="Recession Probability" id="recession-panel-section" class="mb-4">
+    <div class="recession-panel{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
+
+        {# ── Section header (standard SignalTrackers pattern) ─────────── #}
+        <div class="section-header mb-2">
+            <h3 class="section-title">
+                <i class="bi bi-bar-chart-steps me-2"></i>Recession Probability
+            </h3>
+        </div>
+
+        {# ── Mobile toggle button (hidden on tablet+) ─────────────────── #}
+        <button class="recession-panel__toggle"
+                id="recession-panel-toggle"
+                aria-expanded="false"
+                aria-controls="recession-panel-content">
+            <span class="recession-panel__summary">{{ recession_probability.mobile_summary }}</span>
+            <i class="bi bi-chevron-down recession-panel__chevron" aria-hidden="true"></i>
+        </button>
+
+        {# ── Panel content ─────────────────────────────────────────────── #}
+        <div class="recession-panel__content" id="recession-panel-content">
+
+            {# ── Mobile: Stacked model rows (hidden on tablet+) ─────── #}
+            <div class="recession-model-rows">
+
+                {% if recession_probability.ny_fed is defined %}
+                <div class="recession-model-row">
+                    <div class="recession-model-name">NY FED 12-MONTH LEADING</div>
+                    <div class="recession-model-row-body">
+                        <span class="recession-model-desc">Prospective Risk (12-mo ahead)</span>
+                        <span class="recession-model-value recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed | round(1) }}%</span>
+                        <span class="recession-model-risk-label recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed_risk }}</span>
+                    </div>
+                    {% if recession_probability.ny_fed_lower is defined %}
+                    <div class="recession-model-range">Range: {{ recession_probability.ny_fed_lower | round(1) }}%–{{ recession_probability.ny_fed_upper | round(1) }}%</div>
+                    {% endif %}
+                    {% if recession_probability.ny_fed_date %}
+                    <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
+                    {% endif %}
+                </div>
+                <hr class="regime-divider">
+                {% endif %}
+
+                {% if recession_probability.chauvet_piger is defined %}
+                <div class="recession-model-row">
+                    <div class="recession-model-name">CHAUVET-PIGER COINCIDENT</div>
+                    <div class="recession-model-row-body">
+                        <span class="recession-model-desc">Current Activity (real-time)</span>
+                        <span class="recession-model-value recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger | round(1) }}%</span>
+                        <span class="recession-model-risk-label recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger_risk }}</span>
+                    </div>
+                    {% if recession_probability.chauvet_piger_date %}
+                    <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
+                    {% endif %}
+                </div>
+                <hr class="regime-divider">
+                {% endif %}
+
+                {% if recession_probability.richmond_sos is defined %}
+                <div class="recession-model-row">
+                    <div class="recession-model-name">RICHMOND FED SOS INDICATOR</div>
+                    <div class="recession-model-row-body">
+                        <span class="recession-model-desc">Weekly Labor Signal</span>
+                        <span class="recession-model-value recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos | round(1) }}%</span>
+                        <span class="recession-model-risk-label recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos_risk }}</span>
+                    </div>
+                    {% if recession_probability.richmond_sos_date %}
+                    <div class="recession-model-date">{{ recession_probability.richmond_sos_date }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            </div>{# /.recession-model-rows #}
+
+            {# ── Tablet+: 3-column card grid (hidden on mobile) ─────── #}
+            <div class="recession-card-grid">
+
+                {% if recession_probability.ny_fed is defined %}
+                {%- set _ny_clamped = [recession_probability.ny_fed, 50.0] | min -%}
+                {%- set _ny_bar = (_ny_clamped / 50.0 * 100) | round | int -%}
+                {%- if recession_probability.ny_fed_lower is defined -%}
+                {%- set _ny_lo = ([recession_probability.ny_fed_lower, 50.0] | min / 50.0 * 100) | round | int -%}
+                {%- set _ny_hi = ([recession_probability.ny_fed_upper, 50.0] | min / 50.0 * 100) | round | int -%}
+                {%- set _ny_band_w = _ny_hi - _ny_lo -%}
+                {%- endif -%}
+                <div class="recession-card">
+                    <div class="recession-model-name">NY FED 12-MONTH</div>
+                    <div class="recession-model-desc">Prospective Risk (12-mo ahead)</div>
+                    <div class="recession-model-value recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed | round(1) }}%</div>
+                    <div class="recession-model-risk-label recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed_risk }}</div>
+                    <div class="recession-bar-track" aria-hidden="true">
+                        {% if recession_probability.ny_fed_lower is defined %}
+                        <div class="recession-bar-fill recession-bar-fill--band"
+                             style="left: {{ _ny_lo }}%; width: {{ _ny_band_w }}%;"></div>
+                        {% endif %}
+                        <div class="recession-bar-marker" style="left: calc({{ _ny_bar }}% - 5px);"></div>
+                    </div>
+                    {% if recession_probability.ny_fed_lower is defined %}
+                    <div class="recession-model-range">Range: {{ recession_probability.ny_fed_lower | round(1) }}%–{{ recession_probability.ny_fed_upper | round(1) }}%</div>
+                    {% endif %}
+                    {% if recession_probability.ny_fed_date %}
+                    <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if recession_probability.chauvet_piger is defined %}
+                {%- set _cp_clamped = [recession_probability.chauvet_piger, 50.0] | min -%}
+                {%- set _cp_bar = (_cp_clamped / 50.0 * 100) | round | int -%}
+                <div class="recession-card">
+                    <div class="recession-model-name">CHAUVET-PIGER</div>
+                    <div class="recession-model-desc">Current Activity (real-time)</div>
+                    <div class="recession-model-value recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger | round(1) }}%</div>
+                    <div class="recession-model-risk-label recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger_risk }}</div>
+                    <div class="recession-bar-track" aria-hidden="true">
+                        <div class="recession-bar-fill"
+                             style="left: 0; width: {{ _cp_bar }}%;"></div>
+                        <div class="recession-bar-marker" style="left: calc({{ _cp_bar }}% - 5px);"></div>
+                    </div>
+                    {% if recession_probability.chauvet_piger_date %}
+                    <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if recession_probability.richmond_sos is defined %}
+                {%- set _sos_clamped = [recession_probability.richmond_sos, 50.0] | min -%}
+                {%- set _sos_bar = (_sos_clamped / 50.0 * 100) | round | int -%}
+                <div class="recession-card">
+                    <div class="recession-model-name">RICHMOND FED SOS</div>
+                    <div class="recession-model-desc">Weekly Labor Signal</div>
+                    <div class="recession-model-value recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos | round(1) }}%</div>
+                    <div class="recession-model-risk-label recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos_risk }}</div>
+                    <div class="recession-bar-track" aria-hidden="true">
+                        <div class="recession-bar-fill"
+                             style="left: 0; width: {{ _sos_bar }}%;"></div>
+                        <div class="recession-bar-marker" style="left: calc({{ _sos_bar }}% - 5px);"></div>
+                    </div>
+                    {% if recession_probability.richmond_sos_date %}
+                    <div class="recession-model-date">{{ recession_probability.richmond_sos_date }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+            </div>{# /.recession-card-grid #}
+
+            {# ── Divergence alert (shown when spread ≥ 15pp) ─────────── #}
+            {% if recession_probability.divergence_pp >= 15 %}
+            <div class="recession-divergence-alert">
+                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                Models diverge by {{ recession_probability.divergence_pp }}pp — leading and coincident signals disagree. Spread itself signals elevated uncertainty.
+            </div>
+            {% endif %}
+
+            {# ── Plain-language footer ────────────────────────────────── #}
+            <hr class="regime-divider">
+            <div class="recession-footer">
+                {{ recession_probability.interpretation }}
+            </div>
+            <div class="recession-source">
+                Data: FRED API · Richmond Fed · Updated {{ recession_probability.updated }}
+            </div>
+
+        </div>{# /.recession-panel__content #}
+
+    </div>{# /.recession-panel #}
+</section>
+{% endif %}{# /recession_probability #}
+
 <!-- Section 1: Market Conditions at a Glance -->
 <section class="market-conditions-section mb-4" id="market-conditions">
     <!-- Section header -->
@@ -1203,6 +1374,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const moversToggle = document.getElementById('movers-toggle');
     if (moversToggle) {
         moversToggle.addEventListener('click', toggleMoversChart);
+    }
+
+    // Recession Probability Panel toggle (US-146.2)
+    const recessionToggle = document.getElementById('recession-panel-toggle');
+    if (recessionToggle) {
+        recessionToggle.addEventListener('click', function() {
+            const content = document.getElementById('recession-panel-content');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', String(!expanded));
+            if (!expanded) {
+                content.classList.add('recession-panel__content--expanded');
+            } else {
+                content.classList.remove('recession-panel__content--expanded');
+            }
+        });
     }
 });
 
