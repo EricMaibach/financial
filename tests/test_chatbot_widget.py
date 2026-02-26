@@ -83,17 +83,17 @@ class TestChatbotPanel:
 # ---------------------------------------------------------------------------
 
 class TestChatbotControls:
-    def test_minimize_button_present(self, page):
+    def test_single_close_button_present(self, page):
+        # US-144.1: single button only, uses chatbot-minimize class
         assert 'class="chatbot-minimize"' in page
 
-    def test_minimize_button_aria_label(self, page):
-        assert 'aria-label="Minimize chatbot"' in page
-
-    def test_close_button_present(self, page):
-        assert 'class="chatbot-close"' in page
-
-    def test_close_button_aria_label(self, page):
+    def test_single_close_button_aria_label(self, page):
+        # US-144.1: single button closes to FAB
         assert 'aria-label="Close chatbot"' in page
+
+    def test_no_separate_close_button(self, page):
+        # US-144.1: the separate chatbot-close button was removed
+        assert 'class="chatbot-close"' not in page
 
     def test_minimize_has_aria_controls(self, page):
         assert 'aria-controls="chatbot-panel"' in page

@@ -366,29 +366,32 @@ class TestPerformanceBanner(unittest.TestCase):
         self.assertIn('showPerformanceBanner()', func_body)
 
 
-class TestXButtonBehavior(unittest.TestCase):
-    """Verify X button closes to FAB (does not clear) the conversation."""
+class TestSingleButtonBehavior(unittest.TestCase):
+    """Verify the single header button closes to FAB (does not clear) the conversation."""
 
     def setUp(self):
         self.js = read_file(CHATBOT_JS_PATH)
         self.html = read_file(BASE_HTML_PATH)
 
-    def test_close_button_calls_close_not_clear(self):
-        """Close button (X) must call closeChatbot() (closes to FAB), not clear conversation."""
-        # US-4.2.1: × now calls closeChatbot() (closes to FAB only, not minimizes to strip)
-        idx = self.js.find('closeBtn.addEventListener')
+    def test_minimize_btn_calls_close_chatbot(self):
+        """Single header button (chatbot-minimize) must call closeChatbot() (closes to FAB)."""
+        # US-144.1: single button; minimize btn now maps to closeChatbot()
+        idx = self.js.find('minimizeBtn.addEventListener')
         self.assertGreater(idx, 0)
         handler = self.js[idx:idx + 150]
         self.assertIn('this.closeChatbot()', handler)
         self.assertNotIn('clearConversation', handler)
 
-    def test_close_button_in_html(self):
-        """base.html must include the close button with chatbot-close class."""
-        self.assertIn('class="chatbot-close"', self.html)
+    def test_single_button_in_html(self):
+        """base.html must have the single close button with chatbot-minimize class."""
+        self.assertIn('class="chatbot-minimize"', self.html)
+
+    def test_separate_close_button_removed_from_html(self):
+        """base.html must NOT have a separate chatbot-close button (US-144.1 removal)."""
+        self.assertNotIn('class="chatbot-close"', self.html)
 
     def test_close_method_does_not_clear_conversation(self):
         """closeChatbot() method must not touch conversation data."""
-        # US-4.2.1: close() renamed to closeChatbot() in three-state model
         idx = self.js.find('closeChatbot() {')
         self.assertGreater(idx, 0)
         # Find end of closeChatbot() method (next method definition)
