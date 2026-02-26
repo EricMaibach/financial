@@ -6,9 +6,6 @@ Fetches and processes three institutional recession probability models:
 2. Chauvet-Piger coincident model (FRED RECPROUSM156N)
 3. Richmond Fed SOS Indicator (direct XLSX from richmondfed.org)
 
-NOTE: NY Fed yield-curve model is NOT on FRED — it is fetched directly from the NY Fed
-as an XLS file. See Bug #153 for the fix to add _fetch_ny_fed_direct().
-
 Caching:
 - Results stored in data/recession_probability_cache.json
 - Cache is read by Flask context processor on every request
@@ -42,11 +39,12 @@ CACHE_FILE = Path(__file__).parent / 'data' / 'recession_probability_cache.json'
 _FRED_API_KEY = os.environ.get('FRED_API_KEY')
 
 # FRED series IDs
-# NOTE: RECPROUSM156N is "Smoothed U.S. Recession Probabilities" (Chauvet-Piger coincident model).
-# The NY Fed 12-month leading model is a separate series; confirm the correct ID.
-# Per spec: NY Fed uses RECPROUSM156N. Chauvet-Piger uses the series below.
-NY_FED_SERIES = 'RECPROUSM156N'    # NY Fed 12-month leading (spec recommendation — confirm)
-CHAUVET_PIGER_SERIES = 'RECPROUSM156N'  # Chauvet-Piger coincident (same series per spec; update when confirmed)
+CHAUVET_PIGER_SERIES = 'RECPROUSM156N'  # Chauvet-Piger coincident — "Smoothed U.S. Recession Probabilities"
+
+# NY Fed 12-month yield-curve recession probability — NOT on FRED; published as XLS directly by the NY Fed
+_NY_FED_DIRECT_URL = (
+    'https://www.newyorkfed.org/medialibrary/media/research/capital_markets/allmonth.xls'
+)
 
 # Richmond Fed SOS Indicator public data URL (confirmed live, HTTP 200 — Bug #154 fix)
 _RICHMOND_SOS_URL = (
@@ -123,6 +121,75 @@ def _fetch_fred_latest(series_id: str) -> tuple[Optional[float], Optional[str]]:
         return None, None
     except Exception as exc:
         logger.warning('Unexpected error fetching FRED series %s: %s', series_id, exc)
+        return None, None
+
+
+# ---------------------------------------------------------------------------
+# NY Fed direct XLS fetcher (Bug #153)
+# ---------------------------------------------------------------------------
+
+def _fetch_ny_fed_direct() -> tuple[Optional[float], Optional[str]]:
+    """
+    Fetch the NY Fed 12-month yield-curve recession probability directly from the NY Fed.
+
+    The NY Fed does not publish this series on FRED.  It is published as a legacy XLS file
+    at _NY_FED_DIRECT_URL.  The column 'Rec_prob' contains probabilities on a 0.0–1.0 scale;
+    multiply by 100 to convert to percent.
+
+    Returns:
+        (value_pct, date_str) — e.g. (6.2, '2026-01-01') — or (None, None) on failure.
+    """
+    try:
+        resp = requests.get(_NY_FED_DIRECT_URL, timeout=30)
+        resp.raise_for_status()
+
+        try:
+            import pandas as pd
+            from io import BytesIO
+
+            df = pd.read_excel(BytesIO(resp.content), header=0)
+
+            # Locate Rec_prob column (case-insensitive)
+            rec_prob_col = None
+            for col in df.columns:
+                if str(col).strip().lower() == 'rec_prob':
+                    rec_prob_col = col
+                    break
+            if rec_prob_col is None:
+                logger.warning('NY Fed XLS: Rec_prob column not found (columns: %s)', list(df.columns))
+                return None, None
+
+            df = df.dropna(subset=[rec_prob_col])
+            if df.empty:
+                return None, None
+
+            last_row = df.iloc[-1]
+            rec_prob_pct = float(last_row[rec_prob_col]) * 100.0  # Convert 0–1 scale to percent
+
+            # Extract date from first column
+            date_str = ''
+            raw_date = last_row.iloc[0]
+            try:
+                if hasattr(raw_date, 'strftime'):
+                    date_str = raw_date.strftime('%Y-%m-%d')
+                else:
+                    date_str = str(raw_date)[:10]
+            except Exception:
+                date_str = ''
+
+            return round(rec_prob_pct, 1), date_str
+
+        except Exception:
+            pass
+
+        logger.warning('NY Fed direct fetch: could not parse XLS response')
+        return None, None
+
+    except requests.exceptions.RequestException as exc:
+        logger.warning('NY Fed direct fetch failed: %s', exc)
+        return None, None
+    except Exception as exc:
+        logger.warning('Unexpected error fetching NY Fed direct: %s', exc)
         return None, None
 
 
@@ -300,7 +367,7 @@ def update_recession_probability() -> None:
     updated_at = datetime.now(timezone.utc).isoformat()
 
     # Fetch individual models
-    ny_fed_val, ny_fed_date = _fetch_fred_latest(NY_FED_SERIES)
+    ny_fed_val, ny_fed_date = _fetch_ny_fed_direct()
     cp_val, cp_date = _fetch_fred_latest(CHAUVET_PIGER_SERIES)
     sos_val, sos_date = _fetch_richmond_sos()
 

@@ -67,11 +67,21 @@ class TestConstants(unittest.TestCase):
         import recession_probability as rp
         self.rp = rp
 
-    def test_ny_fed_series_defined(self):
-        self.assertTrue(hasattr(self.rp, 'NY_FED_SERIES'))
+    def test_ny_fed_direct_url_defined(self):
+        self.assertTrue(hasattr(self.rp, '_NY_FED_DIRECT_URL'))
 
-    def test_ny_fed_series_is_string(self):
-        self.assertIsInstance(self.rp.NY_FED_SERIES, str)
+    def test_ny_fed_direct_url_is_string(self):
+        self.assertIsInstance(self.rp._NY_FED_DIRECT_URL, str)
+
+    def test_ny_fed_direct_url_points_to_ny_fed(self):
+        self.assertIn('newyorkfed.org', self.rp._NY_FED_DIRECT_URL)
+
+    def test_ny_fed_direct_url_ends_with_xls(self):
+        self.assertIn('allmonth.xls', self.rp._NY_FED_DIRECT_URL)
+
+    def test_ny_fed_series_removed(self):
+        # Bug #153: NY_FED_SERIES removed — NY Fed is fetched directly, not from FRED
+        self.assertFalse(hasattr(self.rp, 'NY_FED_SERIES'))
 
     def test_chauvet_piger_series_defined(self):
         self.assertTrue(hasattr(self.rp, 'CHAUVET_PIGER_SERIES'))
@@ -120,6 +130,17 @@ class TestConstantsInSource(unittest.TestCase):
 
     def test_update_recession_probability_defined(self):
         self.assertIn('def update_recession_probability', self.src)
+
+    def test_ny_fed_direct_url_literal(self):
+        self.assertIn('_NY_FED_DIRECT_URL', self.src)
+        self.assertIn('allmonth.xls', self.src)
+
+    def test_fetch_ny_fed_direct_function_defined(self):
+        self.assertIn('def _fetch_ny_fed_direct', self.src)
+
+    def test_ny_fed_series_constant_removed(self):
+        # Bug #153: NY_FED_SERIES no longer present
+        self.assertNotIn("NY_FED_SERIES = 'RECPROUSM156N'", self.src)
 
 
 # ---------------------------------------------------------------------------
@@ -189,21 +210,20 @@ class TestNyFedConfidenceInterval(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        # Set NY Fed return
-                        ny_return = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
-                        cp_return = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
-                        mock_fred.side_effect = [ny_return, cp_return]
-                        mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
+                            mock_fred.return_value = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
+                            mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
 
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
 
-                        if cache_path.exists():
-                            with open(cache_path) as f:
-                                return json.load(f)
-                        return None
+                            if cache_path.exists():
+                                with open(cache_path) as f:
+                                    return json.load(f)
+                            return None
 
     def test_ny_fed_lower_is_minus_13(self):
         data = self._run_update_with_values(ny_val=28.9, cp_val=4.2)
@@ -240,20 +260,20 @@ class TestDivergenceComputation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        ny_return = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
-                        cp_return = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
-                        mock_fred.side_effect = [ny_return, cp_return]
-                        mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
+                            mock_fred.return_value = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
+                            mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
 
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
 
-                        if cache_path.exists():
-                            with open(cache_path) as f:
-                                return json.load(f)
-                        return None
+                            if cache_path.exists():
+                                with open(cache_path) as f:
+                                    return json.load(f)
+                            return None
 
     def test_divergence_three_models(self):
         # max=28.9, min=0.8, spread=28.1
@@ -291,20 +311,20 @@ class TestGracefulDegradation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        ny_return = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
-                        cp_return = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
-                        mock_fred.side_effect = [ny_return, cp_return]
-                        mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
+                            mock_fred.return_value = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
+                            mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
 
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
 
-                        if cache_path.exists():
-                            with open(cache_path) as f:
-                                return json.load(f)
-                        return None
+                            if cache_path.exists():
+                                with open(cache_path) as f:
+                                    return json.load(f)
+                            return None
 
     def test_cp_missing_ny_fed_still_present(self):
         data = self._run_update(ny_val=28.9, cp_val=None, sos_val=None)
@@ -330,10 +350,11 @@ class TestGracefulDegradation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest', return_value=(None, None)):
-                    with patch('recession_probability._fetch_richmond_sos', return_value=(None, None)):
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                with patch('recession_probability._fetch_ny_fed_direct', return_value=(None, None)):
+                    with patch('recession_probability._fetch_fred_latest', return_value=(None, None)):
+                        with patch('recession_probability._fetch_richmond_sos', return_value=(None, None)):
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
             self.assertFalse(cache_path.exists(), 'Cache should not be written if all models fail')
 
     def test_ny_fed_fields_absent_when_model_unavailable(self):
@@ -355,20 +376,20 @@ class TestPerModelRiskFields(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        ny_return = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
-                        cp_return = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
-                        mock_fred.side_effect = [ny_return, cp_return]
-                        mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
+                            mock_fred.return_value = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
+                            mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
 
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
 
-                        if cache_path.exists():
-                            with open(cache_path) as f:
-                                return json.load(f)
-                        return None
+                            if cache_path.exists():
+                                with open(cache_path) as f:
+                                    return json.load(f)
+                            return None
 
     def test_ny_fed_risk_label_present(self):
         data = self._run_update(ny_val=28.9, cp_val=4.2, sos_val=None)
@@ -484,20 +505,20 @@ class TestMobileSummary(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        ny_return = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
-                        cp_return = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
-                        mock_fred.side_effect = [ny_return, cp_return]
-                        mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (ny_val, '2025-12-01') if ny_val is not None else (None, None)
+                            mock_fred.return_value = (cp_val, '2025-12-01') if cp_val is not None else (None, None)
+                            mock_sos.return_value = (sos_val, '2026-01-10') if sos_val is not None else (None, None)
 
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
 
-                        if cache_path.exists():
-                            with open(cache_path) as f:
-                                return json.load(f)
-                        return None
+                            if cache_path.exists():
+                                with open(cache_path) as f:
+                                    return json.load(f)
+                            return None
 
     def test_mobile_summary_present(self):
         data = self._run_update(ny_val=28.9, cp_val=4.2)
@@ -544,20 +565,19 @@ class TestCacheRoundTrip(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        mock_fred.side_effect = [
-                            (28.9, '2025-12-01'),
-                            (4.2, '2025-12-01'),
-                        ]
-                        mock_sos.return_value = (0.8, '2026-01-10')
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (28.9, '2025-12-01')
+                            mock_fred.return_value = (4.2, '2025-12-01')
+                            mock_sos.return_value = (0.8, '2026-01-10')
 
-                        from recession_probability import (
-                            update_recession_probability,
-                            get_recession_probability,
-                        )
-                        update_recession_probability()
-                        result = get_recession_probability()
+                            from recession_probability import (
+                                update_recession_probability,
+                                get_recession_probability,
+                            )
+                            update_recession_probability()
+                            result = get_recession_probability()
 
             self.assertIsNotNone(result)
             self.assertAlmostEqual(result['ny_fed'], 28.9, places=0)
@@ -670,21 +690,20 @@ class TestPerModelDates(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_path = Path(tmpdir) / 'recession_probability_cache.json'
             with patch('recession_probability.CACHE_FILE', cache_path):
-                with patch('recession_probability._fetch_fred_latest') as mock_fred:
-                    with patch('recession_probability._fetch_richmond_sos') as mock_sos:
-                        mock_fred.side_effect = [
-                            (28.9, '2025-12-01'),
-                            (4.2, '2025-11-01'),
-                        ]
-                        mock_sos.return_value = (0.8, '2026-01-10')
+                with patch('recession_probability._fetch_ny_fed_direct') as mock_ny:
+                    with patch('recession_probability._fetch_fred_latest') as mock_fred:
+                        with patch('recession_probability._fetch_richmond_sos') as mock_sos:
+                            mock_ny.return_value = (28.9, '2025-12-01')
+                            mock_fred.return_value = (4.2, '2025-11-01')
+                            mock_sos.return_value = (0.8, '2026-01-10')
 
-                        from recession_probability import update_recession_probability
-                        update_recession_probability()
+                            from recession_probability import update_recession_probability
+                            update_recession_probability()
 
-                        if cache_path.exists():
-                            with open(cache_path) as f:
-                                return json.load(f)
-                        return None
+                            if cache_path.exists():
+                                with open(cache_path) as f:
+                                    return json.load(f)
+                            return None
 
     def test_ny_fed_date_stored(self):
         data = self._run_update()
@@ -902,6 +921,238 @@ class TestBug154SecurityAndPerformance(unittest.TestCase):
 
     def test_read_excel_uses_header_0(self):
         self.assertIn('header=0', self.src)
+
+
+# ---------------------------------------------------------------------------
+# Bug #153: NY Fed direct XLS fetcher — replacing FRED-based approach
+# ---------------------------------------------------------------------------
+
+
+def _make_ny_fed_df(rec_prob, date=None):
+    """Create a mock DataFrame matching the NY Fed allmonth.xls layout.
+
+    The NY Fed file has a Date column (first) and a Rec_prob column (0.0–1.0 scale).
+    """
+    import pandas as pd
+    from datetime import datetime as dt
+    date_val = date if date is not None else dt(2026, 1, 1)
+    return pd.DataFrame({'Date': [date_val], 'Rec_prob': [rec_prob]})
+
+
+def _call_fetch_ny_fed_direct_with_df(mock_df):
+    """Call _fetch_ny_fed_direct() with mocked HTTP response and pandas read_excel."""
+    mock_resp = MagicMock()
+    mock_resp.content = b'fake xls bytes'
+    with patch('recession_probability.requests.get', return_value=mock_resp):
+        with patch('pandas.read_excel', return_value=mock_df):
+            from recession_probability import _fetch_ny_fed_direct
+            return _fetch_ny_fed_direct()
+
+
+class TestBug153NyFedDirectUrl(unittest.TestCase):
+    """Bug #153: URL must point directly to the NY Fed XLS file."""
+
+    def setUp(self):
+        self.src = read_source('recession_probability.py')
+
+    def test_ny_fed_direct_url_in_source(self):
+        self.assertIn('_NY_FED_DIRECT_URL', self.src)
+
+    def test_url_is_ny_fed_domain(self):
+        self.assertIn('newyorkfed.org', self.src)
+
+    def test_url_is_allmonth_xls(self):
+        self.assertIn('allmonth.xls', self.src)
+
+    def test_ny_fed_series_constant_removed(self):
+        # Bug #153: NY_FED_SERIES was pointing to RECPROUSM156N (wrong — that's Chauvet-Piger)
+        # It is now removed; NY Fed uses _fetch_ny_fed_direct() instead
+        self.assertNotIn("NY_FED_SERIES = ", self.src)
+
+    def test_fetch_ny_fed_direct_function_in_source(self):
+        self.assertIn('def _fetch_ny_fed_direct', self.src)
+
+    def test_update_calls_fetch_ny_fed_direct(self):
+        # update_recession_probability must call _fetch_ny_fed_direct(), not _fetch_fred_latest(NY_FED_SERIES)
+        self.assertIn('_fetch_ny_fed_direct()', self.src)
+
+    def test_rec_prob_column_name_in_source(self):
+        self.assertIn('Rec_prob', self.src)
+
+    def test_scale_conversion_in_source(self):
+        # Must multiply by 100 to convert 0–1 scale to percent
+        self.assertIn('* 100', self.src)
+
+    def test_fetch_makes_get_to_correct_url(self):
+        mock_df = _make_ny_fed_df(0.062)
+        with patch('recession_probability.requests.get') as mock_get:
+            mock_resp = MagicMock()
+            mock_resp.content = b'fake xls bytes'
+            mock_get.return_value = mock_resp
+            with patch('pandas.read_excel', return_value=mock_df):
+                from recession_probability import _fetch_ny_fed_direct
+                _fetch_ny_fed_direct()
+        call_url = mock_get.call_args[0][0]
+        self.assertIn('newyorkfed.org', call_url)
+        self.assertIn('allmonth.xls', call_url)
+
+
+class TestBug153NyFedDirectValue(unittest.TestCase):
+    """Bug #153: _fetch_ny_fed_direct must convert Rec_prob from 0–1 to percent."""
+
+    def test_converts_0_point_062_to_6_point_2_pct(self):
+        val, _ = _call_fetch_ny_fed_direct_with_df(_make_ny_fed_df(0.062))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 6.2, places=1)
+
+    def test_converts_0_point_30_to_30_pct(self):
+        val, _ = _call_fetch_ny_fed_direct_with_df(_make_ny_fed_df(0.30))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 30.0, places=1)
+
+    def test_converts_0_point_0_to_0_pct(self):
+        val, _ = _call_fetch_ny_fed_direct_with_df(_make_ny_fed_df(0.0))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 0.0, places=1)
+
+    def test_converts_1_point_0_to_100_pct(self):
+        val, _ = _call_fetch_ny_fed_direct_with_df(_make_ny_fed_df(1.0))
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 100.0, places=1)
+
+    def test_returns_last_row_value(self):
+        import pandas as pd
+        from datetime import datetime as dt
+        df = pd.DataFrame({
+            'Date': [dt(2025, 11, 1), dt(2025, 12, 1)],
+            'Rec_prob': [0.10, 0.15],
+        })
+        val, _ = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 15.0, places=1)
+
+    def test_skips_nan_rec_prob_rows(self):
+        import pandas as pd
+        import numpy as np
+        from datetime import datetime as dt
+        df = pd.DataFrame({
+            'Date': [dt(2025, 11, 1), dt(2025, 12, 1)],
+            'Rec_prob': [0.10, np.nan],
+        })
+        val, _ = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIsNotNone(val)
+        self.assertAlmostEqual(val, 10.0, places=1)
+
+    def test_value_is_distinct_from_chauvet_piger(self):
+        # The key bug: before fix, ny_fed == chauvet_piger (both used same FRED series).
+        # After fix, ny_fed comes from a completely different source (_fetch_ny_fed_direct).
+        src = read_source('recession_probability.py')
+        # Confirm NY Fed fetch no longer uses RECPROUSM156N (Chauvet-Piger's series)
+        self.assertNotIn("_fetch_fred_latest(NY_FED_SERIES)", src)
+        self.assertIn("_fetch_ny_fed_direct()", src)
+
+
+class TestBug153NyFedDirectDate(unittest.TestCase):
+    """Bug #153: _fetch_ny_fed_direct must return ISO date string from the Date column."""
+
+    def test_timestamp_date_converted_to_iso(self):
+        import pandas as pd
+        from datetime import datetime as dt
+        df = pd.DataFrame({'Date': [dt(2026, 1, 1)], 'Rec_prob': [0.062]})
+        _, date_str = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIsNotNone(date_str)
+        self.assertIn('2026', date_str)
+
+    def test_date_format_is_yyyy_mm_dd(self):
+        import pandas as pd
+        import re
+        from datetime import datetime as dt
+        df = pd.DataFrame({'Date': [dt(2025, 12, 1)], 'Rec_prob': [0.05]})
+        _, date_str = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertRegex(date_str, r'^\d{4}-\d{2}-\d{2}$')
+
+    def test_latest_row_date_returned(self):
+        import pandas as pd
+        from datetime import datetime as dt
+        df = pd.DataFrame({
+            'Date': [dt(2025, 11, 1), dt(2025, 12, 1)],
+            'Rec_prob': [0.10, 0.15],
+        })
+        _, date_str = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIn('2025-12', date_str)
+
+
+class TestBug153NyFedDirectGracefulDegradation(unittest.TestCase):
+    """_fetch_ny_fed_direct must handle all failure modes gracefully."""
+
+    def test_network_error_returns_none_none(self):
+        with patch('recession_probability.requests.get',
+                   side_effect=Exception('network error')):
+            from recession_probability import _fetch_ny_fed_direct
+            val, date_str = _fetch_ny_fed_direct()
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_http_error_returns_none_none(self):
+        import requests as req_lib
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = req_lib.exceptions.HTTPError('404')
+        with patch('recession_probability.requests.get', return_value=mock_resp):
+            from recession_probability import _fetch_ny_fed_direct
+            val, date_str = _fetch_ny_fed_direct()
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_missing_rec_prob_column_returns_none_none(self):
+        import pandas as pd
+        df = pd.DataFrame({'Date': ['2026-01-01'], 'WrongColumn': [0.06]})
+        val, date_str = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_empty_dataframe_returns_none_none(self):
+        import pandas as pd
+        df = pd.DataFrame({'Date': [], 'Rec_prob': []})
+        val, date_str = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_parsing_exception_returns_none_none(self):
+        mock_resp = MagicMock()
+        mock_resp.content = b'not a valid xls file'
+        with patch('recession_probability.requests.get', return_value=mock_resp):
+            with patch('pandas.read_excel', side_effect=Exception('parse error')):
+                from recession_probability import _fetch_ny_fed_direct
+                val, date_str = _fetch_ny_fed_direct()
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+    def test_all_rec_prob_nan_returns_none_none(self):
+        import pandas as pd
+        import numpy as np
+        from datetime import datetime as dt
+        df = pd.DataFrame({'Date': [dt(2026, 1, 1)], 'Rec_prob': [np.nan]})
+        val, date_str = _call_fetch_ny_fed_direct_with_df(df)
+        self.assertIsNone(val)
+        self.assertIsNone(date_str)
+
+
+class TestBug153SecurityAndPerformance(unittest.TestCase):
+    """Security and performance checks for the NY Fed direct fetcher."""
+
+    def setUp(self):
+        self.src = read_source('recession_probability.py')
+
+    def test_url_is_module_level_constant(self):
+        self.assertIn('_NY_FED_DIRECT_URL = (', self.src)
+
+    def test_timeout_set_on_ny_fed_request(self):
+        # NY Fed file is larger — should use a reasonable timeout
+        self.assertIn('timeout=', self.src)
+
+    def test_ny_fed_url_uses_https(self):
+        import recession_probability as rp
+        self.assertTrue(rp._NY_FED_DIRECT_URL.startswith('https://'))
 
 
 if __name__ == '__main__':
