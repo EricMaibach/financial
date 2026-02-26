@@ -236,7 +236,7 @@ If a similar finding is already open, add a comment with new supporting evidence
 
 ### 6. Post Finding (If Warranted)
 
-**Rate limit yourself.** Only post if you have identified something genuinely worth the CEO's attention. Aim for 2–4 posts per week across all your council runs, not one per run. If nothing significant stands out, skip posting and record that in your context file.
+**Rate limit yourself.** Only post if you have identified something genuinely worth the CEO's attention. Aim for 4-6 posts per week across all your council runs, not one per run. If nothing significant stands out, skip posting and record that in your context file.
 
 ```bash
 gh api graphql \
