@@ -1,0 +1,318 @@
+/* =============================================================
+   Regime Implications Panel — Feature 6.1 / US-145.2
+   Homepage Section 0.75: Regime Implications
+   ============================================================= */
+
+/* --- Section Container --- */
+.regime-implications-panel {
+  background: #f9fafb;   /* neutral-50 */
+  border: 1px solid #e5e7eb;   /* neutral-200 */
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* --- Mobile Subtitle (hidden on tablet+) --- */
+.regime-implications-subtitle {
+  font-size: 0.875rem;   /* text-sm */
+  color: #4b5563;        /* neutral-600 */
+  margin: 0 0 4px;
+}
+
+/* --- Mobile Toggle Button (hidden on tablet+) --- */
+.regime-implications-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  cursor: pointer;
+  text-align: left;
+}
+
+.regime-implications-toggle:focus {
+  outline: 2px solid #1E40AF;
+  outline-offset: 2px;
+}
+
+.regime-implications-toggle-label {
+  font-size: 0.875rem;   /* text-sm */
+  color: #4b5563;        /* neutral-600 */
+  flex: 1;
+}
+
+.regime-implications-chevron {
+  color: #6b7280;   /* neutral-500 */
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* Chevron rotates 180° when expanded */
+.regime-implications-toggle[aria-expanded="true"] .regime-implications-chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Collapsible Content (mobile: collapsed by default) --- */
+.regime-implications-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease-out;
+}
+
+.regime-implications-content--expanded {
+  max-height: 4000px;
+}
+
+/* --- Tab Bar (hidden on mobile, shown on tablet+) --- */
+.regime-tab-bar {
+  display: none;
+}
+
+.regime-tab {
+  padding: 10px 16px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 0.875rem;   /* text-sm */
+  font-weight: 400;
+  color: #6b7280;        /* neutral-500 */
+  cursor: pointer;
+  margin-bottom: -1px;   /* overlap tab bar bottom border */
+  transition: color 0.15s;
+}
+
+.regime-tab:hover {
+  color: #374151;   /* neutral-700 */
+}
+
+.regime-tab:focus {
+  outline: 2px solid #1E40AF;
+  outline-offset: -2px;
+}
+
+.regime-tab[aria-selected="true"] {
+  color: #111827;    /* neutral-800 */
+  font-weight: 600;
+}
+
+/* Active tab regime color accent (bottom border) */
+.regime-tab--bull[aria-selected="true"]            { border-bottom-color: #16A34A; }  /* success-600 */
+.regime-tab--neutral[aria-selected="true"]         { border-bottom-color: #3B82F6; }  /* brand-blue-500 */
+.regime-tab--bear[aria-selected="true"]            { border-bottom-color: #D97706; }  /* warning-600 */
+.regime-tab--recession_watch[aria-selected="true"] { border-bottom-color: #DC2626; }  /* danger-600 */
+
+/* Star prefix — static indicator of current regime; only rendered on current-regime tab */
+.regime-tab-star {
+  display: inline;
+}
+
+/* --- Tab Panel --- */
+[role="tabpanel"] {
+  outline: none;
+}
+
+/* --- Asset Class Card Grid --- */
+.implication-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;   /* mobile: single column */
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+/* --- Individual Asset Class Card --- */
+.implication-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;   /* neutral-200 */
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* Signal left border colors */
+.implication-card--strong_outperform    { border-left-color: #16A34A; }  /* success-600 */
+.implication-card--outperform           { border-left-color: #15803D; }  /* success-700 */
+.implication-card--neutral              { border-left-color: #d1d5db; }  /* neutral-300 */
+.implication-card--underperform         { border-left-color: #f59e0b; }  /* warning-500 */
+.implication-card--strong_underperform  { border-left-color: #ef4444; }  /* danger-500 */
+
+/* --- Asset Class Label (e.g. "EQUITIES") --- */
+.implication-card-label {
+  font-size: 0.75rem;    /* text-xs */
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;        /* neutral-500 */
+  margin-bottom: 4px;
+}
+
+/* --- Performance Signal Row (icon + label) --- */
+.implication-signal-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.implication-signal-row .bi {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* Signal icon colors (per spec — icon color slightly different from text for underperform) */
+.signal-icon--strong_outperform    { color: #16A34A; }  /* success-600 */
+.signal-icon--outperform           { color: #15803D; }  /* success-700 */
+.signal-icon--neutral              { color: #9ca3af; }  /* neutral-400 */
+.signal-icon--underperform         { color: #d97706; }  /* warning-600 */
+.signal-icon--strong_underperform  { color: #dc2626; }  /* danger-600 */
+
+/* Signal text label (AA-contrast colors for underperform per spec) */
+.implication-signal-label {
+  font-size: 1rem;    /* text-base 16px */
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.implication-signal--strong_outperform    { color: #16A34A; }  /* success-600 */
+.implication-signal--outperform           { color: #15803D; }  /* success-700 */
+.implication-signal--neutral              { color: #6b7280; }  /* neutral-500 (AA on white) */
+.implication-signal--underperform         { color: #B45309; }  /* warning-700 (AA-contrast text) */
+.implication-signal--strong_underperform  { color: #B91C1C; }  /* danger-700 (AA-contrast text) */
+
+/* --- Annotation Text --- */
+.implication-annotation {
+  font-size: 0.875rem;   /* text-sm */
+  color: #4b5563;        /* neutral-600 */
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* --- Sector Callouts (Equities only) --- */
+.implication-sectors {
+  margin-top: 10px;
+  font-size: 0.75rem;   /* text-xs */
+  color: #6b7280;       /* neutral-500 */
+  line-height: 1.5;
+}
+
+.implication-sectors-leading,
+.implication-sectors-lagging {
+  display: block;
+  margin-top: 2px;
+}
+
+.implication-sectors-leading {
+  margin-top: 0;
+}
+
+/* --- Mobile Regime Switcher (hidden on tablet+) --- */
+.regime-switcher {
+  padding: 12px 0;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}
+
+.regime-switcher-label {
+  font-size: 0.75rem;   /* text-xs */
+  color: #6b7280;       /* neutral-500 */
+  display: block;
+  margin-bottom: 6px;
+}
+
+.regime-switcher-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.regime-switcher-chip {
+  font-size: 0.875rem;   /* text-sm */
+  color: #2563eb;        /* brand-blue-600 */
+  background: none;
+  border: none;
+  padding: 10px 0;
+  min-height: 44px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.regime-switcher-chip:focus {
+  outline: 2px solid #1E40AF;
+  outline-offset: 2px;
+}
+
+.regime-switcher-chip:hover {
+  color: #1d4ed8;   /* brand-blue-700 */
+}
+
+.regime-switcher-chip--hidden {
+  display: none;
+}
+
+/* --- Educational Footer / Disclaimer --- */
+.regime-implications-footer {
+  font-size: 0.75rem;    /* text-xs */
+  color: #9ca3af;        /* neutral-400 */
+  line-height: 1.5;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;   /* neutral-200 hairline */
+}
+
+.regime-implications-footer .bi {
+  color: #9ca3af;   /* neutral-400 */
+  margin-right: 4px;
+}
+
+/* ============================================================
+   Tablet+ overrides (768px+)
+   ============================================================ */
+@media (min-width: 768px) {
+  /* Hide mobile subtitle */
+  .regime-implications-subtitle {
+    display: none;
+  }
+
+  /* Hide mobile toggle */
+  .regime-implications-toggle {
+    display: none;
+  }
+
+  /* Always show content on tablet+ — override collapsed state */
+  .regime-implications-content {
+    max-height: none !important;
+    overflow: visible;
+  }
+
+  /* Show regime tab bar */
+  .regime-tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e5e7eb;
+    margin-top: 12px;
+    margin-bottom: 0;
+  }
+
+  /* 3-column card grid on tablet+ */
+  .implication-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  /* Hide mobile regime switcher on tablet+ */
+  .regime-switcher {
+    display: none;
+  }
+
+  /* Panel padding adjustment on tablet+ */
+  .regime-implications-panel {
+    padding: 24px;
+  }
+}

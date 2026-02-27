@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/navbar-bell.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-card.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/recession-panel.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-implications.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -280,6 +281,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/chatbot.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/regime-implications.js') }}"></script>
 
     <!-- Refresh Data Handler -->
     <script>
