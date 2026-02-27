@@ -324,6 +324,123 @@
 </section>
 {% endif %}{# /recession_probability #}
 
+<!-- Section 0.75: Regime Implications Panel (US-145.2) -->
+{% if regime_implications %}
+<section id="regime-implications" aria-label="Regime Implications" class="mb-4">
+    <div class="regime-implications-panel">
+
+        {# ── Section header (standard SignalTrackers pattern) ─────────── #}
+        <div class="section-header mb-2">
+            <h3 class="section-title">
+                <i class="bi bi-layers me-2"></i>Regime Implications
+            </h3>
+        </div>
+
+        {# ── Mobile subtitle (hidden on tablet+) ──────────────────────── #}
+        <p class="regime-implications-subtitle" id="regime-implications-subtitle">
+            {{ regime_implications.regimes[regime_implications.current_regime].display_name }} · Historical patterns
+        </p>
+
+        {# ── Mobile toggle button (hidden on tablet+) ──────────────────── #}
+        <button class="regime-implications-toggle"
+                id="regime-implications-toggle"
+                aria-expanded="false"
+                aria-controls="regime-implications-content">
+            <span class="regime-implications-toggle-label" id="regime-implications-toggle-label">View Implications</span>
+            <i class="bi bi-chevron-down regime-implications-chevron" aria-hidden="true"></i>
+        </button>
+
+        {# ── Collapsible content (mobile: collapsed; tablet+: always visible) ── #}
+        <div id="regime-implications-content" class="regime-implications-content">
+
+            {# ── Tablet+ tab bar (hidden on mobile) ───────────────────── #}
+            <div class="regime-tab-bar" role="tablist" aria-label="Regime phases">
+                {% for key, regime_data in regime_implications.regimes.items() %}
+                {% set _is_active = (key == regime_implications.current_regime) %}
+                <button class="regime-tab regime-tab--{{ key }}"
+                        id="regime-tab-{{ key }}"
+                        role="tab"
+                        aria-selected="{{ 'true' if _is_active else 'false' }}"
+                        aria-controls="regime-panel-{{ key }}"
+                        tabindex="{{ '0' if _is_active else '-1' }}">
+                    <span class="regime-tab-star" aria-hidden="true">★ </span>{{ regime_data.display_name }}
+                </button>
+                {% endfor %}
+            </div>
+
+            {# ── Tab panels — one per regime ───────────────────────────── #}
+            {% for key, regime_data in regime_implications.regimes.items() %}
+            {% set _is_active = (key == regime_implications.current_regime) %}
+            <div id="regime-panel-{{ key }}"
+                 role="tabpanel"
+                 aria-labelledby="regime-tab-{{ key }}"
+                 {% if not _is_active %}hidden{% endif %}>
+
+                <div class="implication-card-grid">
+                    {% for ac in regime_data.asset_classes %}
+                    <div class="implication-card implication-card--{{ ac.signal }}">
+                        <div class="implication-card-label">{{ ac.display_name | upper }}</div>
+                        <div class="implication-signal-row">
+                            {% if ac.signal == 'strong_outperform' %}
+                            <i class="bi bi-arrow-up-right-circle-fill signal-icon--strong_outperform" aria-hidden="true"></i>
+                            {% elif ac.signal == 'outperform' %}
+                            <i class="bi bi-arrow-up-right signal-icon--outperform" aria-hidden="true"></i>
+                            {% elif ac.signal == 'neutral' %}
+                            <i class="bi bi-dash-circle signal-icon--neutral" aria-hidden="true"></i>
+                            {% elif ac.signal == 'underperform' %}
+                            <i class="bi bi-arrow-down-right signal-icon--underperform" aria-hidden="true"></i>
+                            {% else %}
+                            <i class="bi bi-arrow-down-right-circle-fill signal-icon--strong_underperform" aria-hidden="true"></i>
+                            {% endif %}
+                            <span class="implication-signal-label implication-signal--{{ ac.signal }}">
+                                {% if ac.signal == 'strong_outperform' %}Strong Outperform
+                                {% elif ac.signal == 'outperform' %}Outperform
+                                {% elif ac.signal == 'neutral' %}Neutral
+                                {% elif ac.signal == 'underperform' %}Underperform
+                                {% else %}Strong Underperform
+                                {% endif %}
+                            </span>
+                        </div>
+                        <p class="implication-annotation">{{ ac.annotation }}</p>
+                        {% if ac.leading_sectors %}
+                        <div class="implication-sectors">
+                            <span class="implication-sectors-leading">Leading: {{ ac.leading_sectors | join(' · ') }}</span>
+                            <span class="implication-sectors-lagging">Lagging: {{ ac.lagging_sectors | join(' · ') }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div>{# /tabpanel #}
+            {% endfor %}
+
+            {# ── Mobile regime switcher chips (hidden on tablet+) ─────── #}
+            <div class="regime-switcher" id="regime-switcher">
+                <span class="regime-switcher-label">View other regimes:</span>
+                <div class="regime-switcher-chips">
+                    {% for key, regime_data in regime_implications.regimes.items() %}
+                    <button class="regime-switcher-chip{% if key == regime_implications.current_regime %} regime-switcher-chip--hidden{% endif %}"
+                            data-regime="{{ key }}"
+                            data-regime-name="{{ regime_data.display_name }}">
+                        {{ regime_data.display_name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# ── Educational footer ────────────────────────────────────── #}
+            <div class="regime-implications-footer">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                Historical pattern analysis (FRED-MD, 1960–2025). Patterns reflect historical averages, not guarantees of future performance. Not investment advice.
+            </div>
+
+        </div>{# /.regime-implications-content #}
+
+    </div>{# /.regime-implications-panel #}
+</section>
+{% endif %}{# /regime_implications #}
+
 <!-- Section 1: Market Conditions at a Glance -->
 <section class="market-conditions-section mb-4" id="market-conditions">
     <!-- Section header -->
