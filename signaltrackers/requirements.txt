@@ -29,3 +29,11 @@ tzdata>=2024.1
 
 # Machine Learning (regime classification)
 scikit-learn>=1.3.0
+
+# NLP pipeline for sector management tone (US-123.1)
+# WARNING: torch adds ~250MB (CPU-only) to the Docker image; FinBERT model
+# adds ~500MB on first download. Run update_sector_management_tone() as a
+# quarterly batch job rather than on every web request.
+# For CPU-only inference: pip install torch --index-url https://download.pytorch.org/whl/cpu
+transformers>=4.30.0
+torch>=2.0.0

@@ -50,6 +50,7 @@ from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
 from regime_detection import get_macro_regime, update_macro_regime
 from recession_probability import get_recession_probability, update_recession_probability
 from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
+from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -240,6 +241,34 @@ def inject_regime_implications():
         }
     except Exception:
         return {'regime_implications': None}
+
+
+@app.context_processor
+def inject_sector_management_tone():
+    """Inject sector management tone data into all templates (US-123.1).
+
+    Returns a dict with data_available=True (pipeline ran) or
+    data_available=False (pipeline has not yet completed a full quarter's run).
+    Always returns the sector_management_tone key so templates can check
+    data_available without an outer None guard.
+    """
+    try:
+        data = get_sector_management_tone()
+        if data is None:
+            # Pipeline has not yet completed a full quarter's run
+            from datetime import datetime as _dt
+            now = _dt.utcnow()
+            q_map = {1: 'Q1', 2: 'Q1', 3: 'Q1', 4: 'Q2', 5: 'Q2', 6: 'Q2',
+                     7: 'Q3', 8: 'Q3', 9: 'Q3', 10: 'Q4', 11: 'Q4', 12: 'Q4'}
+            data = {
+                'quarter': q_map[now.month],
+                'year': now.year,
+                'data_available': False,
+                'sectors': [],
+            }
+    except Exception:
+        data = {'quarter': '', 'year': 0, 'data_available': False, 'sectors': []}
+    return {'sector_management_tone': data}
 
 
 def init_scheduler():
@@ -2152,6 +2181,13 @@ def run_data_collection():
             update_recession_probability()
         except Exception as recession_error:
             print(f"Recession probability update error (non-fatal): {recession_error}")
+
+        # Update sector management tone data (US-123.1)
+        # Note: this pipeline is intentionally skipped during the daily refresh
+        # because FinBERT scoring is a long-running quarterly batch job.
+        # update_sector_management_tone() should be run manually or via a
+        # quarterly cron job after each earnings season completes.
+        # The context processor reads from the cache file set by that job.
 
         # Mark as successful
         reload_status['success'] = True
