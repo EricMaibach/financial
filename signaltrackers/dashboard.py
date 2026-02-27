@@ -49,6 +49,7 @@ from models import User, UserSettings
 from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
 from regime_detection import get_macro_regime, update_macro_regime
 from recession_probability import get_recession_probability, update_recession_probability
+from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -219,6 +220,26 @@ def inject_recession_probability():
     except Exception:
         data = None
     return {'recession_probability': data}
+
+
+@app.context_processor
+def inject_regime_implications():
+    """Inject regime implications panel data into all templates (US-145.1)."""
+    try:
+        regime = get_macro_regime()
+        if not regime:
+            return {'regime_implications': None}
+        current_key = REGIME_STATE_TO_KEY.get(regime.get('state', ''))
+        if not current_key:
+            return {'regime_implications': None}
+        return {
+            'regime_implications': {
+                'current_regime': current_key,
+                'regimes': REGIME_IMPLICATIONS,
+            }
+        }
+    except Exception:
+        return {'regime_implications': None}
 
 
 def init_scheduler():
