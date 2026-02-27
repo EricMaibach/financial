@@ -114,6 +114,10 @@ class TestRegimeImplicationsCSSClasses(unittest.TestCase):
     def test_tab_star_declared(self):
         self.assertIn('.regime-tab-star', self.css)
 
+    def test_tab_star_not_aria_selected_controlled(self):
+        """Star must NOT be shown/hidden via aria-selected — it's static HTML on the current-regime tab only."""
+        self.assertNotIn('[aria-selected="true"] .regime-tab-star', self.css)
+
     def test_card_grid_declared(self):
         self.assertIn('.implication-card-grid', self.css)
 
@@ -569,6 +573,15 @@ class TestTabBar(unittest.TestCase):
 
     def test_tab_star_element(self):
         self.assertIn('regime-tab-star', self.s)
+
+    def test_tab_star_conditional_on_current_regime(self):
+        """Star must only render on the current regime tab (guarded by _is_active)."""
+        self.assertIn('_is_active', self.s)
+        # Star span is inside an {% if _is_active %} block, not unconditionally rendered
+        idx = self.s.find('regime-tab-star')
+        # The if _is_active guard must appear before the star span in the tab button loop
+        if_idx = self.s.rfind('if _is_active', 0, idx)
+        self.assertGreater(if_idx, -1, "regime-tab-star must be inside {% if _is_active %} block")
 
     def test_tab_bar_iterates_all_regimes(self):
         self.assertIn('regime_implications.regimes.items()', self.s)

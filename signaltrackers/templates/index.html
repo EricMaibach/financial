@@ -363,7 +363,7 @@
                         aria-selected="{{ 'true' if _is_active else 'false' }}"
                         aria-controls="regime-panel-{{ key }}"
                         tabindex="{{ '0' if _is_active else '-1' }}">
-                    <span class="regime-tab-star" aria-hidden="true">★ </span>{{ regime_data.display_name }}
+                    {% if _is_active %}<span class="regime-tab-star" aria-hidden="true">★ </span>{% endif %}{{ regime_data.display_name }}
                 </button>
                 {% endfor %}
             </div>

@@ -106,12 +106,8 @@
 .regime-tab--bear[aria-selected="true"]            { border-bottom-color: #D97706; }  /* warning-600 */
 .regime-tab--recession_watch[aria-selected="true"] { border-bottom-color: #DC2626; }  /* danger-600 */
 
-/* Star prefix — shown on active tab via CSS */
+/* Star prefix — static indicator of current regime; only rendered on current-regime tab */
 .regime-tab-star {
-  display: none;
-}
-
-.regime-tab[aria-selected="true"] .regime-tab-star {
   display: inline;
 }
 
