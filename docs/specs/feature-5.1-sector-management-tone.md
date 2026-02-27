@@ -3,8 +3,9 @@
 **Issue:** #123
 **Feature:** Sector Management Tone Panel
 **Created:** 2026-02-25
+**Updated:** 2026-02-27 (incorporated PM decisions from Phase 5 approval; Phase 6 now active)
 **Designer:** UI/UX Designer
-**Status:** Draft
+**Status:** Approved (PM approved 2026-02-25; re-queued for Phase 6 user story creation)
 
 ---
 
@@ -379,18 +380,30 @@ Backend sorts sectors by tone strength (positive first, then neutral, then negat
 
 ---
 
-## Open Questions
+## PM Decisions (Resolved — 2026-02-25)
 
-1. **Trend history depth** — This spec designs for 4 quarters of history. If backend can only produce the current quarter initially (data pipeline starting fresh), the sparkline should gracefully show 1 dot with grey placeholders for missing quarters. PM/Engineer: confirm expected history depth at launch.
+All 5 open questions resolved by PM approval comment on 2026-02-25:
 
-2. **Score thresholds for tone classification** — The ±0.15 threshold for neutral vs. positive/negative is a design starting point. Engineer/PM: validate against actual FinBERT score distribution once pipeline is running. If most scores cluster near 0, tighten the threshold. If scores spread widely, the current threshold may work.
+**1. Trend history depth at launch**
+Design for 4 quarters with graceful degradation. If the pipeline starts fresh, show 1 filled dot for the current quarter and **grey placeholder dots** for missing prior quarters — do not simply omit them (visual consistency matters). Engineer: implement sparkline to handle 1–4 dots with placeholders.
 
-3. **Panel placement on mobile** — Given the panel collapses on mobile, users must actively expand it. Is this acceptable for a feature the CEO considers a "leading indicator complement to regime detection"? Alternative: show a compact 2-sector summary strip (most positive + most negative) as the collapsed state. PM: preferred?
+**2. FinBERT score thresholds (±0.15)**
+Accept ±0.15 as the launch threshold. Validate against actual score distribution once pipeline is running in staging. If >60% of scores fall in the neutral band, tighten to ±0.10. Engineer: make this threshold a **config constant**, not a hardcoded value.
 
-4. **Sector name display** — 11 GICS sector names range from 6 chars (Energy) to 22 chars (Consumer Discretionary). On mobile 2-col cards, long names need truncation or abbreviation. This spec uses `short_name` for mobile display (e.g., "Cons. Discretionary"). PM/Engineer: confirm short name mapping is acceptable.
+**3. Collapsed mobile default**
+Keep the collapsed default for MVP. The compact 2-sector strip adds implementation complexity; the existing progressive disclosure pattern is sufficient. Reconsider only if user testing shows the panel is systematically missed on mobile.
 
-5. **Regime integration depth** — Currently, the panel links to the regime card with a text note ("Interpret alongside current macro regime ↑"). Should the panel also show which sectors are particularly notable given the *current* regime? This would require backend to provide regime-sector relevance (similar to category_relevance in Feature 3.3). PM: defer to Phase 6, or include from the start?
+**4. Short sector name mapping (canonical)**
+Use the `short_name` field. Canonical abbreviations:
+- Consumer Discretionary → Cons. Discretionary
+- Consumer Staples → Cons. Staples
+- Communication Services → Comm. Services
+- Information Technology → Technology
+- All other sectors: use full GICS name (≤18 chars, no abbreviation needed)
+
+**5. Regime integration depth**
+Defer regime-sector relevance to Phase 6+. The anchor link ("Interpret alongside current macro regime ↑") is the correct integration level for MVP. Regime-conditional sector highlighting requires backend work (similar to `category_relevance` in Feature 3.3) and should be validated by user behavior first.
 
 ---
 
-*Spec complete. PM: Please review and approve to proceed to user story creation.*
+*Spec approved 2026-02-25. Phase 6 now active — ready for user story creation.*
