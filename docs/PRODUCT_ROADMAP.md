@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-27 (PM: Phase 6 kicked off — milestone created, Features #145 and #123 assigned, needs-design-spec applied)
+**Last updated:** 2026-02-27 (PM: Feature #145 Regime Implications Panel complete — both stories merged, feature closed)
 
 ---
 
@@ -30,8 +30,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| #145 — Regime Implications Panel | P1 | needs-design-spec |
-| #123 — Sector Management Tone Panel | P2 | needs-design-spec |
+| #145 — Regime Implications Panel | P1 | Complete |
+| #123 — Sector Management Tone Panel | P2 | In Progress |
 
 ### Phases 1–5: Complete
 
