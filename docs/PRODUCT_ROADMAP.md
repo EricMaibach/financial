@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-28 (PM Council: Feature #171 Homepage Section Quick-Nav added from council discussion #15)
+**Last updated:** 2026-02-28 (PM queue: Feature #123 Sector Management Tone Panel complete — Phase 6 fully complete)
 
 ---
 
@@ -25,15 +25,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 ## Current Release State
 
-### Phase 6: Advanced Intelligence & Sector Analysis (in progress)
-**Milestone goal:** Translate macro regime awareness into portfolio context — closing the macro → action gap for retail investors.
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| #145 — Regime Implications Panel | P1 | Complete |
-| #123 — Sector Management Tone Panel | P2 | In Progress |
-
-### Phases 1–5: Complete
+### Phases 1–6: Complete
 
 | Phase | Title | Shipped |
 |-------|-------|---------|
@@ -42,10 +34,13 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | Phase 3 | Mobile-First Redesign | 14 stories (Feb 23, 2026) |
 | Phase 4 | Mobile Polish + Core UX Wins | 13 stories (Feb 25, 2026) |
 | Phase 5 | Macro Intelligence Layer | 9 stories (Feb 26, 2026) |
+| Phase 6 | Advanced Intelligence & Sector Analysis | 6 stories (Feb 28, 2026) |
 
 **Phase 5 highlights:** Macro Regime Score Panel (Feature 5.1, #138) and Multi-Model Recession Probability Sub-Panel (Feature 5.2, #146) — three recession models (NY Fed 12-month, Chauvet-Piger coincident, Richmond SOS weekly), all data free via FRED + Richmond Fed.
 
-**Total shipped:** 65 user stories across 5 phases.
+**Phase 6 highlights:** Regime Implications Panel (#145) — 5-level signal scale across 6 asset classes, static config from published research. Sector Management Tone Panel (#123) — SEC EDGAR 8-K ingestion, FinBERT NLP scoring, GICS sector aggregation (11 sectors), quarterly scheduling, /credit stub + nav parity.
+
+**Total shipped:** 71 user stories across 6 phases.
 
 ---
 
