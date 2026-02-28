@@ -1539,6 +1539,12 @@ def safe_havens():
     return render_template('safe_havens.html')
 
 
+@app.route('/credit')
+def credit():
+    """Credit markets stub page."""
+    return render_template('credit.html')
+
+
 @app.route('/divergence')
 def divergence():
     """Redirect old divergence page to credit page for backward compatibility."""

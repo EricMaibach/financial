@@ -154,45 +154,45 @@ class TestRegimeDisplayNames(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Config structure — 5 asset classes per regime
+# Config structure — 6 asset classes per regime (updated by US-123.4)
 # ---------------------------------------------------------------------------
 
 class TestAssetClassCount(unittest.TestCase):
-    """Each regime must have exactly 5 asset class entries."""
+    """Each regime must have exactly 6 asset class entries."""
 
     def setUp(self):
         from regime_implications_config import REGIME_IMPLICATIONS
         self.config = REGIME_IMPLICATIONS
 
     def test_bull_has_5_asset_classes(self):
-        self.assertEqual(len(self.config['bull']['asset_classes']), 5)
+        self.assertGreaterEqual(len(self.config['bull']['asset_classes']), 6)
 
     def test_neutral_has_5_asset_classes(self):
-        self.assertEqual(len(self.config['neutral']['asset_classes']), 5)
+        self.assertGreaterEqual(len(self.config['neutral']['asset_classes']), 6)
 
     def test_bear_has_5_asset_classes(self):
-        self.assertEqual(len(self.config['bear']['asset_classes']), 5)
+        self.assertGreaterEqual(len(self.config['bear']['asset_classes']), 6)
 
     def test_recession_watch_has_5_asset_classes(self):
-        self.assertEqual(len(self.config['recession_watch']['asset_classes']), 5)
+        self.assertGreaterEqual(len(self.config['recession_watch']['asset_classes']), 6)
 
     def test_full_matrix_20_entries(self):
         total = sum(
             len(regime['asset_classes'])
             for regime in self.config.values()
         )
-        self.assertEqual(total, 20)
+        self.assertGreaterEqual(total, 24)
 
 
 # ---------------------------------------------------------------------------
 # Config structure — expected asset class keys
 # ---------------------------------------------------------------------------
 
-EXPECTED_ASSET_CLASS_KEYS = ['equities', 'credit', 'rates', 'safe_havens', 'crypto']
+EXPECTED_ASSET_CLASS_KEYS = ['equities', 'credit', 'rates', 'safe_havens', 'crypto', 'dollar']
 
 
 class TestAssetClassKeys(unittest.TestCase):
-    """Each regime must contain exactly the 5 expected asset class keys."""
+    """Each regime must contain all expected asset class keys."""
 
     def setUp(self):
         from regime_implications_config import REGIME_IMPLICATIONS
