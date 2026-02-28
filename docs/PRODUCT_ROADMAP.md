@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-27 (PM: Feature #145 Regime Implications Panel complete — both stories merged, feature closed)
+**Last updated:** 2026-02-28 (PM Council: Feature #171 Homepage Section Quick-Nav added from council discussion #15)
 
 ---
 
@@ -46,6 +46,19 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 **Phase 5 highlights:** Macro Regime Score Panel (Feature 5.1, #138) and Multi-Model Recession Probability Sub-Panel (Feature 5.2, #146) — three recession models (NY Fed 12-month, Chauvet-Piger coincident, Richmond SOS weekly), all data free via FRED + Richmond Fed.
 
 **Total shipped:** 65 user stories across 5 phases.
+
+---
+
+## Phase 7: Credit Intelligence & Completion (upcoming)
+**Milestone goal:** Build out the credit detail page, integrate credit into the full AI briefing pipeline, and complete remaining market parity and UX gaps.
+
+| Feature | Priority | Status |
+|---------|----------|--------|
+| #169 — Credit Market Detail Page | P2 | Backlog |
+| #166 — ML Container Separation (FinBERT/torch) | P3 | Backlog |
+| #171 — Homepage Section Quick-Nav | P2 | Backlog |
+
+- **Homepage Section Quick-Nav** (#171) — Sticky/floating quick-nav so returning users can jump to any homepage section in ≤1 tap on mobile and desktop; section IDs already in HTML, frontend-only work (#171, approved from council: discussion #15, 2026-02-28)
 
 ---
 
