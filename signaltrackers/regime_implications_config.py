@@ -2,6 +2,7 @@
 Static configuration for the Regime Implications Panel (Feature 6.1 / US-145.1).
 
 Historical asset class performance patterns across all 4 macro regime phases.
+4 regimes × 6 asset classes.
 
 Data sourced from published academic and institutional research:
 - FRED-MD academic paper (Bok, Caratelli, Giannone, et al., 1960–2025)
@@ -38,7 +39,7 @@ REGIME_STATE_TO_KEY = {
 }
 
 # ---------------------------------------------------------------------------
-# Historical pattern data — 4 regimes × 5 asset classes
+# Historical pattern data — 4 regimes × 6 asset classes
 # ---------------------------------------------------------------------------
 
 REGIME_IMPLICATIONS = {
@@ -96,6 +97,17 @@ REGIME_IMPLICATIONS = {
                 'annotation': (
                     'Risk appetite supports crypto alongside equities in bull conditions. '
                     'Pattern based on 2010\u20132025 data.'
+                ),
+                'leading_sectors': None,
+                'lagging_sectors': None,
+            },
+            {
+                'key': 'dollar',
+                'display_name': 'Dollar',
+                'signal': 'neutral',
+                'annotation': (
+                    'USD shows mixed behavior in bull markets; direction reflects US vs. global growth '
+                    'differentials more than risk-on sentiment. Post-Bretton Woods data (1971\u20132025).'
                 ),
                 'leading_sectors': None,
                 'lagging_sectors': None,
@@ -160,6 +172,17 @@ REGIME_IMPLICATIONS = {
                 'leading_sectors': None,
                 'lagging_sectors': None,
             },
+            {
+                'key': 'dollar',
+                'display_name': 'Dollar',
+                'signal': 'neutral',
+                'annotation': (
+                    'No strong directional bias; dollar tracks Fed policy stance and global growth '
+                    'differentials. Post-Bretton Woods data (1971\u20132025).'
+                ),
+                'leading_sectors': None,
+                'lagging_sectors': None,
+            },
         ],
     },
     'bear': {
@@ -220,6 +243,17 @@ REGIME_IMPLICATIONS = {
                 'leading_sectors': None,
                 'lagging_sectors': None,
             },
+            {
+                'key': 'dollar',
+                'display_name': 'Dollar',
+                'signal': 'outperform',
+                'annotation': (
+                    'Flight-to-safety demand supports USD as risk assets sell off; DXY historically '
+                    'strengthens in risk-off environments. Post-Bretton Woods data (1971\u20132025).'
+                ),
+                'leading_sectors': None,
+                'lagging_sectors': None,
+            },
         ],
     },
     'recession_watch': {
@@ -276,6 +310,17 @@ REGIME_IMPLICATIONS = {
                 'annotation': (
                     'Risk-off sentiment weighs on crypto; correlates closely with equities. '
                     'Pattern based on 2010\u20132025 data.'
+                ),
+                'leading_sectors': None,
+                'lagging_sectors': None,
+            },
+            {
+                'key': 'dollar',
+                'display_name': 'Dollar',
+                'signal': 'strong_outperform',
+                'annotation': (
+                    'Peak flight-to-USD demand as global safe haven; reserve currency premium '
+                    'strengthens even as Fed eases. Post-Bretton Woods data (1971\u20132025).'
                 ),
                 'leading_sectors': None,
                 'lagging_sectors': None,
