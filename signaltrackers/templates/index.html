@@ -720,6 +720,111 @@
     </div>
 </section>
 
+<!-- Section 1.5: Sector Management Tone Panel (US-123.2) -->
+{% if sector_management_tone %}
+<section aria-label="Sector Management Tone" id="sector-tone-section" class="mb-4">
+    <div class="sector-tone-panel">
+
+        {# ── Section header (standard SignalTrackers pattern) ─────────── #}
+        <div class="section-header mb-2 sector-tone-header-row">
+            <h3 class="section-title">
+                <i class="bi bi-building me-2"></i>Sector Management Tone
+            </h3>
+            <span class="sector-tone-header-right">Updated quarterly · {{ sector_management_tone.quarter }} {{ sector_management_tone.year }}</span>
+        </div>
+
+        {# ── Regime link (only when macro_regime data is available) ───── #}
+        {% if macro_regime %}
+        <p class="sector-tone-regime-link">
+            <a href="#macro-regime-section">Interpret alongside current macro regime ↑</a>
+        </p>
+        {% endif %}
+
+        {% if sector_management_tone.data_available %}
+        {# ── Mobile toggle button (hidden on tablet+) ──────────────────── #}
+        <button class="sector-tone-toggle"
+                id="sector-tone-toggle"
+                aria-expanded="false"
+                aria-controls="sector-tone-content">
+            <span class="sector-tone-toggle-line" aria-hidden="true"></span>
+            <span class="sector-tone-toggle-label">
+                <i class="bi bi-chevron-down sector-tone-chevron" aria-hidden="true"></i>
+                <span id="sector-tone-toggle-text">Show Sectors</span>
+            </span>
+            <span class="sector-tone-toggle-line" aria-hidden="true"></span>
+        </button>
+
+        {# ── Collapsible content (mobile: collapsed; tablet+: always visible) ── #}
+        <div id="sector-tone-content" class="sector-tone-content">
+
+            {# ── Sector card grid (11 GICS sectors, sorted by backend) ──── #}
+            <div class="sector-card-grid">
+                {% for sector in sector_management_tone.sectors %}
+                {% set _tone = sector.current_tone %}
+                {% set _trend_len = sector.trend | length %}
+                {% set _placeholder_count = [4 - _trend_len, 0] | max %}
+                {# Build accessible tone label list for aria-label #}
+                {% set _tone_labels = [] %}
+                {% for _ in range(_placeholder_count) %}{% if _tone_labels.append('—') %}{% endif %}{% endfor %}
+                {% for t in sector.trend %}{% if _tone_labels.append(t.tone | title) %}{% endif %}{% endfor %}
+                <div class="sector-card sector-card--{{ _tone }}">
+                    {# ── Tone indicator row (icon + text — never color alone) ── #}
+                    <div class="sector-card__tone-row">
+                        {% if _tone == 'positive' %}
+                        <i class="bi bi-arrow-up-short sector-card__tone-icon sector-card__tone-icon--positive" aria-hidden="true"></i>
+                        <span class="sector-card__tone-label sector-card__tone-label--positive">Positive</span>
+                        {% elif _tone == 'negative' %}
+                        <i class="bi bi-arrow-down-short sector-card__tone-icon sector-card__tone-icon--negative" aria-hidden="true"></i>
+                        <span class="sector-card__tone-label sector-card__tone-label--negative">Negative</span>
+                        {% else %}
+                        <i class="bi bi-dash sector-card__tone-icon sector-card__tone-icon--neutral" aria-hidden="true"></i>
+                        <span class="sector-card__tone-label sector-card__tone-label--neutral">Neutral</span>
+                        {% endif %}
+                    </div>
+                    {# ── Sector name (short_name for mobile 2-col cards) ─────── #}
+                    <div class="sector-card__name">{{ sector.short_name }}</div>
+                    {# ── Trend sparkline — 4 quarterly dots, oldest first ──────── #}
+                    <div class="sector-card__sparkline"
+                         aria-label="Trend over last 4 quarters: {{ _tone_labels | join(', ') }}">
+                        {# Placeholder dots for missing prior quarters #}
+                        {% for _ in range(_placeholder_count) %}
+                        <span class="sector-sparkline-dot sector-sparkline-dot--placeholder"
+                              aria-hidden="true"
+                              title="Data not available"></span>
+                        {% endfor %}
+                        {# Filled dots for each recorded quarter (oldest → newest) #}
+                        {% for t in sector.trend %}
+                        <span class="sector-sparkline-dot sector-sparkline-dot--{{ t.tone }}"
+                              aria-hidden="true"
+                              title="{{ t.quarter }} {{ t.year }}: {{ t.tone | title }}"></span>
+                        {% endfor %}
+                    </div>
+                    {# ── Data currency label ──────────────────────────────────── #}
+                    <div class="sector-card__quarter">{{ sector_management_tone.quarter }} {{ sector_management_tone.year }}</div>
+                </div>
+                {% endfor %}
+            </div>{# /.sector-card-grid #}
+
+            {# ── Educational footer ──────────────────────────────────────── #}
+            <div class="sector-tone-footer">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                Aggregate management tone from {{ sector_management_tone.quarter }} {{ sector_management_tone.year }} earnings calls (S&amp;P 500 companies, SEC EDGAR 8-K filings, FinBERT). Sector aggregates only &mdash; not individual stock analysis.
+            </div>
+
+        </div>{# /.sector-tone-content #}
+
+        {% else %}
+        {# ── Empty state (data_available = False) ──────────────────────── #}
+        <div class="sector-tone-empty">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            Sector tone data will be available when {{ sector_management_tone.quarter }} {{ sector_management_tone.year }} earnings season completes. (Typically 6&ndash;8 weeks after quarter end)
+        </div>
+        {% endif %}
+
+    </div>{# /.sector-tone-panel #}
+</section>
+{% endif %}
+
 <!-- Section 2: Today's Market Briefing -->
 <section class="hero-briefing mb-4">
     <div class="section-header mb-3 d-flex justify-content-between align-items-center">
@@ -1504,6 +1609,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 content.classList.add('recession-panel__content--expanded');
             } else {
                 content.classList.remove('recession-panel__content--expanded');
+            }
+        });
+    }
+
+    // Sector Management Tone Panel toggle (US-123.2)
+    const sectorToneToggle = document.getElementById('sector-tone-toggle');
+    if (sectorToneToggle) {
+        sectorToneToggle.addEventListener('click', function() {
+            const content = document.getElementById('sector-tone-content');
+            const toggleText = document.getElementById('sector-tone-toggle-text');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', String(!expanded));
+            if (!expanded) {
+                content.classList.add('sector-tone-content--expanded');
+                if (toggleText) { toggleText.textContent = 'Hide Sectors'; }
+            } else {
+                content.classList.remove('sector-tone-content--expanded');
+                if (toggleText) { toggleText.textContent = 'Show Sectors'; }
             }
         });
     }

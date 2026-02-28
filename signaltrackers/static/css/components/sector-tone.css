@@ -1,0 +1,263 @@
+/* =============================================================
+   Sector Management Tone Panel — Feature 6.1 / US-123.2
+   Homepage Section 1.5: Sector Management Tone
+   ============================================================= */
+
+/* --- Section Container --- */
+.sector-tone-panel {
+  background: #f3f4f6;   /* neutral-100 */
+  border: 1px solid #e5e7eb;   /* neutral-200 */
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* --- Panel Header Row (title + date right-aligned) --- */
+.sector-tone-header-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sector-tone-header-right {
+  font-size: 0.75rem;   /* text-xs */
+  color: #9ca3af;       /* neutral-400 */
+  white-space: nowrap;
+}
+
+/* --- Regime Link (below header, above toggle on mobile) --- */
+.sector-tone-regime-link {
+  font-size: 0.75rem;   /* text-xs */
+  color: #6b7280;       /* neutral-500 */
+  font-style: italic;
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.sector-tone-regime-link a {
+  color: #6b7280;       /* neutral-500 */
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sector-tone-regime-link a:hover {
+  color: #374151;       /* neutral-700 */
+}
+
+/* --- Mobile Toggle Button (hidden on tablet+) --- */
+.sector-tone-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid #e5e7eb;   /* visual separator */
+  cursor: pointer;
+  text-align: center;
+  color: #4b5563;        /* neutral-600 */
+  font-size: 0.875rem;  /* text-sm */
+}
+
+.sector-tone-toggle:focus {
+  outline: 2px solid #1E40AF;
+  outline-offset: 2px;
+}
+
+.sector-tone-toggle-line {
+  flex: 1;
+  height: 1px;
+  background: #d1d5db;  /* neutral-300 */
+}
+
+.sector-tone-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 0.875rem;  /* text-sm */
+  color: #4b5563;       /* neutral-600 */
+}
+
+.sector-tone-chevron {
+  color: #6b7280;   /* neutral-500 */
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Chevron rotates 180° when expanded */
+.sector-tone-toggle[aria-expanded="true"] .sector-tone-chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Collapsible Content (mobile: collapsed by default) --- */
+.sector-tone-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease-out;
+}
+
+.sector-tone-content--expanded {
+  max-height: 4000px;
+}
+
+/* --- Sector Card Grid --- */
+.sector-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);   /* 2-col mobile */
+  gap: 12px;
+  padding-top: 16px;
+}
+
+/* --- Individual Sector Card --- */
+.sector-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;   /* neutral-200 */
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 80px;
+}
+
+/* Semantic left border colors by tone */
+.sector-card--positive { border-left-color: #22c55e; }  /* success-500 */
+.sector-card--neutral  { border-left-color: #d1d5db; }  /* neutral-300 */
+.sector-card--negative { border-left-color: #ef4444; }  /* danger-500 */
+
+/* --- Tone Indicator Row (icon + label) --- */
+.sector-card__tone-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.sector-card__tone-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.sector-card__tone-icon--positive { color: #16A34A; }  /* success-600 */
+.sector-card__tone-icon--neutral  { color: #9ca3af; }  /* neutral-400 */
+.sector-card__tone-icon--negative { color: #dc2626; }  /* danger-600 */
+
+.sector-card__tone-label {
+  font-size: 0.875rem;   /* text-sm */
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.sector-card__tone-label--positive { color: #15803D; font-weight: 600; }  /* success-700 */
+.sector-card__tone-label--neutral  { color: #697386; font-weight: 500; }  /* neutral-500 */
+.sector-card__tone-label--negative { color: #B91C1C; font-weight: 600; }  /* danger-700 */
+
+/* --- Sector Name --- */
+.sector-card__name {
+  font-size: 1rem;       /* text-base 16px */
+  font-weight: 600;
+  color: #374151;        /* neutral-700 */
+  margin-top: 2px;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+/* --- Sparkline Dot Row --- */
+.sector-card__sparkline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+/* --- Individual Sparkline Dots (8px circles) --- */
+.sector-sparkline-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.sector-sparkline-dot--positive    { background-color: #22c55e; }  /* success-500 */
+.sector-sparkline-dot--neutral     { background-color: #d1d5db; }  /* neutral-300 */
+.sector-sparkline-dot--negative    { background-color: #ef4444; }  /* danger-500 */
+.sector-sparkline-dot--placeholder { background-color: #e5e7eb; }  /* neutral-200 grey placeholder */
+
+/* --- Data Currency Label (quarter/year below sparkline) --- */
+.sector-card__quarter {
+  font-size: 0.75rem;   /* text-xs */
+  color: #9ca3af;       /* neutral-400 */
+  line-height: 1;
+}
+
+/* --- Educational Footer --- */
+.sector-tone-footer {
+  font-size: 0.75rem;   /* text-xs */
+  color: #9ca3af;       /* neutral-400 */
+  line-height: 1.5;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;   /* neutral-200 hairline */
+}
+
+.sector-tone-footer .bi {
+  color: #9ca3af;   /* neutral-400 */
+  margin-right: 4px;
+}
+
+/* --- Empty State --- */
+.sector-tone-empty {
+  font-size: 0.875rem;   /* text-sm */
+  color: #6b7280;        /* neutral-500 */
+  line-height: 1.5;
+  padding: 16px 0;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
+}
+
+.sector-tone-empty .bi {
+  color: #9ca3af;   /* neutral-400 */
+  margin-right: 6px;
+}
+
+/* ============================================================
+   Tablet+ overrides (768px+)
+   ============================================================ */
+@media (min-width: 768px) {
+  /* Hide mobile toggle */
+  .sector-tone-toggle {
+    display: none;
+  }
+
+  /* Always show content on tablet+ — override collapsed state */
+  .sector-tone-content {
+    max-height: none !important;
+    overflow: visible;
+  }
+
+  /* 3-column grid on tablet */
+  .sector-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* Panel padding adjustment on tablet+ */
+  .sector-tone-panel {
+    padding: 24px;
+  }
+}
+
+/* ============================================================
+   Desktop overrides (1024px+)
+   ============================================================ */
+@media (min-width: 1024px) {
+  /* 4-column grid on desktop */
+  .sector-card-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
