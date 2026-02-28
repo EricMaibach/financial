@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.executors.pool import ThreadPoolExecutor
+from datetime import datetime, timedelta
 import logging
 import os
 
@@ -51,6 +52,7 @@ def register_jobs(app):
     # Import job wrapper that will handle app context
     from jobs.alert_jobs import check_alert_thresholds_wrapper
     from jobs.email_jobs import send_daily_briefings_wrapper
+    from jobs.sector_tone_jobs import run_sector_tone_pipeline_wrapper
 
     # Alert checking - every 15 minutes
     scheduler.add_job(
@@ -74,6 +76,63 @@ def register_jobs(app):
         replace_existing=True
     )
     logger.info("Registered job: daily_briefings (every 15 minutes)")
+
+    # Quarterly sector management tone pipeline
+    # Runs at 02:00 UTC on the 1st of Jan, Apr, Jul, Oct (start of each calendar quarter)
+    scheduler.add_job(
+        func=run_sector_tone_pipeline_wrapper,
+        trigger='cron',
+        month='1,4,7,10',
+        day=1,
+        hour=2,
+        minute=0,
+        id='sector_tone_quarterly',
+        name='Quarterly sector management tone update',
+        replace_existing=True
+    )
+    logger.info("Registered job: sector_tone_quarterly (Jan/Apr/Jul/Oct 1 at 02:00 UTC)")
+
+    # Startup seed check — queue a one-time pipeline run if the cache is absent or empty
+    _check_and_seed_sector_tone(run_sector_tone_pipeline_wrapper)
+
+
+def _check_and_seed_sector_tone(wrapper_func):
+    """Submit a one-time seed job if the sector tone cache is absent or empty.
+
+    The seed job runs ~5 seconds after startup (date trigger) so Flask can
+    finish initialising before the heavy FinBERT pipeline starts.
+    """
+    cache_empty = _is_sector_tone_cache_empty()
+
+    if cache_empty:
+        logger.info("Sector tone cache empty — queuing immediate seed run")
+        scheduler.add_job(
+            func=wrapper_func,
+            trigger='date',
+            run_date=datetime.utcnow() + timedelta(seconds=5),
+            id='sector_tone_seed',
+            name='Sector tone pipeline seed run (one-time)',
+            replace_existing=True
+        )
+    else:
+        logger.info("Sector tone cache populated — skipping seed run")
+
+
+def _is_sector_tone_cache_empty() -> bool:
+    """Return True if the sector tone cache is absent, empty, or has no data."""
+    try:
+        from sector_tone_pipeline import get_sector_management_tone
+        cache = get_sector_management_tone()
+        if cache is None:
+            return True
+        if not cache.get('data_available'):
+            return True
+        if not cache.get('sectors'):
+            return True
+        return False
+    except Exception as exc:
+        logger.warning("Could not read sector tone cache during startup check: %s", exc)
+        return True
 
 
 def shutdown_scheduler():
