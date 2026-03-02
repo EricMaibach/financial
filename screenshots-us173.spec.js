@@ -77,4 +77,20 @@ test.describe('US-173 Descriptive Collapsible Section Labels', () => {
     await screenshotHeader(page, 'additional-charts', `${outputDir}/crypto-collapsed-header-desktop-1280.png`);
   });
 
+  // ── /dollar ────────────────────────────────────────────────────────────────
+
+  test('dollar-collapsed-header-mobile-375', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('http://localhost:5000/dollar');
+    await page.waitForLoadState('networkidle');
+    await screenshotHeader(page, 'additional-charts', `${outputDir}/dollar-collapsed-header-mobile-375.png`);
+  });
+
+  test('dollar-collapsed-header-desktop-1280', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('http://localhost:5000/dollar');
+    await page.waitForLoadState('networkidle');
+    await screenshotHeader(page, 'additional-charts', `${outputDir}/dollar-collapsed-header-desktop-1280.png`);
+  });
+
 });
