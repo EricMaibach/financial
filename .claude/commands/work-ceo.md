@@ -82,6 +82,28 @@ gh api graphql \
 
 Process each the same way as Research and Refinements discussions.
 
+### 4b. Review NEEDS-MORE-INFO Follow-ups (Cycle 2)
+
+After processing all first-pass queues, check **all three categories** for discussions where:
+- The CEO previously posted NEEDS-MORE-INFO (Cycle 1), AND
+- A follow-up has been posted since, AND
+- No final CEO decision (APPROVED / DISMISSED / ESCALATE) exists yet
+
+Run this for each category (Research, Refinements, Technical):
+
+```bash
+gh api graphql \
+  -f query='{ repository(owner: "EricMaibach", name: "fianancial-council") { discussions(first: 30, categoryId: "<category-id>", states: [OPEN]) { nodes { id number title body url comments(first: 30) { nodes { body } } } } } }' \
+  | jq '.data.repository.discussions.nodes[] | select(
+      (.comments.nodes | map(.body) | any(startswith("## CEO Decision: NEEDS-MORE-INFO"))) and
+      (.comments.nodes | last | .body | startswith("## CEO Decision:") | not)
+    ) | {id, number, title}'
+```
+
+**For each discussion returned**, read the full comment thread (the follow-up is there), then post a final decision — APPROVED, DISMISSED, or ESCALATE. Do not post another NEEDS-MORE-INFO unless you are certain the follow-up did not answer your question.
+
+> **Escalation rule reminder:** If there are already 2 NEEDS-MORE-INFO comments on the discussion, post ESCALATE instead.
+
 ### 5. Post a Decision on Each Pending Discussion
 
 For each unreviewed discussion, post one of three decision formats:
