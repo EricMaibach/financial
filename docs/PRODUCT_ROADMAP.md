@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-02-28 (PM queue: Feature #123 Sector Management Tone Panel complete — Phase 6 fully complete)
+**Last updated:** 2026-03-01 (PM Council: 3 approved discussions processed — #169 updated with credit spread intelligence requirements, #173 user story created, bugs #174/#175 created)
 
 ---
 
@@ -50,10 +50,17 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | Feature | Priority | Status |
 |---------|----------|--------|
 | #169 — Credit Market Detail Page | P2 | Backlog |
+| #173 — Rename "Additional Charts" sections (quick-win) | P3 | Backlog (user-story, needs-test-plan) |
+| #174 — Bug: regime/recession cache ordering fix | P1 | Backlog (prerequisite for #11 wiring) |
+| #175 — Bug: FRED incremental fetching (35yr → targeted) | P2 | Backlog |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | Backlog |
 | #171 — Homepage Section Quick-Nav | P2 | Backlog |
 
 - **Homepage Section Quick-Nav** (#171) — Sticky/floating quick-nav so returning users can jump to any homepage section in ≤1 tap on mobile and desktop; section IDs already in HTML, frontend-only work (#171, approved from council: discussion #15, 2026-02-28)
+- **"Additional Charts" rename** (#173) — Rename collapsible section headers on Equities, Rates, Safe Havens, and Crypto detail pages to descriptive labels (e.g., "Yield Curve & Real Yields") — text change only, four files; standalone P3 quick-win to complete before credit page work begins (#173, approved from council: discussion #20, 2026-03-01)
+- **Bug: cache ordering fix** (#174, P1) — Move `update_macro_regime()` and `update_recession_probability()` to run before AI briefing generation in `run_data_collection()` — prerequisite for wiring regime/recession state into daily briefings (discussion #21, 2026-03-01)
+- **Bug: FRED incremental fetching** (#175, P2) — Replace 35-year full-history FRED fetch on every daily refresh with targeted start-date using `get_last_date_in_file()` output; prevents rate-limit issues as series list grows with Phase 7 credit data (discussion #21, 2026-03-01)
+- **Credit Market Detail Page** (#169, P2) — Updated 2026-03-01: now includes three credit spread intelligence requirements as core: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. All use existing FRED data (approved from council: discussion #19, 2026-03-01)
 
 ---
 
