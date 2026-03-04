@@ -206,10 +206,25 @@ def inject_macro_regime():
             regime['highlighted_signals'] = signals
     except Exception:
         regime = None
+    # Static regime-conditioned copy dicts for homepage narrative bridges (US-183.1)
+    sector_tone_bridge = {
+        'bull': "sector momentum typically confirms the regime. See how this quarter's tone aligns:",
+        'neutral': "sector signals diverge — watch for emerging conviction in either direction:",
+        'bear': "defensive positioning and cash flow quality tend to hold up better. See how tone has shifted:",
+        'recession_watch': "significant sector deterioration is common. Earnings guidance and credit spreads deserve close attention:",
+    }
+    whats_moving_context = {
+        'bull': "In Bull regimes, momentum leaders often widen their lead. Watch for broad participation across sectors as a confirmation signal.",
+        'neutral': "In Neutral regimes, cross-sector dispersion creates selective opportunities. Focus on relative strength rather than broad market direction.",
+        'bear': "In Bear regimes, defensive rotation and breadth deterioration are key warning signals. Cash flow quality and dividend safety take precedence.",
+        'recession_watch': "In Recession Watch regimes, capital preservation matters most. Watch for credit spread widening and earnings guidance cuts as leading signals.",
+    }
     return {
         'macro_regime': regime,
         'category_regime_context': CATEGORY_REGIME_CONTEXT,
         'signal_regime_annotations': SIGNAL_REGIME_ANNOTATIONS,
+        'sector_tone_bridge': sector_tone_bridge,
+        'whats_moving_context': whats_moving_context,
     }
 
 

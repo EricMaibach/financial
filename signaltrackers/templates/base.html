@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/recession-panel.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-implications.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/sector-tone.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-pill.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-thread.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/narrative-bridge.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -28,6 +31,12 @@
                 <span class="navbar-tagline d-none d-md-inline">
                     Comprehensive macro intelligence for individual investors
                 </span>
+                {% if macro_regime %}
+                <span class="navbar-regime-pill regime-pill regime-pill--{{ macro_regime.css_class | replace('regime-', '') }}"
+                      aria-label="Current macro regime: {{ macro_regime.state | title }}">
+                  {{ macro_regime.state | upper }}
+                </span>
+                {% endif %}
             </div>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
