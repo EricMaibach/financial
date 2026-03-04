@@ -1,0 +1,29 @@
+/* =============================================================
+   Regime Pill Component — Feature 7.4 / US-183.1
+   Inline badge showing current macro regime state.
+   Used in: navbar (Approach 3), bridge sentences §1.5 + §2 (Approach 5)
+   ============================================================= */
+
+.regime-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;        /* --text-xs */
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  vertical-align: baseline;
+  line-height: 1.4;
+}
+
+/* Color variants — white text on regime border colors */
+.regime-pill--bull       { background-color: #16A34A; color: #fff; }  /* --regime-bull-border */
+.regime-pill--neutral    { background-color: #1E40AF; color: #fff; }  /* --regime-neutral-border */
+.regime-pill--bear       { background-color: #CA8A04; color: #fff; }  /* --regime-bear-border */
+.regime-pill--recession  { background-color: #DC2626; color: #fff; }  /* --regime-recession-border */
+
+/* Navbar placement variant — gap from brand/tagline */
+.navbar-regime-pill {
+  margin-left: 12px;      /* --space-3 */
+  vertical-align: middle;
+}

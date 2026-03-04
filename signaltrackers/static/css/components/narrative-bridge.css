@@ -1,0 +1,24 @@
+/* =============================================================
+   Narrative Bridge — Feature 7.4 / US-183.1
+   Regime-conditioned bridge sentences and context notes
+   used in §1.5, §2, and §3 of the homepage.
+   ============================================================= */
+
+/* Base bridge paragraph: used in §1.5 Sector Tone */
+.narrative-bridge {
+  font-size: 14px;     /* --text-sm */
+  color: #6b7280;      /* --neutral-500 */
+  line-height: 1.6;
+  margin-bottom: 16px; /* --space-4: before first content element */
+}
+
+/* Compact variant for §2 Today's Briefing anchor line */
+.narrative-bridge--compact {
+  margin-bottom: 12px; /* --space-3: tighter than standard bridge */
+}
+
+/* §3 What's Moving context note */
+.narrative-bridge--whats-moving {
+  margin-top: 8px;     /* --space-2: above the note */
+  margin-bottom: 16px; /* --space-4: below, before movers list */
+}

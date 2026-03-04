@@ -406,12 +406,12 @@ class TestSectorToneHTMLSection(unittest.TestCase):
         self.assertIn('sector_management_tone.quarter', self.html)
         self.assertIn('sector_management_tone.year', self.html)
 
-    def test_section_15_placed_after_section_1(self):
-        # Section 1.5 must come after Section 1 (Market Conditions)
+    def test_section_15_placed_before_section_1(self):
+        # US-183.1 Approach 1 reorder: Section 1.5 now comes BEFORE Section 1 (Market Conditions)
         idx_s1 = self.html.find('Section 1: Market Conditions')
         idx_s15 = self.html.find('Section 1.5')
-        self.assertGreater(idx_s15, idx_s1,
-                           "Section 1.5 must come after Section 1 (Market Conditions)")
+        self.assertLess(idx_s15, idx_s1,
+                        "Section 1.5 must come before Section 1 (Market Conditions) after US-183.1 reorder")
 
     def test_section_15_placed_before_section_2(self):
         # Section 1.5 must come before Section 2 (Today's Market Briefing)
@@ -426,23 +426,26 @@ class TestSectorToneHTMLSection(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestSectorToneRegimeLink(unittest.TestCase):
-    """Regime link must be present and guard on macro_regime."""
+    """US-183.1 Approach 1: old regime link removed; narrative-bridge sentence replaces it."""
 
     def setUp(self):
         self.html = get_index_html()
 
-    def test_regime_link_class_present(self):
-        self.assertIn('sector-tone-regime-link', self.html)
+    def test_regime_link_class_removed(self):
+        # US-183.1 Approach 1: old regime link is redundant after section reorder — must be absent
+        self.assertNotIn('sector-tone-regime-link', self.html)
 
-    def test_regime_link_anchors_to_macro_regime_section(self):
-        self.assertIn('href="#macro-regime-section"', self.html)
+    def test_bridge_sentence_present(self):
+        # Bridge sentence (narrative-bridge class) replaces the old regime link in §1.5
+        self.assertIn('narrative-bridge', self.html)
 
-    def test_regime_link_text_present(self):
-        self.assertIn('Interpret alongside current macro regime', self.html)
+    def test_regime_link_text_removed(self):
+        # Old 'Interpret alongside current macro regime' text removed as part of US-183.1
+        self.assertNotIn('Interpret alongside current macro regime', self.html)
 
-    def test_regime_link_guarded_by_macro_regime(self):
-        # The link must only appear inside a {% if macro_regime %} block
-        idx = self.html.find('sector-tone-regime-link')
+    def test_bridge_sentence_guarded_by_macro_regime(self):
+        # Bridge sentence must only appear inside {% if macro_regime %} block
+        idx = self.html.find('narrative-bridge')
         vicinity = self.html[max(0, idx - 300):idx]
         self.assertIn('{% if macro_regime %}', vicinity)
 
