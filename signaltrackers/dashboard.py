@@ -2177,8 +2177,21 @@ def run_data_collection():
         except Exception as rates_summary_error:
             print(f"Rates AI summary error (non-fatal): {rates_summary_error}")
 
+        # Generate Dollar & Currency AI summary
+        reload_status['status'] = 'Generating Dollar AI summary...'
+        print("Generating Dollar & Currency AI summary...")
+        try:
+            dollar_summary_data = generate_dollar_market_summary()
+            dollar_result = generate_dollar_summary(dollar_summary_data)
+            if dollar_result['success']:
+                print("Dollar AI summary generated successfully!")
+            else:
+                print(f"Dollar AI summary generation failed: {dollar_result['error']}")
+        except Exception as dollar_summary_error:
+            print(f"Dollar AI summary error (non-fatal): {dollar_summary_error}")
+
         # Generate general AI summary AFTER market-specific briefings
-        # This allows it to include crypto/equity/rates briefings as context
+        # This allows it to include crypto/equity/rates/dollar briefings as context
         reload_status['status'] = 'Generating AI daily summary...'
         print("Generating AI daily summary...")
         try:
