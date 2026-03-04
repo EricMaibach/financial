@@ -316,12 +316,11 @@ class MarketSignalsTracker:
             filepath = self.data_dir / f"{signal_name}.csv"
             last_date = self.get_last_date_in_file(filepath)
 
-            # Always fetch based on lookback_days from today
-            start_date = (datetime.now(eastern) - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
-
             if last_date:
-                print(f"Last date in file: {last_date.date()}, fetching {lookback_days} days from {start_date}")
+                start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
+                print(f"Last date in file: {last_date.date()}, fetching from {start_date}")
             else:
+                start_date = (datetime.now(eastern) - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
                 print(f"No existing data, fetching {lookback_days} days from {start_date}")
 
             df = self.fetch_fred_data(series_id, start_date=start_date)
@@ -345,12 +344,11 @@ class MarketSignalsTracker:
             filepath = self.data_dir / f"{signal_name}_price.csv"
             last_date = self.get_last_date_in_file(filepath)
 
-            # Always fetch based on lookback_days from today
-            start_date = (datetime.now(eastern) - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
-
             if last_date:
-                print(f"Last date in file: {last_date.date()}, fetching {lookback_days} days from {start_date}")
+                start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
+                print(f"Last date in file: {last_date.date()}, fetching from {start_date}")
             else:
+                start_date = (datetime.now(eastern) - timedelta(days=lookback_days)).strftime('%Y-%m-%d')
                 print(f"No existing data, fetching {lookback_days} days from {start_date}")
 
             df = self.fetch_etf_data(ticker, start_date=start_date)

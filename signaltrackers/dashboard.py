@@ -2076,7 +2076,7 @@ def run_data_collection():
         reload_status['success'] = None
         reload_status['status'] = 'Collecting market data...'
 
-        # Run market_signals.py (default 30-day lookback)
+        # Run market_signals.py (default ~35-year lookback, 12775 days in market_signals.py)
         print("Running market_signals.py...")
         result1 = subprocess.run(
             ['python', 'market_signals.py'],
@@ -2100,6 +2100,23 @@ def run_data_collection():
 
         if result2.returncode != 0:
             raise Exception(f"divergence_analysis.py failed: {result2.stderr}")
+
+        # Update macro regime and recession probability BEFORE generating briefings
+        # so briefings use same-day cache values (not yesterday's stale data)
+        reload_status['status'] = 'Updating macro regime state...'
+        print("Updating macro regime state...")
+        try:
+            update_macro_regime()
+        except Exception as regime_error:
+            print(f"Macro regime update error (non-fatal): {regime_error}")
+
+        # Update recession probability panel data (US-146.1)
+        reload_status['status'] = 'Updating recession probability data...'
+        print("Updating recession probability data...")
+        try:
+            update_recession_probability()
+        except Exception as recession_error:
+            print(f"Recession probability update error (non-fatal): {recession_error}")
 
         eastern = pytz.timezone('US/Eastern')
         reload_status['last_reload'] = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
@@ -2171,22 +2188,6 @@ def run_data_collection():
                 print(f"Market synthesis generation failed: {synthesis_result['error']}")
         except Exception as synthesis_error:
             print(f"Market synthesis error (non-fatal): {synthesis_error}")
-
-        # Update macro regime state (runs after market data is refreshed)
-        reload_status['status'] = 'Updating macro regime state...'
-        print("Updating macro regime state...")
-        try:
-            update_macro_regime()
-        except Exception as regime_error:
-            print(f"Macro regime update error (non-fatal): {regime_error}")
-
-        # Update recession probability panel data (US-146.1)
-        reload_status['status'] = 'Updating recession probability data...'
-        print("Updating recession probability data...")
-        try:
-            update_recession_probability()
-        except Exception as recession_error:
-            print(f"Recession probability update error (non-fatal): {recession_error}")
 
         # Update sector management tone data (US-123.1)
         # Note: this pipeline is intentionally skipped during the daily refresh
