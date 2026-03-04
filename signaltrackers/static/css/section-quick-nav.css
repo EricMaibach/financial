@@ -1,0 +1,89 @@
+/* =========================================================
+   Section Quick-Nav — Desktop Sticky Strip
+   US-171.1 | Feature #171
+   ========================================================= */
+
+/* ----------------------------------------------------------
+   Container — sticky below navbar
+   ---------------------------------------------------------- */
+.section-quick-nav {
+    position: sticky;
+    top: 64px; /* navbar height */
+    z-index: 100;
+    background: #fff;
+    border-bottom: 1px solid var(--neutral-200, #e5e7eb);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    height: 48px;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+
+    /* Hidden on mobile; shown at 768px+ */
+    display: none;
+}
+
+.section-quick-nav::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+@media (min-width: 768px) {
+    .section-quick-nav {
+        display: block;
+    }
+}
+
+/* ----------------------------------------------------------
+   Inner layout
+   ---------------------------------------------------------- */
+.section-quick-nav__inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    gap: var(--space-2, 8px);
+    white-space: nowrap;
+}
+
+/* ----------------------------------------------------------
+   Individual pill
+   ---------------------------------------------------------- */
+.section-quick-nav__pill {
+    padding: var(--space-1, 4px) var(--space-3, 12px);
+    border-radius: 20px;
+    font-size: var(--text-sm, 14px);
+    font-weight: 500;
+    min-height: 36px;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+    border: none;
+    background: var(--neutral-100, #f3f4f6);
+    color: var(--neutral-600, #4b5563);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.section-quick-nav__pill:hover {
+    background: var(--neutral-200, #e5e7eb);
+    color: var(--neutral-700, #374151);
+}
+
+.section-quick-nav__pill.is-active,
+.section-quick-nav__pill[aria-current="true"] {
+    background: var(--brand-blue-100, #dbeafe);
+    color: var(--brand-blue-500, #3b82f6);
+    font-weight: 600;
+}
+
+.section-quick-nav__pill:focus-visible {
+    outline: 2px solid var(--brand-blue-500, #3b82f6);
+    outline-offset: 2px;
+}
+
+/* ----------------------------------------------------------
+   Reduced motion — disable smooth scrolling
+   ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
