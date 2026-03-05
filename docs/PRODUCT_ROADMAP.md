@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-03 (PM Council: 1 approved discussion processed — Bug #186 created: dollar briefing missing from automated daily refresh)
+**Last updated:** 2026-03-04 (PM: Feature #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot — complete; US-183.2 unblocked)
 
 ---
 
@@ -49,6 +49,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 | Feature | Priority | Status |
 |---------|----------|--------|
+| #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot | P2 | Complete |
 | #169 — Credit Market Detail Page | P2 | Backlog |
 | #173 — Rename "Additional Charts" sections (quick-win) | P3 | Backlog (user-story, needs-test-plan) |
 | #174 — Bug: regime/recession cache ordering fix | P1 | Backlog (prerequisite for #11 wiring) |
