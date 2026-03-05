@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-pill.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-thread.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/narrative-bridge.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/section-quick-nav.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -162,6 +163,7 @@
             </div>
         </div>
     </nav>
+    {% block extra_nav %}{% endblock %}
 
     <!-- Main Content -->
     <main class="container mt-4">

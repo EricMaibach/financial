@@ -2,6 +2,23 @@
 
 {% block title %}SignalTrackers - Macro Intelligence Platform{% endblock %}
 
+{% block extra_nav %}
+{# Desktop sticky section quick-nav — US-171.1. Hidden on mobile via CSS. #}
+<nav class="section-quick-nav" aria-label="Page sections">
+    <div class="section-quick-nav__inner">
+        <button class="section-quick-nav__pill is-active" aria-current="true" data-target="#macro-regime-section">Regime</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#recession-panel-section">Recession</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#regime-implications">Implications</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#sector-tone-section">Sectors</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#market-conditions">Markets</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#briefing-section">Briefing</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#movers-section">Movers</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#signals-section">Signals</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#prediction-section">Prediction</button>
+    </div>
+</nav>
+{% endblock %}
+
 {% block content %}
 {#
   LAYOUT CONVENTION: All homepage sections use direct <section> tags
@@ -828,7 +845,7 @@
 </section>
 
 <!-- Section 2: Today's Market Briefing -->
-<section class="hero-briefing mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
+<section id="briefing-section" class="hero-briefing mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
     <div class="section-header mb-3 d-flex justify-content-between align-items-center">
         <h3 class="section-title">
             <i class="bi bi-bar-chart-line-fill me-2"></i>Today's Market Briefing
@@ -891,7 +908,7 @@
 </section>
 
 <!-- Section 3: What's Moving Today -->
-<section class="whats-moving-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
+<section id="movers-section" class="whats-moving-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
     <div class="section-header d-flex justify-content-between align-items-center mb-3">
         <div>
             <h3 class="section-title mb-0"><i class="bi bi-lightning-fill me-2"></i>What's Moving Today</h3>
@@ -970,7 +987,7 @@
 </div>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
-<section class="market-signals-section mb-4">
+<section id="signals-section" class="market-signals-section mb-4">
     <div class="section-header mb-3">
         <h3 class="section-title">Cross-Market Indicators</h3>
         <small class="text-muted">Cross-market indicators worth watching</small>
@@ -1041,7 +1058,7 @@
 
 <!-- Additional Insights Section -->
 <!-- Prediction Markets -->
-<section class="prediction-markets-section mb-4">
+<section id="prediction-section" class="prediction-markets-section mb-4">
     <div class="section-header mb-3">
         <h3 class="section-title">
             <i class="bi bi-graph-up-arrow"></i> Prediction Markets
@@ -2306,4 +2323,133 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
+/* Section Quick-Nav — US-171.1
+   Scroll-to-section + IntersectionObserver active tracking (desktop only) */
+(function () {
+    'use strict';
+
+    const nav = document.querySelector('.section-quick-nav');
+    if (!nav) return;
+
+    const pills = nav.querySelectorAll('.section-quick-nav__pill');
+    const STRIP_HEIGHT = 48; // quick-nav strip height (px)
+
+    /* Measure actual navbar height and sync CSS variable + scroll offset.
+       The CSS hardcodes top: var(--navbar-height, 64px) so both the strip
+       position and the JS scroll offset stay in sync regardless of true height. */
+    const navbarEl = document.querySelector('.navbar');
+    function measureNavbarHeight() {
+        return navbarEl ? Math.round(navbarEl.getBoundingClientRect().height) : 64;
+    }
+    let navbarHeight = measureNavbarHeight();
+    let SCROLL_OFFSET = navbarHeight + STRIP_HEIGHT;
+
+    function syncSizes() {
+        navbarHeight = measureNavbarHeight();
+        SCROLL_OFFSET = navbarHeight + STRIP_HEIGHT;
+        document.documentElement.style.setProperty('--navbar-height', navbarHeight + 'px');
+    }
+    syncSizes();
+    window.addEventListener('resize', syncSizes);
+
+    /** Reduce motion preference */
+    function prefersReducedMotion() {
+        return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    /** Smooth-scroll to a section, accounting for fixed headers */
+    function scrollToSection(selector) {
+        const target = document.querySelector(selector);
+        if (!target) return;
+        const top = target.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
+        window.scrollTo({ top: top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    }
+
+    /** Mark a pill as active */
+    function setActivePill(targetSelector) {
+        pills.forEach(function (pill) {
+            const isActive = pill.dataset.target === targetSelector;
+            pill.classList.toggle('is-active', isActive);
+            pill.setAttribute('aria-current', isActive ? 'true' : 'false');
+        });
+    }
+
+    /* Suppress IntersectionObserver during programmatic scroll */
+    let isProgrammaticScroll = false;
+    let programmaticScrollTimer = null;
+
+    /* Click handlers */
+    pills.forEach(function (pill) {
+        pill.addEventListener('click', function () {
+            const target = pill.dataset.target;
+            setActivePill(target);
+            isProgrammaticScroll = true;
+            clearTimeout(programmaticScrollTimer);
+            scrollToSection(target);
+            /* Clear flag after scroll animation completes */
+            programmaticScrollTimer = setTimeout(function () {
+                isProgrammaticScroll = false;
+            }, 800);
+        });
+    });
+
+    /* IntersectionObserver — active section tracking */
+    if ('IntersectionObserver' in window) {
+        const sectionIds = [
+            '#macro-regime-section',
+            '#recession-panel-section',
+            '#regime-implications',
+            '#sector-tone-section',
+            '#market-conditions',
+            '#briefing-section',
+            '#movers-section',
+            '#signals-section',
+            '#prediction-section'
+        ];
+
+        const sections = sectionIds
+            .map(function (id) { return document.querySelector(id); })
+            .filter(Boolean);
+
+        /* Track which sections are currently intersecting */
+        const intersecting = new Set();
+
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    intersecting.add(entry.target);
+                } else {
+                    intersecting.delete(entry.target);
+                }
+            });
+
+            /* Skip observer updates while a click-initiated scroll is in flight */
+            if (isProgrammaticScroll) return;
+
+            if (intersecting.size === 0) return; /* keep last active pill */
+
+            /* Pick the topmost intersecting section (smallest offsetTop) */
+            let topmost = null;
+            intersecting.forEach(function (section) {
+                if (!topmost || section.offsetTop < topmost.offsetTop) {
+                    topmost = section;
+                }
+            });
+
+            if (topmost) {
+                setActivePill('#' + topmost.id);
+            }
+        }, {
+            /* Mark section active when it enters top 30% of viewport (below navbar + strip).
+               rootMargin uses the measured SCROLL_OFFSET so it stays correct regardless of actual navbar height. */
+            rootMargin: '-' + SCROLL_OFFSET + 'px 0px -70% 0px',
+            threshold: 0
+        });
+
+        sections.forEach(function (section) { observer.observe(section); });
+    }
+    /* Fallback: if IntersectionObserver not supported, pills still work as scroll links */
+}());
+</script>
 {% endblock %}
