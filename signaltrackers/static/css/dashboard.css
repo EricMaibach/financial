@@ -103,6 +103,12 @@ canvas {
 }
 
 /* Navigation */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030; /* Bootstrap navbar z-index; quick-nav strip is 100 */
+}
+
 .navbar-brand-container {
     display: flex;
     flex-direction: column;

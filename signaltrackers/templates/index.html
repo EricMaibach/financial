@@ -2357,12 +2357,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    /* Suppress IntersectionObserver during programmatic scroll */
+    let isProgrammaticScroll = false;
+    let programmaticScrollTimer = null;
+
     /* Click handlers */
     pills.forEach(function (pill) {
         pill.addEventListener('click', function () {
             const target = pill.dataset.target;
             setActivePill(target);
+            isProgrammaticScroll = true;
+            clearTimeout(programmaticScrollTimer);
             scrollToSection(target);
+            /* Clear flag after scroll animation completes */
+            programmaticScrollTimer = setTimeout(function () {
+                isProgrammaticScroll = false;
+            }, 800);
         });
     });
 
@@ -2396,6 +2406,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
+            /* Skip observer updates while a click-initiated scroll is in flight */
+            if (isProgrammaticScroll) return;
+
             if (intersecting.size === 0) return; /* keep last active pill */
 
             /* Pick the topmost intersecting section (smallest offsetTop) */
@@ -2410,8 +2423,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 setActivePill('#' + topmost.id);
             }
         }, {
-            /* Mark section active when it enters top 30% of viewport (below navbar) */
-            rootMargin: '-64px 0px -70% 0px',
+            /* Mark section active when it enters top 30% of viewport (below navbar + strip) */
+            rootMargin: '-112px 0px -70% 0px',
             threshold: 0
         });
 
