@@ -652,6 +652,49 @@ def calculate_returns(df, column, periods=[1, 5, 20]):
     return returns
 
 
+def calculate_percentile_rank(series, current_value):
+    """Calculate percentile rank of current_value within a pandas Series.
+
+    Uses rolling 20-year history (or full available history if < 20 years).
+    Returns a float 0–100, or None if series is empty.
+    """
+    import numpy as np
+    if series is None or len(series) == 0:
+        return None
+    if len(series) == 1:
+        return 100.0 if current_value >= series.iloc[0] else 0.0
+
+    # Apply 20-year rolling window where possible
+    cutoff = pd.Timestamp.today() - pd.DateOffset(years=20)
+    # series index expected to be dates; filter if index is datetime-like
+    try:
+        windowed = series[series.index >= cutoff]
+        if len(windowed) < 2:
+            windowed = series
+    except TypeError:
+        windowed = series
+
+    count_below = (windowed < current_value).sum()
+    return float(count_below / len(windowed) * 100)
+
+
+def _percentile_label(pct):
+    """Return a human-readable label for a percentile rank."""
+    if pct is None:
+        return 'unavailable'
+    if pct <= 10:
+        return 'near historical tights'
+    if pct <= 25:
+        return 'historically tight'
+    if pct <= 50:
+        return 'below median'
+    if pct <= 75:
+        return 'above median'
+    if pct <= 90:
+        return 'historically wide'
+    return 'near historical wides'
+
+
 def calculate_top_movers(num_movers=5):
     """
     Calculate top movers based on z-score of 5-day changes.
@@ -1556,8 +1599,50 @@ def safe_havens():
 
 @app.route('/credit')
 def credit():
-    """Credit markets stub page."""
-    return render_template('credit.html')
+    """Credit markets page with HY/IG spread data and percentile rankings."""
+    ctx = {
+        'hy_percentile': None,
+        'ig_percentile': None,
+        'hy_percentile_label': 'unavailable',
+        'ig_percentile_label': 'unavailable',
+        'hy_current_bps': None,
+        'ig_current_bps': None,
+        'ccc_current_bps': None,
+        'data_date': None,
+    }
+    try:
+        hy_df = load_csv_data('high_yield_spread.csv')
+        ig_df = load_csv_data('investment_grade_spread.csv')
+        ccc_df = load_csv_data('ccc_spread.csv')
+
+        if hy_df is not None and len(hy_df) > 1:
+            hy_df = hy_df.dropna(subset=['high_yield_spread'])
+            hy_df = hy_df.set_index('date')
+            hy_series = hy_df['high_yield_spread']
+            hy_current = float(hy_series.iloc[-1])
+            ctx['hy_current_bps'] = round(hy_current * 100)
+            ctx['hy_percentile'] = round(calculate_percentile_rank(hy_series, hy_current), 1)
+            ctx['hy_percentile_label'] = _percentile_label(ctx['hy_percentile'])
+            ctx['data_date'] = hy_df.index[-1].strftime('%B %d, %Y')
+
+        if ig_df is not None and len(ig_df) > 1:
+            ig_df = ig_df.dropna(subset=['investment_grade_spread'])
+            ig_df = ig_df.set_index('date')
+            ig_series = ig_df['investment_grade_spread']
+            ig_current = float(ig_series.iloc[-1])
+            ctx['ig_current_bps'] = round(ig_current * 100)
+            ctx['ig_percentile'] = round(calculate_percentile_rank(ig_series, ig_current), 1)
+            ctx['ig_percentile_label'] = _percentile_label(ctx['ig_percentile'])
+
+        if ccc_df is not None and len(ccc_df) > 1:
+            ccc_df = ccc_df.dropna(subset=['ccc_spread'])
+            ccc_current = float(ccc_df['ccc_spread'].iloc[-1])
+            ctx['ccc_current_bps'] = round(ccc_current * 100)
+
+    except Exception:
+        pass  # Graceful empty state — missing CSV returns None values
+
+    return render_template('credit.html', **ctx)
 
 
 @app.route('/divergence')
