@@ -17,6 +17,44 @@
         <button class="section-quick-nav__pill" aria-current="false" data-target="#prediction-section">Prediction</button>
     </div>
 </nav>
+
+{# Mobile FAB + bottom sheet — US-171.2. Hidden on desktop (768px+) via CSS. #}
+<button
+    class="section-quick-nav-fab"
+    id="section-nav-fab"
+    aria-label="Jump to section"
+    aria-expanded="false"
+    aria-controls="section-quick-nav-sheet">
+    <i class="bi bi-list-ul"></i>
+</button>
+
+<div class="section-quick-nav-backdrop" id="section-nav-backdrop" aria-hidden="true"></div>
+
+<div
+    class="section-quick-nav-sheet"
+    id="section-quick-nav-sheet"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="section-nav-sheet-title">
+    <div class="section-quick-nav-sheet__handle-wrap" aria-hidden="true">
+        <div class="section-quick-nav-sheet__handle"></div>
+    </div>
+    <div class="section-quick-nav-sheet__header">
+        <h2 class="section-quick-nav-sheet__title" id="section-nav-sheet-title">Jump to Section</h2>
+        <button class="section-quick-nav-sheet__close" id="section-nav-sheet-close" aria-label="Close section navigator">&times;</button>
+    </div>
+    <div class="section-quick-nav-sheet__list" role="list">
+        <button class="section-quick-nav-sheet__item" data-target="#macro-regime-section" role="listitem">Regime</button>
+        <button class="section-quick-nav-sheet__item" data-target="#recession-panel-section" role="listitem">Recession</button>
+        <button class="section-quick-nav-sheet__item" data-target="#regime-implications" role="listitem">Implications</button>
+        <button class="section-quick-nav-sheet__item" data-target="#sector-tone-section" role="listitem">Sectors</button>
+        <button class="section-quick-nav-sheet__item" data-target="#market-conditions" role="listitem">Markets</button>
+        <button class="section-quick-nav-sheet__item" data-target="#briefing-section" role="listitem">Briefing</button>
+        <button class="section-quick-nav-sheet__item" data-target="#movers-section" role="listitem">Movers</button>
+        <button class="section-quick-nav-sheet__item" data-target="#signals-section" role="listitem">Signals</button>
+        <button class="section-quick-nav-sheet__item" data-target="#prediction-section" role="listitem">Prediction</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -2324,79 +2362,178 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
-/* Section Quick-Nav — US-171.1
-   Scroll-to-section + IntersectionObserver active tracking (desktop only) */
+/* Section Quick-Nav — US-171.1 (desktop strip) + US-171.2 (mobile FAB + sheet)
+   Shared scroll, active-section tracking, and mobile bottom-sheet logic. */
 (function () {
     'use strict';
 
-    const nav = document.querySelector('.section-quick-nav');
-    if (!nav) return;
-
-    const pills = nav.querySelectorAll('.section-quick-nav__pill');
-    const STRIP_HEIGHT = 48; // quick-nav strip height (px)
-
-    /* Measure actual navbar height and sync CSS variable + scroll offset.
-       The CSS hardcodes top: var(--navbar-height, 64px) so both the strip
-       position and the JS scroll offset stay in sync regardless of true height. */
+    /* ------------------------------------------------------------------ */
+    /* Shared: size measurement                                             */
+    /* ------------------------------------------------------------------ */
     const navbarEl = document.querySelector('.navbar');
+    const STRIP_HEIGHT = 48; // desktop strip height (px)
+
     function measureNavbarHeight() {
         return navbarEl ? Math.round(navbarEl.getBoundingClientRect().height) : 64;
     }
     let navbarHeight = measureNavbarHeight();
-    let SCROLL_OFFSET = navbarHeight + STRIP_HEIGHT;
+    /* Desktop: offset = navbar + strip. Mobile: offset = navbar only (strip is hidden). */
+    let desktopScrollOffset = navbarHeight + STRIP_HEIGHT;
+    let mobileScrollOffset  = navbarHeight;
 
     function syncSizes() {
-        navbarHeight = measureNavbarHeight();
-        SCROLL_OFFSET = navbarHeight + STRIP_HEIGHT;
+        navbarHeight        = measureNavbarHeight();
+        desktopScrollOffset = navbarHeight + STRIP_HEIGHT;
+        mobileScrollOffset  = navbarHeight;
         document.documentElement.style.setProperty('--navbar-height', navbarHeight + 'px');
     }
     syncSizes();
     window.addEventListener('resize', syncSizes);
 
-    /** Reduce motion preference */
+    /* ------------------------------------------------------------------ */
+    /* Shared: helpers                                                      */
+    /* ------------------------------------------------------------------ */
     function prefersReducedMotion() {
         return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
-    /** Smooth-scroll to a section, accounting for fixed headers */
-    function scrollToSection(selector) {
+    function scrollToSection(selector, isMobile) {
         const target = document.querySelector(selector);
         if (!target) return;
-        const top = target.getBoundingClientRect().top + window.scrollY - SCROLL_OFFSET;
+        const offset = isMobile ? mobileScrollOffset : desktopScrollOffset;
+        const top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top: top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     }
 
-    /** Mark a pill as active */
-    function setActivePill(targetSelector) {
+    /* ------------------------------------------------------------------ */
+    /* Shared: active-section state — updates desktop pills + mobile items  */
+    /* ------------------------------------------------------------------ */
+    const pills      = document.querySelectorAll('.section-quick-nav__pill');
+    const sheetItems = document.querySelectorAll('.section-quick-nav-sheet__item');
+
+    function setActiveSection(targetSelector) {
+        /* Desktop pills */
         pills.forEach(function (pill) {
-            const isActive = pill.dataset.target === targetSelector;
-            pill.classList.toggle('is-active', isActive);
-            pill.setAttribute('aria-current', isActive ? 'true' : 'false');
+            const active = pill.dataset.target === targetSelector;
+            pill.classList.toggle('is-active', active);
+            pill.setAttribute('aria-current', active ? 'true' : 'false');
+        });
+        /* Mobile sheet items */
+        sheetItems.forEach(function (item) {
+            item.classList.toggle('is-active', item.dataset.target === targetSelector);
         });
     }
 
-    /* Suppress IntersectionObserver during programmatic scroll */
+    /* ------------------------------------------------------------------ */
+    /* Desktop strip (US-171.1)                                             */
+    /* ------------------------------------------------------------------ */
     let isProgrammaticScroll = false;
     let programmaticScrollTimer = null;
 
-    /* Click handlers */
     pills.forEach(function (pill) {
         pill.addEventListener('click', function () {
             const target = pill.dataset.target;
-            setActivePill(target);
+            setActiveSection(target);
             isProgrammaticScroll = true;
             clearTimeout(programmaticScrollTimer);
-            scrollToSection(target);
-            /* Clear flag after scroll animation completes */
+            scrollToSection(target, false);
             programmaticScrollTimer = setTimeout(function () {
                 isProgrammaticScroll = false;
             }, 800);
         });
     });
 
-    /* IntersectionObserver — active section tracking */
+    /* ------------------------------------------------------------------ */
+    /* Mobile FAB + bottom sheet (US-171.2)                                 */
+    /* ------------------------------------------------------------------ */
+    const fab      = document.getElementById('section-nav-fab');
+    const backdrop = document.getElementById('section-nav-backdrop');
+    const sheet    = document.getElementById('section-quick-nav-sheet');
+    const closeBtn = document.getElementById('section-nav-sheet-close');
+
+    if (fab && sheet && backdrop && closeBtn) {
+        /* Collect all focusable elements inside the sheet (close button + items) */
+        function getFocusable() {
+            return Array.prototype.slice.call(
+                sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+            ).filter(function (el) { return !el.disabled; });
+        }
+
+        function openSheet() {
+            backdrop.classList.add('is-open');
+            sheet.classList.add('is-open');
+            fab.setAttribute('aria-expanded', 'true');
+            document.body.style.overflow = 'hidden';
+            /* Move focus to first sheet item (or close button as fallback) */
+            var focusable = getFocusable();
+            /* First item after close button; fall back to close button */
+            var firstItem = sheet.querySelector('.section-quick-nav-sheet__item');
+            (firstItem || closeBtn).focus();
+            /* Scroll active item into view within the sheet list */
+            var activeItem = sheet.querySelector('.section-quick-nav-sheet__item.is-active');
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function closeSheet() {
+            backdrop.classList.remove('is-open');
+            sheet.classList.remove('is-open');
+            fab.setAttribute('aria-expanded', 'false');
+            document.body.style.overflow = '';
+            fab.focus();
+        }
+
+        fab.addEventListener('click', openSheet);
+        closeBtn.addEventListener('click', closeSheet);
+        backdrop.addEventListener('click', closeSheet);
+
+        /* Section item click: close sheet then scroll */
+        sheetItems.forEach(function (item) {
+            item.addEventListener('click', function () {
+                var target = item.dataset.target;
+                setActiveSection(target);
+                closeSheet();
+                /* Small delay lets scroll-lock lift before scrolling */
+                setTimeout(function () {
+                    scrollToSection(target, true);
+                }, 16);
+            });
+        });
+
+        /* Escape key closes the sheet */
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && sheet.classList.contains('is-open')) {
+                closeSheet();
+            }
+        });
+
+        /* Focus trap — Tab / Shift+Tab cycles within the sheet while open */
+        sheet.addEventListener('keydown', function (e) {
+            if (e.key !== 'Tab') return;
+            var focusable = getFocusable();
+            if (focusable.length === 0) return;
+            var first = focusable[0];
+            var last  = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        });
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* IntersectionObserver — active section tracking (shared)              */
+    /* ------------------------------------------------------------------ */
     if ('IntersectionObserver' in window) {
-        const sectionIds = [
+        var sectionIds = [
             '#macro-regime-section',
             '#recession-panel-section',
             '#regime-implications',
@@ -2408,14 +2545,13 @@ document.addEventListener('DOMContentLoaded', function() {
             '#prediction-section'
         ];
 
-        const sections = sectionIds
+        var sections = sectionIds
             .map(function (id) { return document.querySelector(id); })
             .filter(Boolean);
 
-        /* Track which sections are currently intersecting */
-        const intersecting = new Set();
+        var intersecting = new Set();
 
-        const observer = new IntersectionObserver(function (entries) {
+        var observer = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry) {
                 if (entry.isIntersecting) {
                     intersecting.add(entry.target);
@@ -2424,13 +2560,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            /* Skip observer updates while a click-initiated scroll is in flight */
             if (isProgrammaticScroll) return;
+            if (intersecting.size === 0) return;
 
-            if (intersecting.size === 0) return; /* keep last active pill */
-
-            /* Pick the topmost intersecting section (smallest offsetTop) */
-            let topmost = null;
+            var topmost = null;
             intersecting.forEach(function (section) {
                 if (!topmost || section.offsetTop < topmost.offsetTop) {
                     topmost = section;
@@ -2438,18 +2571,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (topmost) {
-                setActivePill('#' + topmost.id);
+                setActiveSection('#' + topmost.id);
             }
         }, {
-            /* Mark section active when it enters top 30% of viewport (below navbar + strip).
-               rootMargin uses the measured SCROLL_OFFSET so it stays correct regardless of actual navbar height. */
-            rootMargin: '-' + SCROLL_OFFSET + 'px 0px -70% 0px',
+            /* rootMargin accounts for navbar + strip (desktop) — conservative enough for mobile too */
+            rootMargin: '-' + desktopScrollOffset + 'px 0px -70% 0px',
             threshold: 0
         });
 
         sections.forEach(function (section) { observer.observe(section); });
     }
-    /* Fallback: if IntersectionObserver not supported, pills still work as scroll links */
+    /* Fallback: if IntersectionObserver not supported, navigation still works as scroll links */
 }());
 </script>
 {% endblock %}
