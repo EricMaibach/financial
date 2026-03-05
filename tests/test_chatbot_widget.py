@@ -10,8 +10,12 @@ Requires the application to be running at http://localhost:5000.
 Run with: python3 -m pytest tests/test_chatbot_widget.py -v
 """
 
+import os
 import pytest
 import requests
+
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_BASE_HTML = os.path.join(_REPO_ROOT, 'signaltrackers', 'templates', 'base.html')
 
 BASE_URL = "http://localhost:5000"
 
@@ -197,3 +201,27 @@ class TestOldChatbotRemoved:
         """New chatbot CSS classes are present."""
         assert 'chatbot-fab' in page
         assert 'chatbot-panel' in page
+
+
+# ---------------------------------------------------------------------------
+# Static Regression Guards (no live app required — Bug #198)
+# ---------------------------------------------------------------------------
+
+class TestChatbotControlsStatic:
+    """Static guards that run without a live app.
+
+    These ensure the chatbot-close class removed in US-144.1 cannot be
+    silently reintroduced. Reads base.html directly.
+    """
+
+    def setup_method(self):
+        with open(_BASE_HTML, 'r') as f:
+            self.html = f.read()
+
+    def test_no_chatbot_close_class_in_base_html(self):
+        """chatbot-close must not appear in base.html (US-144.1)."""
+        assert 'class="chatbot-close"' not in self.html
+
+    def test_chatbot_minimize_present_in_base_html(self):
+        """chatbot-minimize is the single close control (US-144.1)."""
+        assert 'class="chatbot-minimize"' in self.html
