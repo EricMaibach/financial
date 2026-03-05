@@ -2333,7 +2333,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!nav) return;
 
     const pills = nav.querySelectorAll('.section-quick-nav__pill');
-    const SCROLL_OFFSET = 112; // navbar (64px) + strip (48px)
+    const STRIP_HEIGHT = 48; // quick-nav strip height (px)
+
+    /* Measure actual navbar height and sync CSS variable + scroll offset.
+       The CSS hardcodes top: var(--navbar-height, 64px) so both the strip
+       position and the JS scroll offset stay in sync regardless of true height. */
+    const navbarEl = document.querySelector('.navbar');
+    function measureNavbarHeight() {
+        return navbarEl ? Math.round(navbarEl.getBoundingClientRect().height) : 64;
+    }
+    let navbarHeight = measureNavbarHeight();
+    let SCROLL_OFFSET = navbarHeight + STRIP_HEIGHT;
+
+    function syncSizes() {
+        navbarHeight = measureNavbarHeight();
+        SCROLL_OFFSET = navbarHeight + STRIP_HEIGHT;
+        document.documentElement.style.setProperty('--navbar-height', navbarHeight + 'px');
+    }
+    syncSizes();
+    window.addEventListener('resize', syncSizes);
 
     /** Reduce motion preference */
     function prefersReducedMotion() {
@@ -2423,8 +2441,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 setActivePill('#' + topmost.id);
             }
         }, {
-            /* Mark section active when it enters top 30% of viewport (below navbar + strip) */
-            rootMargin: '-112px 0px -70% 0px',
+            /* Mark section active when it enters top 30% of viewport (below navbar + strip).
+               rootMargin uses the measured SCROLL_OFFSET so it stays correct regardless of actual navbar height. */
+            rootMargin: '-' + SCROLL_OFFSET + 'px 0px -70% 0px',
             threshold: 0
         });
 

@@ -8,7 +8,7 @@
    ---------------------------------------------------------- */
 .section-quick-nav {
     position: sticky;
-    top: 64px; /* navbar height */
+    top: var(--navbar-height, 64px); /* Dynamic: JS sets --navbar-height to actual rendered navbar height */
     z-index: 100;
     background: #fff;
     border-bottom: 1px solid var(--neutral-200, #e5e7eb);
