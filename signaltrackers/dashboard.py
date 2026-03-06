@@ -51,6 +51,7 @@ from regime_detection import get_macro_regime, update_macro_regime
 from recession_probability import get_recession_probability, update_recession_probability
 from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
 from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
+from credit_interpretation_config import get_credit_interpretation
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -1641,6 +1642,21 @@ def credit():
 
     except Exception:
         pass  # Graceful empty state — missing CSV returns None values
+
+    # Resolve regime-conditioned interpretation text (US-169.2)
+    try:
+        regime = get_macro_regime()
+        regime_state = regime.get('state') if regime else None
+        interpretation, spread_bucket = get_credit_interpretation(
+            regime_state, ctx['hy_percentile']
+        )
+        ctx['credit_interpretation'] = interpretation
+        ctx['credit_interpretation_bucket'] = spread_bucket
+        ctx['credit_interpretation_regime'] = regime_state
+    except Exception:
+        ctx['credit_interpretation'] = None
+        ctx['credit_interpretation_bucket'] = None
+        ctx['credit_interpretation_regime'] = None
 
     return render_template('credit.html', **ctx)
 
