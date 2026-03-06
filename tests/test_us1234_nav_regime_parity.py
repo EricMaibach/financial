@@ -79,23 +79,23 @@ class TestCreditTemplateStructure(unittest.TestCase):
     def test_has_page_header(self):
         self.assertIn("Credit Markets", self.html)
 
-    def test_has_placeholder_text(self):
-        self.assertIn("coming in a future release", self.html.lower())
+    def test_has_data_driven_content(self):
+        # Stub "coming in a future release" is replaced — page is now data-driven
+        self.assertNotIn("coming in a future release", self.html.lower())
 
-    def test_placeholder_mentions_hy_spreads(self):
-        self.assertIn("HY spreads", self.html)
+    def test_has_hy_spread_reference(self):
+        self.assertIn("HY", self.html)
 
-    def test_placeholder_mentions_ig_spreads(self):
-        self.assertIn("IG spreads", self.html)
+    def test_has_ig_spread_reference(self):
+        self.assertIn("IG", self.html)
 
-    def test_placeholder_links_to_home(self):
-        self.assertIn('href="/"', self.html)
+    def test_has_javascript(self):
+        # Charts require JS — template now includes <script> block
+        self.assertIn('<script', self.html)
 
-    def test_no_javascript(self):
-        self.assertNotIn('<script', self.html)
-
-    def test_no_charts(self):
-        self.assertNotIn('chart', self.html.lower())
+    def test_has_chart_elements(self):
+        # Data-driven page requires chart canvases
+        self.assertIn('chart', self.html.lower())
 
     def test_endblock_present(self):
         self.assertIn("{% endblock %}", self.html)
@@ -121,8 +121,9 @@ class TestCreditRouteInDashboard(unittest.TestCase):
         # Find the credit function and verify it renders credit.html
         idx = self.src.find("def credit():")
         self.assertGreater(idx, 0)
-        section = self.src[idx:idx + 200]
-        self.assertIn("render_template('credit.html')", section)
+        # Route body is ~2kb; use generous slice to capture render_template call
+        section = self.src[idx:idx + 3000]
+        self.assertIn("render_template('credit.html'", section)
 
     def test_credit_decorator_before_function(self):
         route_idx = self.src.find("@app.route('/credit')")
