@@ -405,6 +405,34 @@
     </div>
     {% endif %}
 
+    <!-- Regime-Conditioned Interpretation Block (US-169.2) -->
+    {% if credit_interpretation %}
+    <div style="padding: 0 var(--space-4) var(--space-4); max-width: var(--container-xl); margin: 0 auto;">
+        <div class="credit-interpretation-block" style="
+            border-left: 4px solid var(--category-credit);
+            background: var(--neutral-50);
+            border-radius: 0 6px 6px 0;
+            padding: var(--space-4) var(--space-5);
+        ">
+            <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);">
+                <i class="bi bi-lightbulb-fill" style="color: var(--category-credit); font-size: var(--text-sm);"></i>
+                <span style="font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--neutral-500);">
+                    {% if credit_interpretation_regime and credit_interpretation_bucket %}
+                        {{ credit_interpretation_regime }} Regime · {{ credit_interpretation_bucket | capitalize }} Spreads
+                    {% elif credit_interpretation_bucket %}
+                        {{ credit_interpretation_bucket | capitalize }} Spreads
+                    {% else %}
+                        Current Conditions
+                    {% endif %}
+                </span>
+            </div>
+            <p style="margin: 0; font-size: var(--text-sm); line-height: 1.65; color: var(--neutral-700);">
+                {{ credit_interpretation }}
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Collapsible Section: Market Statistics -->
     <div class="collapsible-section" data-collapsed="true" data-section-id="market-stats">
         <button class="collapsible-section__header" aria-expanded="false">
