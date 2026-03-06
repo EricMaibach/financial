@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-04 (PM: Feature #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot — complete; US-183.2 unblocked)
+**Last updated:** 2026-03-06 (PM Council: 3 features created from council discussions #29, #30, #31)
 
 ---
 
@@ -57,6 +57,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #186 — Bug: Dollar briefing missing from automated daily refresh | P2 | Backlog |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | Backlog |
 | #171 — Homepage Section Quick-Nav | P2 | Backlog |
+| #207 — Asset Detail Page Header — Shared Component Refactor | P3 | Backlog |
+| #208 — Refactor: Consolidate get_stats() and Fix Daily Briefing 52-Week Context Gap | P2 | Backlog |
 
 - **Homepage Section Quick-Nav** (#171) — Sticky/floating quick-nav so returning users can jump to any homepage section in ≤1 tap on mobile and desktop; section IDs already in HTML, frontend-only work (#171, approved from council: discussion #15, 2026-02-28)
 - **"Additional Charts" rename** (#173) — Rename collapsible section headers on Equities, Rates, Safe Havens, and Crypto detail pages to descriptive labels (e.g., "Yield Curve & Real Yields") — text change only, four files; standalone P3 quick-win to complete before credit page work begins (#173, approved from council: discussion #20, 2026-03-01)
@@ -64,6 +66,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 - **Bug: FRED incremental fetching** (#175, P2) — Replace 35-year full-history FRED fetch on every daily refresh with targeted start-date using `get_last_date_in_file()` output; prevents rate-limit issues as series list grows with Phase 7 credit data (discussion #21, 2026-03-01)
 - **Credit Market Detail Page** (#169, P2) — Updated 2026-03-01: now includes three credit spread intelligence requirements as core: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. All use existing FRED data (approved from council: discussion #19, 2026-03-01)
 - **Bug: Dollar briefing missing from automated daily refresh** (#186, P2) — `run_data_collection()` generates crypto/equity/rates briefings but skips the dollar briefing entirely; `generate_daily_summary()` checks for same-day dollar briefing and injects it as synthesis context — so the dollar context is never available in automated runs. Fix: add ~10-line step to `run_data_collection()` mirroring existing briefing pattern (#186, approved from council: discussion #26, 2026-03-03)
+- **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component in `static/css/components/asset-page-header.css`, update all 6 templates, document in design system. Timing: after US-169.3 merges (#207, approved from council: discussion #30, 2026-03-06)
+- **Refactor: Consolidate get_stats() and Fix Daily Briefing 52-Week Context Gap** (#208, P2) — Extract single module-level `get_metric_stats(df)` in `dashboard.py`; replace all 5 inline definitions; update daily briefing format strings to include 52-week range and distance-from-extreme context (#208, approved from council: discussion #31, 2026-03-06)
 
 ---
 
@@ -74,6 +78,7 @@ These ideas are approved for exploration but have not been assigned to a milesto
 | Idea | Origin | Notes |
 |------|--------|-------|
 | PCR + GEX regime-conditioned indicators | Dismissed in council #104, reconsidering after macro regime foundation | Prerequisite: complete Phase 5 macro regime work first. Only using free OCC/Barchart data. |
+| Global Trade Pulse — FRED Trade Balance Indicator | Council discussion #29 | Single-panel macro indicator: US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI integration deferred to Phase 9+. (#206, approved 2026-03-06) |
 
 ---
 
