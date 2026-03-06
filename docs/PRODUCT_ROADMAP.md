@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-06 (PM Council: 3 features created from council discussions #29, #30, #31)
+**Last updated:** 2026-03-06 (PM queue run — 118th: processed 3 new council-approved features, created US-208.1 story)
 
 ---
 
@@ -32,7 +32,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | Phase 1 | Repositioning & Core Gaps | 16 stories |
 | Phase 2 | Consolidation & Templates | 13 stories |
 | Phase 3 | Mobile-First Redesign | 14 stories (Feb 23, 2026) |
-| Phase 4 | Mobile Polish + Core UX Wins | 13 stories (Feb 25, 2026) |
+| Phase 4 | Mobile Polish + Core UX Wins | 13 stories (Feb 28, 2026) |
 | Phase 5 | Macro Intelligence Layer | 9 stories (Feb 26, 2026) |
 | Phase 6 | Advanced Intelligence & Sector Analysis | 6 stories (Feb 28, 2026) |
 
@@ -44,41 +44,36 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 ---
 
-## Phase 7: Credit Intelligence & Completion (upcoming)
+## Phase 7: Credit Intelligence & Completion (in progress)
 **Milestone goal:** Build out the credit detail page, integrate credit into the full AI briefing pipeline, and complete remaining market parity and UX gaps.
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot | P2 | Complete |
-| #169 — Credit Market Detail Page | P2 | Backlog |
-| #173 — Rename "Additional Charts" sections (quick-win) | P3 | Backlog (user-story, needs-test-plan) |
-| #174 — Bug: regime/recession cache ordering fix | P1 | Backlog (prerequisite for #11 wiring) |
-| #175 — Bug: FRED incremental fetching (35yr → targeted) | P2 | Backlog |
-| #186 — Bug: Dollar briefing missing from automated daily refresh | P2 | Backlog |
-| #166 — ML Container Separation (FinBERT/torch) | P3 | Backlog |
-| #171 — Homepage Section Quick-Nav | P2 | Backlog |
-| #207 — Asset Detail Page Header — Shared Component Refactor | P3 | Backlog |
-| #208 — Refactor: Consolidate get_stats() and Fix Daily Briefing 52-Week Context Gap | P2 | Backlog |
+| #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot | P2 | CLOSED ✅ (2026-03-04) |
+| #171 — Homepage Section Quick-Nav | P2 | CLOSED ✅ (2026-03-05) |
+| #183 — Homepage Narrative Cohesion — Full Redesign | P3 | IN PROGRESS (US-183.1 ✅; US-183.2 #185 `ready-for-implementation`) |
+| #169 — Credit Market Detail Page | P2 | IN PROGRESS (US-169.1 ✅, US-169.2 ✅; US-169.3 #193 `ready-for-pr`) |
+| #208 — Refactor: Consolidate get_stats() / Fix Daily Briefing 52-Week Gap | P2 | US-208.1 (#209) `needs-test-plan` |
+| #207 — Asset Detail Page Header — Shared Component Refactor | P3 | `needs-design-spec` (pickup after US-169.3 merges) |
+| #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | `needs-design-spec` |
+| #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
 
-- **Homepage Section Quick-Nav** (#171) — Sticky/floating quick-nav so returning users can jump to any homepage section in ≤1 tap on mobile and desktop; section IDs already in HTML, frontend-only work (#171, approved from council: discussion #15, 2026-02-28)
-- **"Additional Charts" rename** (#173) — Rename collapsible section headers on Equities, Rates, Safe Havens, and Crypto detail pages to descriptive labels (e.g., "Yield Curve & Real Yields") — text change only, four files; standalone P3 quick-win to complete before credit page work begins (#173, approved from council: discussion #20, 2026-03-01)
-- **Bug: cache ordering fix** (#174, P1) — Move `update_macro_regime()` and `update_recession_probability()` to run before AI briefing generation in `run_data_collection()` — prerequisite for wiring regime/recession state into daily briefings (discussion #21, 2026-03-01)
-- **Bug: FRED incremental fetching** (#175, P2) — Replace 35-year full-history FRED fetch on every daily refresh with targeted start-date using `get_last_date_in_file()` output; prevents rate-limit issues as series list grows with Phase 7 credit data (discussion #21, 2026-03-01)
-- **Credit Market Detail Page** (#169, P2) — Updated 2026-03-01: now includes three credit spread intelligence requirements as core: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. All use existing FRED data (approved from council: discussion #19, 2026-03-01)
-- **Bug: Dollar briefing missing from automated daily refresh** (#186, P2) — `run_data_collection()` generates crypto/equity/rates briefings but skips the dollar briefing entirely; `generate_daily_summary()` checks for same-day dollar briefing and injects it as synthesis context — so the dollar context is never available in automated runs. Fix: add ~10-line step to `run_data_collection()` mirroring existing briefing pattern (#186, approved from council: discussion #26, 2026-03-03)
-- **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component in `static/css/components/asset-page-header.css`, update all 6 templates, document in design system. Timing: after US-169.3 merges (#207, approved from council: discussion #30, 2026-03-06)
-- **Refactor: Consolidate get_stats() and Fix Daily Briefing 52-Week Context Gap** (#208, P2) — Extract single module-level `get_metric_stats(df)` in `dashboard.py`; replace all 5 inline definitions; update daily briefing format strings to include 52-week range and distance-from-extreme context (#208, approved from council: discussion #31, 2026-03-06)
+### Active Story Pipeline
 
----
+**WIP slot is open.** Next up in priority order:
 
-## Strategic Backlog (approved, not yet scheduled)
+1. **US-169.3** (#193) — `ready-for-pr` — Engineer to create PR
+2. **US-208.1** (#209) — `needs-test-plan` — QA to create test plan
+3. **US-183.2** (#185) — `ready-for-implementation` — queued after current WIP
 
-These ideas are approved for exploration but have not been assigned to a milestone:
+### Phase 7 Feature Detail
 
-| Idea | Origin | Notes |
-|------|--------|-------|
-| PCR + GEX regime-conditioned indicators | Dismissed in council #104, reconsidering after macro regime foundation | Prerequisite: complete Phase 5 macro regime work first. Only using free OCC/Barchart data. |
-| Global Trade Pulse — FRED Trade Balance Indicator | Council discussion #29 | Single-panel macro indicator: US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI integration deferred to Phase 9+. (#206, approved 2026-03-06) |
+- **Credit Market Detail Page** (#169, P2) — Three credit spread intelligence requirements: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. All use existing FRED data. US-169.3 ready for PR.
+- **Homepage Narrative Cohesion — Full Redesign** (#183, P3) — US-183.1 complete (reorder, visual threading, navbar pill, bridge sentences). US-183.2 (#185) AI prompt anchoring — `ready-for-implementation`, blocked on Feature #178 (now merged).
+- **Refactor: Consolidate get_stats()** (#208, P2) — Extract single module-level `get_metric_stats(df)` in `dashboard.py`; replace all 5 inline definitions; update daily briefing format strings to include 52-week range and distance-from-extreme context. Backend-only. Story #209 created.
+- **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component. Timing: after US-169.3 merges (Credit page will then be complete). `needs-design-spec`.
+- **Global Trade Pulse — FRED Trade Balance Indicator** (#206, P2) — Single-panel macro indicator showing US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI deferred to Phase 9+. `needs-design-spec`. Assigned to Phase 7 (human confirm if preferred elsewhere).
+- **ML Container Separation** (#166, P3) — Extract FinBERT/torch from main app container. `needs-human-decision` — waiting on architecture decision (Redis queue vs. standalone cron vs. HTTP API).
 
 ---
 
@@ -89,6 +84,7 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Direction | Reason | Date |
 |-----------|--------|------|
 | Options flow + dark pool synthesis as primary signal | Dark pool prints lack reliable direction signal; options flow space has better-funded competitors; fundamental data quality issue would undermine user trust | 2026-02-23 |
+| BDI (Baltic Dry Index) integration | Adds new data dependency while Phase 7 is in progress; FRED trade balance is sufficient to validate signal value first | 2026-03-06 |
 
 ---
 
