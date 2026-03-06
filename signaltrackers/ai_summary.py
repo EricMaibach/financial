@@ -1524,6 +1524,215 @@ def get_dollar_summary_for_display():
 
 
 # ============================================================================
+# Credit Summary Functions
+# ============================================================================
+
+CREDIT_SUMMARIES_FILE = DATA_DIR / "credit_summaries.json"
+
+
+def load_credit_summaries():
+    """Load all stored credit AI summaries."""
+    if CREDIT_SUMMARIES_FILE.exists():
+        try:
+            with open(CREDIT_SUMMARIES_FILE, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {"summaries": []}
+    return {"summaries": []}
+
+
+def save_credit_summary(date_str, summary_text, web_search_used=False, news_context=None):
+    """Save a credit AI summary to storage."""
+    data = load_credit_summaries()
+
+    eastern = pytz.timezone('US/Eastern')
+    existing_idx = None
+    for idx, s in enumerate(data["summaries"]):
+        if s["date"] == date_str:
+            existing_idx = idx
+            break
+
+    summary_entry = {
+        "date": date_str,
+        "generated_at": datetime.now(eastern).isoformat(),
+        "summary": summary_text,
+        "web_search_used": web_search_used,
+        "news_context": news_context[:500] if news_context else None
+    }
+
+    if existing_idx is not None:
+        data["summaries"][existing_idx] = summary_entry
+    else:
+        data["summaries"].append(summary_entry)
+
+    data["summaries"] = sorted(data["summaries"], key=lambda x: x["date"])[-30:]
+
+    DATA_DIR.mkdir(exist_ok=True)
+    with open(CREDIT_SUMMARIES_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def get_latest_credit_summary():
+    """Get the most recent credit AI summary."""
+    data = load_credit_summaries()
+    if data["summaries"]:
+        return sorted(data["summaries"], key=lambda x: x["date"])[-1]
+    return None
+
+
+def get_recent_credit_summaries(days=3):
+    """Get recent credit summaries for context."""
+    data = load_credit_summaries()
+    if not data["summaries"]:
+        return []
+    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
+    return sorted_summaries[:days]
+
+
+def fetch_credit_news():
+    """Fetch current credit market news using web search."""
+    if not is_tavily_configured():
+        return None
+
+    news_parts = []
+
+    credit_news = search_financial_news("high yield credit spreads corporate bonds Fed policy news today", max_results=5)
+    if credit_news.get('results'):
+        news_parts.append("## Today's Credit Market News")
+        if credit_news.get('answer'):
+            news_parts.append(credit_news['answer'])
+        for r in credit_news['results'][:3]:
+            news_parts.append(f"- {r['title']}: {r['content'][:200]}...")
+
+    ig_news = search_web("investment grade credit spreads corporate debt issuance", max_results=3)
+    if ig_news.get('results'):
+        news_parts.append("\n## Investment Grade & Issuance")
+        for r in ig_news['results'][:2]:
+            news_parts.append(f"- {r['title']}: {r['content'][:150]}...")
+
+    return "\n".join(news_parts) if news_parts else None
+
+
+def generate_credit_summary(credit_data_summary):
+    """
+    Generate the daily Credit Markets AI summary.
+
+    Args:
+        credit_data_summary: String with credit market data from generate_credit_market_summary()
+
+    Returns:
+        dict with 'success', 'summary', and 'error' keys
+    """
+    client, error = get_ai_client()
+    if client is None:
+        return {
+            'success': False,
+            'summary': None,
+            'error': error
+        }
+
+    try:
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
+
+        recent_summaries = get_recent_credit_summaries(days=3)
+        previous_context = ""
+        if recent_summaries:
+            previous_context = "\n\n## YOUR PREVIOUS CREDIT SUMMARIES (for continuity - don't repeat these):\n"
+            for s in recent_summaries:
+                if s["date"] != today:
+                    previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
+
+        news_context = fetch_credit_news()
+        news_section = ""
+        if news_context:
+            news_section = f"\n\n## TODAY'S CREDIT NEWS:\n{news_context}"
+
+        system_prompt = """You are a credit market analyst providing daily briefings for the Credit Markets page of a financial dashboard. Your audience understands markets and wants actionable insight on corporate credit conditions, spread dynamics, and what credit is signaling about the economy.
+
+Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, macro regime, default risk, and cross-asset implications.
+
+CRITICAL RULES:
+- Write EXACTLY 3 paragraphs (250-350 words total)
+- First paragraph: The credit story TODAY - where HY and IG spreads are, whether they're tight/normal/wide versus history (percentile), and what the trend has been. Include specific spread levels in basis points.
+- Second paragraph: The macro interpretation - what current spread levels imply about default risk, the economic cycle, and risk appetite. Connect to the macro regime (bull/bear/recession watch) and explain whether credit conditions are confirming or diverging from equity market signals.
+- Third paragraph: What to watch - key spread thresholds that would change the outlook, CCC vs HY dynamics (distress concentration), and the main risk scenarios (spread widening triggers, liquidity conditions). End with specific actionable guidance.
+- Reference specific numbers (spread levels in bps, percentile rankings) meaningfully
+- Highlight any EXTREME readings (>95th or <5th percentile) with historical context
+- If HY is at notably tight levels, explain the complacency risk and what could trigger widening
+- Connect credit spread moves to the broader economic outlook clearly
+- DO NOT repeat themes from previous summaries
+
+You have access to a web search tool if you need to look up additional context about credit market conditions, major bond issuances, or corporate default news. Use it when helpful to provide better context.
+
+Remember: Your job is to help investors understand what the credit market is pricing in about economic health, default risk, and financial conditions — and what that means for portfolio positioning."""
+
+        user_prompt = f"""Today is {today}. Generate today's credit markets briefing.
+
+{credit_data_summary}
+{news_section}
+{previous_context}
+
+Remember: 3 paragraphs, tell the credit story clearly, explain what spread levels mean for economic outlook and risk, make it actionable for investors."""
+
+        print(f"[Credit Summary] Calling OpenAI with {len(user_prompt)} chars of input...")
+        result = call_ai_with_tools(
+            client=client,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_tokens=900,
+            log_prefix="[Credit Summary]"
+        )
+
+        if not result['success']:
+            return {
+                'success': False,
+                'summary': None,
+                'error': result['error']
+            }
+
+        summary = result['content']
+
+        save_credit_summary(
+            date_str=today,
+            summary_text=summary,
+            web_search_used=bool(news_context),
+            news_context=news_context
+        )
+
+        print(f"[Credit Summary] Generated credit summary for {today}")
+        return {
+            'success': True,
+            'summary': summary,
+            'error': None
+        }
+
+    except Exception as e:
+        print(f"[Credit Summary] Error generating summary: {e}")
+        return {
+            'success': False,
+            'summary': None,
+            'error': str(e)
+        }
+
+
+def get_credit_summary_for_display():
+    """
+    Get the current credit summary formatted for display.
+    Returns dict with summary info or None if not available.
+    """
+    summary = get_latest_credit_summary()
+    if summary:
+        return {
+            'date': summary['date'],
+            'generated_at': summary['generated_at'],
+            'summary': summary['summary'],
+            'web_search_used': summary.get('web_search_used', False)
+        }
+    return None
+
+
+# ============================================================================
 # Portfolio Summary Functions
 # ============================================================================
 
