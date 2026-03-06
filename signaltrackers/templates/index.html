@@ -11,6 +11,7 @@
         <button class="section-quick-nav__pill" aria-current="false" data-target="#regime-implications">Implications</button>
         <button class="section-quick-nav__pill" aria-current="false" data-target="#sector-tone-section">Sectors</button>
         <button class="section-quick-nav__pill" aria-current="false" data-target="#market-conditions">Markets</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#trade-pulse-section">Trade</button>
         <button class="section-quick-nav__pill" aria-current="false" data-target="#briefing-section">Briefing</button>
         <button class="section-quick-nav__pill" aria-current="false" data-target="#movers-section">Movers</button>
         <button class="section-quick-nav__pill" aria-current="false" data-target="#signals-section">Signals</button>
@@ -49,6 +50,7 @@
         <button class="section-quick-nav-sheet__item" data-target="#regime-implications" role="listitem">Implications</button>
         <button class="section-quick-nav-sheet__item" data-target="#sector-tone-section" role="listitem">Sectors</button>
         <button class="section-quick-nav-sheet__item" data-target="#market-conditions" role="listitem">Markets</button>
+        <button class="section-quick-nav-sheet__item" data-target="#trade-pulse-section" role="listitem">Trade</button>
         <button class="section-quick-nav-sheet__item" data-target="#briefing-section" role="listitem">Briefing</button>
         <button class="section-quick-nav-sheet__item" data-target="#movers-section" role="listitem">Movers</button>
         <button class="section-quick-nav-sheet__item" data-target="#signals-section" role="listitem">Signals</button>
@@ -882,6 +884,140 @@
     </div>
 </section>
 
+<!-- Section 1.3: Global Trade Pulse (US-206.2) -->
+{% if trade_balance_value is not none %}
+<section id="trade-pulse-section"
+         class="mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}"
+         aria-label="Global Trade Pulse">
+
+    <div class="section-header mb-2">
+        <h3 class="section-title"><i class="bi bi-globe2 me-2"></i>Global Trade Pulse</h3>
+        <span class="section-header__subtitle" style="font-size:0.875rem;color:#697386;">US Goods Trade Balance (FRED BOPGSTB)</span>
+    </div>
+
+    {# Mobile toggle button (hidden on tablet+) #}
+    <button class="trade-pulse-toggle"
+            id="trade-pulse-toggle"
+            aria-expanded="false"
+            aria-controls="trade-pulse-content">
+        <span class="trade-pulse-toggle-line" aria-hidden="true"></span>
+        <span class="trade-pulse-toggle-label">
+            <i class="bi bi-chevron-down trade-pulse-chevron" aria-hidden="true"></i>
+            <span id="trade-pulse-toggle-text">View Trade Data</span>
+        </span>
+        <span class="trade-pulse-toggle-line" aria-hidden="true"></span>
+    </button>
+
+    <div id="trade-pulse-content" class="trade-pulse-content">
+
+        {# Metric + Percentile two-column grid #}
+        <div class="trade-pulse-grid">
+
+            {# --- Metric panel --- #}
+            <div>
+                <div class="trade-pulse-current-value"
+                     style="font-size:1.5rem;font-family:var(--font-mono,monospace);color:#1A202C;line-height:1.2;">
+                    {% if trade_balance_value < 0 %}
+                        &minus;${{ "%.1f"|format(trade_balance_value|abs) }}b
+                    {% else %}
+                        +${{ "%.1f"|format(trade_balance_value) }}b
+                    {% endif %}
+                </div>
+                <div style="font-size:0.875rem;color:#697386;margin-top:3px;">
+                    {{ trade_balance_period }}
+                </div>
+
+                {# YoY change badge #}
+                {% if trade_yoy_change is not none %}
+                <div style="margin-top:8px;display:flex;align-items:center;gap:4px;min-height:44px;">
+                    {% if trade_yoy_direction == 'up' %}
+                        <i class="bi bi-arrow-up" style="color:#16A34A;" aria-hidden="true"></i>
+                        <span style="font-size:0.875rem;color:#16A34A;">+${{ "%.1f"|format(trade_yoy_change|abs) }}b</span>
+                    {% else %}
+                        <i class="bi bi-arrow-down" style="color:#DC2626;" aria-hidden="true"></i>
+                        <span style="font-size:0.875rem;color:#DC2626;">&minus;${{ "%.1f"|format(trade_yoy_change|abs) }}b</span>
+                    {% endif %}
+                    {% if trade_balance_period %}
+                    {% set _period_parts = trade_balance_period.split(' ') %}
+                    <span style="font-size:0.875rem;color:#697386;">vs. {{ _period_parts[0] }} {{ _period_parts[1]|int - 1 }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            {# --- Percentile panel --- #}
+            {% if trade_percentile is not none %}
+            <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span style="font-size:0.875rem;color:#697386;">Percentile</span>
+                    <span style="font-size:0.875rem;font-weight:600;color:#2D3748;">{{ trade_percentile|round|int }}th pct.</span>
+                </div>
+
+                {# Percentile bar color based on tier #}
+                {% set _pct = trade_percentile|round|int %}
+                {% if _pct <= 25 %}
+                    {% set _pct_color = '#DC2626' %}
+                {% elif _pct <= 40 %}
+                    {% set _pct_color = '#CA8A04' %}
+                {% elif _pct <= 60 %}
+                    {% set _pct_color = '#9AA5B1' %}
+                {% elif _pct <= 75 %}
+                    {% set _pct_color = '#0284C7' %}
+                {% else %}
+                    {% set _pct_color = '#16A34A' %}
+                {% endif %}
+
+                <div class="trade-pulse-pct-bar-track"
+                     role="progressbar"
+                     aria-valuenow="{{ _pct }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-label="Trade balance at {{ _pct }}th percentile of 10-year range">
+                    <div class="trade-pulse-pct-bar-fill"
+                         style="width:{{ _pct }}%;background:{{ _pct_color }};"></div>
+                </div>
+
+                <div style="font-size:0.75rem;color:#697386;margin-top:4px;">
+                    {% if _pct < 50 %}
+                        Weaker than {{ 100 - _pct }}% of months (10-year range)
+                    {% else %}
+                        Stronger than {{ _pct }}% of months (10-year range)
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>{# /.trade-pulse-grid #}
+
+        {# Regime-conditioned interpretation block #}
+        {% if trade_interpretation_body %}
+        <div style="margin-top:16px;">
+            <div style="border-left:4px solid #0D9488;background:#FAFBFC;border-radius:0 6px 6px 0;padding:1rem 1.5rem;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <i class="bi bi-lightbulb-fill" style="color:#0D9488;font-size:0.875rem;" aria-hidden="true"></i>
+                    <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#697386;">
+                        {{ trade_interpretation_label }}
+                    </span>
+                </div>
+                <p style="margin:0;font-size:0.875rem;line-height:1.65;color:#2D3748;">
+                    {{ trade_interpretation_body }}
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Data freshness #}
+        {% if trade_last_updated %}
+        <div style="margin-top:12px;font-size:0.75rem;color:#9AA5B1;">
+            Last Updated: {{ trade_last_updated }} (FRED BOPGSTB)
+        </div>
+        {% endif %}
+
+    </div>{# /.trade-pulse-content #}
+
+</section>
+{% endif %}
+
 <!-- Section 2: Today's Market Briefing -->
 <section id="briefing-section" class="hero-briefing mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
     <div class="section-header mb-3 d-flex justify-content-between align-items-center">
@@ -1696,6 +1832,24 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 content.classList.remove('sector-tone-content--expanded');
                 if (toggleText) { toggleText.textContent = 'Show Sectors'; }
+            }
+        });
+    }
+
+    // Global Trade Pulse Panel toggle (US-206.2)
+    const tradePulseToggle = document.getElementById('trade-pulse-toggle');
+    if (tradePulseToggle) {
+        tradePulseToggle.addEventListener('click', function() {
+            const content = document.getElementById('trade-pulse-content');
+            const toggleText = document.getElementById('trade-pulse-toggle-text');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', String(!expanded));
+            if (!expanded) {
+                content.classList.add('trade-pulse-content--expanded');
+                if (toggleText) { toggleText.textContent = 'Hide'; }
+            } else {
+                content.classList.remove('trade-pulse-content--expanded');
+                if (toggleText) { toggleText.textContent = 'View Trade Data'; }
             }
         });
     }
