@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-06 (PM queue run — 118th: processed 3 new council-approved features, created US-208.1 story)
+**Last updated:** 2026-03-06 (PM queue run — closed Feature #169 Credit Market Detail Page; all 3 stories merged)
 
 ---
 
@@ -52,7 +52,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot | P2 | CLOSED ✅ (2026-03-04) |
 | #171 — Homepage Section Quick-Nav | P2 | CLOSED ✅ (2026-03-05) |
 | #183 — Homepage Narrative Cohesion — Full Redesign | P3 | IN PROGRESS (US-183.1 ✅; US-183.2 #185 `ready-for-implementation`) |
-| #169 — Credit Market Detail Page | P2 | IN PROGRESS (US-169.1 ✅, US-169.2 ✅; US-169.3 #193 `ready-for-pr`) |
+| #169 — Credit Market Detail Page | P2 | CLOSED ✅ (2026-03-06) |
 | #208 — Refactor: Consolidate get_stats() / Fix Daily Briefing 52-Week Gap | P2 | US-208.1 (#209) `needs-test-plan` |
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | `needs-design-spec` (pickup after US-169.3 merges) |
 | #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | `needs-design-spec` |
@@ -62,13 +62,15 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 **WIP slot is open.** Next up in priority order:
 
-1. **US-169.3** (#193) — `ready-for-pr` — Engineer to create PR
-2. **US-208.1** (#209) — `needs-test-plan` — QA to create test plan
-3. **US-183.2** (#185) — `ready-for-implementation` — queued after current WIP
+1. **US-208.1** (#209) — `ready-for-implementation` — P2, get_stats() refactor (QA test plan done)
+2. **US-206.1** (#212) — `needs-test-plan` — P2, Global Trade Pulse backend
+3. **US-207.1** (#211) — `needs-test-plan` — P3, Asset detail header CSS refactor
+4. **US-183.2** (#185) — `ready-for-implementation` — P3, AI prompt anchoring
+5. **US-206.2** (#213) — `needs-test-plan` — P2, Global Trade Pulse frontend (depends on #212)
 
 ### Phase 7 Feature Detail
 
-- **Credit Market Detail Page** (#169, P2) — Three credit spread intelligence requirements: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. All use existing FRED data. US-169.3 ready for PR.
+- **Credit Market Detail Page** (#169, P2) — ✅ COMPLETE. Three credit spread intelligence requirements delivered: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. AI briefing integration complete — credit context now in chatbot and daily briefing pipeline.
 - **Homepage Narrative Cohesion — Full Redesign** (#183, P3) — US-183.1 complete (reorder, visual threading, navbar pill, bridge sentences). US-183.2 (#185) AI prompt anchoring — `ready-for-implementation`, blocked on Feature #178 (now merged).
 - **Refactor: Consolidate get_stats()** (#208, P2) — Extract single module-level `get_metric_stats(df)` in `dashboard.py`; replace all 5 inline definitions; update daily briefing format strings to include 52-week range and distance-from-extreme context. Backend-only. Story #209 created.
 - **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component. Timing: after US-169.3 merges (Credit page will then be complete). `needs-design-spec`.
