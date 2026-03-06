@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-06 (PM queue run — closed Feature #208 Consolidate get_stats() / Fix Daily Briefing 52-Week Gap; 1 story merged)
+**Last updated:** 2026-03-06 (PM queue run — closed Feature #206 Global Trade Pulse; PR #216 merged)
 
 ---
 
@@ -55,17 +55,15 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #169 — Credit Market Detail Page | P2 | CLOSED ✅ (2026-03-06) |
 | #208 — Refactor: Consolidate get_stats() / Fix Daily Briefing 52-Week Gap | P2 | CLOSED ✅ (2026-03-06) |
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | US-207.1 (#211) `ready-for-implementation` |
-| #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | US-206.1 (#212) + US-206.2 (#213) `ready-for-implementation` |
+| #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | CLOSED ✅ (2026-03-06) |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
 
 ### Active Story Pipeline
 
 **WIP slot is open.** Next up in priority order:
 
-1. **US-206.1** (#212) — `ready-for-implementation` — P2, Global Trade Pulse backend
+1. **US-183.2** (#185) — `ready-for-implementation` — P0 Critical, AI prompt anchoring
 2. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
-3. **US-183.2** (#185) — `ready-for-implementation` — P0 Critical, AI prompt anchoring
-4. **US-206.2** (#213) — `ready-for-implementation` — P2, Global Trade Pulse frontend (depends on #212)
 
 ### Phase 7 Feature Detail
 
@@ -73,7 +71,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 - **Homepage Narrative Cohesion — Full Redesign** (#183, P3) — US-183.1 complete (reorder, visual threading, navbar pill, bridge sentences). US-183.2 (#185) AI prompt anchoring — `ready-for-implementation`, blocked on Feature #178 (now merged).
 - **Refactor: Consolidate get_stats()** (#208, P2) — ✅ COMPLETE. Single `get_metric_stats(df)` at module level in `dashboard.py`; all 5 inline definitions replaced; daily briefing now includes 52-week range and distance-from-extreme context. Backend-only.
 - **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component. US-207.1 (#211) `ready-for-implementation`.
-- **Global Trade Pulse — FRED Trade Balance Indicator** (#206, P2) — Single-panel macro indicator showing US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI deferred to Phase 9+. US-206.1 (#212) backend + US-206.2 (#213) frontend both `ready-for-implementation`; #213 must wait for #212 to merge.
+- **Global Trade Pulse — FRED Trade Balance Indicator** (#206, P2) — ✅ COMPLETE. Single-panel macro indicator showing US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI deferred to Phase 9+. Follow-on: wire into AI Daily Briefing and Chatbot in Phase 8.
 - **ML Container Separation** (#166, P3) — Extract FinBERT/torch from main app container. `needs-human-decision` — waiting on architecture decision (Redis queue vs. standalone cron vs. HTTP API).
 
 ---
