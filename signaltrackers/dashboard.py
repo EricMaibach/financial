@@ -53,6 +53,7 @@ from recession_probability import get_recession_probability, update_recession_pr
 from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
 from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
 from credit_interpretation_config import get_credit_interpretation
+from trade_interpretation_config import get_trade_interpretation
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -1581,10 +1582,104 @@ def logout():
 # Page Routes
 # =============================================================================
 
+def _get_trade_balance_context():
+    """Build the template context dict for the Global Trade Pulse panel (US-206.1).
+
+    Loads trade_balance.csv, computes current value, reading period, YoY change,
+    10-year rolling percentile, and trade condition, then looks up the regime-
+    conditioned interpretation copy.
+
+    Returns a dict with all trade_* keys; values default to None on any error.
+    """
+    ctx = {
+        'trade_balance_value': None,
+        'trade_balance_period': None,
+        'trade_yoy_change': None,
+        'trade_yoy_direction': None,
+        'trade_percentile': None,
+        'trade_condition': None,
+        'trade_interpretation_label': None,
+        'trade_interpretation_body': None,
+        'trade_last_updated': None,
+    }
+    try:
+        df = load_csv_data('trade_balance.csv')
+        if df is None or len(df) < 2:
+            return ctx
+
+        df = df.dropna(subset=['trade_balance'])
+        if len(df) < 2:
+            return ctx
+
+        df = df.sort_values('date').reset_index(drop=True)
+        df['date'] = pd.to_datetime(df['date'])
+
+        current_row = df.iloc[-1]
+        current_value = float(current_row['trade_balance'])
+        current_date = current_row['date']
+
+        ctx['trade_balance_value'] = round(current_value, 1)
+        ctx['trade_balance_period'] = current_date.strftime('%b %Y')
+        ctx['trade_last_updated'] = current_date.strftime('%b %Y')
+
+        # YoY: find the row with the same month in the prior year
+        prior_year = current_date.year - 1
+        prior_month = current_date.month
+        prior_rows = df[(df['date'].dt.year == prior_year) & (df['date'].dt.month == prior_month)]
+        if not prior_rows.empty:
+            prior_value = float(prior_rows.iloc[-1]['trade_balance'])
+            yoy_change = round(current_value - prior_value, 1)
+            ctx['trade_yoy_change'] = yoy_change
+            ctx['trade_yoy_direction'] = 'up' if yoy_change >= 0 else 'down'
+        else:
+            yoy_change = None
+
+        # 10-year rolling percentile
+        series = df.set_index('date')['trade_balance']
+        cutoff = pd.Timestamp.today() - pd.DateOffset(years=10)
+        try:
+            windowed = series[series.index >= cutoff]
+            if len(windowed) < 2:
+                windowed = series
+        except TypeError:
+            windowed = series
+
+        count_below = int((windowed < current_value).sum())
+        percentile = round(float(count_below / len(windowed) * 100), 1)
+        ctx['trade_percentile'] = percentile
+
+        # Trade condition
+        if yoy_change is not None:
+            if current_value < 0:
+                condition = 'widening_deficit' if yoy_change < 0 else 'narrowing_deficit'
+            else:
+                condition = 'widening_surplus' if yoy_change > 0 else 'narrowing_surplus'
+            ctx['trade_condition'] = condition
+        else:
+            condition = None
+
+        # Regime-conditioned interpretation
+        try:
+            regime = get_macro_regime()
+            regime_state = regime.get('state') if regime else None
+        except Exception:
+            regime_state = None
+
+        label, body = get_trade_interpretation(regime_state, condition, percentile)
+        ctx['trade_interpretation_label'] = label
+        ctx['trade_interpretation_body'] = body
+
+    except Exception:
+        pass  # Graceful empty state — missing CSV returns None values
+
+    return ctx
+
+
 @app.route('/')
 def index():
     """Main dashboard page."""
-    return render_template('index.html')
+    ctx = _get_trade_balance_context()
+    return render_template('index.html', **ctx)
 
 
 @app.route('/equity')

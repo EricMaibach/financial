@@ -86,7 +86,9 @@ class MarketSignalsTracker:
             'breakeven_inflation_10y': 'T10YIE',  # 10-Year Breakeven Inflation Rate
             'treasury_10y': 'DGS10',  # 10-Year Treasury Constant Maturity Rate (nominal yield)
             # Federal Reserve Policy Rate
-            'fed_funds_rate': 'FEDFUNDS'  # Effective Federal Funds Rate (Monthly)
+            'fed_funds_rate': 'FEDFUNDS',  # Effective Federal Funds Rate (Monthly)
+            # Trade Balance (US-206.1)
+            'trade_balance': 'BOPGSTB',  # US Goods Trade Balance, monthly SA (billions USD)
         }
 
         # ETF tickers organized by category
