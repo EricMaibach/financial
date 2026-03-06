@@ -27,6 +27,7 @@ from ai_summary import (
     generate_equity_summary, get_equity_summary_for_display,
     generate_rates_summary, get_rates_summary_for_display,
     generate_dollar_summary, get_dollar_summary_for_display,
+    generate_credit_summary, get_credit_summary_for_display,
     get_ai_client, call_ai_with_tools
 )
 from metric_tools import (
@@ -2291,6 +2292,19 @@ def run_data_collection():
         except Exception as dollar_summary_error:
             print(f"Dollar AI summary error (non-fatal): {dollar_summary_error}")
 
+        # Generate Credit Markets AI summary
+        reload_status['status'] = 'Generating Credit AI summary...'
+        print("Generating Credit AI summary...")
+        try:
+            credit_summary_data = generate_credit_market_summary()
+            credit_result = generate_credit_summary(credit_summary_data)
+            if credit_result['success']:
+                print("Credit AI summary generated successfully!")
+            else:
+                print(f"Credit AI summary generation failed: {credit_result['error']}")
+        except Exception as credit_summary_error:
+            print(f"Credit AI summary error (non-fatal): {credit_summary_error}")
+
         # Generate general AI summary AFTER market-specific briefings
         # This allows it to include crypto/equity/rates/dollar briefings as context
         reload_status['status'] = 'Generating AI daily summary...'
@@ -2558,6 +2572,42 @@ def api_generate_dollar_summary():
     try:
         dollar_summary_data = generate_dollar_market_summary()
         result = generate_dollar_summary(dollar_summary_data)
+
+        if result['success']:
+            return jsonify({
+                'status': 'success',
+                'summary': result['summary']
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'error': result['error']
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/credit-summary')
+def api_credit_summary():
+    """Get the current credit AI summary."""
+    summary = get_credit_summary_for_display()
+    if summary:
+        return jsonify(summary)
+    return jsonify({
+        'error': 'No credit summary available',
+        'message': 'Run a data reload to generate a summary'
+    }), 404
+
+
+@app.route('/api/credit-summary/generate', methods=['POST'])
+def api_generate_credit_summary():
+    """Manually trigger credit AI summary generation."""
+    try:
+        credit_summary_data = generate_credit_market_summary()
+        result = generate_credit_summary(credit_summary_data)
 
         if result['success']:
             return jsonify({
@@ -4269,6 +4319,171 @@ def generate_dollar_market_summary():
     except Exception as e:
         print(f"Error generating dollar market summary: {e}")
         return "Dollar market data summary unavailable."
+
+
+def generate_credit_market_summary():
+    """Generate a credit-focused market data summary for the Credit AI briefing."""
+    try:
+        eastern = pytz.timezone('US/Eastern')
+        summary_parts = []
+        summary_parts.append("# CREDIT MARKETS DATA SUMMARY")
+        summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
+        summary_parts.append("")
+
+        def get_stats(df):
+            if df is None or len(df) < 2:
+                return None
+            col = [c for c in df.columns if c != 'date'][0]
+            current = df.iloc[-1][col]
+            values = df[col].dropna().tolist()
+            percentile = sum(1 for v in values if v <= current) / len(values) * 100
+
+            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
+            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
+            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
+
+            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
+            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
+
+            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
+            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
+
+            return {
+                'current': current,
+                'percentile': percentile,
+                'change_1d': change_1d,
+                'change_5d': change_5d,
+                'change_30d': change_30d,
+                'pct_change_5d': pct_change_5d,
+                'pct_change_30d': pct_change_30d,
+                'high_52w': high_52w,
+                'low_52w': low_52w
+            }
+
+        # Load credit-relevant metrics
+        hy_df = load_csv_data('high_yield_spread.csv')
+        ig_df = load_csv_data('investment_grade_spread.csv')
+        ccc_df = load_csv_data('ccc_spread.csv')
+        hy_price_df = load_csv_data('high_yield_credit_price.csv')
+        ig_price_df = load_csv_data('investment_grade_credit_price.csv')
+        vix_df = load_csv_data('vix_price.csv')
+        treasury_10y_df = load_csv_data('treasury_10y.csv')
+        sp500_df = load_csv_data('sp500_price.csv')
+
+        # HY OAS Section
+        summary_parts.append("## HIGH YIELD SPREADS (OAS)")
+        if hy_df is not None:
+            stats = get_stats(hy_df)
+            if stats:
+                hy_bps = stats['current'] * 100
+                if hy_bps < 300:
+                    level = "TIGHT (complacent, low default pricing)"
+                elif hy_bps < 450:
+                    level = "Normal"
+                elif hy_bps < 600:
+                    level = "Wide (elevated stress)"
+                else:
+                    level = "VERY WIDE (crisis/default pricing)"
+                summary_parts.append(f"HY OAS: {hy_bps:.0f} bp [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day change: {stats['change_5d']*100:+.0f} bp")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bp")
+                summary_parts.append(f"  52-week range: {stats['low_52w']*100:.0f} - {stats['high_52w']*100:.0f} bp")
+                summary_parts.append("  KEY LEVELS: 300 bp (tight/complacent), 450 bp (normal), 600 bp (stress), 900+ bp (crisis)")
+        summary_parts.append("")
+
+        # IG OAS Section
+        summary_parts.append("## INVESTMENT GRADE SPREADS (OAS)")
+        if ig_df is not None:
+            stats = get_stats(ig_df)
+            if stats:
+                ig_bps = stats['current'] * 100
+                if ig_bps < 80:
+                    level = "TIGHT"
+                elif ig_bps < 150:
+                    level = "Normal"
+                else:
+                    level = "Wide (stress)"
+                summary_parts.append(f"IG OAS: {ig_bps:.0f} bp [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day change: {stats['change_5d']*100:+.0f} bp")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bp")
+                summary_parts.append(f"  52-week range: {stats['low_52w']*100:.0f} - {stats['high_52w']*100:.0f} bp")
+                summary_parts.append("  KEY LEVELS: 80 bp (tight), 150 bp (normal upper), 200+ bp (stress)")
+        summary_parts.append("")
+
+        # CCC Section
+        summary_parts.append("## CCC-RATED SPREADS (Distressed Credit)")
+        if ccc_df is not None:
+            stats = get_stats(ccc_df)
+            if stats:
+                ccc_bps = stats['current'] * 100
+                summary_parts.append(f"CCC OAS: {ccc_bps:.0f} bp ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  5-day change: {stats['change_5d']*100:+.0f} bp")
+                summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bp")
+                # CCC/HY ratio for distress concentration
+                if hy_df is not None:
+                    hy_stats = get_stats(hy_df)
+                    if hy_stats and hy_stats['current'] > 0:
+                        ratio = stats['current'] / hy_stats['current']
+                        summary_parts.append(f"  CCC/HY ratio: {ratio:.2f}x (normal 2.5-4x) - {'rising distress' if ratio > 4 else 'contained' if ratio < 3 else 'normal'}")
+                summary_parts.append("  CONTEXT: CCC spreads lead HY in defaults; rising CCC/HY ratio = distressed credits under pressure first")
+        summary_parts.append("")
+
+        # Credit ETF Prices (Total Return Signal)
+        summary_parts.append("## CREDIT ETF PRICES (Total Return Signal)")
+        if hy_price_df is not None:
+            stats = get_stats(hy_price_df)
+            if stats:
+                summary_parts.append(f"HYG (HY ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.2f}%")
+        if ig_price_df is not None:
+            stats = get_stats(ig_price_df)
+            if stats:
+                summary_parts.append(f"LQD (IG ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.2f}%")
+        summary_parts.append("  (Falling prices = spread widening and/or rising Treasury yields)")
+        summary_parts.append("")
+
+        # Cross-Asset Context
+        summary_parts.append("## CROSS-ASSET CREDIT CONTEXT")
+        if vix_df is not None:
+            stats = get_stats(vix_df)
+            if stats:
+                summary_parts.append(f"VIX: {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) - {'Risk-off' if stats['current'] > 25 else 'Normal' if stats['current'] > 15 else 'Complacent'}")
+        if treasury_10y_df is not None:
+            stats = get_stats(treasury_10y_df)
+            if stats:
+                summary_parts.append(f"10Y Treasury: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) - affects credit all-in yields")
+        if sp500_df is not None:
+            stats = get_stats(sp500_df)
+            if stats:
+                summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.2f}%")
+        summary_parts.append("  CONTEXT: Tight credit + rising equities = risk-on; Credit widening ahead of equity decline = early warning signal")
+        summary_parts.append("")
+
+        # Macro Regime Context
+        try:
+            regime = get_macro_regime()
+            if regime and regime.get('state') and regime.get('state') != 'Unknown':
+                summary_parts.append("## MACRO REGIME CONTEXT")
+                summary_parts.append(f"Current regime: {regime['state']} (confidence: {regime.get('confidence', 'N/A')})")
+                summary_parts.append("  (Use regime context to interpret whether current spread levels are unusual for this cycle phase)")
+                summary_parts.append("")
+        except Exception:
+            pass
+
+        # Interpretation Framework
+        summary_parts.append("## CREDIT SPREAD INTERPRETATION FRAMEWORK")
+        summary_parts.append("- HY < 300 bp: Markets pricing near-zero defaults; complacency risk")
+        summary_parts.append("- HY 300-450 bp: Normal credit conditions; healthy risk appetite")
+        summary_parts.append("- HY 450-600 bp: Elevated stress; de-risking underway")
+        summary_parts.append("- HY > 600 bp: Crisis territory; distress/default cycle underway")
+        summary_parts.append("- IG typically 60-70% of HY move; IG leading HY = early warning")
+        summary_parts.append("- Credit leading equities: spread widening before equity decline = macro alarm")
+        summary_parts.append("")
+
+        return "\n".join(summary_parts)
+
+    except Exception as e:
+        print(f"Error generating credit market summary: {e}")
+        return "Credit market data summary unavailable."
 
 
 @app.route('/api/chat', methods=['POST'])

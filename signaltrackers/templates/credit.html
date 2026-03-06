@@ -433,6 +433,27 @@
     </div>
     {% endif %}
 
+    <!-- Collapsible Section: AI Credit Analysis -->
+    <div class="collapsible-section" data-collapsed="true" data-section-id="ai-briefing">
+        <button class="collapsible-section__header" aria-expanded="false">
+            <h2 class="collapsible-section__title"><i class="bi bi-chat-square-text-fill"></i> AI Credit Analysis</h2>
+            <svg class="collapsible-section__icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="collapsible-section__content" hidden>
+            <div style="background: white; padding: var(--space-4); border-radius: 8px;">
+                <div id="credit-summary-content" class="summary-text">
+                    <p class="text-muted mb-0"><i class="bi bi-hourglass-split"></i> Loading credit analysis...</p>
+                </div>
+                <div id="credit-summary-error" class="text-muted d-none">
+                    <p class="mb-0"><i class="bi bi-info-circle"></i> No analysis available yet. Click "Reload Data" on the main dashboard to generate one.</p>
+                </div>
+                <div id="credit-summary-timestamp" style="margin-top: var(--space-3); font-size: var(--text-xs); color: var(--neutral-500);"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Collapsible Section: Market Statistics -->
     <div class="collapsible-section" data-collapsed="true" data-section-id="market-stats">
         <button class="collapsible-section__header" aria-expanded="false">
@@ -922,8 +943,48 @@ function initTimeRangeControls() {
     });
 }
 
+async function loadCreditSummary() {
+    try {
+        const response = await fetch('/api/credit-summary');
+        const data = await response.json();
+
+        const contentDiv = document.getElementById('credit-summary-content');
+        const errorDiv = document.getElementById('credit-summary-error');
+        const timestampDiv = document.getElementById('credit-summary-timestamp');
+
+        if (data.error) {
+            contentDiv.classList.add('d-none');
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true, gfm: true, sanitize: false });
+            contentDiv.innerHTML = marked.parse(data.summary);
+        } else {
+            contentDiv.innerHTML = data.summary
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        }
+
+        if (data.generated_at) {
+            const genDate = new Date(data.generated_at);
+            const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            timestampDiv.textContent = `Generated: ${dateStr} at ${timeStr}`;
+        }
+
+    } catch (error) {
+        console.error('Error loading credit summary:', error);
+        document.getElementById('credit-summary-content').classList.add('d-none');
+        document.getElementById('credit-summary-error').classList.remove('d-none');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadCreditData();
+    loadCreditSummary();
     initCollapsibleSections();
     initTimeRangeControls();
 });
