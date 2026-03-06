@@ -3265,6 +3265,48 @@ def api_debug_web_search():
     })
 
 
+def get_metric_stats(df):
+    """Compute standard stats for a metric DataFrame.
+
+    Returns a dict with: current, percentile, change_1d, change_5d, change_30d,
+    pct_change_5d, pct_change_30d, high_52w, low_52w, min, max.
+    Returns None if df is None or has fewer than 2 rows.
+    """
+    if df is None or len(df) < 2:
+        return None
+    col = [c for c in df.columns if c != 'date'][0]
+    values = df[col].dropna()
+    if len(values) < 2:
+        return None
+    current = float(values.iloc[-1])
+    change_1d = float(values.iloc[-1] - values.iloc[-2]) if len(values) >= 2 else 0.0
+    change_5d = float(values.iloc[-1] - values.iloc[-6]) if len(values) >= 6 else 0.0
+    change_30d = float(values.iloc[-1] - values.iloc[-31]) if len(values) >= 31 else 0.0
+    pct_change_5d = (
+        float((current / float(values.iloc[-6])) - 1) * 100
+        if len(values) >= 6 and float(values.iloc[-6]) != 0 else 0.0
+    )
+    pct_change_30d = (
+        float((current / float(values.iloc[-31])) - 1) * 100
+        if len(values) >= 31 and float(values.iloc[-31]) != 0 else 0.0
+    )
+    high_52w = float(values.tail(252).max()) if len(values) > 252 else float(values.max())
+    low_52w = float(values.tail(252).min()) if len(values) > 252 else float(values.min())
+    return {
+        'current': current,
+        'percentile': float((values < current).sum() / len(values) * 100),
+        'change_1d': change_1d,
+        'change_5d': change_5d,
+        'change_30d': change_30d,
+        'pct_change_5d': pct_change_5d,
+        'pct_change_30d': pct_change_30d,
+        'high_52w': high_52w,
+        'low_52w': low_52w,
+        'min': float(values.min()),
+        'max': float(values.max()),
+    }
+
+
 def generate_market_summary():
     """Generate a comprehensive market data summary for AI context."""
     try:
@@ -3308,27 +3350,6 @@ def generate_market_summary():
         m2_df = load_csv_data('m2_money_supply.csv')
         cpi_df = load_csv_data('cpi.csv')
 
-        # Helper function to get current value and stats
-        def get_stats(df):
-            if df is None or len(df) == 0:
-                return None
-            values = df[df.columns[1]].dropna()
-            if len(values) == 0:
-                return None
-            return {
-                'current': float(values.iloc[-1]),
-                'min': float(values.min()),
-                'max': float(values.max()),
-                'mean': float(values.mean()),
-                'change_1d': float(values.iloc[-1] - values.iloc[-2]) if len(values) >= 2 else 0,
-                'change_1d_pct': float(((values.iloc[-1] / values.iloc[-2]) - 1) * 100) if len(values) >= 2 else 0,
-                'change_5d': float(values.iloc[-1] - values.iloc[-6]) if len(values) >= 6 else 0,
-                'change_5d_pct': float(((values.iloc[-1] / values.iloc[-6]) - 1) * 100) if len(values) >= 6 else 0,
-                'change_30d': float(values.iloc[-1] - values.iloc[-31]) if len(values) >= 31 else 0,
-                'change_30d_pct': float(((values.iloc[-1] / values.iloc[-31]) - 1) * 100) if len(values) >= 31 else 0,
-                'percentile': float((values < values.iloc[-1]).sum() / len(values) * 100)
-            }
-
         # Helper for YoY change (for monthly data)
         def get_yoy(df):
             if df is None or len(df) < 13:
@@ -3343,76 +3364,82 @@ def generate_market_summary():
         # Credit Spreads Section
         summary_parts.append("## CREDIT SPREADS")
         if hy_spread_df is not None:
-            stats = get_stats(hy_spread_df)
+            stats = get_metric_stats(hy_spread_df)
             if stats:
-                summary_parts.append(f"High Yield (HY): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"High Yield (HY): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         if ig_spread_df is not None:
-            stats = get_stats(ig_spread_df)
+            stats = get_metric_stats(ig_spread_df)
             if stats:
-                summary_parts.append(f"Investment Grade (IG): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Investment Grade (IG): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         if ccc_spread_df is not None:
-            stats = get_stats(ccc_spread_df)
+            stats = get_metric_stats(ccc_spread_df)
             if stats:
-                summary_parts.append(f"CCC-rated: {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"CCC-rated: {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
         # Safe Havens Section
         summary_parts.append("## SAFE HAVEN ASSETS")
         if gold_df is not None:
-            stats = get_stats(gold_df)
+            stats = get_metric_stats(gold_df)
             if stats:
-                summary_parts.append(f"Gold (GLD×10): ${stats['current']*10:,.0f}/oz equiv ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Gold (GLD×10): ${stats['current']*10:,.0f}/oz equiv ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
+                summary_parts.append(f"  52w range: ${stats['low_52w']*10:,.0f}–${stats['high_52w']*10:,.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
         if silver_df is not None:
-            stats = get_stats(silver_df)
+            stats = get_metric_stats(silver_df)
             if stats:
-                summary_parts.append(f"Silver (SLV): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Silver (SLV): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         if bitcoin_df is not None:
-            stats = get_stats(bitcoin_df)
+            stats = get_metric_stats(bitcoin_df)
             if stats:
-                summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
+                summary_parts.append(f"  52w range: ${stats['low_52w']:,.0f}–${stats['high_52w']:,.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
         summary_parts.append("")
 
         # Equity Markets
         summary_parts.append("## EQUITY MARKETS")
         if sp500_df is not None:
-            stats = get_stats(sp500_df)
+            stats = get_metric_stats(sp500_df)
             if stats:
-                summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
+                summary_parts.append(f"  52w range: ${stats['low_52w']:.0f}–${stats['high_52w']:.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
         if vix_df is not None:
-            stats = get_stats(vix_df)
+            stats = get_metric_stats(vix_df)
             if stats:
-                summary_parts.append(f"VIX (Fear Index): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"VIX (Fear Index): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
         # Market Concentration
         summary_parts.append("## MARKET CONCENTRATION (Higher = More AI/Tech Concentration)")
         if smh_spy_df is not None:
-            stats = get_stats(smh_spy_df)
+            stats = get_metric_stats(smh_spy_df)
             if stats:
-                summary_parts.append(f"Semiconductor/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Semiconductor/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         if xlk_spy_df is not None:
-            stats = get_stats(xlk_spy_df)
+            stats = get_metric_stats(xlk_spy_df)
             if stats:
-                summary_parts.append(f"Tech Sector/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Tech Sector/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         if growth_value_df is not None:
-            stats = get_stats(growth_value_df)
+            stats = get_metric_stats(growth_value_df)
             if stats:
-                summary_parts.append(f"Growth/Value: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Growth/Value: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         if breadth_df is not None:
-            stats = get_stats(breadth_df)
+            stats = get_metric_stats(breadth_df)
             if stats:
-                summary_parts.append(f"Market Breadth (SPY/RSP): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"Market Breadth (SPY/RSP): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
         # Yen Carry Trade
         summary_parts.append("## YEN CARRY TRADE MONITOR")
         if usdjpy_df is not None:
-            stats = get_stats(usdjpy_df)
+            stats = get_metric_stats(usdjpy_df)
             if stats:
-                summary_parts.append(f"USD/JPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d_pct']:+.1f}%")
+                summary_parts.append(f"USD/JPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
                 summary_parts.append("  (Lower = stronger yen = carry trade unwinding risk)")
         if japan_10y_df is not None:
-            stats = get_stats(japan_10y_df)
+            stats = get_metric_stats(japan_10y_df)
             if stats:
                 summary_parts.append(f"Japan 10Y Yield: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append("  (Rising yields = BOJ tightening = carry trade at risk)")
@@ -3421,12 +3448,12 @@ def generate_market_summary():
         # Yield Curve (Recession Indicators)
         summary_parts.append("## YIELD CURVE (Recession Indicators)")
         if yield_curve_10y2y_df is not None:
-            stats = get_stats(yield_curve_10y2y_df)
+            stats = get_metric_stats(yield_curve_10y2y_df)
             if stats:
                 status = "INVERTED" if stats['current'] < 0 else "Normal"
                 summary_parts.append(f"10Y-2Y Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.2f}%")
         if yield_curve_10y3m_df is not None:
-            stats = get_stats(yield_curve_10y3m_df)
+            stats = get_metric_stats(yield_curve_10y3m_df)
             if stats:
                 status = "INVERTED" if stats['current'] < 0 else "Normal"
                 summary_parts.append(f"10Y-3M Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.2f}%")
@@ -3436,12 +3463,12 @@ def generate_market_summary():
         # Labor Market
         summary_parts.append("## LABOR MARKET (Weekly Data)")
         if initial_claims_df is not None:
-            stats = get_stats(initial_claims_df)
+            stats = get_metric_stats(initial_claims_df)
             if stats:
                 level = "Low" if stats['current'] < 250 else "Elevated" if stats['current'] > 300 else "Normal"
                 summary_parts.append(f"Initial Claims: {stats['current']:.0f}k [{level}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.0f}k")
         if continuing_claims_df is not None:
-            stats = get_stats(continuing_claims_df)
+            stats = get_metric_stats(continuing_claims_df)
             if stats:
                 summary_parts.append(f"Continuing Claims: {stats['current']:.0f}k ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.0f}k")
         summary_parts.append("  (Rising claims = labor market weakening; Initial >300k = warning, >400k = recession signal)")
@@ -3450,18 +3477,18 @@ def generate_market_summary():
         # Economic Indicators
         summary_parts.append("## ECONOMIC INDICATORS (Monthly Data)")
         if consumer_confidence_df is not None:
-            stats = get_stats(consumer_confidence_df)
+            stats = get_metric_stats(consumer_confidence_df)
             if stats:
                 summary_parts.append(f"Consumer Confidence (UMich): {stats['current']:.1f} ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append("  (<70 = recession territory, >100 = strong optimism)")
         if m2_df is not None:
-            stats = get_stats(m2_df)
+            stats = get_metric_stats(m2_df)
             yoy = get_yoy(m2_df)
             if stats:
                 summary_parts.append(f"M2 Money Supply: ${stats['current']/1000:.2f} trillion | YoY: {yoy:+.1f}%")
                 summary_parts.append("  (Negative YoY = highly unusual, deflationary)")
         if cpi_df is not None:
-            stats = get_stats(cpi_df)
+            stats = get_metric_stats(cpi_df)
             yoy = get_yoy(cpi_df)
             if stats:
                 summary_parts.append(f"CPI Index: {stats['current']:.1f} | YoY Inflation: {yoy:+.1f}%")
@@ -3470,7 +3497,7 @@ def generate_market_summary():
 
         # Divergence Gap (Gold vs Credit)
         if divergence_df is not None:
-            stats = get_stats(divergence_df)
+            stats = get_metric_stats(divergence_df)
             if stats:
                 summary_parts.append("## DIVERGENCE GAP (Gold-Implied Spread minus Actual HY Spread)")
                 summary_parts.append(f"Current: {stats['current']:.0f} bp ({stats['percentile']:.1f}th percentile)")
@@ -3551,36 +3578,6 @@ def generate_crypto_market_summary():
         summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
-        def get_stats(df):
-            if df is None or len(df) < 2:
-                return None
-            col = [c for c in df.columns if c != 'date'][0]
-            current = df.iloc[-1][col]
-            values = df[col].dropna().tolist()
-            percentile = sum(1 for v in values if v <= current) / len(values) * 100
-
-            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
-            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
-            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
-
-            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
-            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
-
-            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
-            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
-
-            return {
-                'current': current,
-                'percentile': percentile,
-                'change_1d': change_1d,
-                'change_5d': change_5d,
-                'change_30d': change_30d,
-                'pct_change_5d': pct_change_5d,
-                'pct_change_30d': pct_change_30d,
-                'high_52w': high_52w,
-                'low_52w': low_52w
-            }
-
         # Load crypto-relevant metrics
         bitcoin_df = load_csv_data('bitcoin_price.csv')
         gold_df = load_csv_data('gold_price.csv')
@@ -3598,7 +3595,7 @@ def generate_crypto_market_summary():
         # Bitcoin Section
         summary_parts.append("## BITCOIN")
         if bitcoin_df is not None:
-            stats = get_stats(bitcoin_df)
+            stats = get_metric_stats(bitcoin_df)
             if stats:
                 summary_parts.append(f"Price: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
@@ -3613,7 +3610,7 @@ def generate_crypto_market_summary():
         # Fear & Greed Index
         summary_parts.append("## CRYPTO SENTIMENT")
         if fear_greed_df is not None:
-            stats = get_stats(fear_greed_df)
+            stats = get_metric_stats(fear_greed_df)
             if stats:
                 # Interpret the level
                 level = stats['current']
@@ -3639,7 +3636,7 @@ def generate_crypto_market_summary():
         # BTC/Gold Ratio
         summary_parts.append("## BTC/GOLD RATIO")
         if btc_gold_ratio_df is not None:
-            stats = get_stats(btc_gold_ratio_df)
+            stats = get_metric_stats(btc_gold_ratio_df)
             if stats:
                 summary_parts.append(f"BTC priced in gold: {stats['current']:.1f} oz ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
@@ -3650,21 +3647,21 @@ def generate_crypto_market_summary():
         summary_parts.append("## LIQUIDITY INDICATORS (Key BTC Drivers)")
 
         if fed_balance_df is not None:
-            stats = get_stats(fed_balance_df)
+            stats = get_metric_stats(fed_balance_df)
             if stats:
                 trend = "EXPANDING (bullish for BTC)" if stats['change_30d'] > 0 else "SHRINKING (headwind for BTC)"
                 summary_parts.append(f"Fed Balance Sheet: ${stats['current']/1000:.2f} trillion [{trend}]")
                 summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.2f}%")
 
         if reverse_repo_df is not None:
-            stats = get_stats(reverse_repo_df)
+            stats = get_metric_stats(reverse_repo_df)
             if stats:
                 trend = "Rising (liquidity parking at Fed)" if stats['change_30d'] > 0 else "Declining (liquidity entering markets)"
                 summary_parts.append(f"Reverse Repo (RRP): ${stats['current']:.0f}B [{trend}]")
                 summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
 
         if nfci_df is not None:
-            stats = get_stats(nfci_df)
+            stats = get_metric_stats(nfci_df)
             if stats:
                 if stats['current'] > 0.5:
                     condition = "TIGHT (bearish for risk assets)"
@@ -3679,7 +3676,7 @@ def generate_crypto_market_summary():
                 summary_parts.append("  (Negative = loose conditions favor BTC; Positive = tight conditions = headwind)")
 
         if m2_df is not None:
-            stats = get_stats(m2_df)
+            stats = get_metric_stats(m2_df)
             if stats:
                 # Calculate YoY change
                 if len(m2_df) > 12:
@@ -3693,24 +3690,24 @@ def generate_crypto_market_summary():
         # Risk Context
         summary_parts.append("## RISK CONTEXT")
         if vix_df is not None:
-            stats = get_stats(vix_df)
+            stats = get_metric_stats(vix_df)
             if stats:
                 level = "HIGH FEAR" if stats['current'] > 30 else "Elevated" if stats['current'] > 20 else "Low"
                 summary_parts.append(f"VIX: {stats['current']:.1f} [{level}] | 5d: {stats['pct_change_5d']:+.1f}%")
 
         if dxy_df is not None:
-            stats = get_stats(dxy_df)
+            stats = get_metric_stats(dxy_df)
             if stats:
                 trend = "Strengthening (BTC headwind)" if stats['change_30d'] > 0 else "Weakening (BTC tailwind)"
                 summary_parts.append(f"Dollar Index (DXY): {stats['current']:.2f} [{trend}] | 30d: {stats['pct_change_30d']:+.1f}%")
 
         if sp500_df is not None:
-            stats = get_stats(sp500_df)
+            stats = get_metric_stats(sp500_df)
             if stats:
                 summary_parts.append(f"S&P 500: {stats['current']:,.0f} | 30d: {stats['pct_change_30d']:+.1f}%")
 
         if nasdaq_df is not None:
-            stats = get_stats(nasdaq_df)
+            stats = get_metric_stats(nasdaq_df)
             if stats:
                 summary_parts.append(f"Nasdaq 100: {stats['current']:,.0f} | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
@@ -3739,36 +3736,6 @@ def generate_equity_market_summary():
         summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
-        def get_stats(df):
-            if df is None or len(df) < 2:
-                return None
-            col = [c for c in df.columns if c != 'date'][0]
-            current = df.iloc[-1][col]
-            values = df[col].dropna().tolist()
-            percentile = sum(1 for v in values if v <= current) / len(values) * 100
-
-            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
-            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
-            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
-
-            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
-            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
-
-            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
-            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
-
-            return {
-                'current': current,
-                'percentile': percentile,
-                'change_1d': change_1d,
-                'change_5d': change_5d,
-                'change_30d': change_30d,
-                'pct_change_5d': pct_change_5d,
-                'pct_change_30d': pct_change_30d,
-                'high_52w': high_52w,
-                'low_52w': low_52w
-            }
-
         # Load equity-relevant metrics
         sp500_df = load_csv_data('sp500_price.csv')
         nasdaq_df = load_csv_data('nasdaq_price.csv')
@@ -3785,19 +3752,19 @@ def generate_equity_market_summary():
         # Core Indices Section
         summary_parts.append("## CORE INDICES")
         if sp500_df is not None:
-            stats = get_stats(sp500_df)
+            stats = get_metric_stats(sp500_df)
             if stats:
                 summary_parts.append(f"S&P 500: {stats['current']:,.0f} ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
 
         if nasdaq_df is not None:
-            stats = get_stats(nasdaq_df)
+            stats = get_metric_stats(nasdaq_df)
             if stats:
                 summary_parts.append(f"Nasdaq 100: {stats['current']:,.0f} ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
 
         if small_cap_df is not None:
-            stats = get_stats(small_cap_df)
+            stats = get_metric_stats(small_cap_df)
             if stats:
                 summary_parts.append(f"Russell 2000 (Small Caps): ${stats['current']:,.2f} ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
@@ -3806,7 +3773,7 @@ def generate_equity_market_summary():
         # VIX Section
         summary_parts.append("## VOLATILITY")
         if vix_df is not None:
-            stats = get_stats(vix_df)
+            stats = get_metric_stats(vix_df)
             if stats:
                 if stats['current'] < 15:
                     level = "LOW (complacency)"
@@ -3824,7 +3791,7 @@ def generate_equity_market_summary():
         # Market Structure Section
         summary_parts.append("## MARKET STRUCTURE (Breadth & Concentration)")
         if breadth_df is not None:
-            stats = get_stats(breadth_df)
+            stats = get_metric_stats(breadth_df)
             if stats:
                 if stats['percentile'] < 20:
                     condition = "VERY NARROW (concentrated)"
@@ -3841,7 +3808,7 @@ def generate_equity_market_summary():
                 summary_parts.append("  (Low = few stocks driving gains; High = broad participation)")
 
         if smh_spy_df is not None:
-            stats = get_stats(smh_spy_df)
+            stats = get_metric_stats(smh_spy_df)
             if stats:
                 if stats['percentile'] > 90:
                     level = "EXTREME concentration"
@@ -3857,7 +3824,7 @@ def generate_equity_market_summary():
         # Style Rotation Section
         summary_parts.append("## STYLE & SIZE ROTATION")
         if growth_value_df is not None:
-            stats = get_stats(growth_value_df)
+            stats = get_metric_stats(growth_value_df)
             if stats:
                 if stats['percentile'] > 80:
                     bias = "Strong GROWTH leadership"
@@ -3873,7 +3840,7 @@ def generate_equity_market_summary():
                 summary_parts.append(f"  30-day change: {stats['pct_change_30d']:+.1f}%")
 
         if iwm_spy_df is not None:
-            stats = get_stats(iwm_spy_df)
+            stats = get_metric_stats(iwm_spy_df)
             if stats:
                 if stats['percentile'] > 70:
                     bias = "Small caps leading (risk-on)"
@@ -3888,17 +3855,17 @@ def generate_equity_market_summary():
         # Key Sectors Section
         summary_parts.append("## KEY SECTORS")
         if semi_df is not None:
-            stats = get_stats(semi_df)
+            stats = get_metric_stats(semi_df)
             if stats:
                 summary_parts.append(f"Semiconductors (SMH): ${stats['current']:,.2f} | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
 
         if financials_df is not None:
-            stats = get_stats(financials_df)
+            stats = get_metric_stats(financials_df)
             if stats:
                 summary_parts.append(f"Financials (XLF): ${stats['current']:,.2f} | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
 
         if energy_df is not None:
-            stats = get_stats(energy_df)
+            stats = get_metric_stats(energy_df)
             if stats:
                 summary_parts.append(f"Energy (XLE): ${stats['current']:,.2f} | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
@@ -3927,36 +3894,6 @@ def generate_rates_market_summary():
         summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
-        def get_stats(df):
-            if df is None or len(df) < 2:
-                return None
-            col = [c for c in df.columns if c != 'date'][0]
-            current = df.iloc[-1][col]
-            values = df[col].dropna().tolist()
-            percentile = sum(1 for v in values if v <= current) / len(values) * 100
-
-            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
-            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
-            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
-
-            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
-            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
-
-            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
-            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
-
-            return {
-                'current': current,
-                'percentile': percentile,
-                'change_1d': change_1d,
-                'change_5d': change_5d,
-                'change_30d': change_30d,
-                'pct_change_5d': pct_change_5d,
-                'pct_change_30d': pct_change_30d,
-                'high_52w': high_52w,
-                'low_52w': low_52w
-            }
-
         # Load rates-relevant metrics
         treasury_10y_df = load_csv_data('treasury_10y.csv')
         yield_curve_10y2y_df = load_csv_data('yield_curve_10y2y.csv')
@@ -3971,7 +3908,7 @@ def generate_rates_market_summary():
         # Treasury Yields Section
         summary_parts.append("## TREASURY YIELDS")
         if treasury_10y_df is not None:
-            stats = get_stats(treasury_10y_df)
+            stats = get_metric_stats(treasury_10y_df)
             if stats:
                 if stats['current'] > 4.5:
                     level = "ELEVATED (restrictive)"
@@ -3988,7 +3925,7 @@ def generate_rates_market_summary():
         # Yield Curve Section
         summary_parts.append("## YIELD CURVE (Recession Indicator)")
         if yield_curve_10y2y_df is not None:
-            stats = get_stats(yield_curve_10y2y_df)
+            stats = get_metric_stats(yield_curve_10y2y_df)
             if stats:
                 spread_bps = stats['current'] * 100
                 if stats['current'] < 0:
@@ -4001,7 +3938,7 @@ def generate_rates_market_summary():
                 summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
 
         if yield_curve_10y3m_df is not None:
-            stats = get_stats(yield_curve_10y3m_df)
+            stats = get_metric_stats(yield_curve_10y3m_df)
             if stats:
                 spread_bps = stats['current'] * 100
                 if stats['current'] < 0:
@@ -4018,7 +3955,7 @@ def generate_rates_market_summary():
         # Real Yields Section
         summary_parts.append("## REAL YIELDS & INFLATION")
         if real_yield_df is not None:
-            stats = get_stats(real_yield_df)
+            stats = get_metric_stats(real_yield_df)
             if stats:
                 if stats['current'] > 2:
                     policy = "RESTRICTIVE"
@@ -4033,7 +3970,7 @@ def generate_rates_market_summary():
                 summary_parts.append("  (Real yield = nominal yield minus inflation expectations)")
 
         if breakeven_df is not None:
-            stats = get_stats(breakeven_df)
+            stats = get_metric_stats(breakeven_df)
             if stats:
                 if stats['current'] > 2.5:
                     expectation = "Above target (inflation concerns)"
@@ -4046,7 +3983,7 @@ def generate_rates_market_summary():
                 summary_parts.append("  (Market's 10-year inflation forecast)")
 
         if cpi_df is not None:
-            stats = get_stats(cpi_df)
+            stats = get_metric_stats(cpi_df)
             if stats:
                 summary_parts.append(f"CPI (YoY): {stats['current']:.1f}%")
         summary_parts.append("")
@@ -4054,11 +3991,11 @@ def generate_rates_market_summary():
         # Fed Policy Section
         summary_parts.append("## FED POLICY")
         if fed_funds_df is not None:
-            stats = get_stats(fed_funds_df)
+            stats = get_metric_stats(fed_funds_df)
             if stats:
                 summary_parts.append(f"Fed Funds Rate: {stats['current']:.2f}%")
                 if treasury_10y_df is not None:
-                    t10y_stats = get_stats(treasury_10y_df)
+                    t10y_stats = get_metric_stats(treasury_10y_df)
                     if t10y_stats:
                         term_premium = t10y_stats['current'] - stats['current']
                         summary_parts.append(f"  Term Premium (10Y - Fed Funds): {term_premium:.2f}%")
@@ -4067,8 +4004,8 @@ def generate_rates_market_summary():
         # Cross-Asset Context
         summary_parts.append("## RATES IMPACT ON OTHER ASSETS")
         if sp500_df is not None and treasury_10y_df is not None:
-            sp_stats = get_stats(sp500_df)
-            t10y_stats = get_stats(treasury_10y_df)
+            sp_stats = get_metric_stats(sp500_df)
+            t10y_stats = get_metric_stats(treasury_10y_df)
             if sp_stats and t10y_stats:
                 # Equity risk premium approximation (rough)
                 earnings_yield = 100 / 20  # Assume ~20x P/E
@@ -4077,8 +4014,8 @@ def generate_rates_market_summary():
                 summary_parts.append("  (Higher rates compress equity valuations)")
 
         if gold_df is not None and real_yield_df is not None:
-            gold_stats = get_stats(gold_df)
-            ry_stats = get_stats(real_yield_df)
+            gold_stats = get_metric_stats(gold_df)
+            ry_stats = get_metric_stats(real_yield_df)
             if gold_stats and ry_stats:
                 summary_parts.append(f"Gold vs Real Yields: Gold {gold_stats['pct_change_30d']:+.1f}% (30d) | Real yield {ry_stats['change_30d']*100:+.0f} bps")
                 summary_parts.append("  (Gold typically inversely correlated with real yields)")
@@ -4091,7 +4028,7 @@ def generate_rates_market_summary():
         ccc_spread_df = load_csv_data('ccc_spread.csv')
 
         if hy_spread_df is not None:
-            stats = get_stats(hy_spread_df)
+            stats = get_metric_stats(hy_spread_df)
             if stats:
                 if stats['current'] > 500:
                     status = "STRESS (significant risk aversion)"
@@ -4106,7 +4043,7 @@ def generate_rates_market_summary():
                 summary_parts.append("  KEY LEVELS: 300bp (first warning), 500bp (stress), 800bp (crisis)")
 
         if ig_spread_df is not None:
-            stats = get_stats(ig_spread_df)
+            stats = get_metric_stats(ig_spread_df)
             if stats:
                 if stats['current'] > 150:
                     status = "STRESS"
@@ -4120,8 +4057,8 @@ def generate_rates_market_summary():
                 summary_parts.append(f"  30-day change: {stats['change_30d']:+.0f} bp")
 
         if ccc_spread_df is not None and hy_spread_df is not None:
-            ccc_stats = get_stats(ccc_spread_df)
-            hy_stats = get_stats(hy_spread_df)
+            ccc_stats = get_metric_stats(ccc_spread_df)
+            hy_stats = get_metric_stats(hy_spread_df)
             if ccc_stats and hy_stats and hy_stats['current'] > 0:
                 ccc_hy_ratio = ccc_stats['current'] / hy_stats['current']
                 if ccc_hy_ratio > 3.5:
@@ -4161,36 +4098,6 @@ def generate_dollar_market_summary():
         summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
-        def get_stats(df):
-            if df is None or len(df) < 2:
-                return None
-            col = [c for c in df.columns if c != 'date'][0]
-            current = df.iloc[-1][col]
-            values = df[col].dropna().tolist()
-            percentile = sum(1 for v in values if v <= current) / len(values) * 100
-
-            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
-            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
-            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
-
-            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
-            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
-
-            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
-            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
-
-            return {
-                'current': current,
-                'percentile': percentile,
-                'change_1d': change_1d,
-                'change_5d': change_5d,
-                'change_30d': change_30d,
-                'pct_change_5d': pct_change_5d,
-                'pct_change_30d': pct_change_30d,
-                'high_52w': high_52w,
-                'low_52w': low_52w
-            }
-
         # Load dollar-relevant metrics
         dxy_df = load_csv_data('dollar_index_price.csv')
         usdjpy_df = load_csv_data('usdjpy_price.csv')
@@ -4204,7 +4111,7 @@ def generate_dollar_market_summary():
         # Dollar Index Section
         summary_parts.append("## US DOLLAR INDEX (DXY)")
         if dxy_df is not None:
-            stats = get_stats(dxy_df)
+            stats = get_metric_stats(dxy_df)
             if stats:
                 # Dollar Smile framework interpretation
                 if stats['current'] > 105:
@@ -4225,7 +4132,7 @@ def generate_dollar_market_summary():
         # USD/JPY Section (Carry Trade Indicator)
         summary_parts.append("## USD/JPY (Carry Trade Barometer)")
         if usdjpy_df is not None:
-            stats = get_stats(usdjpy_df)
+            stats = get_metric_stats(usdjpy_df)
             if stats:
                 # Carry trade dynamics
                 if stats['current'] > 150:
@@ -4255,14 +4162,14 @@ def generate_dollar_market_summary():
         # Rate Differentials
         summary_parts.append("## RATE DIFFERENTIALS (Dollar Driver)")
         if treasury_10y_df is not None:
-            stats = get_stats(treasury_10y_df)
+            stats = get_metric_stats(treasury_10y_df)
             if stats:
                 summary_parts.append(f"US 10Y Treasury: {stats['current']:.2f}%")
                 summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bps")
                 summary_parts.append("  (Higher US rates typically support USD)")
 
         if fed_funds_df is not None:
-            stats = get_stats(fed_funds_df)
+            stats = get_metric_stats(fed_funds_df)
             if stats:
                 summary_parts.append(f"Fed Funds Rate: {stats['current']:.2f}%")
                 summary_parts.append("  CONTEXT: Rate differential vs ECB/BOJ drives FX flows")
@@ -4271,20 +4178,20 @@ def generate_dollar_market_summary():
         # Cross-Asset Context
         summary_parts.append("## DOLLAR IMPACT ON OTHER ASSETS")
         if gold_df is not None and dxy_df is not None:
-            gold_stats = get_stats(gold_df)
-            dxy_stats = get_stats(dxy_df)
+            gold_stats = get_metric_stats(gold_df)
+            dxy_stats = get_metric_stats(dxy_df)
             if gold_stats and dxy_stats:
                 summary_parts.append(f"Gold: ${gold_stats['current']:.2f} ({gold_stats['pct_change_30d']:+.1f}% 30d) vs DXY {dxy_stats['pct_change_30d']:+.1f}%")
                 summary_parts.append("  (Gold typically inversely correlated with USD)")
 
         if sp500_df is not None:
-            stats = get_stats(sp500_df)
+            stats = get_metric_stats(sp500_df)
             if stats:
                 summary_parts.append(f"S&P 500: {stats['current']:.2f} ({stats['pct_change_30d']:+.1f}% 30d)")
                 summary_parts.append("  (Strong dollar headwind for multinational earnings)")
 
         if bitcoin_df is not None:
-            stats = get_stats(bitcoin_df)
+            stats = get_metric_stats(bitcoin_df)
             if stats:
                 summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['pct_change_30d']:+.1f}% 30d)")
                 summary_parts.append("  (Crypto sensitive to dollar liquidity conditions)")
@@ -4293,7 +4200,7 @@ def generate_dollar_market_summary():
         # Risk Sentiment
         summary_parts.append("## RISK SENTIMENT CONTEXT")
         if vix_df is not None:
-            stats = get_stats(vix_df)
+            stats = get_metric_stats(vix_df)
             if stats:
                 if stats['current'] > 25:
                     regime = "RISK-OFF (supports USD safe-haven bid)"
@@ -4330,36 +4237,6 @@ def generate_credit_market_summary():
         summary_parts.append(f"Generated: {datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')} ET")
         summary_parts.append("")
 
-        def get_stats(df):
-            if df is None or len(df) < 2:
-                return None
-            col = [c for c in df.columns if c != 'date'][0]
-            current = df.iloc[-1][col]
-            values = df[col].dropna().tolist()
-            percentile = sum(1 for v in values if v <= current) / len(values) * 100
-
-            change_1d = current - df.iloc[-2][col] if len(df) > 1 else 0
-            change_5d = current - df.iloc[-6][col] if len(df) > 5 else 0
-            change_30d = current - df.iloc[-31][col] if len(df) > 30 else 0
-
-            pct_change_5d = ((current / df.iloc[-6][col]) - 1) * 100 if len(df) > 5 and df.iloc[-6][col] != 0 else 0
-            pct_change_30d = ((current / df.iloc[-31][col]) - 1) * 100 if len(df) > 30 and df.iloc[-31][col] != 0 else 0
-
-            high_52w = df[col].tail(252).max() if len(df) > 252 else df[col].max()
-            low_52w = df[col].tail(252).min() if len(df) > 252 else df[col].min()
-
-            return {
-                'current': current,
-                'percentile': percentile,
-                'change_1d': change_1d,
-                'change_5d': change_5d,
-                'change_30d': change_30d,
-                'pct_change_5d': pct_change_5d,
-                'pct_change_30d': pct_change_30d,
-                'high_52w': high_52w,
-                'low_52w': low_52w
-            }
-
         # Load credit-relevant metrics
         hy_df = load_csv_data('high_yield_spread.csv')
         ig_df = load_csv_data('investment_grade_spread.csv')
@@ -4373,7 +4250,7 @@ def generate_credit_market_summary():
         # HY OAS Section
         summary_parts.append("## HIGH YIELD SPREADS (OAS)")
         if hy_df is not None:
-            stats = get_stats(hy_df)
+            stats = get_metric_stats(hy_df)
             if stats:
                 hy_bps = stats['current'] * 100
                 if hy_bps < 300:
@@ -4394,7 +4271,7 @@ def generate_credit_market_summary():
         # IG OAS Section
         summary_parts.append("## INVESTMENT GRADE SPREADS (OAS)")
         if ig_df is not None:
-            stats = get_stats(ig_df)
+            stats = get_metric_stats(ig_df)
             if stats:
                 ig_bps = stats['current'] * 100
                 if ig_bps < 80:
@@ -4413,7 +4290,7 @@ def generate_credit_market_summary():
         # CCC Section
         summary_parts.append("## CCC-RATED SPREADS (Distressed Credit)")
         if ccc_df is not None:
-            stats = get_stats(ccc_df)
+            stats = get_metric_stats(ccc_df)
             if stats:
                 ccc_bps = stats['current'] * 100
                 summary_parts.append(f"CCC OAS: {ccc_bps:.0f} bp ({stats['percentile']:.1f}th %ile)")
@@ -4421,7 +4298,7 @@ def generate_credit_market_summary():
                 summary_parts.append(f"  30-day change: {stats['change_30d']*100:+.0f} bp")
                 # CCC/HY ratio for distress concentration
                 if hy_df is not None:
-                    hy_stats = get_stats(hy_df)
+                    hy_stats = get_metric_stats(hy_df)
                     if hy_stats and hy_stats['current'] > 0:
                         ratio = stats['current'] / hy_stats['current']
                         summary_parts.append(f"  CCC/HY ratio: {ratio:.2f}x (normal 2.5-4x) - {'rising distress' if ratio > 4 else 'contained' if ratio < 3 else 'normal'}")
@@ -4431,11 +4308,11 @@ def generate_credit_market_summary():
         # Credit ETF Prices (Total Return Signal)
         summary_parts.append("## CREDIT ETF PRICES (Total Return Signal)")
         if hy_price_df is not None:
-            stats = get_stats(hy_price_df)
+            stats = get_metric_stats(hy_price_df)
             if stats:
                 summary_parts.append(f"HYG (HY ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.2f}%")
         if ig_price_df is not None:
-            stats = get_stats(ig_price_df)
+            stats = get_metric_stats(ig_price_df)
             if stats:
                 summary_parts.append(f"LQD (IG ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.2f}%")
         summary_parts.append("  (Falling prices = spread widening and/or rising Treasury yields)")
@@ -4444,15 +4321,15 @@ def generate_credit_market_summary():
         # Cross-Asset Context
         summary_parts.append("## CROSS-ASSET CREDIT CONTEXT")
         if vix_df is not None:
-            stats = get_stats(vix_df)
+            stats = get_metric_stats(vix_df)
             if stats:
                 summary_parts.append(f"VIX: {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) - {'Risk-off' if stats['current'] > 25 else 'Normal' if stats['current'] > 15 else 'Complacent'}")
         if treasury_10y_df is not None:
-            stats = get_stats(treasury_10y_df)
+            stats = get_metric_stats(treasury_10y_df)
             if stats:
                 summary_parts.append(f"10Y Treasury: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) - affects credit all-in yields")
         if sp500_df is not None:
-            stats = get_stats(sp500_df)
+            stats = get_metric_stats(sp500_df)
             if stats:
                 summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.2f}%")
         summary_parts.append("  CONTEXT: Tight credit + rising equities = risk-on; Credit widening ahead of equity decline = early warning signal")
