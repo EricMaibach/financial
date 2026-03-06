@@ -1,0 +1,114 @@
+/* =============================================================
+   Global Trade Pulse Panel — Feature 8.2 / US-206.2
+   Homepage Section 1.3: Global Trade Pulse
+   ============================================================= */
+
+/* --- Category color token --- */
+:root {
+  --category-trade: #0D9488;
+}
+
+/* --- Mobile Toggle Button (hidden on tablet+) --- */
+.trade-pulse-toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  gap: 12px;
+  color: #697386;   /* neutral-500 */
+}
+
+.trade-pulse-toggle:focus {
+  outline: 2px solid var(--category-trade);
+  outline-offset: 2px;
+}
+
+.trade-pulse-toggle-line {
+  flex: 1;
+  height: 1px;
+  background: #E8ECEF;  /* neutral-200 */
+}
+
+.trade-pulse-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.trade-pulse-chevron {
+  transition: transform 200ms ease;
+}
+
+.trade-pulse-toggle[aria-expanded="true"] .trade-pulse-chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Collapsible Content (mobile: collapsed by default) --- */
+.trade-pulse-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 200ms ease-out;
+}
+
+.trade-pulse-content--expanded {
+  max-height: 2000px;
+}
+
+/* --- Metric + Percentile two-column grid --- */
+.trade-pulse-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 12px;
+}
+
+/* --- Percentile bar track --- */
+.trade-pulse-pct-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: #E8ECEF;  /* neutral-200 */
+  overflow: hidden;
+  margin: 6px 0;
+}
+
+.trade-pulse-pct-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* --- Tablet+ (768px+) overrides --- */
+@media (min-width: 768px) {
+  /* Hide mobile toggle on tablet+ */
+  .trade-pulse-toggle {
+    display: none;
+  }
+
+  /* Always show content on tablet+ */
+  .trade-pulse-content {
+    max-height: none !important;
+    overflow: visible;
+    padding-top: 12px;
+  }
+
+  /* Two-column layout on tablet+ */
+  .trade-pulse-grid {
+    flex-direction: row;
+    gap: 24px;
+  }
+
+  .trade-pulse-grid > * {
+    flex: 1;
+  }
+
+  /* Current value scales up on tablet+ */
+  .trade-pulse-current-value {
+    font-size: 1.875rem !important;  /* text-3xl */
+  }
+}
