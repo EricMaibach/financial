@@ -33,6 +33,12 @@ from web_search import (
     SEARCH_FUNCTION_DEFINITION, execute_search_function
 )
 
+try:
+    from regime_detection import get_macro_regime
+except ImportError:
+    def get_macro_regime():
+        return None
+
 # =============================================================================
 # AI Provider Configuration
 # =============================================================================
@@ -572,8 +578,20 @@ You have access to a web search tool if you need to look up additional context a
 
 You're writing the one thing someone reads about markets today. Make it count."""
 
+        # Build regime prefix for Today's Briefing if macro regime is available
+        regime = get_macro_regime()
+        regime_state = regime['state'] if regime and regime.get('state') else None
+        if regime_state and regime_state.lower() != 'unknown':
+            regime_prefix_briefing = (
+                f"Open your briefing by naming the current macro regime ({regime_state}) "
+                "and in one sentence explaining what it means for investors today. "
+                "Then proceed with your standard briefing content. "
+            )
+        else:
+            regime_prefix_briefing = ""
+
         # The user prompt with all the data
-        user_prompt = f"""Today is {today}. Generate today's market briefing.
+        user_prompt = f"""{regime_prefix_briefing}Today is {today}. Generate today's market briefing.
 
 {market_data_summary}
 {movers_text}
