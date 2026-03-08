@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-08 (PM work queue — triaged 3 new council issues; US-219.1 #221 created)
+**Last updated:** 2026-03-08 (PM work queue — #218 spec approved; US-218.1 #222 created)
 
 ---
 
@@ -57,7 +57,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | US-207.1 (#211) `ready-for-implementation` |
 | #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | CLOSED ✅ (2026-03-06) |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
-| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | `needs-design-spec` (UI feature → Designer creating spec) |
+| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | IN PROGRESS — US-218.1 (#222) `needs-test-plan` |
 | #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | IN PROGRESS — US-219.1 (#221) `needs-test-plan` |
 | #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | `needs-test-plan` (approved from council: discussion #37, 2026-03-08) |
 
@@ -69,7 +69,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 2. **#220** — `needs-test-plan` — P1, Portfolio AI credit spread unit bug (two-line fix)
 3. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
 4. **US-219.1** (#221) — `needs-test-plan` — P3, Regime thread missing from Cross-Market/Prediction sections
-5. **#218** — `needs-design-spec` — P3, Multi-Model Trust Signal explainer (awaiting Designer spec)
+5. **US-218.1** (#222) — `needs-test-plan` — P3, Multi-Model Trust Signal callout (recession panel)
 
 ### Phase 7 Feature Detail
 
