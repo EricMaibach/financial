@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-06 (PM queue run — closed Feature #206 Global Trade Pulse; PR #216 merged)
+**Last updated:** 2026-03-08 (PM council run — 3 new issues from CEO-approved council discussions)
 
 ---
 
@@ -57,13 +57,19 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | US-207.1 (#211) `ready-for-implementation` |
 | #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | CLOSED ✅ (2026-03-06) |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
+| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | `needs-test-plan` (approved from council: discussion #35, 2026-03-08) |
+| #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | `needs-test-plan` (approved from council: discussion #36, 2026-03-08) |
+| #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | `needs-test-plan` (approved from council: discussion #37, 2026-03-08) |
 
 ### Active Story Pipeline
 
 **WIP slot is open.** Next up in priority order:
 
-1. **US-183.2** (#185) — `ready-for-implementation` — P0 Critical, AI prompt anchoring
-2. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
+1. **US-183.2** (#185) — `ready-for-pr` — P0 Critical, AI prompt anchoring (QA approved; Engineer needs to create PR)
+2. **#220** — `needs-test-plan` — P1, Portfolio AI credit spread unit bug (two-line fix)
+3. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
+4. **#218** — `needs-test-plan` — P3, Multi-Model Trust Signal explainer
+5. **#219** — `needs-test-plan` — P3, Regime thread missing from Cross-Market/Prediction sections
 
 ### Phase 7 Feature Detail
 
@@ -73,6 +79,9 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 - **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component. US-207.1 (#211) `ready-for-implementation`.
 - **Global Trade Pulse — FRED Trade Balance Indicator** (#206, P2) — ✅ COMPLETE. Single-panel macro indicator showing US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI deferred to Phase 9+. Follow-on: wire into AI Daily Briefing and Chatbot in Phase 8.
 - **ML Container Separation** (#166, P3) — Extract FinBERT/torch from main app container. `needs-human-decision` — waiting on architecture decision (Redis queue vs. standalone cron vs. HTTP API).
+- **Multi-Model Trust Signal** (#218, P3) — Persistent UI explainer on Recession Probability panel using the 2022–2024 yield curve false alarm as the canonical example of why multi-model synthesis outperforms any single indicator. Copy + small UI component only; no new backend. (Approved from council discussion #35, 2026-03-08)
+- **Fix: Regime Thread Missing from Cross-Market and Prediction Sections** (#219, P3) — Add `regime-thread` class to `#signals-section` and `#prediction-section`. Two-line template change; all other homepage sections already have it. (Approved from council discussion #36, 2026-03-08)
+- **Bug: Portfolio AI Credit Spread Unit Conversion** (#220, P1) — `generate_portfolio_market_context()` in `dashboard.py:3297-3304` formats HY/IG spreads without the `* 100` conversion, causing portfolio AI to see ~3 bp instead of ~280 bp. Silent accuracy failure in user-facing analysis. Two-line fix. (Approved from council discussion #37, 2026-03-08)
 
 ---
 
