@@ -18,6 +18,14 @@ cd "$REPO_DIR" || {
   exit 1
 }
 
+# Phase guard — council pauses during BUILDING
+ROADMAP="$REPO_DIR/docs/PRODUCT_ROADMAP.md"
+PHASE_STATE=$(grep "^\*\*State:\*\*" "$ROADMAP" | awk '{print $2}')
+if [ "$PHASE_STATE" = "BUILDING" ]; then
+  echo "Phase is BUILDING — council paused. Skipping CEO and PM Council." >> "$LOG_FILE"
+  exit 0
+fi
+
 echo "--- CEO running ---" >> "$LOG_FILE"
 claude --dangerously-skip-permissions -p "/work-ceo" >> "$LOG_FILE" 2>&1
 echo "--- CEO done: $(date) ---" >> "$LOG_FILE"
