@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-09 (Feature #183 closed ✅; roadmap pipeline updated — #220/#223 bugs closed; #224 at ready-for-pr)
+**Last updated:** 2026-03-09 (Bug #224 closed ✅ — PR merged; pipeline current — #211/#221/#222 ready-for-implementation)
 
 ---
 
@@ -67,16 +67,15 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | IN PROGRESS — US-219.1 (#221) `ready-for-implementation` |
 | #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | CLOSED ✅ |
 | #223 — Bug: market_signals.py crashes on empty FRED observations | P0 | CLOSED ✅ |
-| #224 — Bug: Sector tone pipeline all Neutral — EDGAR fetch broken | P1 | `ready-for-pr` |
+| #224 — Bug: Sector tone pipeline all Neutral — EDGAR fetch broken | P1 | CLOSED ✅ (2026-03-09) |
 
 ### Active Story Pipeline
 
 **WIP slot is open.** Next up in priority order:
 
-1. **#224** — `ready-for-pr` — P1, Sector tone pipeline EDGAR bug (Engineer creates PR)
-2. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
-3. **US-219.1** (#221) — `ready-for-implementation` — P3, Regime thread missing from Cross-Market/Prediction sections
-4. **US-218.1** (#222) — `ready-for-implementation` — P3, Multi-Model Trust Signal callout (recession panel)
+1. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
+2. **US-219.1** (#221) — `ready-for-implementation` — P3, Regime thread missing from Cross-Market/Prediction sections
+3. **US-218.1** (#222) — `ready-for-implementation` — P3, Multi-Model Trust Signal callout (recession panel)
 
 ### Phase 7 Feature Detail
 
