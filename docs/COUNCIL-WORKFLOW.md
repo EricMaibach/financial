@@ -1,7 +1,8 @@
 # Council Workflow — Strategic Ideation
 
-**Status:** Design Complete — Ready for Implementation
+**Status:** Implemented
 **Created:** 2026-02-22
+**Updated:** 2026-03-08 (phase state model, human approval gate, deploy pipeline)
 **Purpose:** Upstream ideation layer that surfaces new ideas and refinements, funneling approved concepts into the existing Feature Workflow.
 
 ---
@@ -12,11 +13,54 @@ The Council Workflow is an **async ideation layer** that runs on a schedule and 
 
 ```
 Council Workflow (ideation)
-        ↓ (approved idea becomes a Feature Issue)
+        ↓ (approved idea becomes a Feature Issue, tagged needs-human-approval)
+Human reviews and removes needs-human-approval label
+        ↓ (/work-pm detects approval, flips phase to BUILDING)
 Feature Workflow (definition + spec)
         ↓
 User Story Workflow (implementation)
+        ↓ (all stories merged → /work-pm creates GitHub Release → deploy → flips to IDEATING)
+Council Workflow resumes (next IDEATING phase)
 ```
+
+---
+
+## Phase State Model
+
+The council operates on a **phase cadence** controlled by a state block in `docs/PRODUCT_ROADMAP.md`:
+
+```markdown
+## Active Phase
+**Phase:** Phase N — [Title]
+**State:** IDEATING | BUILDING
+```
+
+| State | Council | Implementation | Who Transitions |
+|-------|---------|----------------|-----------------|
+| **IDEATING** | Runs freely | Idle (no new scope) | Human approves features → `/work-pm` auto-flips to BUILDING |
+| **BUILDING** | Paused (bash guard exits before `claude`) | Active | `/work-pm` flips to IDEATING when all milestone issues close |
+
+**The bash-layer pause** is enforced in all 4 council scripts before invoking `claude`:
+```bash
+PHASE_STATE=$(grep "^\*\*State:\*\*" "$ROADMAP" | awk '{print $2}')
+if [ "$PHASE_STATE" = "BUILDING" ]; then exit 0; fi
+```
+Zero tokens consumed when paused.
+
+**IDEATING → BUILDING transition:**
+1. PM Council creates Feature Issues tagged `needs-human-approval`
+2. Human reviews, removes `needs-human-approval` from features they want to build
+3. `/work-pm` detects unlabeled features during IDEATING → edits roadmap to `BUILDING` → commits + pushes
+4. Council pauses on next cron run
+
+**BUILDING → IDEATING transition (phase completion):**
+1. `/work-pm` detects all milestone issues closed → closes milestone → creates GitHub Release
+2. `docker-publish.yml` GH Actions fires → builds + pushes `ghcr.io/ericmaibach/financial:latest`
+3. Watchtower auto-pulls and redeploys in Portainer
+4. `/work-pm` flips roadmap to `IDEATING` for Phase N+1 → commits + pushes
+5. Council resumes on next cron run
+
+---
 
 ### Agents
 
@@ -283,11 +327,13 @@ Before deciding, I need to understand: [specific question]
    f. Close the Discussion
 4. Update `~/.claude/projects/financial/roles/pm-context.md`
 
+**Human Approval Gate:** All council-originated Feature Issues are tagged `needs-human-approval`. `/work-pm` skips them until the human removes the label, signalling scope commitment. Once at least one feature is approved, `/work-pm` auto-flips the phase to BUILDING.
+
 **Feature Issue format (council-originated):**
 ```bash
 gh issue create \
   --title "[Feature title]" \
-  --label "feature" \
+  --label "feature,needs-human-approval" \
   --milestone "<milestone>" \
   --body "## Feature
 

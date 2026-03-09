@@ -60,8 +60,17 @@ Runs on a schedule. Surfaces new ideas and product refinements, funnels approved
 ```
 Researcher/Designer/Engineer post findings → CEO approves/dismisses → PM creates Feature Issue
                                                                                 ↓
+                                                            Feature Issue gets needs-human-approval label
+                                                                                ↓
+                                                            Human removes label → /work-pm flips to BUILDING
+                                                                                ↓
                                                                     Feature Workflow picks it up
 ```
+
+**Phase state** controls when the council runs. Tracked in `docs/PRODUCT_ROADMAP.md` under `## Active Phase`:
+- **IDEATING** — Council runs freely. Ideas flow in, CEO reviews, PM Council queues Feature Issues.
+- **BUILDING** — Council pauses (bash-layer guard exits before invoking `claude`). Implementation pipeline runs.
+- **COMPLETE** — PM detects all stories done → closes milestone → creates GitHub Release → flips to IDEATING → deploy triggers automatically.
 
 | Agent | Schedule | Role |
 |-------|----------|------|
@@ -69,7 +78,7 @@ Researcher/Designer/Engineer post findings → CEO approves/dismisses → PM cre
 | Designer Council | Daily (9am) | Looks inward — UX debt, design gaps, refinements |
 | Engineer Council | Daily (10:30am) | Looks inward — core functionality, algorithms, AI data feed quality, technical debt |
 | CEO | Weekly (Mon 10am) | Reviews all council inputs, makes go/no-go decisions |
-| PM Council | Weekly (Mon 11am) | Translates CEO approvals into Feature Issues |
+| PM Council | Weekly (Mon 11am) | Translates CEO approvals into Feature Issues (tagged `needs-human-approval`) |
 
 ### Quick Reference
 
@@ -213,6 +222,7 @@ When breaking down a feature into implementable work:
 | `blocked` | Work is blocked, needs human intervention | Human |
 | `needs-clarification` | Requirements unclear, needs PM or human input | PM / Human |
 | `needs-human-decision` | Escalated — requires human decision to proceed | Human |
+| `needs-human-approval` | Council-originated Feature Issue awaiting human review before entering implementation pipeline. Human removes label to approve; `/work-pm` skips it until cleared. | Human |
 
 ### Priority
 All bugs and user stories should be assigned a priority in the project board:
@@ -419,12 +429,17 @@ docker compose up
 
 ### Council Workflow Scripts
 
+Council scripts check the phase state before invoking `claude`. If `**State:** BUILDING` is set in `docs/PRODUCT_ROADMAP.md`, the script exits immediately — zero tokens consumed.
+
 ```bash
 # One-time setup — installs cron jobs for all council agents
 bash scripts/setup-council-cron.sh
 
 # Check installed cron jobs
 crontab -l
+
+# Check current phase state
+grep -A2 "## Active Phase" docs/PRODUCT_ROADMAP.md
 
 # View logs
 tail -f ~/.claude/projects/financial/logs/researcher-council.log
@@ -438,7 +453,15 @@ claude --dangerously-skip-permissions -p "/work-engineer-council"
 claude --dangerously-skip-permissions -p "/work-ceo"
 ```
 
-See `docs/COUNCIL-WORKFLOW.md` for full design, state machine, and implementation details.
+### Deployment Pipeline
+
+Triggered automatically when `/work-pm` creates a GitHub Release at phase completion:
+
+```
+gh release create "phase-N-complete" → docker-publish.yml builds + pushes ghcr.io/ericmaibach/financial:latest → Watchtower auto-pulls
+```
+
+No manual steps needed. See `docs/COUNCIL-WORKFLOW.md` for full design, state machine, and implementation details.
 
 ### Data Collection
 ```bash
