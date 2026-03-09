@@ -158,6 +158,8 @@ ls docs/specs/
 ls signaltrackers/templates/
 ```
 
+# Review product roadmap and use current phase as a guide to orient your investigation - `docs/PRODUCT_ROADMAP.md`
+
 **What to look for:**
 - Inconsistent interaction patterns across the product
 - Components that do not meet the design system spec

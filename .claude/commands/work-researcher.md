@@ -150,6 +150,7 @@ Update your context file: `[date] — Human idea: [title] — [Forwarded to CEO 
 
 **Before researching**, read these to understand what is already covered:
 - `docs/PRODUCT_ROADMAP.md` — what is already planned
+- `docs/PRODUCT_ROADMAP.md` — look at curret phase and use it as a guide to orient your research
 - Your context file's "Recently Covered Topics" — what you have already posted
 - Open Research discussions (titles only) — avoid duplicates:
 
