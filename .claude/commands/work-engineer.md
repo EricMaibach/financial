@@ -241,9 +241,11 @@ Implements #<issue-number> per design spec."
    git push origin feature/US-X.X.X
    ```
 12. Comment on issue: "✅ Implementation complete on branch `feature/US-X.X.X`. [Brief summary of what was built]."
-13. Route to the next stage:
+13. Route to the next stage — **all stories and bugs follow the same pipeline. Never create a PR directly from implementation.**
     - **UI changes present**: `gh issue edit <number> --remove-label ready-for-implementation --add-label needs-design-review`
     - **Backend/non-UI only**: `gh issue edit <number> --remove-label ready-for-implementation --add-label needs-qa-testing`
+
+> **Note on QA test plans:** A completed QA test plan means QA is *ready to test your implementation* — it is NOT approval of your work. You must always route through `needs-qa-testing` after implementation so QA can verify the fix. A pre-existing test plan does not skip this step.
 
 ---
 
