@@ -1161,7 +1161,7 @@
 </div>
 
 <!-- Section 4: Market Signals (US-1.1.4) -->
-<section id="signals-section" class="market-signals-section mb-4">
+<section id="signals-section" class="market-signals-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
     <div class="section-header mb-3">
         <h3 class="section-title">Cross-Market Indicators</h3>
         <small class="text-muted">Cross-market indicators worth watching</small>
@@ -1232,7 +1232,7 @@
 
 <!-- Additional Insights Section -->
 <!-- Prediction Markets -->
-<section id="prediction-section" class="prediction-markets-section mb-4">
+<section id="prediction-section" class="prediction-markets-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
     <div class="section-header mb-3">
         <h3 class="section-title">
             <i class="bi bi-graph-up-arrow"></i> Prediction Markets
