@@ -26,6 +26,7 @@ Docker / image-size note:
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 import re
@@ -205,6 +206,25 @@ def _fetch_edgar_ticker_map() -> dict[str, str]:
     return result
 
 
+def _strip_html(raw: str) -> str:
+    """Strip HTML/SGML markup from an EDGAR document, returning plain text.
+
+    EDGAR documents use an SGML envelope followed by HTML body content.
+    Passing raw HTML to FinBERT wastes the 512-token window on markup
+    instead of prose — this helper removes tags and decodes HTML entities
+    using only Python builtins (no extra dependency required).
+    """
+    # Remove SGML envelope headers (e.g. <DOCUMENT>, <TYPE>EX-99.1, etc.)
+    text = re.sub(r'<(?!/?[a-zA-Z])[^>]*>', '', raw)
+    # Strip HTML tags
+    text = re.sub(r'<[^>]+>', ' ', text)
+    # Decode HTML entities (e.g. &amp; &nbsp; &#160;)
+    text = html.unescape(text)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
 def _extract_ex991_url(index_html: str, int_cik: int, accession_clean: str) -> Optional[str]:
     """Extract the EX-99.1 exhibit URL from a filing index HTML page.
 
@@ -307,7 +327,7 @@ def _fetch_recent_8k_filing_texts(
             try:
                 doc_resp = requests.get(ex99_url, timeout=_EDGAR_TIMEOUT, headers=headers)
                 doc_resp.raise_for_status()
-                text = doc_resp.text[:_MAX_FINBERT_INPUT_CHARS]
+                text = _strip_html(doc_resp.text)[:_MAX_FINBERT_INPUT_CHARS]
             except Exception as exc:
                 logger.warning("EDGAR EX-99.1 fetch failed for %s: %s", ex99_url, exc)
 
@@ -319,7 +339,7 @@ def _fetch_recent_8k_filing_texts(
             try:
                 doc_resp = requests.get(primary_url, timeout=_EDGAR_TIMEOUT, headers=headers)
                 doc_resp.raise_for_status()
-                text = doc_resp.text[:_MAX_FINBERT_INPUT_CHARS]
+                text = _strip_html(doc_resp.text)[:_MAX_FINBERT_INPUT_CHARS]
             except Exception as exc:
                 logger.warning("EDGAR primary doc fetch failed for %s: %s", primary_url, exc)
 

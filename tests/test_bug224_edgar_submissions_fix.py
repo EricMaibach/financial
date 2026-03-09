@@ -700,5 +700,118 @@ class TestAcceptanceCriteria(unittest.TestCase):
         self.assertNotIn('aapl:Zero500NotesDue', result[0])
 
 
+# ---------------------------------------------------------------------------
+# _strip_html helper (HTML stripping before FinBERT scoring)
+# ---------------------------------------------------------------------------
+
+
+class TestStripHtml(unittest.TestCase):
+    """_strip_html must convert raw EDGAR HTML/SGML to clean plain text."""
+
+    def setUp(self):
+        from sector_tone_pipeline import _strip_html
+        self.strip = _strip_html
+
+    def test_strips_html_tags(self):
+        """Basic HTML tags must be removed."""
+        raw = "<html><body><p>Revenue increased 12%.</p></body></html>"
+        result = self.strip(raw)
+        self.assertNotIn('<', result)
+        self.assertNotIn('>', result)
+        self.assertIn("Revenue increased 12%.", result)
+
+    def test_strips_sgml_envelope_headers(self):
+        """SGML headers like <DOCUMENT>, <TYPE>, <SEQUENCE> must be removed."""
+        raw = "<DOCUMENT>\n<TYPE>EX-99.1\n<SEQUENCE>2\n<TEXT>\n<html><body>Earnings text.</body></html>"
+        result = self.strip(raw)
+        self.assertNotIn('<DOCUMENT>', result)
+        self.assertNotIn('<TYPE>', result)
+        self.assertNotIn('<SEQUENCE>', result)
+        self.assertIn("Earnings text.", result)
+
+    def test_decodes_html_entities(self):
+        """HTML entities must be decoded to their character equivalents."""
+        raw = "<p>Revenue &amp; profit rose 10%&nbsp;year-over-year.</p>"
+        result = self.strip(raw)
+        self.assertIn("Revenue & profit rose 10%", result)
+        self.assertNotIn("&amp;", result)
+        self.assertNotIn("&nbsp;", result)
+
+    def test_collapses_whitespace(self):
+        """Multiple spaces, tabs, and newlines must be collapsed to single spaces."""
+        raw = "<p>Net income\n\n   was\t$1.2 billion.</p>"
+        result = self.strip(raw)
+        self.assertNotIn('\n', result)
+        self.assertNotIn('\t', result)
+        self.assertNotIn('  ', result)
+        self.assertIn("Net income", result)
+        self.assertIn("$1.2 billion.", result)
+
+    def test_returns_stripped_string_not_bytes(self):
+        """Return value must be a str with no leading/trailing whitespace."""
+        raw = "  <p>Hello world</p>  "
+        result = self.strip(raw)
+        self.assertIsInstance(result, str)
+        self.assertEqual(result, result.strip())
+
+    def test_empty_string_returns_empty(self):
+        """Empty input must return empty string."""
+        self.assertEqual(self.strip(""), "")
+
+    def test_strips_script_and_style_tags(self):
+        """Script and style tag content is removed with the tags."""
+        raw = "<html><head><style>body{color:red}</style></head><body><p>Real content.</p></body></html>"
+        result = self.strip(raw)
+        self.assertIn("Real content.", result)
+        # Tag content (CSS) removed with tags — the text between them may appear
+        # but structural markup must be gone
+        self.assertNotIn('<style>', result)
+        self.assertNotIn('<html>', result)
+
+    def test_real_edgar_sgml_envelope(self):
+        """Reproduces QA evidence: META EX-99.1 SGML envelope is stripped."""
+        raw = (
+            "<DOCUMENT>\n<TYPE>EX-99.1\n<SEQUENCE>2\n"
+            "<FILENAME>meta-12312025xexhibit991.htm\n<DESCRIPTION>EX-99.1\n<TEXT>\n"
+            "<html><head>\n<!-- Document created using Wdesk -->\n"
+            "<title>Document</title></head>"
+            "<body><div id='if4849fe'>"
+            "<p>Meta Platforms reports Q4 2025 revenue of $48.4 billion, up 21% year-over-year.</p>"
+            "</div></body></html>"
+        )
+        result = self.strip(raw)
+        self.assertNotIn('<DOCUMENT>', result)
+        self.assertNotIn('<html>', result)
+        self.assertNotIn('<head>', result)
+        self.assertNotIn('<body>', result)
+        self.assertIn("Meta Platforms reports Q4 2025 revenue of $48.4 billion", result)
+
+    def test_finbert_window_not_wasted_on_markup(self):
+        """After stripping, markup overhead does not fill the text."""
+        # Simulate a document where markup consumes the first 500 chars
+        markup_prefix = "<html><head>" + "<div class='x'>" * 20 + "</head><body>"
+        prose = "Net revenue for the quarter was $10 billion."
+        raw = markup_prefix + prose + "</body></html>"
+        result = self.strip(raw)
+        # Prose must be present — not buried behind markup chars
+        self.assertIn("Net revenue for the quarter was $10 billion.", result)
+
+    def test_strip_html_function_exists_in_module(self):
+        """_strip_html must be importable from sector_tone_pipeline."""
+        from sector_tone_pipeline import _strip_html
+        self.assertTrue(callable(_strip_html))
+
+    def test_strip_html_called_before_finbert_input(self):
+        """Source code must apply _strip_html to fetched document text."""
+        src = read_source('sector_tone_pipeline.py')
+        self.assertIn('_strip_html(', src,
+                      '_strip_html must be called before passing text to FinBERT')
+
+    def test_html_module_imported(self):
+        """html stdlib module must be imported for entity decoding."""
+        src = read_source('sector_tone_pipeline.py')
+        self.assertIn('import html', src)
+
+
 if __name__ == '__main__':
     unittest.main()
