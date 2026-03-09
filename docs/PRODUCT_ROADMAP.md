@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-08 (Phase 8 & 9 planned — signal quality, portfolio foundation, depth & polish)
+**Last updated:** 2026-03-09 (Feature #183 closed ✅; roadmap pipeline updated — #220/#223 bugs closed; #224 at ready-for-pr)
 
 ---
 
@@ -57,30 +57,31 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 |---------|----------|--------|
 | #178 — Wire Macro Regime/Recession into AI Briefings & Chatbot | P2 | CLOSED ✅ (2026-03-04) |
 | #171 — Homepage Section Quick-Nav | P2 | CLOSED ✅ (2026-03-05) |
-| #183 — Homepage Narrative Cohesion — Full Redesign | P3 | IN PROGRESS (US-183.1 ✅; US-183.2 #185 `ready-for-pr`) |
+| #183 — Homepage Narrative Cohesion — Full Redesign | P3 | CLOSED ✅ (2026-03-09) |
 | #169 — Credit Market Detail Page | P2 | CLOSED ✅ (2026-03-06) |
 | #208 — Refactor: Consolidate get_stats() / Fix Daily Briefing 52-Week Gap | P2 | CLOSED ✅ (2026-03-06) |
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | US-207.1 (#211) `ready-for-implementation` |
 | #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | CLOSED ✅ (2026-03-06) |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
-| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | IN PROGRESS — US-218.1 (#222) `needs-test-plan` |
-| #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | IN PROGRESS — US-219.1 (#221) `needs-test-plan` |
-| #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | `needs-test-plan` (approved from council: discussion #37, 2026-03-08) |
+| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | IN PROGRESS — US-218.1 (#222) `ready-for-implementation` |
+| #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | IN PROGRESS — US-219.1 (#221) `ready-for-implementation` |
+| #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | CLOSED ✅ |
+| #223 — Bug: market_signals.py crashes on empty FRED observations | P0 | CLOSED ✅ |
+| #224 — Bug: Sector tone pipeline all Neutral — EDGAR fetch broken | P1 | `ready-for-pr` |
 
 ### Active Story Pipeline
 
 **WIP slot is open.** Next up in priority order:
 
-1. **US-183.2** (#185) — `ready-for-pr` — P0 Critical, AI prompt anchoring (QA approved; Engineer needs to create PR)
-2. **#220** — `needs-test-plan` — P1, Portfolio AI credit spread unit bug (two-line fix)
-3. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
-4. **US-219.1** (#221) — `needs-test-plan` — P3, Regime thread missing from Cross-Market/Prediction sections
-5. **US-218.1** (#222) — `needs-test-plan` — P3, Multi-Model Trust Signal callout (recession panel)
+1. **#224** — `ready-for-pr` — P1, Sector tone pipeline EDGAR bug (Engineer creates PR)
+2. **US-207.1** (#211) — `ready-for-implementation` — P3, Asset detail header CSS refactor
+3. **US-219.1** (#221) — `ready-for-implementation` — P3, Regime thread missing from Cross-Market/Prediction sections
+4. **US-218.1** (#222) — `ready-for-implementation` — P3, Multi-Model Trust Signal callout (recession panel)
 
 ### Phase 7 Feature Detail
 
 - **Credit Market Detail Page** (#169, P2) — ✅ COMPLETE. Three credit spread intelligence requirements delivered: (1) HY/IG OAS percentile gauge vs. rolling 20-year history, (2) regime-conditioned interpretation block, (3) HY–IG differential sparkline. AI briefing integration complete — credit context now in chatbot and daily briefing pipeline.
-- **Homepage Narrative Cohesion — Full Redesign** (#183, P3) — US-183.1 complete (reorder, visual threading, navbar pill, bridge sentences). US-183.2 (#185) AI prompt anchoring — `ready-for-pr`, QA approved, Engineer to create PR.
+- **Homepage Narrative Cohesion — Full Redesign** (#183, P3) — ✅ COMPLETE. US-183.1: structural reorder (VERDICT→IMPLICATIONS→EVIDENCE→TODAY arc), visual regime threading (left-border accent), navbar regime pill, bridge sentences for §1.5/§2/§3. US-183.2: AI prompt anchoring — §1 Market Conditions and §2 Today's Briefing open with explicit regime context.
 - **Refactor: Consolidate get_stats()** (#208, P2) — ✅ COMPLETE. Single `get_metric_stats(df)` at module level in `dashboard.py`; all 5 inline definitions replaced; daily briefing now includes 52-week range and distance-from-extreme context. Backend-only.
 - **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — Consolidate 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component. US-207.1 (#211) `ready-for-implementation`.
 - **Global Trade Pulse — FRED Trade Balance Indicator** (#206, P2) — ✅ COMPLETE. Single-panel macro indicator showing US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI deferred to Phase 9+. Follow-on: wire into AI Daily Briefing and Chatbot in Phase 8.
