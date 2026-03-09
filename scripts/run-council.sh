@@ -49,6 +49,17 @@ while true; do
   echo "=== Full Council Run: $(date) ===" >> "$LOG_FILE"
   echo "=================================================" >> "$LOG_FILE"
 
+  # Phase guard — council pauses during BUILDING
+  git pull origin main >> "$LOG_FILE" 2>&1
+  ROADMAP="$REPO_DIR/docs/PRODUCT_ROADMAP.md"
+  PHASE_STATE=$(grep "^\*\*State:\*\*" "$ROADMAP" | awk '{print $2}')
+  if [ "$PHASE_STATE" = "BUILDING" ]; then
+    echo "Phase is BUILDING — council paused. Skipping all agents." | tee -a "$LOG_FILE"
+    echo "=== Sleeping 2 days. Next run: $(date -d "+2 days") ===" | tee -a "$LOG_FILE"
+    sleep "$SLEEP_SECONDS"
+    continue
+  fi
+
   run_agent "Researcher"       "/work-researcher"
   run_agent "Designer Council" "/work-designer-council"
   run_agent "Engineer Council" "/work-engineer-council"
