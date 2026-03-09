@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-08 (PM work queue — #218 spec approved; US-218.1 #222 created)
+**Last updated:** 2026-03-08 (Phase 8 & 9 planned — signal quality, portfolio foundation, depth & polish)
 
 ---
 
@@ -91,6 +91,64 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 ---
 
+## Phase 8: Signal Quality & Portfolio Foundation (planned)
+**Milestone goal:** Deepen the quality and accuracy of the AI intelligence layer, fix the alert experience, and lay the foundation for real estate portfolio coverage.
+
+*Phase 8 is a refinement phase — depth over breadth. We have added significant surface area across Phases 5–7. This phase makes what we have genuinely excellent before expanding further.*
+
+### Hard Requirements
+
+These are confirmed scope — no council research needed on direction.
+
+| Requirement | Notes |
+|-------------|-------|
+| Daily Briefing Email audit & refresh | A lot has changed since the email was last updated: homepage redesign, regime detection, global trade pulse, new credit metrics. Audit the template, AI prompts, and data feeding the email. Bring it current. |
+| Wire Global Trade Pulse into AI Daily Briefing & Chatbot | Carried forward from Phase 7 (#206). BOPGSTB panel ships without AI integration — Phase 8 closes that gap. |
+| Property investment categories — value tracking | Add farmland, commercial rental property, and residential rental property as portfolio asset categories. At minimum: manual value entry, included in portfolio totals and AI recommendations. AI can reason meaningfully about these assets with values alone. |
+| AI briefing prompt refresh | Audit all AI prompts against current signal coverage. Ensure regime, credit, global trade, and recession probability context is consistently included. Low-effort, high-impact. |
+
+### Council Research Focus
+
+These are open questions. Council researches and proposes — CEO approves/dismisses — PM creates Feature Issues.
+
+| Topic | Council | Question |
+|-------|---------|----------|
+| Smart Market Alerts replacement | Researcher | Find an innovative, rare-signal alert approach — something that fires infrequently but with genuine conviction (e.g., multi-signal convergence at extremes, regime change triggers). If nothing compelling surfaces, recommend removing the feature. Do not propose incremental threshold tweaks. |
+| AI briefing data quality | Engineer Council | What pre-processing, cross-signal correlation, or lightweight ML approaches could meaningfully improve LLM inputs? Look at: anomaly detection on individual metrics, convergence signals (multiple indicators stressed simultaneously), historical similarity matching. Propose what's achievable without major new dependencies. |
+| Portfolio UX & analysis depth | Designer + Engineer Council | How should the portfolio section evolve? What analysis improvements are achievable given the value-tracking foundation? |
+| Property macro data sources | Researcher + Engineer Council | Are there reliable public data sources for commercial cap rates, farmland price indexes, or residential rental yields? If yes, propose Phase 9 integration approach. If not, confirm value-tracking-only scope is correct. |
+
+### Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Daily briefing email — content accuracy | Covers all major signal categories now in the product |
+| Alert signal quality | Either: alerts fire ≤2x/week and are actionable, or feature is removed |
+| Portfolio — property category adoption | Real estate categories available and included in AI portfolio analysis |
+
+---
+
+## Phase 9: Depth & Polish (planned)
+
+**Milestone goal:** Build on Phase 8 council findings, deepen portfolio analysis, and address UX polish backlog.
+
+*Scope is intentionally open — defined by what Phase 8 council surfaces. Known candidates below.*
+
+### Known Candidates
+
+| Candidate | Depends On |
+|-----------|-----------|
+| Alert replacement implementation | Phase 8 Researcher finding something worth building |
+| Property macro analysis | Phase 8 council confirming viable data sources |
+| AI briefing data pre-processing | Phase 8 Engineer Council proposal approved by CEO |
+| Portfolio UX polish | Phase 8 Designer Council findings |
+| General UX polish | Designer Council backlog items |
+| BDI (Baltic Dry Index) integration | Re-evaluate after FRED trade balance signal validated in Phase 7/8 |
+
+*Phase 9 scope will be finalized at Phase 8 completion.*
+
+---
+
 ## What We Are NOT Building
 
 These directions have been evaluated and dismissed. Do not re-propose without new evidence:
@@ -98,7 +156,6 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Direction | Reason | Date |
 |-----------|--------|------|
 | Options flow + dark pool synthesis as primary signal | Dark pool prints lack reliable direction signal; options flow space has better-funded competitors; fundamental data quality issue would undermine user trust | 2026-02-23 |
-| BDI (Baltic Dry Index) integration | Adds new data dependency while Phase 7 is in progress; FRED trade balance is sufficient to validate signal value first | 2026-03-06 |
 
 ---
 
