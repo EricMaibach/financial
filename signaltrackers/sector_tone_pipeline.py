@@ -26,8 +26,10 @@ Docker / image-size note:
 
 from __future__ import annotations
 
+import html
 import json
 import logging
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -204,83 +206,146 @@ def _fetch_edgar_ticker_map() -> dict[str, str]:
     return result
 
 
+def _strip_html(raw: str) -> str:
+    """Strip HTML/SGML markup from an EDGAR document, returning plain text.
+
+    EDGAR documents use an SGML envelope followed by HTML body content.
+    Passing raw HTML to FinBERT wastes the 512-token window on markup
+    instead of prose — this helper removes tags and decodes HTML entities
+    using only Python builtins (no extra dependency required).
+    """
+    # Remove SGML envelope headers (e.g. <DOCUMENT>, <TYPE>EX-99.1, etc.)
+    text = re.sub(r'<(?!/?[a-zA-Z])[^>]*>', '', raw)
+    # Strip HTML tags
+    text = re.sub(r'<[^>]+>', ' ', text)
+    # Decode HTML entities (e.g. &amp; &nbsp; &#160;)
+    text = html.unescape(text)
+    # Collapse whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+
+def _extract_ex991_url(index_html: str, int_cik: int, accession_clean: str) -> Optional[str]:
+    """Extract the EX-99.1 exhibit URL from a filing index HTML page.
+
+    Searches table rows for an EX-99.1 entry and returns the full HTTPS URL
+    to the exhibit document. Returns None if no EX-99.1 row is found.
+    """
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', index_html, re.DOTALL | re.IGNORECASE)
+    for row in rows:
+        if re.search(r'\bEX-99\.1\b', row, re.IGNORECASE):
+            hrefs = re.findall(
+                r'href="(/Archives/edgar/data/[^"]+\.htm[^"]*)"',
+                row,
+                re.IGNORECASE,
+            )
+            if hrefs:
+                return f"https://www.sec.gov{hrefs[0]}"
+    return None
+
+
 def _fetch_recent_8k_filing_texts(
     cik: str,
     quarter: str,
     year: int,
 ) -> list[str]:
-    """Fetch text from recent 8-K filings for a company in the given quarter.
+    """Fetch text from recent 8-K earnings filings for a company in the given quarter.
 
-    Uses EDGAR full-text search endpoint (no API key required). Returns a list
-    of text strings (up to _MAX_FILINGS_PER_COMPANY), each at most
-    _MAX_FINBERT_INPUT_CHARS characters. Returns [] on any error.
+    Uses the EDGAR submissions API (company-specific by design) to get the
+    8-K filing list for the company, fetches each filing's index HTML to
+    locate the EX-99.1 earnings press release, and returns the press release
+    text. Falls back to the primary document if no EX-99.1 is present.
+
+    Returns a list of text strings (up to _MAX_FILINGS_PER_COMPANY), each at
+    most _MAX_FINBERT_INPUT_CHARS characters. Returns [] on any error.
     """
     headers = {"User-Agent": "SignalTrackers financial-research@signaltrackers.app"}
     startdt, enddt = _quarter_date_range(quarter, year)
 
-    params = {
-        "q": "earnings",
-        "forms": "8-K",
-        "dateRange": "custom",
-        "startdt": startdt,
-        "enddt": enddt,
-        "entity": str(int(cik)),  # EDGAR search takes unpadded CIK
-    }
-
+    # Step 1: Fetch company-specific submissions JSON (zero-padded 10-digit CIK)
+    submissions_url = _EDGAR_SUBMISSIONS_URL.format(cik=cik)
     try:
-        resp = requests.get(
-            _EDGAR_SEARCH_URL,
-            params=params,
-            timeout=_EDGAR_TIMEOUT,
-            headers=headers,
-        )
+        resp = requests.get(submissions_url, timeout=_EDGAR_TIMEOUT, headers=headers)
         if resp.status_code == 429:
             logger.warning("EDGAR rate limited (429) for CIK %s — skipping", cik)
             return []
         resp.raise_for_status()
-        data = resp.json()
+        submissions = resp.json()
     except Exception as exc:
-        logger.warning("EDGAR search failed for CIK %s: %s", cik, exc)
+        logger.warning("EDGAR submissions fetch failed for CIK %s: %s", cik, exc)
         return []
 
-    hits = data.get("hits", {}).get("hits", [])
+    time.sleep(_EDGAR_RATE_LIMIT_PAUSE)
+
+    # Step 2: Filter 8-K filings within the quarter date range
+    recent = submissions.get("filings", {}).get("recent", {})
+    accession_numbers = recent.get("accessionNumber", [])
+    forms = recent.get("form", [])
+    filing_dates = recent.get("filingDate", [])
+    primary_docs = recent.get("primaryDocument", [])
+
+    matching: list[tuple[str, str]] = []  # (accession_no, primary_doc)
+    for accession, form, filing_date, primary_doc in zip(
+        accession_numbers, forms, filing_dates, primary_docs
+    ):
+        if form != "8-K":
+            continue
+        if not (startdt <= filing_date <= enddt):
+            continue
+        matching.append((accession, primary_doc))
+        if len(matching) >= _MAX_FILINGS_PER_COMPANY:
+            break
+
+    if not matching:
+        return []
+
     texts: list[str] = []
+    int_cik = int(cik)
 
-    for hit in hits[:_MAX_FILINGS_PER_COMPANY]:
-        source = hit.get("_source", {})
-        # Use entity/filing description as text proxy; in production you would
-        # fetch the actual exhibit document (Ex-99.1 earnings press release).
-        display_names = source.get("display_names", "")
-        if isinstance(display_names, list):
-            display_names = " ".join(display_names)
-        file_desc = source.get("file_desc", "")
-        period = source.get("period_of_report", "")
-        # Build a text excerpt from available metadata + description
-        text_parts = [p for p in [display_names, file_desc, period] if p]
-        text = " | ".join(text_parts)
+    for accession, primary_doc in matching:
+        accession_clean = accession.replace("-", "")
+        index_url = (
+            f"{_EDGAR_ARCHIVES_BASE}/{int_cik}/{accession_clean}/{accession}-index.htm"
+        )
 
-        # Attempt to fetch the actual filing document text
-        filing_url = source.get("file_date", "")
-        accession = source.get("accession_no", "")
-        if accession:
-            # Fetch Ex-99.1 from the EDGAR filing index
-            accession_clean = accession.replace("-", "")
-            index_url = (
-                f"{_EDGAR_ARCHIVES_BASE}/{int(cik)}/{accession_clean}/"
-                f"{accession}-index.htm"
+        # Step 3: Fetch filing index HTML
+        try:
+            idx_resp = requests.get(index_url, timeout=_EDGAR_TIMEOUT, headers=headers)
+            idx_resp.raise_for_status()
+            index_html = idx_resp.text
+        except Exception as exc:
+            logger.warning("EDGAR index fetch failed for %s: %s", index_url, exc)
+            time.sleep(_EDGAR_RATE_LIMIT_PAUSE)
+            continue
+
+        time.sleep(_EDGAR_RATE_LIMIT_PAUSE)
+
+        # Step 4: Locate EX-99.1 and fetch earnings press release text
+        ex99_url = _extract_ex991_url(index_html, int_cik, accession_clean)
+        text = ""
+        if ex99_url:
+            try:
+                doc_resp = requests.get(ex99_url, timeout=_EDGAR_TIMEOUT, headers=headers)
+                doc_resp.raise_for_status()
+                text = _strip_html(doc_resp.text)[:_MAX_FINBERT_INPUT_CHARS]
+            except Exception as exc:
+                logger.warning("EDGAR EX-99.1 fetch failed for %s: %s", ex99_url, exc)
+
+        # Step 5: Fall back to primary document if no EX-99.1 text
+        if not text.strip() and primary_doc:
+            primary_url = (
+                f"{_EDGAR_ARCHIVES_BASE}/{int_cik}/{accession_clean}/{primary_doc}"
             )
             try:
-                idx_resp = requests.get(
-                    index_url, timeout=_EDGAR_TIMEOUT, headers=headers
-                )
-                if idx_resp.ok:
-                    # Use the index page text as filing content
-                    text = idx_resp.text[:_MAX_FINBERT_INPUT_CHARS]
-            except Exception:
-                pass  # Fall back to metadata text
+                doc_resp = requests.get(primary_url, timeout=_EDGAR_TIMEOUT, headers=headers)
+                doc_resp.raise_for_status()
+                text = _strip_html(doc_resp.text)[:_MAX_FINBERT_INPUT_CHARS]
+            except Exception as exc:
+                logger.warning("EDGAR primary doc fetch failed for %s: %s", primary_url, exc)
 
         if text and text.strip():
-            texts.append(text[:_MAX_FINBERT_INPUT_CHARS])
+            texts.append(text)
+
         time.sleep(_EDGAR_RATE_LIMIT_PAUSE)
 
     return texts
