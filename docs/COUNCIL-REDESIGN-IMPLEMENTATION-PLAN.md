@@ -135,7 +135,7 @@ When `/work-pm` creates a GitHub Release via `gh release create "phase-N-complet
 
 ## Phase 7 — Validation
 
-- [x] Verify phase guard: Confirmed `run-researcher-council.sh` logs "Phase is BUILDING — council paused. Exiting." and exits before invoking `claude`. **Note:** Required `git pull` in the `financial-pm` checkout — scripts use that path and it was behind main.
+- [x] Verify phase guard: Confirmed `run-researcher-council.sh` logs "Phase is BUILDING — council paused. Exiting." and exits before invoking `claude`. **Note:** Required `git pull` in the `financial-pm` checkout — scripts use that path and it was behind main. **Also fixed:** `run-council.sh` (the manual full-run loop script) was missing the guard entirely — added with a `git pull` at the top of each loop iteration so it always reads the latest phase state.
 - [x] Verify `needs-human-approval` label flow: Label confirmed live in GitHub (`#E4E669`). Command files verified to include `--label "feature,needs-human-approval"` in `gh issue create`.
 - [x] Verify `/work-pm` BUILDING skip: Simulated the exact jq filter from `work-pm.md` against live issues — correctly returns 5 existing Phase 7 features (all without the label, all grandfathered in). 0 features have `needs-human-approval`.
 - [x] Verify IDEATING → BUILDING flip: Simulated detection query — 5 features without `needs-human-approval` would trigger the BUILDING flip. Logic confirmed correct. Full agent run not executed (would process live queues).
