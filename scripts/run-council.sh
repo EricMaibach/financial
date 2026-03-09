@@ -1,5 +1,5 @@
 #!/bin/bash
-# Full Council Run — all agents in order, loops every 2 days.
+# Full Council Run — all agents in order, loops every 1 day.
 # Run manually from a terminal: bash scripts/run-council.sh
 # Keep this terminal session alive; Ctrl+C to stop.
 #
@@ -15,7 +15,7 @@
 LOG_DIR="$HOME/.claude/projects/financial/logs"
 LOG_FILE="$LOG_DIR/council-full.log"
 REPO_DIR="$HOME/Documents/repos/financialproject/financial-pm"
-SLEEP_SECONDS=$((2 * 24 * 60 * 60))  # 2 days
+SLEEP_SECONDS=$((1 * 24 * 60 * 60))  # 1 day
 
 mkdir -p "$LOG_DIR"
 
@@ -36,7 +36,7 @@ cd "$REPO_DIR" || {
   exit 1
 }
 
-echo "Council loop started. Running every 2 days. Ctrl+C to stop."
+echo "Council loop started. Running every 1 day. Ctrl+C to stop."
 echo "Logs: $LOG_FILE"
 
 while true; do
@@ -55,7 +55,7 @@ while true; do
   PHASE_STATE=$(grep "^\*\*State:\*\*" "$ROADMAP" | awk '{print $2}')
   if [ "$PHASE_STATE" = "BUILDING" ]; then
     echo "Phase is BUILDING — council paused. Skipping all agents." | tee -a "$LOG_FILE"
-    echo "=== Sleeping 2 days. Next run: $(date -d "+2 days") ===" | tee -a "$LOG_FILE"
+    echo "=== Sleeping 2 days. Next run: $(date -d "+1 day") ===" | tee -a "$LOG_FILE"
     sleep "$SLEEP_SECONDS"
     continue
   fi
@@ -68,9 +68,9 @@ while true; do
 
   echo ""
   echo "=== Full Council Run complete: $(date) ==="
-  echo "=== Sleeping 2 days. Next run: $(date -d "+2 days") ==="
+  echo "=== Sleeping 2 days. Next run: $(date -d "+1 day") ==="
   echo "=== Full Council Run complete: $(date) ===" >> "$LOG_FILE"
-  echo "=== Next run: $(date -d "+2 days") ===" >> "$LOG_FILE"
+  echo "=== Next run: $(date -d "+1 day") ===" >> "$LOG_FILE"
 
   sleep "$SLEEP_SECONDS"
 done
