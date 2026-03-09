@@ -39,6 +39,15 @@ Before reviewing any discussions:
    ```bash
    gh issue list --state open --json number,title,labels | jq '.[] | {number, title, labels: [.labels[].name]}'
    ```
+4. Read the current phase state:
+   ```bash
+   grep -A2 "## Active Phase" docs/PRODUCT_ROADMAP.md
+   ```
+5. Check how many features are already queued awaiting human approval:
+   ```bash
+   gh issue list --label "needs-human-approval" --state open --json number,title | jq '.[] | {number, title}'
+   ```
+   If many features are already queued, calibrate your selectivity — avoid overloading the next phase's scope. Quality over quantity.
 
 ### 2. Review Pending Research Discussions
 
@@ -183,6 +192,7 @@ Only do this if there is a genuine strategic update to record — not every week
 - **Check against dismissed directions.** Your context file tracks directions you have already rejected. Do not re-approve without new compelling evidence.
 - **Check against the backlog.** If something similar already exists as an open issue, note it in your decision comment and dismiss rather than creating a duplicate.
 - **Refinements vs Features.** Small UX improvements may not warrant a feature issue — note in your DISMISSED comment that this is design debt to address in any upcoming UI story rather than a standalone feature.
+- **Phase fit.** When approving ideas, consider whether they belong in the *next* phase or are further out. Use "defer to future phase" (not DISMISSED) for good-but-not-now ideas — this signals the idea is valid but not timely. True DISMISSED means the direction is wrong, not just early.
 
 ---
 

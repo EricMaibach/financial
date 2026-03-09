@@ -26,6 +26,39 @@ See `pm.md`. You may only commit `docs/PRODUCT_ROADMAP.md` (rare). All other wor
 
 ---
 
+## Phase State Check
+
+At the start of every session, read the current phase state:
+
+```bash
+grep -A2 "## Active Phase" docs/PRODUCT_ROADMAP.md
+```
+
+**If State is `IDEATING`:**
+
+Check for any feature issues that have been approved by the human (i.e., they exist but do NOT have `needs-human-approval`):
+
+```bash
+gh issue list --label "feature" --state open --json number,title,labels \
+  | jq '.[] | select(.labels | map(.name) | contains(["needs-human-approval"]) | not) | {number, title}'
+```
+
+If any unlabeled (human-approved) features exist, the human has committed to scope — flip the phase to BUILDING:
+
+```bash
+# Edit docs/PRODUCT_ROADMAP.md: change **State:** IDEATING to **State:** BUILDING
+# Then commit and push:
+git add docs/PRODUCT_ROADMAP.md
+git commit -m "Transition phase to BUILDING — human approved feature scope"
+git push origin main
+```
+
+Then proceed with queue processing as normal (BUILDING behavior below).
+
+**If State is `BUILDING`:** Proceed with queue processing as normal. Skip any feature with `needs-human-approval` (see Queue 2).
+
+---
+
 ## Queue Processing
 
 Process queues in this priority order. Handle one item per queue before moving on.
@@ -54,7 +87,9 @@ gh issue list --label needs-pm-approval --state open
 gh issue list --label ready-for-stories --state open
 ```
 
-**For each feature found:**
+**Skip any feature that has the `needs-human-approval` label.** These are awaiting human review and must not enter the implementation pipeline yet.
+
+**For each feature found (without `needs-human-approval`):**
 
 1. Read the feature issue thoroughly: `gh issue view <number>`
 2. Read the design spec linked in the issue
@@ -135,6 +170,64 @@ gh issue list --label feature --state open --json number,title,labels \
        git commit -m "Update roadmap: [feature title] complete"
        git push origin main
        ```
+
+### 3b. Phase Completion Check (After Closing Features)
+
+After processing Queue 3, check whether the entire active phase is now complete. This runs every session but only triggers when everything is actually done.
+
+**Step 1 — Read the active phase:**
+```bash
+grep -A2 "## Active Phase" docs/PRODUCT_ROADMAP.md
+```
+
+**Step 2 — Check if any issues remain open in the active milestone:**
+```bash
+# List open issues in the current phase milestone (update milestone name to match)
+gh issue list --milestone "<active phase milestone name>" --state open --json number,title | jq '.[] | {number, title}'
+```
+
+If any issues are still open, stop here — the phase is not complete.
+
+**Step 3 — If all milestone issues are closed, execute phase completion:**
+
+a. Close the milestone:
+```bash
+# Get the milestone number
+MILESTONE_NUMBER=$(gh api repos/EricMaibach/financial/milestones | jq '.[] | select(.title | contains("<phase name>")) | .number')
+# Close it
+gh api -X PATCH repos/EricMaibach/financial/milestones/$MILESTONE_NUMBER -f state=closed
+```
+
+b. Create a GitHub Release:
+```bash
+# Tag format: phase-N-complete (e.g. phase-7-complete)
+gh release create "phase-7-complete" \
+  --title "Phase 7: Credit Intelligence & Completion" \
+  --notes "Phase 7 complete. All user stories implemented and merged. Deployment triggered automatically."
+```
+
+c. Flip phase state to IDEATING and update phase name in `docs/PRODUCT_ROADMAP.md`:
+```markdown
+## Active Phase
+**Phase:** Phase 8 — TBD (Council will define scope during IDEATING)
+**State:** IDEATING
+```
+
+d. Commit and push:
+```bash
+git add docs/PRODUCT_ROADMAP.md
+git commit -m "Phase [N] complete — milestone closed, release created, transitioning to IDEATING"
+git push origin main
+```
+
+e. Comment on the closed milestone (via issue or directly):
+```
+Phase [N] complete. GitHub Release created. Council will resume on next scheduled run to surface Phase [N+1] ideas.
+```
+
+> **Important:** The GitHub Release triggers the deploy pipeline (GH Actions → Docker → Portainer). You do not need to do anything else for deployment.
+
+---
 
 ### 4. Handle Issues Needing Clarification
 

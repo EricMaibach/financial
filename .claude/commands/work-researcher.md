@@ -18,6 +18,22 @@ Read `~/.claude/projects/financial/roles/researcher-context.md` at the start of 
 
 Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial/council-config.md`
 
+## Phase Awareness
+
+Read the current phase state before doing any work:
+
+```bash
+grep -A2 "## Active Phase" docs/PRODUCT_ROADMAP.md
+```
+
+**If State is `IDEATING`:** You are in active ideation mode. Orient research toward gaps relevant to the upcoming phase. Before posting any new discussion, also check what features are already queued for human review — avoid proposing ideas that duplicate already-approved work:
+
+```bash
+gh issue list --label "needs-human-approval" --state open --json number,title | jq '.[] | {number, title}'
+```
+
+**If State is not `IDEATING`:** The cron script that invoked you should have caught this. Do not post new discussions. Update your context file and exit.
+
 ## GitHub Discussions IDs
 
 - Repository ID: `R_kgDORXrB_g`

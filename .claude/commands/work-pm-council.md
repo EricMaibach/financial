@@ -100,7 +100,7 @@ From the discussion's comments, find the `## CEO Decision: APPROVED` comment and
 ```bash
 gh issue create \
   --title "[Feature title from CEO decision]" \
-  --label "feature" \
+  --label "feature,needs-human-approval" \
   --milestone "<milestone from CEO decision>" \
   --body "## Feature
 
@@ -119,7 +119,10 @@ CEO rationale: [paste CEO rationale from decision comment]
 - [ ] [Observable outcome 2]
 
 ## Notes
-[Any constraints or considerations from the council discussion]"
+[Any constraints or considerations from the council discussion]
+
+---
+⏳ **Awaiting human approval.** This feature has the \`needs-human-approval\` label. The human must remove this label before it enters the implementation pipeline. Until then, \`/work-pm\` will skip it."
 ```
 
 **Step d — Add to project board and set priority:**
@@ -144,7 +147,7 @@ gh api graphql \
   -f body="PM: Feature issue created: #[number] — [title]
 [issue-url]
 
-This will enter the Feature Workflow. Next step: design spec or user stories depending on whether UI changes are needed."
+Labelled with \`needs-human-approval\`. The human must remove this label to allow it into the implementation pipeline. Closing this discussion."
 ```
 
 ```bash
