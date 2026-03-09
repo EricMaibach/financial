@@ -2942,10 +2942,23 @@ def generate_market_conditions_synthesis():
         dashboard_data = get_dashboard_data()
         statuses = calculate_market_statuses(dashboard_data)
 
+        # Build regime prefix if macro regime is available
+        regime = get_macro_regime()
+        regime_state = regime['state'] if regime and regime.get('state') else None
+        if regime_state and regime_state.lower() != 'unknown':
+            regime_prefix_market = (
+                f"Begin your synthesis by explicitly naming the current macro regime ({regime_state}) "
+                "and in one sentence explaining whether current market conditions are consistent with "
+                "or diverging from what is historically typical for this regime. "
+                "Then proceed with your standard market conditions summary. "
+            )
+        else:
+            regime_prefix_market = ""
+
         # Build the AI prompt
         system_prompt = """You are a financial market analyst. Given market condition statuses, write a single sentence (max 150 characters) that synthesizes the overall market environment. Be concise, objective, and highlight the 2-3 most important conditions. Write only the synthesis sentence, nothing else."""
 
-        user_prompt = f"""Current Market Statuses:
+        user_prompt = f"""{regime_prefix_market}Current Market Statuses:
 - Credit: {statuses['credit']}
 - Equities: {statuses['equities']}
 - Rates: {statuses['rates']}
