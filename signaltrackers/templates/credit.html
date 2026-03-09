@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/chart-container.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/collapsible-section.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/key-stats-panel.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/asset-page-header.css') }}">
 <style>
 /* Mobile-First Credit Page Styles */
 :root {
@@ -37,41 +38,13 @@
     --neutral-800: #212529;
 
     --category-credit: #dc3545;
+    --category-color: #dc3545;
     --success-600: #198754;
     --danger-600: #dc3545;
     --warning-600: #ffc107;
     --info-600: #0dcaf0;
 
     --container-xl: 1280px;
-}
-
-/* Page header */
-.credit-header {
-    padding: var(--space-4);
-    background: white;
-    border-bottom: 1px solid var(--neutral-200);
-}
-
-.credit-header__title {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    color: var(--neutral-800);
-    margin: 0 0 var(--space-2) 0;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.credit-header__description {
-    font-size: var(--text-sm);
-    color: var(--neutral-600);
-    margin: 0 0 var(--space-2) 0;
-}
-
-.credit-header__updated {
-    font-size: var(--text-sm);
-    color: var(--neutral-500);
-    margin: 0;
 }
 
 /* Content page */
@@ -251,14 +224,6 @@
 
 /* Tablet+ layouts */
 @media (min-width: 768px) {
-    .credit-header {
-        padding: var(--space-6);
-    }
-
-    .credit-header__title {
-        font-size: var(--text-3xl);
-    }
-
     .content-grid {
         display: grid;
         grid-template-columns: 1.5fr 1fr;
@@ -307,12 +272,12 @@
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
-    <header class="credit-header">
-        <h1 class="credit-header__title">
-            <i class="bi bi-credit-card text-danger"></i> Credit Markets
+    <header class="asset-page-header">
+        <h1 class="asset-page-header__title">
+            <i class="bi bi-credit-card" style="color: var(--category-color);" aria-hidden="true"></i> Credit Markets
         </h1>
-        <p class="credit-header__description">HY spreads, IG spreads, and credit market stress indicators</p>
-        <p class="credit-header__updated">Last Updated: <span id="last-updated-time">{{ data_date or 'Loading...' }}</span></p>
+        <p class="asset-page-header__description">HY spreads, IG spreads, and credit market stress indicators</p>
+        <p class="asset-page-header__updated">Last Updated: <span id="last-updated-time">{{ data_date or 'Loading...' }}</span></p>
     </header>
 
     <!-- Compact Regime Strip -->

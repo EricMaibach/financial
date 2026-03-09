@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/chart-container.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/collapsible-section.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/key-stats-panel.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/asset-page-header.css') }}">
 <style>
 /* Mobile-First Rates Page Styles */
 :root {
@@ -43,37 +44,9 @@
     --danger-600: #dc3545;
     --warning-600: #ffc107;
     --info-600: #0dcaf0;
+    --category-color: #0d6efd;
 
     --container-xl: 1280px;
-}
-
-/* Page header */
-.rates-header {
-    padding: var(--space-4);
-    background: white;
-    border-bottom: 1px solid var(--neutral-200);
-}
-
-.rates-header__title {
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    color: var(--neutral-800);
-    margin: 0 0 var(--space-2) 0;
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.rates-header__description {
-    font-size: var(--text-sm);
-    color: var(--neutral-600);
-    margin: 0 0 var(--space-2) 0;
-}
-
-.rates-header__updated {
-    font-size: var(--text-sm);
-    color: var(--neutral-500);
-    margin: 0;
 }
 
 /* Content page */
@@ -238,14 +211,6 @@
 
 /* Tablet+ layouts */
 @media (min-width: 768px) {
-    .rates-header {
-        padding: var(--space-6);
-    }
-
-    .rates-header__title {
-        font-size: var(--text-3xl);
-    }
-
     .content-grid {
         display: grid;
         grid-template-columns: 1.5fr 1fr; /* 60/40 split */
@@ -293,12 +258,12 @@
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
-    <header class="rates-header">
-        <h1 class="rates-header__title">
-            <i class="bi bi-graph-down-arrow text-primary"></i> Interest Rates
+    <header class="asset-page-header">
+        <h1 class="asset-page-header__title">
+            <i class="bi bi-graph-down-arrow" style="color: var(--category-color);" aria-hidden="true"></i> Interest Rates
         </h1>
-        <p class="rates-header__description">Tracking Treasury yields, curve shape, and inflation expectations</p>
-        <p class="rates-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
+        <p class="asset-page-header__description">Tracking Treasury yields, curve shape, and inflation expectations</p>
+        <p class="asset-page-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
     </header>
 
     <!-- Compact Regime Strip -->

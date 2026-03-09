@@ -1,0 +1,45 @@
+/* ============================================================
+   Asset Page Header — Shared Component
+   Usage: <header class="asset-page-header"> on all 6 asset detail pages.
+   Set --category-color in the page's :root to apply the correct
+   per-page accent color to header icons and accent elements.
+   ============================================================ */
+
+.asset-page-header {
+    padding: var(--space-4);
+    background: white;
+    border-bottom: 1px solid var(--neutral-200);
+}
+
+.asset-page-header__title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--neutral-800);
+    margin: 0 0 var(--space-2) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.asset-page-header__description {
+    font-size: var(--text-sm);
+    color: var(--neutral-600);
+    margin: 0 0 var(--space-2) 0;
+}
+
+.asset-page-header__updated {
+    font-size: var(--text-sm);
+    color: var(--neutral-500);
+    margin: 0;
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+    .asset-page-header {
+        padding: var(--space-6);
+    }
+
+    .asset-page-header__title {
+        font-size: var(--text-3xl);
+    }
+}

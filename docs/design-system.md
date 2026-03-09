@@ -412,6 +412,42 @@ States:
 - Medium (default): `space-3` `space-6`, `text-base`, 44px min-height
 - Large: `space-4` `space-8`, `text-lg`, 52px min-height
 
+### Asset Detail Page Header
+
+Canonical header for all 6 asset detail pages (Credit, Equity, Rates, Dollar, Crypto, Safe Havens).
+
+```
+File: static/css/components/asset-page-header.css
+
+HTML:
+<header class="asset-page-header">
+  <h1 class="asset-page-header__title">
+    <i class="bi bi-{icon}" style="color: var(--category-color);" aria-hidden="true"></i>
+    {Page Name}
+  </h1>
+  <p class="asset-page-header__description">{Subtitle}</p>
+  <p class="asset-page-header__updated">Last Updated: <span id="last-updated-time">…</span></p>
+</header>
+
+Per-page setup: Each template sets --category-color in its :root block.
+
+Mobile (default):  padding space-4; title text-2xl (24px)
+Tablet+ (768px+):  padding space-6; title text-3xl (30px)
+```
+
+| Page | `--category-color` |
+|------|--------------------|
+| Credit | `#dc3545` (danger-red) |
+| Equity | `#0d6efd` (brand-blue) |
+| Rates | `#0d6efd` (brand-blue) |
+| Dollar | `#0dcaf0` (teal-info) |
+| Crypto | `#ffc107` (warning-amber) |
+| Safe Havens | `#198754` (success-green) |
+
+**Accessibility:** `aria-hidden="true"` on all decorative header icons (icon is redundant with the text title).
+
+---
+
 ### Cards
 
 **Standard Card**
