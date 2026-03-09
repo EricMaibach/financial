@@ -3308,12 +3308,12 @@ def generate_portfolio_market_context():
         # Credit spreads
         hy_df = load_csv_data('high_yield_spread.csv')
         if hy_df is not None and not hy_df.empty:
-            hy_val = hy_df.iloc[-1][hy_df.columns[1]]
+            hy_val = hy_df.iloc[-1][hy_df.columns[1]] * 100
             metrics_summary.append(f"- HY Spread: {hy_val:.0f} bp")
 
         ig_df = load_csv_data('investment_grade_spread.csv')
         if ig_df is not None and not ig_df.empty:
-            ig_val = ig_df.iloc[-1][ig_df.columns[1]]
+            ig_val = ig_df.iloc[-1][ig_df.columns[1]] * 100
             metrics_summary.append(f"- IG Spread: {ig_val:.0f} bp")
 
         # VIX
