@@ -177,6 +177,8 @@ class MarketSignalsTracker:
                 return None
 
             df = pd.DataFrame(data['observations'])
+            if df.empty or 'date' not in df.columns or 'value' not in df.columns:
+                return None
             df = df[['date', 'value']]
             df['date'] = pd.to_datetime(df['date'])
             df['value'] = pd.to_numeric(df['value'], errors='coerce')
