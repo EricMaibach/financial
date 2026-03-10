@@ -322,6 +322,44 @@ class ExtremePercentileDetector(AlertDetector):
         return None
 
 
+class RegimeTransitionLayer1Detector(AlertDetector):
+    """Layer 1 alert: fires when 2+ of 3 macro signals flip direction within 30 days."""
+
+    def __init__(self):
+        super().__init__(
+            alert_type='regime_transition_l1',
+            title_template='Regime Transition Alert',
+            severity='warning',
+        )
+
+    def should_trigger(self, user, metrics):
+        prefs = user.alert_preferences
+        if not prefs or not prefs.alerts_enabled:
+            return None
+
+        # Low-frequency event: suppress re-alerts within 7 days
+        if self.was_recently_triggered(user.id, hours=168):
+            return None
+
+        try:
+            from services.layer1_regime_transition import check_regime_transition
+            payload = check_regime_transition()
+        except Exception as e:
+            logger.error("Layer 1 regime transition check failed: %s", str(e), exc_info=True)
+            return None
+
+        if payload is None:
+            return None
+
+        return {
+            'title': f"Regime Transition: {', '.join(payload['signals_triggered'])}",
+            'message': payload['context_sentence'],
+            'metric_name': 'Regime Transition',
+            'metric_value': float(len(payload['signals_triggered'])),
+            'threshold_value': 2.0,
+        }
+
+
 def check_all_alerts_for_user(user):
     """
     Run all alert detectors for a single user
@@ -350,6 +388,7 @@ def check_all_alerts_for_user(user):
         YieldCurveInversionDetector(),
         EquityBreadthDetector(),
         ExtremePercentileDetector(),
+        RegimeTransitionLayer1Detector(),
     ]
 
     alerts_created = 0

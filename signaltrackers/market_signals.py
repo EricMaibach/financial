@@ -89,6 +89,8 @@ class MarketSignalsTracker:
             'fed_funds_rate': 'FEDFUNDS',  # Effective Federal Funds Rate (Monthly)
             # Trade Balance (US-206.1)
             'trade_balance': 'BOPGSTB',  # US Goods Trade Balance, monthly SA (billions USD)
+            # Composite Leading Indicator (Layer 1 Alert Engine — US-237.1)
+            'cli': 'USSLIND',  # Conference Board US Leading Index (monthly)
         }
 
         # ETF tickers organized by category
