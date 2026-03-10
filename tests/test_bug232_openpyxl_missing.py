@@ -5,13 +5,22 @@ openpyxl must be listed in signaltrackers/requirements.txt so that
 pandas.read_excel() can parse the Richmond Fed .xlsx file. Without it,
 _fetch_richmond_sos() silently returns (None, None) via a bare except clause,
 causing the SOS model block to be omitted from the Recession Probability panel.
+
+Second root cause (discovered during preview image validation): the Date column
+in the Richmond Fed xlsx is parsed by pandas+openpyxl as datetime64/Timestamp,
+NOT as an Excel serial integer. The original code called int(last_row.iloc[0]),
+which raises TypeError on a Timestamp. Fix: use pd.Timestamp(last_row.iloc[0]).
+
+Test note: xlsx mock data MUST use datetime objects in the Date column so that
+openpyxl stores them as proper date cells and pandas reads them back as Timestamps.
+Passing serial integers would store them as plain numbers, masking the bug.
 """
 
 import io
 import os
 import sys
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -99,6 +108,27 @@ class TestRichmondSOSSourceStructure(unittest.TestCase):
         """richmond_sos_risk must be assigned in the probability update."""
         self.assertIn('richmond_sos_risk', self.src)
 
+    def test_timestamp_used_for_date_parsing(self):
+        """Source must use pd.Timestamp() to parse the date column — not int() serial conversion.
+
+        pandas+openpyxl automatically parse date columns as datetime64/Timestamp.
+        The original code called int(last_row.iloc[0]) which raises TypeError on a Timestamp.
+        The fix is: pd.Timestamp(last_row.iloc[0]).strftime('%Y-%m-%d')
+        """
+        self.assertIn('pd.Timestamp', self.src,
+                      "pd.Timestamp not found — date parsing must use pd.Timestamp(last_row.iloc[0])")
+
+    def test_no_serial_integer_date_conversion(self):
+        """Source must NOT use the broken Excel serial integer date conversion.
+
+        The old code: int(last_row.iloc[0]) raises TypeError on a Timestamp.
+        Presence of 'date_serial' or 'datetime(1899' indicates the unfixed version.
+        """
+        self.assertNotIn('date_serial', self.src,
+                         "date_serial found — Excel serial integer conversion must be removed")
+        self.assertNotIn('datetime(1899', self.src,
+                         "datetime(1899 found — Excel epoch conversion must be removed")
+
 
 # ---------------------------------------------------------------------------
 # Behavioural tests (mocked network)
@@ -106,7 +136,13 @@ class TestRichmondSOSSourceStructure(unittest.TestCase):
 
 
 def _make_xlsx_bytes(rows: list[tuple]) -> bytes:
-    """Build a minimal .xlsx file in memory using openpyxl."""
+    """Build a minimal .xlsx file in memory using openpyxl.
+
+    IMPORTANT: Pass datetime objects for the Date column, not Excel serial integers.
+    openpyxl stores datetime objects as proper date-typed cells; pandas+openpyxl then
+    reads them back as Timestamps — matching the real Richmond Fed file format.
+    Passing an integer would store it as a plain number and mask the date-parsing bug.
+    """
     try:
         import openpyxl
     except ImportError:
@@ -123,13 +159,12 @@ def _make_xlsx_bytes(rows: list[tuple]) -> bytes:
     return buf.getvalue()
 
 
-def _excel_serial(date: datetime) -> int:
-    """Convert a datetime to Excel serial integer (1900 epoch, 1-indexed)."""
-    return (date - datetime(1899, 12, 31)).days + 1
-
-
 class TestFetchRichmondSOSSuccess(unittest.TestCase):
-    """_fetch_richmond_sos() must parse a well-formed xlsx and return (value, date)."""
+    """_fetch_richmond_sos() must parse a well-formed xlsx and return (value, date).
+
+    Mock data uses datetime objects in the Date column so openpyxl stores proper
+    date cells, which pandas reads back as Timestamps — exactly as the real file does.
+    """
 
     def setUp(self):
         try:
@@ -138,12 +173,11 @@ class TestFetchRichmondSOSSuccess(unittest.TestCase):
             self.skipTest("openpyxl not installed — install it via requirements.txt")
 
     def test_returns_float_and_date_string(self):
-        """Happy path: valid xlsx → (float, 'YYYY-MM-DD')."""
+        """Happy path: valid xlsx with datetime Date cell → (float, 'YYYY-MM-DD')."""
         from recession_probability import _fetch_richmond_sos
 
         target_date = datetime(2026, 2, 7)
-        serial = _excel_serial(target_date)
-        xlsx_bytes = _make_xlsx_bytes([(serial, 0.35, 0.2)])
+        xlsx_bytes = _make_xlsx_bytes([(target_date, 0.35, 0.2)])
 
         mock_resp = MagicMock()
         mock_resp.content = xlsx_bytes
@@ -152,16 +186,16 @@ class TestFetchRichmondSOSSuccess(unittest.TestCase):
         with patch('recession_probability.requests.get', return_value=mock_resp):
             prob, date_str = _fetch_richmond_sos()
 
-        self.assertIsNotNone(prob, "Expected float probability, got None")
+        self.assertIsNotNone(prob, "Expected float probability, got None — date parsing likely failed")
         self.assertAlmostEqual(prob, 0.35, places=5)
         self.assertEqual(date_str, '2026-02-07')
 
     def test_returns_latest_row(self):
-        """With multiple rows, the last row's value is returned."""
+        """With multiple rows, the last row's value and date are returned."""
         from recession_probability import _fetch_richmond_sos
 
-        d1 = _excel_serial(datetime(2026, 1, 31))
-        d2 = _excel_serial(datetime(2026, 2, 7))
+        d1 = datetime(2026, 1, 31)
+        d2 = datetime(2026, 2, 7)
         xlsx_bytes = _make_xlsx_bytes([(d1, 0.10, 0.2), (d2, 0.45, 0.2)])
 
         mock_resp = MagicMock()
