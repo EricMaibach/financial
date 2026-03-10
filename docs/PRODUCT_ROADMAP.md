@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-09 (US-218.1 #222 merged ✅; Bug #232 at ready-for-pr (PR #234); US-218.2 #233 at ready-for-implementation)
+**Last updated:** 2026-03-10 (Bug #232 merged ✅ (PR #234); US-218.2 #233 at ready-for-pr (PR #236))
 
 ---
 
@@ -63,8 +63,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | CLOSED ✅ (2026-03-09) |
 | #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | CLOSED ✅ (2026-03-06) |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
-| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | IN PROGRESS — US-218.1 (#222) merged ✅; US-218.2 (#233) `ready-for-implementation` |
-| #232 — Bug: Richmond Fed SOS Indicator missing — openpyxl not installed | P1 | `ready-for-pr` — PR #234 open, awaiting human merge |
+| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | IN PROGRESS — US-218.1 (#222) merged ✅; US-218.2 (#233) `ready-for-pr` — PR #236 open |
+| #232 — Bug: Richmond Fed SOS Indicator missing — openpyxl not installed | P1 | CLOSED ✅ (2026-03-10) |
 | #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | CLOSED ✅ (2026-03-09) |
 | #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | CLOSED ✅ |
 | #223 — Bug: market_signals.py crashes on empty FRED observations | P0 | CLOSED ✅ |
@@ -72,9 +72,9 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 ### Active Story Pipeline
 
-**Current WIP:** Bug #232 (openpyxl missing) — `ready-for-pr` — P1, PR #234 open (awaiting human merge)
+**Current WIP:** US-218.2 (#233) — `ready-for-pr` — P3, PR #236 open (awaiting human merge)
 
-**Next up:** US-218.2 (#233) — `ready-for-implementation` — P3, Recession Probability panel consolidation (depends on #222 merged ✅ — unblocked)
+**Next up:** nothing — Phase 7 complete pending PR #236 merge
 
 ### Phase 7 Feature Detail
 
@@ -87,7 +87,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 - **Multi-Model Trust Signal** (#218, P3) — Persistent UI explainer on Recession Probability panel using the 2022–2024 yield curve false alarm as the canonical example of why multi-model synthesis outperforms any single indicator. Copy + small UI component only; no new backend. (Approved from council discussion #35, 2026-03-08)
 - **Fix: Regime Thread Missing from Cross-Market and Prediction Sections** (#219, P3) — ✅ COMPLETE. Added `regime-thread` class to `#signals-section` and `#prediction-section`. Regime-colored left border now renders consistently across all homepage sections.
 - **Bug: Portfolio AI Credit Spread Unit Conversion** (#220, P1) — `generate_portfolio_market_context()` in `dashboard.py:3297-3304` formats HY/IG spreads without the `* 100` conversion, causing portfolio AI to see ~3 bp instead of ~280 bp. Silent accuracy failure in user-facing analysis. Two-line fix. (Approved from council discussion #37, 2026-03-08)
-- **Bug: Richmond Fed SOS Indicator missing — openpyxl not installed** (#232, P1) — `openpyxl` was absent from `requirements.txt`; `_fetch_richmond_sos()` silently returned `(None, None)`, causing the third recession model to not render. Fix: add `openpyxl>=3.0.0`. PR #234 open.
+- **Bug: Richmond Fed SOS Indicator missing — openpyxl not installed** (#232, P1) — ✅ COMPLETE. `openpyxl` was absent from `requirements.txt`; `_fetch_richmond_sos()` silently returned `(None, None)`, causing the third recession model to not render. Fix: add `openpyxl>=3.0.0`. PR #234 merged.
 
 ---
 
