@@ -91,6 +91,8 @@ class MarketSignalsTracker:
             'trade_balance': 'BOPGSTB',  # US Goods Trade Balance, monthly SA (billions USD)
             # Composite Leading Indicator (Layer 1 Alert Engine — US-237.1)
             'cli': 'USSLIND',  # Conference Board US Leading Index (monthly)
+            # ISM Manufacturing PMI (Layer 2/3 Alert Engine — US-237.2)
+            'ism_manufacturing': 'NAPM',  # ISM Manufacturing: PMI Composite Index
         }
 
         # ETF tickers organized by category

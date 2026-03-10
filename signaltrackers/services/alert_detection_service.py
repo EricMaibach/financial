@@ -360,6 +360,86 @@ class RegimeTransitionLayer1Detector(AlertDetector):
         }
 
 
+class ExtremePercentileLayer2Detector(AlertDetector):
+    """Layer 2 alert: fires when a tracked indicator crosses the 90th or 10th
+    percentile (10-year window) and has recently risen from below the 70th pct."""
+
+    def __init__(self):
+        super().__init__(
+            alert_type='extreme_percentile_l2',
+            title_template='Extreme Percentile Alert (Layer 2)',
+            severity='warning',
+        )
+
+    def should_trigger(self, user, metrics):
+        prefs = user.alert_preferences
+        if not prefs or not prefs.alerts_enabled:
+            return None
+
+        if self.was_recently_triggered(user.id, hours=168):
+            return None
+
+        try:
+            from services.layer2_extreme_percentile import check_extreme_percentile
+            payloads = check_extreme_percentile()
+        except Exception as e:
+            logger.error("Layer 2 extreme percentile check failed: %s", str(e), exc_info=True)
+            return None
+
+        if not payloads:
+            return None
+
+        # Return the first triggered payload (each indicator fires independently;
+        # the detector runs once per user per check cycle — further alerts in
+        # subsequent runs or via separate detector instances if needed)
+        payload = payloads[0]
+        return {
+            'title': f"Extreme Percentile: {payload['signals_triggered'][0]}",
+            'message': payload['context_sentence'],
+            'metric_name': payload['signals_triggered'][0],
+            'metric_value': float(payload['current_percentile']),
+            'threshold_value': 90.0 if payload['current_percentile'] >= 50 else 10.0,
+        }
+
+
+class ConvergenceLayer3Detector(AlertDetector):
+    """Layer 3 alert: fires when 3+ tracked indicators simultaneously sit in
+    stress territory (>75th or <25th pct) and all agree on direction."""
+
+    def __init__(self):
+        super().__init__(
+            alert_type='convergence_l3',
+            title_template='Multi-Signal Convergence Alert (Layer 3)',
+            severity='warning',
+        )
+
+    def should_trigger(self, user, metrics):
+        prefs = user.alert_preferences
+        if not prefs or not prefs.alerts_enabled:
+            return None
+
+        if self.was_recently_triggered(user.id, hours=168):
+            return None
+
+        try:
+            from services.layer3_convergence import check_convergence
+            payload = check_convergence()
+        except Exception as e:
+            logger.error("Layer 3 convergence check failed: %s", str(e), exc_info=True)
+            return None
+
+        if payload is None:
+            return None
+
+        return {
+            'title': f"Multi-Signal Convergence: {len(payload['signals_triggered'])} indicators",
+            'message': payload['context_sentence'],
+            'metric_name': 'Multi-Signal Convergence',
+            'metric_value': float(len(payload['signals_triggered'])),
+            'threshold_value': 3.0,
+        }
+
+
 def check_all_alerts_for_user(user):
     """
     Run all alert detectors for a single user
@@ -389,6 +469,8 @@ def check_all_alerts_for_user(user):
         EquityBreadthDetector(),
         ExtremePercentileDetector(),
         RegimeTransitionLayer1Detector(),
+        ExtremePercentileLayer2Detector(),
+        ConvergenceLayer3Detector(),
     ]
 
     alerts_created = 0
