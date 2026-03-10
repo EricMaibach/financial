@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-10 (PM run: Phase 8 BUILDING — #237 broken into 3 user stories; #238 → needs-design-spec; #239 ✅ CLOSED via PR #240)
+**Last updated:** 2026-03-10 (PM run: #238 spec approved → broken into US-238.1 #245, US-238.2 #246, US-238.3 #247 — all needs-test-plan P2)
 
 ---
 
@@ -120,7 +120,10 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 - US-237.2 (#242): Layers 2 & 3 Extreme Percentile + Multi-Signal Convergence — `needs-test-plan`
 - US-237.3 (#243): Integration, Rate-Limiting (≤5/week), Display Update — `needs-test-plan` (depends on #241, #242)
 
-**Feature #238**: Portfolio Real Estate Categories — UX Design + Implementation (P2) — `needs-design-spec` (in designer queue)
+**Feature #238**: Portfolio Real Estate Categories — UX Design + Implementation (P2)
+- US-238.1 #245: Backend (API + breakdown + AI) — `needs-test-plan`
+- US-238.2 #246: Frontend (picker, colors, labels) — `needs-test-plan` (depends on #245)
+- US-238.3 #247: UI (Real Estate summary card) — `needs-test-plan` (depends on #245, #246)
 
 **Bug #239**: Chatbot metrics silently broken — METRIC_INFO filename mismatches (P1) — CLOSED ✅ (PR #240 merged 2026-03-10)
 
