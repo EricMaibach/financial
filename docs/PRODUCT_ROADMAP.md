@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-10 (Bug #232 merged ✅ (PR #234); US-218.2 #233 at ready-for-pr (PR #236))
+**Last updated:** 2026-03-10 (Phase 7 complete ✅ — Feature #218 closed, milestone closed, release created, transitioning to IDEATING)
 
 ---
 
@@ -24,8 +24,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 7 — Credit Intelligence & Completion
-**State:** BUILDING
+**Phase:** Phase 8 — Signal Quality & Portfolio Foundation
+**State:** IDEATING
 
 ---
 
@@ -41,16 +41,17 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | Phase 4 | Mobile Polish + Core UX Wins | 13 stories (Feb 28, 2026) |
 | Phase 5 | Macro Intelligence Layer | 9 stories (Feb 26, 2026) |
 | Phase 6 | Advanced Intelligence & Sector Analysis | 6 stories (Feb 28, 2026) |
+| Phase 7 | Credit Intelligence & Completion | Mar 10, 2026 |
 
 **Phase 5 highlights:** Macro Regime Score Panel (Feature 5.1, #138) and Multi-Model Recession Probability Sub-Panel (Feature 5.2, #146) — three recession models (NY Fed 12-month, Chauvet-Piger coincident, Richmond SOS weekly), all data free via FRED + Richmond Fed.
 
 **Phase 6 highlights:** Regime Implications Panel (#145) — 5-level signal scale across 6 asset classes, static config from published research. Sector Management Tone Panel (#123) — SEC EDGAR 8-K ingestion, FinBERT NLP scoring, GICS sector aggregation (11 sectors), quarterly scheduling, /credit stub + nav parity.
 
-**Total shipped:** 71 user stories across 6 phases.
+**Total shipped:** 71+ user stories across 7 phases.
 
 ---
 
-## Phase 7: Credit Intelligence & Completion (in progress)
+## Phase 7: Credit Intelligence & Completion ✅ COMPLETE
 **Milestone goal:** Build out the credit detail page, integrate credit into the full AI briefing pipeline, and complete remaining market parity and UX gaps.
 
 | Feature | Priority | Status |
@@ -63,18 +64,12 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 | #207 — Asset Detail Page Header — Shared Component Refactor | P3 | CLOSED ✅ (2026-03-09) |
 | #206 — Global Trade Pulse — FRED Trade Balance Indicator | P2 | CLOSED ✅ (2026-03-06) |
 | #166 — ML Container Separation (FinBERT/torch) | P3 | `needs-human-decision` (architecture trigger escalated) |
-| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | IN PROGRESS — US-218.1 (#222) merged ✅; US-218.2 (#233) `ready-for-pr` — PR #236 open |
+| #218 — Multi-Model Trust Signal: Why We Use Three Models | P3 | CLOSED ✅ (2026-03-10) |
 | #232 — Bug: Richmond Fed SOS Indicator missing — openpyxl not installed | P1 | CLOSED ✅ (2026-03-10) |
 | #219 — Fix: Regime Thread Missing from Cross-Market and Prediction Sections | P3 | CLOSED ✅ (2026-03-09) |
 | #220 — Bug: Portfolio AI Credit Spread Unit Conversion (HY/IG reads as ~3 bp instead of ~280 bp) | P1 | CLOSED ✅ |
 | #223 — Bug: market_signals.py crashes on empty FRED observations | P0 | CLOSED ✅ |
 | #224 — Bug: Sector tone pipeline all Neutral — EDGAR fetch broken | P1 | CLOSED ✅ (2026-03-09) |
-
-### Active Story Pipeline
-
-**Current WIP:** US-218.2 (#233) — `ready-for-pr` — P3, PR #236 open (awaiting human merge)
-
-**Next up:** nothing — Phase 7 complete pending PR #236 merge
 
 ### Phase 7 Feature Detail
 
@@ -84,7 +79,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 - **Asset Detail Page Header — Shared Component Refactor** (#207, P3) — ✅ COMPLETE. Consolidated 6 duplicate page-header CSS blocks into a single shared `.asset-page-header` component in `static/css/components/asset-page-header.css`. CSS custom property for category color accent. All 6 templates updated, per-page blocks removed, component documented in `docs/design-system.md`.
 - **Global Trade Pulse — FRED Trade Balance Indicator** (#206, P2) — ✅ COMPLETE. Single-panel macro indicator showing US goods trade balance (BOPGSTB), YoY change, percentile framing, regime-conditioned interpretation. FRED-only scope; BDI deferred to Phase 9+. Follow-on: wire into AI Daily Briefing and Chatbot in Phase 8.
 - **ML Container Separation** (#166, P3) — Extract FinBERT/torch from main app container. `needs-human-decision` — waiting on architecture decision (Redis queue vs. standalone cron vs. HTTP API).
-- **Multi-Model Trust Signal** (#218, P3) — Persistent UI explainer on Recession Probability panel using the 2022–2024 yield curve false alarm as the canonical example of why multi-model synthesis outperforms any single indicator. Copy + small UI component only; no new backend. (Approved from council discussion #35, 2026-03-08)
+- **Multi-Model Trust Signal** (#218, P3) — ✅ COMPLETE. Persistent UI explainer on Recession Probability panel using the 2022–2024 yield curve false alarm as the canonical example of why multi-model synthesis outperforms any single indicator. Copy + small UI component only; no new backend.
 - **Fix: Regime Thread Missing from Cross-Market and Prediction Sections** (#219, P3) — ✅ COMPLETE. Added `regime-thread` class to `#signals-section` and `#prediction-section`. Regime-colored left border now renders consistently across all homepage sections.
 - **Bug: Portfolio AI Credit Spread Unit Conversion** (#220, P1) — `generate_portfolio_market_context()` in `dashboard.py:3297-3304` formats HY/IG spreads without the `* 100` conversion, causing portfolio AI to see ~3 bp instead of ~280 bp. Silent accuracy failure in user-facing analysis. Two-line fix. (Approved from council discussion #37, 2026-03-08)
 - **Bug: Richmond Fed SOS Indicator missing — openpyxl not installed** (#232, P1) — ✅ COMPLETE. `openpyxl` was absent from `requirements.txt`; `_fetch_richmond_sos()` silently returned `(None, None)`, causing the third recession model to not render. Fix: add `openpyxl>=3.0.0`. PR #234 merged.
