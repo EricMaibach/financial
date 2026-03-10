@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-10 (Phase 7 complete ✅ — Feature #218 closed, milestone closed, release created, transitioning to IDEATING)
+**Last updated:** 2026-03-10 (PM Council run: 3 council discussions converted to Feature Issues #237, #238, #239 for Phase 8)
 
 ---
 
@@ -112,6 +112,12 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | AI briefing data quality | Engineer Council | What pre-processing, cross-signal correlation, or lightweight ML approaches could meaningfully improve LLM inputs? Look at: anomaly detection on individual metrics, convergence signals (multiple indicators stressed simultaneously), historical similarity matching. Propose what's achievable without major new dependencies. |
 | Portfolio UX & analysis depth | Designer + Engineer Council | How should the portfolio section evolve? What analysis improvements are achievable given the value-tracking foundation? |
 | Property macro data sources | Researcher + Engineer Council | Are there reliable public data sources for commercial cap rates, farmland price indexes, or residential rental yields? If yes, propose Phase 9 integration approach. If not, confirm value-tracking-only scope is correct. |
+
+### Planned Work (from council — awaiting human approval)
+
+- **Smart Market Alerts — 3-Layer Architecture Replacement** — Replace threshold-crossing alerts with a 3-layer macro alert engine (Regime Transition, Extreme Percentile, Multi-Signal Convergence) producing ≤5 high-conviction alerts/week, each with a plain-language historical context sentence (#237, approved from council discussion #38, 2026-03-10)
+- **Portfolio Real Estate Categories — UX Design + Implementation** — Add farmland, commercial rental, and residential rental as dollar-value-entry portfolio holdings; value-based chart integration; Real Estate summary card; AI prompt adjustment (#238, approved from council discussion #39, 2026-03-10)
+- **Bug: Chatbot metrics silently broken — METRIC_INFO filename mismatches** — Fix 5 METRIC_INFO filename mismatches + add 2 missing entries (Fed Funds Rate, Trade Balance); all chatbot-listed metrics resolve successfully (#239, P1, approved from council discussion #40, 2026-03-10)
 
 ### Success Metrics
 
