@@ -563,6 +563,23 @@ class MarketSignalsTracker:
             self.append_to_csv(ratio_df, self.data_dir / "iwm_spy_ratio.csv")
             print("IWM/SPY ratio (small cap vs large cap) calculated")
 
+        # QQQ/SPY ratio - Nasdaq vs S&P 500 (tech leadership)
+        if spy_file.exists() and qqq_file.exists():
+            try:
+                spy_df = pd.read_csv(spy_file)
+                qqq_df = pd.read_csv(qqq_file)
+                spy_df.columns = ['date', 'spy']
+                qqq_df.columns = ['date', 'qqq']
+
+                merged = pd.merge(spy_df, qqq_df, on='date')
+                merged['qqq_spy_ratio'] = (merged['qqq'] / merged['spy']) * 100
+
+                ratio_df = merged[['date', 'qqq_spy_ratio']]
+                self.append_to_csv(ratio_df, self.data_dir / "qqq_spy_ratio.csv")
+                print("QQQ/SPY ratio (Nasdaq vs S&P 500 tech leadership) calculated")
+            except Exception as e:
+                print(f"Warning: could not calculate QQQ/SPY ratio: {e}")
+
         # Bitcoin/Gold ratio - BTC priced in ounces of gold
         btc_file = self.data_dir / "bitcoin_price.csv"
         if btc_file.exists() and gold_file.exists():
