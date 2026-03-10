@@ -41,21 +41,23 @@ class TestMultiModelTrustSignalCallout(unittest.TestCase):
         self.assertGreater(callout_idx, source_idx,
                            "callout must appear after .recession-source")
 
-    def test_callout_separated_by_hr(self):
+    def test_callout_separated_by_toggle(self):
+        # US-218.2: callout now in progressive disclosure; toggle button separates source from content
         panel = self._recession_panel_content()
         source_idx = panel.find('recession-source')
         callout_idx = panel.find('Why three models?')
         between = panel[source_idx:callout_idx]
-        self.assertIn('regime-divider', between,
-                      "<hr class='regime-divider'> must appear between source and callout")
+        self.assertIn('recession-why-toggle', between,
+                      "recession-why-toggle must appear between source and callout")
 
     def test_callout_uses_info_circle_icon(self):
+        # US-218.2: info-circle is in the collapsible content (second occurrence of "Why three models?")
         panel = self._recession_panel_content()
-        callout_idx = panel.find('Why three models?')
-        # Look in the surrounding block (~500 chars)
-        block = panel[max(0, callout_idx - 200):callout_idx + 200]
-        self.assertIn('bi-info-circle', block)
-        self.assertIn('aria-hidden="true"', block)
+        content_idx = panel.find('id="recession-why-content"')
+        self.assertNotEqual(content_idx, -1, "recession-why-content not found")
+        content_block = panel[content_idx:content_idx + 600]
+        self.assertIn('bi-info-circle', content_block)
+        self.assertIn('aria-hidden="true"', content_block)
 
     def test_callout_uses_bootstrap_utilities_only(self):
         panel = self._recession_panel_content()
@@ -75,9 +77,10 @@ class TestMultiModelTrustSignalCallout(unittest.TestCase):
         self.assertIn(expected_fragment, self.html)
 
     def test_callout_body_ends_correctly(self):
+        # US-218.2: indentation updated to match progressive disclosure wrapper
         expected_fragment = (
             "and when they diverge,\n"
-            "                the disagreement is itself the signal."
+            "                  the disagreement is itself the signal."
         )
         self.assertIn(expected_fragment, self.html)
 
@@ -125,16 +128,20 @@ class TestMultiModelTrustSignalLabelText(unittest.TestCase):
         self.assertIn('Why three models?', self.html)
 
     def test_label_style_classes(self):
-        idx = self.html.find('Why three models?')
-        block = self.html[max(0, idx - 200):idx + 50]
+        # US-218.2: callout heading is inside collapsible content; find via recession-why-content
+        content_idx = self.html.find('id="recession-why-content"')
+        self.assertNotEqual(content_idx, -1, "recession-why-content not found")
+        block = self.html[content_idx:content_idx + 400]
         self.assertIn('text-xs', block)
         self.assertIn('text-uppercase', block)
         self.assertIn('fw-semibold', block)
         self.assertIn('text-secondary', block)
 
     def test_body_style_classes(self):
-        idx = self.html.find('Why three models?')
-        block = self.html[idx:idx + 500]
+        # US-218.2: callout body is inside collapsible content
+        content_idx = self.html.find('id="recession-why-content"')
+        self.assertNotEqual(content_idx, -1, "recession-why-content not found")
+        block = self.html[content_idx:content_idx + 600]
         self.assertIn('small text-muted mb-0', block)
 
 

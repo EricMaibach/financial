@@ -358,34 +358,39 @@
 
             </div>{# /.recession-card-grid #}
 
-            {# ── Divergence alert (shown when spread ≥ 15pp) ─────────── #}
-            {% if recession_probability.divergence_pp >= 15 %}
-            <div class="recession-divergence-alert">
-                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-                Models diverge by {{ recession_probability.divergence_pp }}pp — leading and coincident signals disagree. Spread itself signals elevated uncertainty.
-            </div>
-            {% endif %}
-
-            {# ── Plain-language footer ────────────────────────────────── #}
+            {# ── Plain-language footer (diverging state: warning styling) ── #}
             <hr class="regime-divider">
-            <div class="recession-footer">
+            <div class="recession-footer{% if recession_probability.divergence_pp >= 15 %} recession-footer--diverging{% endif %}">
                 {{ recession_probability.interpretation }}
             </div>
             <div class="recession-source">
                 Data: FRED API · Richmond Fed · Updated {{ recession_probability.updated }}
             </div>
 
-            <hr class="regime-divider">
-            <div class="bg-light border-start border-2 border-secondary rounded-2 p-3 mt-2">
-              <p class="text-xs text-uppercase fw-semibold text-secondary mb-1">
-                <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Why three models?
-              </p>
-              <p class="small text-muted mb-0">
-                Single indicators fail in practice. The yield curve inverted in 2022 and held through
-                2024 — a textbook recession signal — while the expansion continued. Three
-                methodologically distinct models are more reliable than any one, and when they diverge,
-                the disagreement is itself the signal.
-              </p>
+            {# ── WHY THREE MODELS — progressive disclosure (collapsed by default) ── #}
+            <button class="recession-why-toggle"
+                    id="recession-why-toggle"
+                    aria-expanded="false"
+                    aria-controls="recession-why-content">
+                <span class="recession-why-toggle-line" aria-hidden="true"></span>
+                <span class="recession-why-toggle-label">
+                    <i class="bi bi-chevron-down recession-why-chevron" aria-hidden="true"></i>
+                    Why three models?
+                </span>
+                <span class="recession-why-toggle-line" aria-hidden="true"></span>
+            </button>
+            <div id="recession-why-content" class="recession-why-content" hidden>
+              <div class="bg-light border-start border-2 border-secondary rounded-2 p-3 mt-2">
+                <p class="text-xs text-uppercase fw-semibold text-secondary mb-1">
+                  <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Why three models?
+                </p>
+                <p class="small text-muted mb-0">
+                  Single indicators fail in practice. The yield curve inverted in 2022 and held through
+                  2024 — a textbook recession signal — while the expansion continued. Three
+                  methodologically distinct models are more reliable than any one, and when they diverge,
+                  the disagreement is itself the signal.
+                </p>
+              </div>
             </div>
 
         </div>{# /.recession-panel__content #}
@@ -1827,6 +1832,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 content.classList.add('recession-panel__content--expanded');
             } else {
                 content.classList.remove('recession-panel__content--expanded');
+            }
+        });
+    }
+
+    // WHY THREE MODELS progressive disclosure toggle (US-218.2)
+    const recessionWhyToggle = document.getElementById('recession-why-toggle');
+    if (recessionWhyToggle) {
+        recessionWhyToggle.addEventListener('click', function() {
+            const content = document.getElementById('recession-why-content');
+            const expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', String(!expanded));
+            if (!expanded) {
+                content.removeAttribute('hidden');
+            } else {
+                content.setAttribute('hidden', '');
             }
         });
     }

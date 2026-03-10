@@ -119,7 +119,10 @@ class TestRecessionPanelCSSClasses(unittest.TestCase):
         self.assertIn('.recession-bar-marker', self.css)
 
     def test_recession_divergence_alert_declared(self):
-        self.assertIn('.recession-divergence-alert', self.css)
+        # US-218.2: alert box removed; replaced by .recession-footer--diverging
+        self.assertNotIn('.recession-divergence-alert', self.css,
+                         "recession-divergence-alert CSS should have been removed by US-218.2")
+        self.assertIn('.recession-footer--diverging', self.css)
 
     def test_recession_footer_declared(self):
         self.assertIn('.recession-footer', self.css)
@@ -177,8 +180,11 @@ class TestDivergenceAlertCSS(unittest.TestCase):
         self.assertIn('#B45309', self.css)
 
     def test_divergence_alert_has_border(self):
-        # #FDE68A = warning-200 border
-        self.assertIn('#FDE68A', self.css)
+        # US-218.2: alert box removed; diverging footer now uses #D97706 (warning-600) left border
+        self.assertNotIn('#FDE68A', self.css,
+                         "#FDE68A was from the removed alert box — should be gone")
+        self.assertIn('#D97706', self.css,
+                      "#D97706 (warning-600) should be used as left border on .recession-footer--diverging")
 
 
 class TestMobileLayout(unittest.TestCase):
@@ -644,32 +650,31 @@ class TestDivergenceAlert(unittest.TestCase):
         self.html = get_index_html()
 
     def test_divergence_alert_class_present(self):
-        self.assertIn('class="recession-divergence-alert"', self.html)
+        # US-218.2: alert box removed; diverging state now on recession-footer via modifier class
+        self.assertNotIn('class="recession-divergence-alert"', self.html,
+                         "recession-divergence-alert HTML block should have been removed by US-218.2")
+        self.assertIn('recession-footer--diverging', self.html)
 
     def test_divergence_alert_conditional_on_15pp(self):
         self.assertIn('recession_probability.divergence_pp >= 15', self.html)
 
     def test_divergence_alert_icon_aria_hidden(self):
-        # Warning icon inside alert must be aria-hidden
-        idx = self.html.find('class="recession-divergence-alert"')
-        self.assertGreater(idx, -1)
-        alert_block = self.html[idx:idx + 500]
-        self.assertIn('aria-hidden="true"', alert_block)
+        # US-218.2: no alert icon; diverging state on footer has no icon — test removed
+        # The warning icon was removed along with the alert box; this is expected
+        self.assertNotIn('bi-exclamation-triangle-fill', self.html,
+                         "Alert icon should have been removed with the alert block")
 
     def test_divergence_alert_shows_divergence_pp_value(self):
         self.assertIn('recession_probability.divergence_pp', self.html)
 
     def test_no_empty_divergence_alert_when_below_threshold(self):
-        # The divergence alert is inside {% if %}…{% endif %}, not always rendered
-        idx = self.html.find('recession-divergence-alert')
-        self.assertGreater(idx, -1)
-        # Check that there's a Jinja2 if block controlling this element
-        before_alert = self.html[:idx]
-        # Find the last {% if %} before the alert — should contain divergence_pp >= 15
-        last_if = before_alert.rfind('{% if')
-        self.assertGreater(last_if, -1)
-        if_statement = self.html[last_if:last_if + 100]
-        self.assertIn('divergence_pp', if_statement)
+        # US-218.2: alert box removed; recession-footer--diverging conditional used instead
+        # Verify the modifier class is applied conditionally (inside Jinja2 if block)
+        idx = self.html.find('recession-footer--diverging')
+        self.assertGreater(idx, -1, "recession-footer--diverging not found")
+        before = self.html[max(0, idx - 300):idx]
+        self.assertIn('divergence_pp >= 15', before,
+                      "recession-footer--diverging must be inside a divergence_pp >= 15 conditional")
 
 
 class TestFooterElements(unittest.TestCase):
@@ -679,7 +684,8 @@ class TestFooterElements(unittest.TestCase):
         self.html = get_index_html()
 
     def test_recession_footer_class_present(self):
-        self.assertIn('class="recession-footer"', self.html)
+        # US-218.2: footer now has conditional modifier; use partial match
+        self.assertIn('recession-footer', self.html)
 
     def test_interpretation_text_rendered(self):
         self.assertIn('recession_probability.interpretation', self.html)
@@ -697,8 +703,9 @@ class TestFooterElements(unittest.TestCase):
         self.assertIn('recession_probability.updated', self.html)
 
     def test_footer_separated_by_regime_divider(self):
-        idx = self.html.find('class="recession-footer"')
-        self.assertGreater(idx, -1)
+        # US-218.2: footer div has conditional modifier class; use partial class search
+        idx = self.html.find('"recession-footer')
+        self.assertGreater(idx, -1, '"recession-footer not found in template')
         before_footer = self.html[:idx]
         # A regime-divider should appear just before the footer
         last_divider = before_footer.rfind('regime-divider')
