@@ -98,73 +98,53 @@
                         </div>
 
                         <div id="alert-options" style="{{ 'display: none;' if not prefs.alerts_enabled }}">
-                            <!-- Individual Alert Toggles -->
-                            <h6 class="mb-3">Alert Types</h6>
+                            <!-- 3-Layer Alert Toggles -->
+                            <h6 class="mb-3">Alert Layers</h6>
+                            <p class="text-muted small mb-3">
+                                The 3-layer alert engine produces at most 5 high-conviction alerts per week.
+                                Higher-conviction layers are always sent first when the budget is limited.
+                            </p>
 
-                            <div class="mb-3">
+                            <div class="mb-3 p-3 border rounded">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="vix_threshold_25"
-                                           name="vix_threshold_25" {{ 'checked' if prefs.vix_threshold_25 }}>
-                                    <label class="form-check-label" for="vix_threshold_25">
-                                        <strong>VIX Spike (>25)</strong>
+                                    <input class="form-check-input" type="checkbox" id="layer_3_enabled"
+                                           name="layer_3_enabled" {{ 'checked' if prefs.layer_3_enabled }}>
+                                    <label class="form-check-label" for="layer_3_enabled">
+                                        <span class="badge layer-badge layer-3 me-1">Multi-Signal Convergence</span>
+                                        <strong>Layer 3 — Highest Conviction</strong>
                                     </label>
                                 </div>
-                                <small class="text-muted d-block ms-4">Notify when VIX crosses 25 (elevated volatility)</small>
+                                <small class="text-muted d-block ms-4 mt-1">
+                                    Fires when 3+ macro indicators simultaneously enter stress territory. Expected 1–3 times per year.
+                                </small>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-3 p-3 border rounded">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="vix_threshold_30"
-                                           name="vix_threshold_30" {{ 'checked' if prefs.vix_threshold_30 }}>
-                                    <label class="form-check-label" for="vix_threshold_30">
-                                        <strong>VIX Spike (>30)</strong>
+                                    <input class="form-check-input" type="checkbox" id="layer_2_enabled"
+                                           name="layer_2_enabled" {{ 'checked' if prefs.layer_2_enabled }}>
+                                    <label class="form-check-label" for="layer_2_enabled">
+                                        <span class="badge layer-badge layer-2 me-1">Extreme Percentile</span>
+                                        <strong>Layer 2 — Medium Conviction</strong>
                                     </label>
                                 </div>
-                                <small class="text-muted d-block ms-4">Notify when VIX crosses 30 (extreme volatility)</small>
+                                <small class="text-muted d-block ms-4 mt-1">
+                                    Fires when a key indicator hits its 90th or 10th percentile vs. 10-year history and has rapidly moved there. Expected 4–8 times per year.
+                                </small>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-3 p-3 border rounded">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="credit_spread_threshold_50bp"
-                                           name="credit_spread_threshold_50bp" {{ 'checked' if prefs.credit_spread_threshold_50bp }}>
-                                    <label class="form-check-label" for="credit_spread_threshold_50bp">
-                                        <strong>Credit Spreads Widening</strong>
+                                    <input class="form-check-input" type="checkbox" id="layer_1_enabled"
+                                           name="layer_1_enabled" {{ 'checked' if prefs.layer_1_enabled }}>
+                                    <label class="form-check-label" for="layer_1_enabled">
+                                        <span class="badge layer-badge layer-1 me-1">Regime Transition</span>
+                                        <strong>Layer 1 — Directional Signal</strong>
                                     </label>
                                 </div>
-                                <small class="text-muted d-block ms-4">Notify when spreads widen >50bp in a week</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="yield_curve_inversion"
-                                           name="yield_curve_inversion" {{ 'checked' if prefs.yield_curve_inversion }}>
-                                    <label class="form-check-label" for="yield_curve_inversion">
-                                        <strong>Yield Curve Changes</strong>
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block ms-4">Notify when curve inverts or un-inverts</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="equity_breadth_deterioration"
-                                           name="equity_breadth_deterioration" {{ 'checked' if prefs.equity_breadth_deterioration }}>
-                                    <label class="form-check-label" for="equity_breadth_deterioration">
-                                        <strong>Equity Breadth Deterioration</strong>
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block ms-4">Notify when market breadth weakens significantly</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="extreme_percentile_enabled"
-                                           name="extreme_percentile_enabled" {{ 'checked' if prefs.extreme_percentile_enabled }}>
-                                    <label class="form-check-label" for="extreme_percentile_enabled">
-                                        <strong>Extreme Metric Readings</strong>
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block ms-4">Notify when 3+ metrics reach extreme percentiles (>95th or <5th)</small>
+                                <small class="text-muted d-block ms-4 mt-1">
+                                    Fires when the Composite Leading Indicator, yield curve, and financial conditions index flip direction together. Expected 3–5 times per year.
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -194,8 +174,9 @@
                 <div class="card-body">
                     <ul class="small mb-0">
                         <li class="mb-2">Alerts check market conditions every 15 minutes</li>
-                        <li class="mb-2">You'll receive immediate email notifications when thresholds are crossed</li>
-                        <li class="mb-2">Duplicate alerts are suppressed (24-48 hour cooldown)</li>
+                        <li class="mb-2">Maximum 5 alerts per 7-day rolling window — only the most meaningful signals fire</li>
+                        <li class="mb-2">Higher-conviction alerts (Layer 3 → Layer 2 → Layer 1) fill the weekly budget first</li>
+                        <li class="mb-2">Each alert includes a plain-language context sentence with historical frequency</li>
                         <li class="mb-2">All alerts are logged in <a href="{{ url_for('alert_history') }}">Alert History</a></li>
                     </ul>
                 </div>
@@ -215,6 +196,13 @@
         </div>
     </div>
 </div>
+
+<style>
+.layer-badge { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em; }
+.layer-1 { background-color: #6f42c1; color: #fff; }
+.layer-2 { background-color: #fd7e14; color: #fff; }
+.layer-3 { background-color: #dc3545; color: #fff; }
+</style>
 
 <script>
 // Toggle visibility of sub-options

@@ -1926,12 +1926,11 @@ def save_alert_settings():
 
         # Alert settings
         prefs.alerts_enabled = request.form.get('alerts_enabled') == 'on'
-        prefs.vix_threshold_25 = request.form.get('vix_threshold_25') == 'on'
-        prefs.vix_threshold_30 = request.form.get('vix_threshold_30') == 'on'
-        prefs.credit_spread_threshold_50bp = request.form.get('credit_spread_threshold_50bp') == 'on'
-        prefs.yield_curve_inversion = request.form.get('yield_curve_inversion') == 'on'
-        prefs.equity_breadth_deterioration = request.form.get('equity_breadth_deterioration') == 'on'
-        prefs.extreme_percentile_enabled = request.form.get('extreme_percentile_enabled') == 'on'
+
+        # 3-layer toggles (US-237.3)
+        prefs.layer_1_enabled = request.form.get('layer_1_enabled') == 'on'
+        prefs.layer_2_enabled = request.form.get('layer_2_enabled') == 'on'
+        prefs.layer_3_enabled = request.form.get('layer_3_enabled') == 'on'
 
         db.session.commit()
 
