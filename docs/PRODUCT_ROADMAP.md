@@ -153,6 +153,8 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | Portfolio UX polish | Phase 8 Designer Council findings |
 | General UX polish | Designer Council backlog items |
 | BDI (Baltic Dry Index) integration | Re-evaluate after FRED trade balance signal validated in Phase 7/8 |
+| Persistent news pipeline + news page | Human-approved candidate (Discussion #46). Feature A: scheduled fetch+store + AI-summarized news page. Feature B (deferred): custom RSS/feed management. Requires Tavily API. Feature Issue to be created at Phase 9 kickoff. |
+| Contextual AI entry points | Human-approved candidate (Discussion #45). Part 1: section-level AI icon → opens chatbot pre-loaded with section data. Part 2 (deferred): sentence-level drill-in from AI briefings. Both require design spec. Feature Issue to be created at Phase 9 kickoff. |
 
 *Phase 9 scope will be finalized at Phase 8 completion.*
 
