@@ -204,7 +204,7 @@ def _fetch_richmond_sos() -> tuple[Optional[float], Optional[str]]:
     The Richmond Fed SOS is a weekly labor/stress indicator published as an XLSX file.
 
     File layout (Bug #154 confirmed):
-        Column 0: Date (Excel serial integer — e.g. 46060 → 2026-02-07)
+        Column 0: Date (datetime — pandas/openpyxl parses date cells as Timestamps)
         Column 1: SOS indicator (float, the actual value to use)
         Column 2: Recession Threshold (constant 0.2 — do NOT use this column)
 
@@ -219,16 +219,15 @@ def _fetch_richmond_sos() -> tuple[Optional[float], Optional[str]]:
             import pandas as pd
             from io import BytesIO
             df = pd.read_excel(BytesIO(resp.content), header=0)
-            # File has 3 columns: Date (serial int), SOS indicator, Recession Threshold
+            # File has 3 columns: Date (Timestamp), SOS indicator, Recession Threshold
             if df.empty:
                 return None, None
             df = df.dropna(subset=[df.columns[1]])  # Drop rows where SOS indicator is null
             if df.empty:
                 return None, None
             last_row = df.iloc[-1]
-            # Column 0 is an Excel serial integer — convert to ISO date string
-            date_serial = int(last_row.iloc[0])
-            date_val = (datetime(1899, 12, 31) + timedelta(days=date_serial - 1)).strftime('%Y-%m-%d')
+            # Column 0 is a date cell — pandas+openpyxl parses it as a Timestamp
+            date_val = pd.Timestamp(last_row.iloc[0]).strftime('%Y-%m-%d')
             prob_val = float(last_row.iloc[1])  # SOS indicator (not Recession Threshold constant)
             return prob_val, date_val
         except Exception:
