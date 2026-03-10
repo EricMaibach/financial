@@ -731,15 +731,15 @@ class TestPerModelDates(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 
-def _make_richmond_df(date_serial, sos_val, threshold=0.2):
+def _make_richmond_df(date_val, sos_val, threshold=0.2):
     """Create a mock DataFrame matching the confirmed Richmond Fed file layout.
 
-    Column 0: Date (Excel serial integer)
+    Column 0: Date (datetime — pandas/openpyxl parses date cells as Timestamps)
     Column 1: SOS indicator (float)
     Column 2: Recession Threshold (constant, always 0.2)
     """
     import pandas as pd
-    return pd.DataFrame({0: [date_serial], 1: [sos_val], 2: [threshold]})
+    return pd.DataFrame({0: [date_val], 1: [sos_val], 2: [threshold]})
 
 
 def _call_fetch_richmond_sos_with_df(mock_df):
@@ -766,7 +766,8 @@ class TestBug154RichmondSosUrl(unittest.TestCase):
         self.assertNotIn('survey_of_manufacturing_activity/2024/sos_indicator.xlsx', self.src)
 
     def test_fetch_makes_get_to_correct_url(self):
-        mock_df = _make_richmond_df(46060, 0.058)
+        from datetime import datetime
+        mock_df = _make_richmond_df(datetime(2026, 2, 7), 0.058)
         with patch('recession_probability.requests.get') as mock_get:
             mock_resp = MagicMock()
             mock_resp.content = b'fake xlsx bytes'
@@ -783,29 +784,34 @@ class TestBug154RichmondSosColumn(unittest.TestCase):
     """Bug #154 Fix 2: Must read column 1 (SOS indicator), not column -1 (Threshold constant)."""
 
     def test_returns_sos_value_not_threshold_constant(self):
+        from datetime import datetime
         # SOS=0.058, Threshold=0.2 — must return 0.058, not 0.2
-        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.058))
         self.assertIsNotNone(val)
         self.assertAlmostEqual(val, 0.058, places=3)
 
     def test_does_not_return_threshold_constant(self):
-        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        from datetime import datetime
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.058))
         self.assertIsNotNone(val)
         self.assertNotAlmostEqual(val, 0.2, places=3)
 
     def test_sos_value_0_point_3_high_risk(self):
-        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.3))
+        from datetime import datetime
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.3))
         self.assertIsNotNone(val)
         self.assertAlmostEqual(val, 0.3, places=3)
 
     def test_sos_value_0_point_1_low_risk(self):
-        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.1))
+        from datetime import datetime
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.1))
         self.assertIsNotNone(val)
         self.assertAlmostEqual(val, 0.1, places=3)
 
     def test_sos_value_exactly_0_point_2_not_confused_with_threshold(self):
+        from datetime import datetime
         # SOS of 0.2 is valid data (at recession threshold) — not the Threshold column
-        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.2, threshold=0.2))
+        val, _ = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.2, threshold=0.2))
         self.assertIsNotNone(val)
         self.assertAlmostEqual(val, 0.2, places=3)
 
@@ -816,33 +822,37 @@ class TestBug154RichmondSosColumn(unittest.TestCase):
 
 
 class TestBug154RichmondSosDateParsing(unittest.TestCase):
-    """Bug #154 Fix 3: Date column is Excel serial integer — must convert to ISO string."""
+    """Bug #154/#232 Fix 3: Date column is a Timestamp — must format to ISO string."""
 
-    def test_serial_46060_converts_to_2026_02_07(self):
-        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+    def test_timestamp_feb_07_2026_converts_to_2026_02_07(self):
+        from datetime import datetime
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.058))
         self.assertEqual(date_str, '2026-02-07')
 
-    def test_serial_44927_converts_to_2023_01_01(self):
-        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(44927, 0.1))
+    def test_timestamp_jan_01_2023_converts_to_2023_01_01(self):
+        from datetime import datetime
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2023, 1, 1), 0.1))
         self.assertEqual(date_str, '2023-01-01')
 
     def test_date_not_raw_serial_string(self):
-        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        from datetime import datetime
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.058))
         self.assertIsNotNone(date_str)
         # Must not return the raw integer as a string
         self.assertNotEqual(date_str, '46060')
         self.assertNotEqual(date_str, '46059')
 
     def test_date_format_is_yyyy_mm_dd(self):
-        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(46060, 0.058))
+        from datetime import datetime
+        _, date_str = _call_fetch_richmond_sos_with_df(_make_richmond_df(datetime(2026, 2, 7), 0.058))
         self.assertIsNotNone(date_str)
         import re
         self.assertRegex(date_str, r'^\d{4}-\d{2}-\d{2}$')
 
-    def test_datetime_timedelta_in_source(self):
+    def test_pd_timestamp_used_no_serial_conversion(self):
         src = read_source('recession_probability.py')
-        self.assertIn('timedelta', src)
-        self.assertIn('1899', src)
+        self.assertIn('pd.Timestamp', src)
+        self.assertNotIn('1899', src)
 
 
 class TestBug154RichmondSosGracefulDegradation(unittest.TestCase):
@@ -885,10 +895,11 @@ class TestBug154RichmondSosGracefulDegradation(unittest.TestCase):
 
     def test_nan_sos_rows_skipped(self):
         # Last row has NaN in SOS — should use second-to-last non-null row
+        from datetime import datetime
         import pandas as pd
         import numpy as np
         df = pd.DataFrame({
-            0: [44927, 46060],
+            0: [datetime(2023, 1, 1), datetime(2026, 2, 7)],
             1: [0.1, np.nan],
             2: [0.2, 0.2],
         })
@@ -897,8 +908,9 @@ class TestBug154RichmondSosGracefulDegradation(unittest.TestCase):
         self.assertAlmostEqual(val, 0.1, places=3)
 
     def test_single_row_returns_correctly(self):
+        from datetime import datetime
         import pandas as pd
-        df = pd.DataFrame({0: [44927], 1: [0.07], 2: [0.2]})
+        df = pd.DataFrame({0: [datetime(2023, 1, 1)], 1: [0.07], 2: [0.2]})
         val, date_str = _call_fetch_richmond_sos_with_df(df)
         self.assertIsNotNone(val)
         self.assertAlmostEqual(val, 0.07, places=3)
