@@ -84,7 +84,7 @@ METRIC_INFO = {
         'category': 'Equities',
         'description': 'Nasdaq 100 index (via QQQ ETF) - tech-heavy'
     },
-    'russell2000_price': {
+    'small_cap_price': {
         'category': 'Equities',
         'description': 'Russell 2000 small-cap index (via IWM ETF)'
     },
@@ -112,15 +112,15 @@ METRIC_INFO = {
         'category': 'Yen Carry Trade',
         'description': 'Japan 10Y government bond yield - BOJ policy gauge'
     },
-    'dxy_price': {
+    'dollar_index_price': {
         'category': 'Currency',
-        'description': 'US Dollar Index (DXY) - dollar strength'
+        'description': 'US Dollar Index (DXY, via UUP ETF) - dollar strength'
     },
     'oil_price': {
         'category': 'Commodities',
         'description': 'Crude oil price (via USO ETF)'
     },
-    'leveraged_loan_etf': {
+    'leveraged_loan_price': {
         'category': 'Credit Markets',
         'description': 'Leveraged loan ETF (BKLN) - floating rate credit'
     },
@@ -200,6 +200,14 @@ METRIC_INFO = {
         'category': 'Macro',
         'description': 'Institutional recession probability models: NY Fed 12-month, Chauvet-Piger, and Richmond SOS'
     },
+    'fed_funds_rate': {
+        'category': 'Fed Policy',
+        'description': 'Effective Federal Funds Rate (%) - the most important macro policy rate, set by the Fed'
+    },
+    'trade_balance': {
+        'category': 'Economic Indicators',
+        'description': 'US Goods Trade Balance (billions USD, monthly SA) - trade deficit/surplus'
+    },
 }
 
 
@@ -237,8 +245,8 @@ def execute_list_metrics():
     # Build response with available metrics
     metrics_by_category = {}
 
-    # Metrics that are always available (cache-based, not CSV-based)
-    cache_based_metrics = {'divergence_gap', 'macro_regime', 'recession_probability'}
+    # Metrics that are always available (cache-based or computed, not direct CSV-based)
+    cache_based_metrics = {'divergence_gap', 'macro_regime', 'recession_probability', 'treasury_2y_yield'}
 
     for metric_id, info in METRIC_INFO.items():
         if metric_id in available_files or metric_id in cache_based_metrics:
@@ -286,6 +294,10 @@ def execute_get_metric_data(metric_id, include_time_series=False):
     # Special handling for recession_probability (JSON cache, not CSV)
     if metric_id == 'recession_probability':
         return _get_recession_probability_data()
+
+    # Special handling for treasury_2y_yield (computed from treasury_10y and yield_curve_10y2y)
+    if metric_id == 'treasury_2y_yield':
+        return _get_treasury_2y_yield_data(include_time_series)
 
     # Try loading the metric
     filename = f"{metric_id}.csv"
@@ -521,6 +533,72 @@ def _get_recession_probability_data():
         return json.dumps(result, indent=2)
     except Exception as e:
         return json.dumps({'error': f'Error reading recession probability cache: {str(e)}'})
+
+
+def _get_treasury_2y_yield_data(include_time_series=False):
+    """Compute 2Y Treasury yield from 10Y yield minus the 10Y-2Y spread."""
+    t10y_df = load_csv_data('treasury_10y.csv')
+    curve_df = load_csv_data('yield_curve_10y2y.csv')
+
+    if t10y_df is None:
+        return json.dumps({'error': 'Cannot compute treasury_2y_yield — treasury_10y.csv not available'})
+    if curve_df is None:
+        return json.dumps({'error': 'Cannot compute treasury_2y_yield — yield_curve_10y2y.csv not available'})
+
+    t10y_df = t10y_df.dropna(subset=[t10y_df.columns[1]])
+    curve_df = curve_df.dropna(subset=[curve_df.columns[1]])
+
+    t10y_df.columns = ['date', 't10y']
+    curve_df.columns = ['date', 'curve']
+
+    merged = pd.merge(t10y_df, curve_df, on='date', how='inner')
+    if len(merged) == 0:
+        return json.dumps({'error': 'No overlapping dates between treasury_10y and yield_curve_10y2y'})
+
+    merged['t2y'] = merged['t10y'] - merged['curve']
+    values = merged['t2y'].tolist()
+    dates = merged['date'].dt.strftime('%Y-%m-%d').tolist()
+
+    current_value = values[-1]
+
+    result = {
+        'metric_id': 'treasury_2y_yield',
+        'friendly_name': '2-Year Treasury Yield',
+        'description': METRIC_INFO['treasury_2y_yield']['description'],
+        'category': METRIC_INFO['treasury_2y_yield']['category'],
+        'current_value': round(current_value, 4),
+        'percentile': round(calculate_percentile(values, current_value), 1),
+        'data_points': len(values),
+        'date_range': {
+            'start': dates[0],
+            'end': dates[-1]
+        },
+        'statistics': {
+            'min': round(min(values), 4),
+            'max': round(max(values), 4),
+            'average': round(sum(values) / len(values), 4),
+            'median': round(sorted(values)[len(values) // 2], 4)
+        },
+        'recent_changes': {},
+        'note': 'Computed as 10Y Treasury yield minus 10Y-2Y spread'
+    }
+
+    if len(values) >= 2:
+        result['recent_changes']['1_day'] = round(values[-1] - values[-2], 4)
+    if len(values) >= 5:
+        result['recent_changes']['5_day'] = round(values[-1] - values[-5], 4)
+    if len(values) >= 30:
+        result['recent_changes']['30_day'] = round(values[-1] - values[-30], 4)
+    if len(values) >= 252:
+        result['recent_changes']['1_year'] = round(values[-1] - values[-252], 4)
+
+    if include_time_series:
+        result['time_series'] = {
+            'dates': dates,
+            'values': [round(v, 4) for v in values]
+        }
+
+    return json.dumps(result, indent=2)
 
 
 def execute_metric_function(function_name, function_args):
