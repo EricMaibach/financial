@@ -48,6 +48,9 @@ ASSET_TYPES = {
     'cash': {'symbol_required': False, 'data_source': None},
     'savings': {'symbol_required': False, 'data_source': None},
     'money_market': {'symbol_required': False, 'data_source': None},   # Money market funds/accounts
+    'farmland': {'symbol_required': False, 'data_source': None},
+    'commercial_real_estate': {'symbol_required': False, 'data_source': None},
+    'residential_real_estate': {'symbol_required': False, 'data_source': None},
     'other': {'symbol_required': False, 'data_source': None},
 }
 
@@ -460,6 +463,10 @@ def get_portfolio_summary_for_ai() -> Dict[str, Any]:
         a["percentage"] for a in portfolio_data["allocations"]
         if a["asset_type"] in ['cash', 'savings', 'money_market']
     )
+    real_estate_pct = sum(
+        a["percentage"] for a in portfolio_data["allocations"]
+        if a["asset_type"] in ['farmland', 'commercial_real_estate', 'residential_real_estate']
+    )
     other_pct = sum(
         a["percentage"] for a in portfolio_data["allocations"]
         if a["asset_type"] == 'other'
@@ -475,6 +482,7 @@ def get_portfolio_summary_for_ai() -> Dict[str, Any]:
             "equities": round(equity_pct, 2),
             "alternatives": round(alternatives_pct, 2),
             "cash": round(cash_pct, 2),
+            "real_estate": round(real_estate_pct, 2),
             "other": round(other_pct, 2)
         },
         "concentration_warnings": concentration_risk,
@@ -756,6 +764,10 @@ def db_get_portfolio_summary_for_ai(user_id: str) -> Dict[str, Any]:
         a["percentage"] for a in portfolio_data["allocations"]
         if a["asset_type"] in ['cash', 'savings', 'money_market']
     )
+    real_estate_pct = sum(
+        a["percentage"] for a in portfolio_data["allocations"]
+        if a["asset_type"] in ['farmland', 'commercial_real_estate', 'residential_real_estate']
+    )
     other_pct = sum(
         a["percentage"] for a in portfolio_data["allocations"]
         if a["asset_type"] == 'other'
@@ -771,6 +783,7 @@ def db_get_portfolio_summary_for_ai(user_id: str) -> Dict[str, Any]:
             "equities": round(equity_pct, 2),
             "alternatives": round(alternatives_pct, 2),
             "cash": round(cash_pct, 2),
+            "real_estate": round(real_estate_pct, 2),
             "other": round(other_pct, 2)
         },
         "concentration_warnings": concentration_risk,
