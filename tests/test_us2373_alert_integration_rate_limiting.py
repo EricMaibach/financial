@@ -40,6 +40,9 @@ if not _FLASK_STACK_AVAILABLE:
     sys.modules.setdefault("models", MagicMock())
     sys.modules.setdefault("models.alert", MagicMock())
     sys.modules.setdefault("models.user", MagicMock())
+    # market_signals stub: installed temporarily then removed after module load
+    # to prevent it from polluting the real market_signals in other test files.
+    _market_signals_was_absent = "market_signals" not in sys.modules
     sys.modules.setdefault("market_signals", MagicMock())
     sys.modules.setdefault("services.alert_email_service", MagicMock(send_pending_alert_notifications=MagicMock(return_value={})))
 
@@ -56,6 +59,13 @@ sys.modules.setdefault("services.layer3_convergence", MagicMock())
 
 _ads_spec.loader.exec_module(_ads_mod)
 sys.modules["alert_detection_service"] = _ads_mod
+
+# Remove the market_signals stub if we installed it — the loaded module already
+# holds a direct reference to the stub object, so other test files can now
+# import the real market_signals without getting this mock.
+if not _FLASK_STACK_AVAILABLE and _market_signals_was_absent:
+    sys.modules.pop("market_signals", None)
+del _market_signals_was_absent
 
 # Expose symbols
 RegimeTransitionLayer1Detector = _ads_mod.RegimeTransitionLayer1Detector
