@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-10 (PM run: #238 spec approved → broken into US-238.1 #245, US-238.2 #246, US-238.3 #247 — all needs-test-plan P2)
+**Last updated:** 2026-03-11 (PM run: Feature #237 Smart Market Alerts CLOSED ✅ — all 3 stories merged; Feature #238 in progress (#247 open))
 
 ---
 
@@ -115,10 +115,10 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ### Phase 8 Active Work
 
-**Feature #237**: Smart Market Alerts — 3-Layer Architecture Replacement (P2) — broken into 3 user stories
-- US-237.1 (#241): Layer 1 Regime Transition Detection — `needs-test-plan`
-- US-237.2 (#242): Layers 2 & 3 Extreme Percentile + Multi-Signal Convergence — `needs-test-plan`
-- US-237.3 (#243): Integration, Rate-Limiting (≤5/week), Display Update — `needs-test-plan` (depends on #241, #242)
+**Feature #237**: Smart Market Alerts — 3-Layer Architecture Replacement (P2) — CLOSED ✅ (2026-03-11)
+- US-237.1 (#241): Layer 1 Regime Transition Detection — CLOSED ✅
+- US-237.2 (#242): Layers 2 & 3 Extreme Percentile + Multi-Signal Convergence — CLOSED ✅
+- US-237.3 (#243): Integration, Rate-Limiting (≤5/week), Display Update — CLOSED ✅
 
 **Feature #238**: Portfolio Real Estate Categories — UX Design + Implementation (P2)
 - US-238.1 #245: Backend (API + breakdown + AI) — `needs-test-plan`
