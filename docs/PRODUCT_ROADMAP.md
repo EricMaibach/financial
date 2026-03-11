@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-11 (PM run: Feature #237 Smart Market Alerts CLOSED ✅ — all 3 stories merged; Feature #238 in progress (#247 open))
+**Last updated:** 2026-03-11 (PM run: Feature #238 Portfolio Real Estate Categories CLOSED ✅ — all 3 stories merged)
 
 ---
 
@@ -120,10 +120,10 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 - US-237.2 (#242): Layers 2 & 3 Extreme Percentile + Multi-Signal Convergence — CLOSED ✅
 - US-237.3 (#243): Integration, Rate-Limiting (≤5/week), Display Update — CLOSED ✅
 
-**Feature #238**: Portfolio Real Estate Categories — UX Design + Implementation (P2)
-- US-238.1 #245: Backend (API + breakdown + AI) — `needs-test-plan`
-- US-238.2 #246: Frontend (picker, colors, labels) — `needs-test-plan` (depends on #245)
-- US-238.3 #247: UI (Real Estate summary card) — `needs-test-plan` (depends on #245, #246)
+**Feature #238**: Portfolio Real Estate Categories — UX Design + Implementation (P2) — CLOSED ✅ (2026-03-11)
+- US-238.1 (#245): Backend (API + breakdown + AI) — CLOSED ✅
+- US-238.2 (#246): Frontend (picker, colors, labels) — CLOSED ✅
+- US-238.3 (#247): UI (Real Estate summary card) — CLOSED ✅
 
 **Bug #239**: Chatbot metrics silently broken — METRIC_INFO filename mismatches (P1) — CLOSED ✅ (PR #240 merged 2026-03-10)
 
