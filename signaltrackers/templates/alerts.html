@@ -26,11 +26,9 @@
             <label for="alert-type-filter" class="form-label">Filter by Type</label>
             <select class="form-select" id="alert-type-filter">
                 <option value="all">All Alerts</option>
-                <option value="vix_spike">VIX Spikes</option>
-                <option value="credit_spread">Credit Spreads</option>
-                <option value="yield_curve">Yield Curve</option>
-                <option value="equity_breadth">Equity Breadth</option>
-                <option value="extreme_percentile">Extreme Readings</option>
+                <option value="regime_transition">Regime Transition</option>
+                <option value="extreme_percentile">Extreme Percentile</option>
+                <option value="multi_signal_convergence">Multi-Signal Convergence</option>
             </select>
         </div>
         <div class="col-md-4">
@@ -79,15 +77,24 @@
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
                                 <!-- Header -->
-                                <div class="d-flex align-items-center mb-2">
+                                <div class="d-flex align-items-center mb-2 flex-wrap gap-1">
                                     <!-- Severity Badge -->
-                                    <span class="badge me-2 severity-{{ alert.severity }}">
+                                    <span class="badge me-1 severity-{{ alert.severity }}">
                                         {{ alert.severity|upper }}
                                     </span>
 
+                                    <!-- Layer Label Badge -->
+                                    {% if alert.alert_type == 'regime_transition' %}
+                                    <span class="badge layer-badge layer-1 me-1">Regime Transition</span>
+                                    {% elif alert.alert_type == 'extreme_percentile' %}
+                                    <span class="badge layer-badge layer-2 me-1">Extreme Percentile</span>
+                                    {% elif alert.alert_type == 'multi_signal_convergence' %}
+                                    <span class="badge layer-badge layer-3 me-1">Multi-Signal Convergence</span>
+                                    {% endif %}
+
                                     <!-- Unread Indicator -->
                                     {% if not alert.read %}
-                                    <span class="badge bg-primary me-2">NEW</span>
+                                    <span class="badge bg-primary me-1">NEW</span>
                                     {% endif %}
 
                                     <!-- Timestamp -->
@@ -100,9 +107,9 @@
                                 <!-- Title -->
                                 <h5 class="card-title mb-2">{{ alert.title }}</h5>
 
-                                <!-- Message -->
+                                <!-- Context Sentence (plain-language explanation) -->
                                 {% if alert.message %}
-                                <p class="card-text text-muted mb-2">{{ alert.message }}</p>
+                                <p class="card-text context-sentence mb-2">{{ alert.message }}</p>
                                 {% endif %}
 
                                 <!-- Metric Details -->
@@ -194,6 +201,24 @@
     background-color: #f8f9fa;
     border-radius: 6px;
     padding: 12px;
+}
+
+.layer-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.layer-1 { background-color: #6f42c1; color: #fff; }
+.layer-2 { background-color: #fd7e14; color: #212529; }
+.layer-3 { background-color: #dc3545; color: #fff; }
+
+.context-sentence {
+    color: #495057;
+    font-style: italic;
+    border-left: 3px solid #dee2e6;
+    padding-left: 10px;
+    margin-top: 4px;
 }
 </style>
 

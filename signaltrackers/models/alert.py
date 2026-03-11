@@ -28,13 +28,18 @@ class AlertPreference(db.Model):
     # Alert preferences
     alerts_enabled = db.Column(db.Boolean, default=True, nullable=False)
 
-    # Smart alert thresholds (None = disabled)
+    # Smart alert thresholds — legacy columns kept for rollback safety (not exposed in UI)
     vix_threshold_25 = db.Column(db.Boolean, default=True, nullable=False)
     vix_threshold_30 = db.Column(db.Boolean, default=True, nullable=False)
     credit_spread_threshold_50bp = db.Column(db.Boolean, default=True, nullable=False)
     yield_curve_inversion = db.Column(db.Boolean, default=True, nullable=False)
     equity_breadth_deterioration = db.Column(db.Boolean, default=True, nullable=False)
     extreme_percentile_enabled = db.Column(db.Boolean, default=True, nullable=False)
+
+    # 3-layer smart alert toggles (US-237.3)
+    layer_1_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Regime Transition
+    layer_2_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Extreme Percentile
+    layer_3_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Multi-Signal Convergence
 
     # Relationships
     user = db.relationship('User', backref=db.backref('alert_preferences', uselist=False))

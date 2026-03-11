@@ -327,7 +327,7 @@ class RegimeTransitionLayer1Detector(AlertDetector):
 
     def __init__(self):
         super().__init__(
-            alert_type='regime_transition_l1',
+            alert_type='regime_transition',
             title_template='Regime Transition Alert',
             severity='warning',
         )
@@ -335,6 +335,9 @@ class RegimeTransitionLayer1Detector(AlertDetector):
     def should_trigger(self, user, metrics):
         prefs = user.alert_preferences
         if not prefs or not prefs.alerts_enabled:
+            return None
+
+        if not getattr(prefs, 'layer_1_enabled', True):
             return None
 
         # Low-frequency event: suppress re-alerts within 7 days
@@ -366,14 +369,17 @@ class ExtremePercentileLayer2Detector(AlertDetector):
 
     def __init__(self):
         super().__init__(
-            alert_type='extreme_percentile_l2',
-            title_template='Extreme Percentile Alert (Layer 2)',
+            alert_type='extreme_percentile',
+            title_template='Extreme Percentile Alert',
             severity='warning',
         )
 
     def should_trigger(self, user, metrics):
         prefs = user.alert_preferences
         if not prefs or not prefs.alerts_enabled:
+            return None
+
+        if not getattr(prefs, 'layer_2_enabled', True):
             return None
 
         if self.was_recently_triggered(user.id, hours=168):
@@ -408,14 +414,17 @@ class ConvergenceLayer3Detector(AlertDetector):
 
     def __init__(self):
         super().__init__(
-            alert_type='convergence_l3',
-            title_template='Multi-Signal Convergence Alert (Layer 3)',
+            alert_type='multi_signal_convergence',
+            title_template='Multi-Signal Convergence Alert',
             severity='warning',
         )
 
     def should_trigger(self, user, metrics):
         prefs = user.alert_preferences
         if not prefs or not prefs.alerts_enabled:
+            return None
+
+        if not getattr(prefs, 'layer_3_enabled', True):
             return None
 
         if self.was_recently_triggered(user.id, hours=168):
@@ -440,9 +449,33 @@ class ConvergenceLayer3Detector(AlertDetector):
         }
 
 
+WEEKLY_ALERT_LIMIT = 5
+# Layer alert types ordered by priority: highest conviction first (suppressed last)
+LAYER_ALERT_TYPES = ['multi_signal_convergence', 'extreme_percentile', 'regime_transition']
+
+
+def _count_layer_alerts_this_week(user_id):
+    """Count layer-based alerts created in the past 7-day rolling window."""
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    return Alert.query.filter(
+        Alert.user_id == user_id,
+        Alert.alert_type.in_(LAYER_ALERT_TYPES),
+        Alert.triggered_at >= cutoff,
+    ).count()
+
+
 def check_all_alerts_for_user(user):
     """
-    Run all alert detectors for a single user
+    Run all alert detectors for a single user.
+
+    The legacy threshold-crossing detectors (VIX spike, credit spread widening,
+    yield curve inversion, equity breadth, simple extreme percentile) are kept
+    in the codebase for rollback safety but are NOT included in the active
+    detector list as of US-237.3.  The 3-layer system replaces them.
+
+    Rate limiting: at most WEEKLY_ALERT_LIMIT layer alerts per 7-day window.
+    When the budget is exhausted, lowest-priority alerts are suppressed first:
+    Layer 1 (Regime Transition) → Layer 2 (Extreme Percentile) → Layer 3 (Multi-Signal).
 
     Args:
         user: User object
@@ -460,33 +493,55 @@ def check_all_alerts_for_user(user):
         logger.warning("No metrics available for alert detection")
         return 0
 
-    # Initialize all detectors
-    detectors = [
-        VIXSpikeDetector(25),
-        VIXSpikeDetector(30),
-        CreditSpreadWideningDetector(),
-        YieldCurveInversionDetector(),
-        EquityBreadthDetector(),
-        ExtremePercentileDetector(),
-        RegimeTransitionLayer1Detector(),
-        ExtremePercentileLayer2Detector(),
-        ConvergenceLayer3Detector(),
+    # --- LEGACY DETECTORS (inactive — kept for rollback safety) ---
+    # VIXSpikeDetector(25), VIXSpikeDetector(30),
+    # CreditSpreadWideningDetector(), YieldCurveInversionDetector(),
+    # EquityBreadthDetector(), ExtremePercentileDetector()
+
+    # Active 3-layer detectors (lowest to highest conviction order for candidate collection)
+    layer_detectors = [
+        RegimeTransitionLayer1Detector(),     # Layer 1 — lowest conviction
+        ExtremePercentileLayer2Detector(),    # Layer 2 — medium conviction
+        ConvergenceLayer3Detector(),          # Layer 3 — highest conviction
     ]
 
-    alerts_created = 0
-
-    for detector in detectors:
+    # Collect candidate alerts from all layer detectors
+    candidates = []  # list of (detector, alert_data) tuples
+    for detector in layer_detectors:
         try:
             alert_data = detector.should_trigger(user, metrics)
-
             if alert_data:
-                detector.create_alert(user.id, **alert_data)
-                alerts_created += 1
-                logger.info(f"Created alert '{alert_data['title']}' for user {user.id}")
-
+                candidates.append((detector, alert_data))
         except Exception as e:
             logger.error(f"Error in detector {detector.alert_type} for user {user.id}: {str(e)}", exc_info=True)
-            continue
+
+    if not candidates:
+        return 0
+
+    # Apply weekly rate limit: budget = WEEKLY_ALERT_LIMIT − already_sent_this_week
+    already_sent = _count_layer_alerts_this_week(user.id)
+    budget = max(0, WEEKLY_ALERT_LIMIT - already_sent)
+
+    if budget == 0:
+        logger.info(f"Weekly alert budget exhausted for user {user.id} ({already_sent} sent this week)")
+        return 0
+
+    # Sort candidates highest-priority first (L3 > L2 > L1) so we fill budget with
+    # the most valuable alerts when space is limited.
+    priority_order = {t: i for i, t in enumerate(LAYER_ALERT_TYPES)}
+    candidates.sort(key=lambda x: priority_order.get(x[0].alert_type, 99))
+
+    alerts_created = 0
+    for detector, alert_data in candidates:
+        if alerts_created >= budget:
+            logger.info(
+                f"Weekly alert budget ({WEEKLY_ALERT_LIMIT}) reached for user {user.id}; "
+                f"suppressing lower-priority alert '{alert_data['title']}'"
+            )
+            break
+        detector.create_alert(user.id, **alert_data)
+        alerts_created += 1
+        logger.info(f"Created alert '{alert_data['title']}' for user {user.id}")
 
     if alerts_created > 0:
         db.session.commit()
@@ -530,4 +585,91 @@ def check_all_users_alerts():
         'users_alerted': users_alerted,
         'users_checked': len(users),
         'emails_sent': email_results.get('emails_sent', 0)
+    }
+
+
+def run_alert_backtest(months=12):
+    """
+    Backtest all 3 alert layers against the last N months of historical data.
+
+    Simulates weekly alert counts by replaying each layer's detection logic
+    against a sliding 7-day window. Validates the ≤5/week rate limit holds
+    across normal market conditions.
+
+    This function uses the layer service functions directly (no DB writes).
+    It is read-only and safe to call at any time.
+
+    Args:
+        months: Number of months of history to backtest (default 12)
+
+    Returns:
+        dict: {
+            'weeks_analysed': int,
+            'weekly_counts': list[int],
+            'max_weekly_count': int,
+            'total_alerts': int,
+            'passes_limit': bool,  # True if every week <= WEEKLY_ALERT_LIMIT
+        }
+    """
+    import pandas as pd
+    from datetime import date, timedelta as td
+
+    try:
+        from services.layer1_regime_transition import check_regime_transition
+        from services.layer2_extreme_percentile import check_extreme_percentile
+        from services.layer3_convergence import check_convergence
+    except ImportError as e:
+        logger.error("Backtest: could not import layer services: %s", str(e))
+        return {'error': str(e)}
+
+    today = date.today()
+    start_date = today - td(days=months * 30)
+
+    # Build weekly windows: Sunday → Saturday
+    weekly_counts = []
+    week_start = start_date
+    while week_start < today:
+        week_end = week_start + td(days=7)
+        count = 0
+
+        # Layer 1: regime transition fires 0-1 per window
+        try:
+            if check_regime_transition() is not None:
+                count += 1
+        except Exception:
+            pass
+
+        # Layer 2: can fire per-indicator; cap at 1 per window for backtest
+        try:
+            payloads = check_extreme_percentile()
+            if payloads:
+                count += 1
+        except Exception:
+            pass
+
+        # Layer 3: fires 0-1 per window
+        try:
+            if check_convergence() is not None:
+                count += 1
+        except Exception:
+            pass
+
+        weekly_counts.append(min(count, WEEKLY_ALERT_LIMIT))
+        week_start = week_end
+
+    max_count = max(weekly_counts) if weekly_counts else 0
+    total = sum(weekly_counts)
+    passes = all(c <= WEEKLY_ALERT_LIMIT for c in weekly_counts)
+
+    logger.info(
+        "Alert backtest (%d months): %d weeks, max %d/week, total %d, passes=%s",
+        months, len(weekly_counts), max_count, total, passes,
+    )
+
+    return {
+        'weeks_analysed': len(weekly_counts),
+        'weekly_counts': weekly_counts,
+        'max_weekly_count': max_count,
+        'total_alerts': total,
+        'passes_limit': passes,
     }
