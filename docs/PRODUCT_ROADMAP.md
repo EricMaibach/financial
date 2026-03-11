@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-11 (PM run: Feature #238 Portfolio Real Estate Categories CLOSED ✅ — all 3 stories merged)
+**Last updated:** 2026-03-11 (Phase 8 COMPLETE ✅ — milestone closed, release phase-8-complete created, transitioning to Phase 9 IDEATING)
 
 ---
 
@@ -24,8 +24,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 8 — Signal Quality & Portfolio Foundation
-**State:** BUILDING
+**Phase:** Phase 9 — Depth & Polish (Council will define scope during IDEATING)
+**State:** IDEATING
 
 ---
 
@@ -86,7 +86,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 ---
 
-## Phase 8: Signal Quality & Portfolio Foundation (planned)
+## Phase 8: Signal Quality & Portfolio Foundation ✅ COMPLETE
 **Milestone goal:** Deepen the quality and accuracy of the AI intelligence layer, fix the alert experience, and lay the foundation for real estate portfolio coverage.
 
 *Phase 8 is a refinement phase — depth over breadth. We have added significant surface area across Phases 5–7. This phase makes what we have genuinely excellent before expanding further.*
