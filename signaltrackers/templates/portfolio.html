@@ -110,6 +110,15 @@
             </div>
         </div>
     </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metric-card">
+            <div class="card-body">
+                <h6 class="text-muted">REAL ESTATE</h6>
+                <h2 class="mb-0" id="real-estate-pct">0%</h2>
+                <small class="text-muted" id="real-estate-breakdown">No real estate holdings</small>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Allocation Charts -->
@@ -408,9 +417,30 @@ function updateUI() {
     const breakdown = portfolioData.type_breakdown || {};
     const equitiesPct = (breakdown.stock || 0) + (breakdown.etf || 0) + (breakdown.mutual_fund || 0);
     const alternativesPct = (breakdown.crypto || 0) + (breakdown.gold || 0);
+    const realEstatePct = (breakdown.farmland || 0)
+        + (breakdown.commercial_real_estate || 0)
+        + (breakdown.residential_real_estate || 0);
 
     document.getElementById('equities-pct').textContent = equitiesPct.toFixed(1) + '%';
     document.getElementById('alternatives-pct').textContent = alternativesPct.toFixed(1) + '%';
+
+    // Update real estate card
+    document.getElementById('real-estate-pct').textContent = realEstatePct.toFixed(1) + '%';
+    const reParts = [];
+    if (breakdown.farmland) reParts.push({ key: 'farmland', pct: breakdown.farmland });
+    if (breakdown.commercial_real_estate) reParts.push({ key: 'commercial_real_estate', pct: breakdown.commercial_real_estate });
+    if (breakdown.residential_real_estate) reParts.push({ key: 'residential_real_estate', pct: breakdown.residential_real_estate });
+    const reAbbr = { farmland: 'Farm', commercial_real_estate: 'Comm', residential_real_estate: 'Resid' };
+    const reFull = { farmland: 'Farmland', commercial_real_estate: 'Commercial RE', residential_real_estate: 'Residential RE' };
+    let reBreakdown;
+    if (reParts.length === 0) {
+        reBreakdown = 'No real estate holdings';
+    } else if (reParts.length === 1) {
+        reBreakdown = reFull[reParts[0].key] + ' ' + Math.round(reParts[0].pct) + '%';
+    } else {
+        reBreakdown = reParts.map(p => reAbbr[p.key] + ' ' + Math.round(p.pct) + '%').join(' \u00B7 ');
+    }
+    document.getElementById('real-estate-breakdown').textContent = reBreakdown;
 
     // Update table
     updateHoldingsTable();
