@@ -2089,6 +2089,7 @@ def format_portfolio_for_ai(portfolio_data):
         parts.append(f"- Equities (stocks/ETFs/mutual funds): {breakdown.get('equities', 0)}%")
         parts.append(f"- Alternatives (crypto/gold): {breakdown.get('alternatives', 0)}%")
         parts.append(f"- Cash & Savings: {breakdown.get('cash', 0)}%")
+        parts.append(f"- Real Estate (farmland/commercial/residential): {breakdown.get('real_estate', 0)}%")
         parts.append(f"- Other: {breakdown.get('other', 0)}%")
         parts.append("")
 
