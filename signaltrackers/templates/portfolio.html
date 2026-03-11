@@ -436,9 +436,9 @@ function updateUI() {
     if (reParts.length === 0) {
         reBreakdown = 'No real estate holdings';
     } else if (reParts.length === 1) {
-        reBreakdown = reFull[reParts[0].key] + ' ' + reParts[0].pct.toFixed(1) + '%';
+        reBreakdown = reFull[reParts[0].key] + ' ' + Math.round(reParts[0].pct) + '%';
     } else {
-        reBreakdown = reParts.map(p => reAbbr[p.key] + ' ' + p.pct.toFixed(1) + '%').join(' \u00B7 ');
+        reBreakdown = reParts.map(p => reAbbr[p.key] + ' ' + Math.round(p.pct) + '%').join(' \u00B7 ');
     }
     document.getElementById('real-estate-breakdown').textContent = reBreakdown;
 
