@@ -205,6 +205,11 @@
                             <option value="cash">Cash</option>
                             <option value="savings">Savings Account</option>
                             <option value="money_market">Money Market</option>
+                            <optgroup label="Real Estate">
+                                <option value="farmland">Farmland</option>
+                                <option value="commercial_real_estate">Commercial Real Estate</option>
+                                <option value="residential_real_estate">Residential Real Estate</option>
+                            </optgroup>
                             <option value="other">Other</option>
                         </select>
                         <span id="asset-type-error" class="form-error-message" role="alert" hidden><span aria-hidden="true">⚠ </span>Please fill in all required fields</span>
@@ -330,6 +335,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 nameInput.value = 'Cash';
             } else if (this.value === 'savings') {
                 nameInput.value = 'Savings Account';
+            } else if (this.value === 'farmland') {
+                nameInput.value = 'Farmland';
+            } else if (this.value === 'commercial_real_estate') {
+                nameInput.value = 'Commercial Real Estate';
+            } else if (this.value === 'residential_real_estate') {
+                nameInput.value = 'Residential Real Estate';
             } else {
                 nameInput.value = '';
             }
@@ -465,6 +476,9 @@ function formatAssetType(type) {
         'cash': 'Cash',
         'savings': 'Savings',
         'money_market': 'Money Market',
+        'farmland': 'Farmland',
+        'commercial_real_estate': 'Comm. RE',
+        'residential_real_estate': 'Residential RE',
         'other': 'Other'
     };
     return labels[type] || type;
@@ -502,6 +516,9 @@ function updateAssetClassChart() {
         'cash': '#6c757d',
         'savings': '#0dcaf0',
         'money_market': '#17a2b8',
+        'farmland': '#7B9E5A',
+        'commercial_real_estate': '#607D8B',
+        'residential_real_estate': '#E07B39',
         'other': '#6610f2'
     };
 
