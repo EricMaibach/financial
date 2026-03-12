@@ -2742,6 +2742,8 @@ def api_chatbot():
     conversation_history = data.get('conversation', [])
     context = data.get('context', {})
     page = context.get('page', '/')
+    section = context.get('section') or None
+    section_name = context.get('section_name') or None
 
     try:
         client, provider = get_user_ai_client()
@@ -2750,10 +2752,14 @@ def api_chatbot():
 
     model = get_user_ai_model()
 
+    section_context = (
+        f" The user is focused on the '{section_name}' section of the dashboard."
+        if section_name else ""
+    )
     system_prompt = (
         "You are an AI assistant helping an individual investor understand macro financial markets. "
         "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
-        f"The user is currently viewing the dashboard page: {page}. "
+        f"The user is currently viewing the dashboard page: {page}.{section_context} "
         "Be helpful, accurate, and focused on the investor's understanding needs. "
         "Keep responses concise (2-4 paragraphs) unless more detail is clearly needed."
     )

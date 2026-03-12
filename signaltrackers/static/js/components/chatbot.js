@@ -34,6 +34,10 @@ class ChatbotWidget {
         this.performanceBannerDismissed = false;
         this.lastUserMessage = null;
 
+        // Section context set by AI section buttons (US-258.2)
+        this.activeSectionId = null;
+        this.activeSectionName = null;
+
         if (!this.fab || !this.panel) {
             console.warn('ChatbotWidget: Required elements not found in DOM');
             return;
@@ -244,7 +248,9 @@ class ChatbotWidget {
                 message,
                 conversation: this.conversation,
                 context: {
-                    page: window.location.pathname
+                    page: window.location.pathname,
+                    section: this.activeSectionId || null,
+                    section_name: this.activeSectionName || null
                 }
             })
         });
@@ -286,6 +292,42 @@ class ChatbotWidget {
         if (role === 'ai') {
             this.announce(`AI says: ${text}`);
         }
+    }
+
+    /**
+     * Inject a pre-loaded AI opening message for a section entry point.
+     * The message is client-side only (no API call) so it appears instantly.
+     * It is also added to conversation history so the AI has context for
+     * follow-up replies.
+     * @param {string} markdownText - The opening message (may contain **bold**)
+     */
+    addSectionOpeningMessage(markdownText) {
+        // Simple **bold** → <strong> conversion for the opening message
+        const html = markdownText.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+        // Hide empty state
+        const emptyState = this.messages.querySelector('.chatbot-empty-state');
+        if (emptyState) emptyState.style.display = 'none';
+
+        const messageEl = document.createElement('div');
+        messageEl.className = 'chatbot-message chatbot-message--ai';
+        messageEl.innerHTML = `
+            <span class="chatbot-message-icon" aria-hidden="true">🤖</span>
+            <span class="chatbot-message-label sr-only">AI said:</span>
+            <p class="chatbot-message-text">${html}</p>
+        `;
+        this.messages.appendChild(messageEl);
+        this.scrollToBottom();
+
+        // Show clear link
+        if (this.clearBtn) this.clearBtn.classList.add('visible');
+
+        // Add to conversation history as an assistant message so the AI has context
+        this.conversation.push({ role: 'ai', content: markdownText });
+        this.messageCount++;
+        this.saveConversation();
+
+        this.announce(`AI says: ${markdownText}`);
     }
 
     showTypingIndicator() {
@@ -496,7 +538,7 @@ class ChatbotWidget {
     }
 }
 
-// Initialize when DOM is ready
+// Initialize when DOM is ready — expose instance globally for AI section buttons (US-258.2)
 document.addEventListener('DOMContentLoaded', () => {
-    new ChatbotWidget();
+    window.chatbotWidget = new ChatbotWidget();
 });
