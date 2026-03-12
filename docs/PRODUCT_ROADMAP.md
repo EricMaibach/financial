@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-12 (PM run: #255/#256/#259 specs approved → 5 user stories created #265-269)
+**Last updated:** 2026-03-12 (PM run: #256 complete — all stories merged; queues otherwise clean)
 
 ---
 
@@ -148,9 +148,9 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 - US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — `needs-test-plan`
 - US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — `needs-test-plan`
 
-**Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — stories in progress
+✅ **Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — **Complete**
 - Extract 3 severity hex values to named CSS tokens; shared component file; fix Smart Market Alerts card header from bg-danger
-- US-256.1 (#265): Extract tokens, create component CSS, fix card header — `needs-test-plan`
+- US-256.1 (#265): Extract tokens, create component CSS, fix card header — merged
 
 **Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — `ready-for-pr`
 - Wire get_latest_credit_summary() into generate_daily_summary() and generate_portfolio_market_context(); ~10 lines mechanical wiring
