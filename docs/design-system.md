@@ -546,6 +546,21 @@ Variants:
   Neutral: Background var(--neutral-200), Text var(--neutral-700)
 ```
 
+### AI Feature Tokens
+
+Used by the AI icon system (chatbot FAB, panel header, provenance badge, section AI buttons).
+
+| Token | Value | Semantic |
+|-------|-------|---------|
+| `--ai-color` | `#6366F1` | AI identity — indigo-500, matches chatbot FAB background |
+| `--ai-accent` | `#F59E0B` | AI sparkle mark — amber-500, warm contrast to cool indigo |
+
+`--ai-color` on white = 4.54:1 (passes WCAG AA). `--ai-accent` is decorative only — never use as sole text color (2.93:1 contrast).
+
+Defined in `static/css/dashboard.css` `:root`. See `Feature 9.3 — Contextual AI Entry Points` spec for full SVG icon family.
+
+---
+
 ### Alert Severity Badges
 
 Used on Smart Market Alerts settings and any future alert-adjacent surface.
