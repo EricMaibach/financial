@@ -6,6 +6,8 @@
     --success-color: #28a745;
     --info-color: #17a2b8;
     --dark-bg: #212529;
+    --ai-color: #6366F1;   /* indigo-500 — AI identity, matches chatbot FAB */
+    --ai-accent: #F59E0B;  /* amber-500 — sparkle mark */
 }
 
 body {

@@ -45,8 +45,10 @@ class TestChatbotFAB:
     def test_fab_aria_expanded_false_initially(self, page):
         assert 'aria-expanded="false"' in page
 
-    def test_fab_has_robot_icon(self, page):
-        assert 'bi-robot' in page
+    def test_fab_has_ai_icon(self, page):
+        # US-258.1: bi-robot replaced with custom SVG icon (white-on-indigo compact variant)
+        assert 'chatbot-fab-icon' in page
+        assert 'bi-robot' not in page
 
     def test_fab_badge_present(self, page):
         assert 'chatbot-badge' in page
@@ -76,7 +78,8 @@ class TestChatbotPanel:
         assert '<header class="chatbot-header"' in page
 
     def test_panel_title_text(self, page):
-        assert '>AI Chatbot<' in page
+        # US-258.1: panel header updated to "SignalTrackers AI" with sparkle mark icon
+        assert 'SignalTrackers AI' in page
 
     def test_panel_title_id(self, page):
         assert 'id="chatbot-title"' in page
