@@ -546,6 +546,27 @@ Variants:
   Neutral: Background var(--neutral-200), Text var(--neutral-700)
 ```
 
+### Alert Severity Badges
+
+Used on Smart Market Alerts settings and any future alert-adjacent surface.
+
+| Token | Value | Semantic |
+|-------|-------|---------|
+| `--alert-l1-color` | `#6f42c1` | L1 Critical — purple |
+| `--alert-l2-color` | `#fd7e14` | L2 Important — orange |
+| `--alert-l3-color` | `#dc3545` | L3 Standard — red |
+| `--alert-header-bg` | `#4F46E5` | Smart Alerts card header (brand-indigo-500) |
+
+File: `static/css/components/alert-severity.css`
+
+Badges use `.alert-severity-badge` base class + modifier `--l1`, `--l2`, `--l3`.
+
+```html
+<span class="badge alert-severity-badge alert-severity-badge--l3 me-1">Multi-Signal Convergence</span>
+```
+
+> **Note:** L2 orange (#fd7e14) with white text fails WCAG AA contrast (≈2.9:1). Pre-existing issue — deferred to a future fix (dark text on light-orange background).
+
 ### Navigation
 
 **Top Navigation Bar**
