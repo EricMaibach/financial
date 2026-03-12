@@ -540,6 +540,10 @@ def generate_daily_summary(market_data_summary, top_movers):
         if dollar_summary and dollar_summary.get("date") == today:
             briefings_found.append(f"### Dollar & Currency Briefing:\n{dollar_summary['summary']}")
 
+        credit_summary = get_latest_credit_summary()
+        if credit_summary and credit_summary.get("date") == today:
+            briefings_found.append(f"### Credit Markets Briefing:\n{credit_summary['summary']}")
+
         if briefings_found:
             specific_briefings_context = "\n\n## TODAY'S SPECIFIC MARKET BRIEFINGS (synthesize these into your narrative):\n" + "\n\n".join(briefings_found)
 
