@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-12 (PM run: #258 spec approved → 4 user stories created; #255/#256/#259 spec files missing from repo — designer notified)
+**Last updated:** 2026-03-12 (PM run: #255/#256/#259 specs approved → 5 user stories created #265-269)
 
 ---
 
@@ -143,11 +143,14 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ### Phase 9 Active Work
 
-**Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — `needs-pm-approval` (spec file missing from repo — designer notified)
+**Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — stories in progress
 - Case-Shiller HPI, CPI Rent trend, Rental Vacancy Rate, USDA NASS farmland $/acre; regime-contextualized; FRED/NASS only
+- US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — `needs-test-plan`
+- US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — `needs-test-plan`
 
-**Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — `needs-pm-approval` (spec file missing from repo — designer notified)
+**Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — stories in progress
 - Extract 3 severity hex values to named CSS tokens; shared component file; fix Smart Market Alerts card header from bg-danger
+- US-256.1 (#265): Extract tokens, create component CSS, fix card header — `needs-test-plan`
 
 **Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — `ready-for-pr`
 - Wire get_latest_credit_summary() into generate_daily_summary() and generate_portfolio_market_context(); ~10 lines mechanical wiring
@@ -159,8 +162,10 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 - US-258.3 (#263): Desktop sentence drill-in toolbar — `needs-test-plan`
 - US-258.4 (#264): Mobile sentence tap flow — `needs-test-plan`
 
-**Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — `needs-pm-approval` (spec file missing from repo — designer notified)
+**Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — stories in progress
 - Tavily API fetch+store → aggregate AI summary → /news page + feeds AI briefings and chatbot. Feature B (custom feeds) deferred.
+- US-259.1 (#266): News page backend route and data model — `needs-test-plan`
+- US-259.2 (#267): News page frontend template and CSS — `needs-test-plan`
 
 ### Backlog Candidates (not yet created as issues)
 
