@@ -3269,7 +3269,7 @@ def generate_portfolio_market_context():
     from ai_summary import (
         get_latest_summary, get_latest_crypto_summary,
         get_latest_equity_summary, get_latest_rates_summary,
-        get_latest_dollar_summary
+        get_latest_dollar_summary, get_latest_credit_summary
     )
 
     context_parts = []
@@ -3296,6 +3296,10 @@ def generate_portfolio_market_context():
     dollar = get_latest_dollar_summary()
     if dollar:
         briefings.append(f"**Dollar Briefing:**\n{dollar.get('summary', 'N/A')}")
+
+    credit = get_latest_credit_summary()
+    if credit:
+        briefings.append(f"**Credit Briefing:**\n{credit.get('summary', 'N/A')}")
 
     if briefings:
         context_parts.append("## Today's AI Briefings\n" + "\n\n".join(briefings))
