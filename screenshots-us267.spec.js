@@ -119,3 +119,38 @@ for (const vp of VIEWPORTS) {
     });
   });
 }
+
+// "News unavailable" empty state (is_stale=True, summary_text=None — no prior data exists)
+// Captured at desktop-1280 only (one breakpoint sufficient per designer feedback)
+test('News page — wifi-off empty state at desktop-1280', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`${BASE_URL}/news`, { waitUntil: 'domcontentloaded' });
+
+  // Replace the existing empty state content with the wifi-off state markup
+  // (mirrors the {% elif is_stale %} branch in news.html)
+  await page.evaluate(() => {
+    const container = document.querySelector('.news-page');
+    if (!container) return;
+
+    // Remove any existing main content / empty states
+    const toRemove = container.querySelectorAll('.news-empty-state, .news-layout');
+    toRemove.forEach(el => el.remove());
+
+    const unavailableState = document.createElement('div');
+    unavailableState.className = 'news-empty-state';
+    unavailableState.innerHTML = `
+      <i class="bi bi-wifi-off news-empty-state__icon" aria-hidden="true"></i>
+      <h2 class="news-empty-state__heading">News unavailable</h2>
+      <p class="news-empty-state__body">
+        We couldn't fetch today's news and have no prior summary to display.<br>
+        The pipeline will retry automatically tomorrow.
+      </p>
+    `;
+    container.appendChild(unavailableState);
+  });
+
+  await page.screenshot({
+    path: path.join(OUT_DIR, 'desktop-1280-news-unavailable.png'),
+    fullPage: true,
+  });
+});
