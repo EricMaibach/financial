@@ -442,9 +442,12 @@ class TestSettingsTemplate:
         content = self.TEMPLATE.read_text()
         assert 'name="layer_3_enabled"' in content
 
-    def test_layer_badge_css_present(self):
+    def test_alert_severity_badge_classes_present(self):
         content = self.TEMPLATE.read_text()
-        assert 'layer-badge' in content
+        assert 'alert-severity-badge' in content
+        assert 'alert-severity-badge--l1' in content
+        assert 'alert-severity-badge--l2' in content
+        assert 'alert-severity-badge--l3' in content
 
     def test_old_vix_checkbox_removed(self):
         content = self.TEMPLATE.read_text()

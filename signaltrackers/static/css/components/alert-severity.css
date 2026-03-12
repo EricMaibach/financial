@@ -1,0 +1,46 @@
+/* ============================================================
+   Alert Severity — Design Tokens + Badge Styles
+   SignalTrackers Design System
+   ============================================================ */
+
+:root {
+  /* Severity badge colors — established in Phase 8 */
+  --alert-l1-color: #6f42c1;   /* L1 Critical — purple */
+  --alert-l2-color: #fd7e14;   /* L2 Important — orange */
+  --alert-l3-color: #dc3545;   /* L3 Standard — red */
+
+  /* Smart Market Alerts card header */
+  --alert-header-bg: #4F46E5;  /* brand-indigo-500 — premium/AI feature */
+}
+
+/* Severity badge base */
+.alert-severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;   /* space-1 space-3 */
+  border-radius: 12px;         /* pill shape */
+  font-size: 0.75rem;          /* text-xs */
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: white;
+}
+
+.alert-severity-badge--l1 {
+  background-color: var(--alert-l1-color);
+}
+
+.alert-severity-badge--l2 {
+  background-color: var(--alert-l2-color);
+}
+
+.alert-severity-badge--l3 {
+  background-color: var(--alert-l3-color);
+}
+
+/* Smart Market Alerts card header */
+.alert-settings-header {
+  background-color: var(--alert-header-bg);
+  color: white;
+}
