@@ -1,0 +1,68 @@
+/* ============================================================
+   AI Section Button — Ghost Pill
+   US-258.2: Section-level AI entry points
+   ============================================================ */
+
+.ai-section-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--ai-color, #6366F1);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ai-color, #6366F1);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 120ms ease, border-color 120ms ease;
+    touch-action: manipulation;
+}
+
+.ai-section-btn:hover {
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+.ai-section-btn:active {
+    background-color: rgba(99, 102, 241, 0.16);
+}
+
+.ai-section-btn:focus-visible {
+    outline: 2px solid var(--ai-color, #6366F1);
+    outline-offset: 2px;
+}
+
+.ai-section-btn svg {
+    flex-shrink: 0;
+}
+
+/* Mobile: taller touch target via extended tap padding */
+@media (max-width: 767.98px) {
+    .ai-section-btn {
+        height: 36px;
+        padding: 0 10px;
+    }
+}
+
+/* Section headers: ensure flex layout so the AI button right-aligns */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 8px;
+}
+
+/* Give the title element min-width:0 so it can shrink before pushing the button off-row */
+.section-header > .section-title {
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+/* Asset page header: AI button lives in its own row below the description */
+.asset-page-header__actions {
+    margin-top: 12px;
+}
