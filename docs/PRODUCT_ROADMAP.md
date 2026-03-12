@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-12 (PM kickoff run — Phase 9 kickoff Feature Issues created: #258 Contextual AI Entry Points, #259 Persistent News Pipeline; both needs-human-approval)
+**Last updated:** 2026-03-12 (Phase transition: IDEATING → BUILDING — human approved scope for Phase 9; all 5 issues approved)
 
 ---
 
@@ -24,8 +24,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 9 — Depth & Polish (Council will define scope during IDEATING)
-**State:** IDEATING
+**Phase:** Phase 9 — Depth & Polish
+**State:** BUILDING
 
 ---
 
