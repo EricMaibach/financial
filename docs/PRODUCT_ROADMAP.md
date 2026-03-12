@@ -137,29 +137,35 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 9: Depth & Polish (planned)
+## Phase 9: Depth & Polish — IN PROGRESS
 
-**Milestone goal:** Build on Phase 8 council findings, deepen portfolio analysis, and address UX polish backlog.
+**Milestone goal:** Build on Phase 8 council findings, add property macro coverage, a persistent news pipeline, contextual AI entry points, and address design system polish.
 
-*Scope is intentionally open — defined by what Phase 8 council surfaces. Known candidates below.*
+### Phase 9 Active Work
 
-### Planned Work
+**Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — `needs-design-spec`
+- Case-Shiller HPI, CPI Rent trend, Rental Vacancy Rate, USDA NASS farmland $/acre; regime-contextualized; FRED/NASS only
 
-- **Property Macro Panel — Residential & Farmland Indicators** — Case-Shiller HPI, CPI Rent trend, rental vacancy rate, and USDA NASS farmland $/acre; all regime-contextualized, FRED/NASS only, no new paid data sources. Tier 2 (Zillow rent-to-price ratio, REIT-implied CRE proxies) at engineer's discretion. (#255, approved from council discussion #49, 2026-03-11)
-- **Alert Severity Design Tokens — CSS Component + Card Header Fix** — Extract three alert severity hex values to named CSS tokens (--alert-l1/2/3-color), shared component file, design-system doc update; fix Smart Market Alerts card header from bg-danger to neutral/brand-adjacent color. (#256, approved from council discussion #50, 2026-03-11)
-- **Bug: Credit briefing excluded from daily synthesis and portfolio context** — Wire get_latest_credit_summary() into both generate_daily_summary() and generate_portfolio_market_context(), matching existing pattern for crypto/equity/rates/dollar. ~10 lines, mechanical wiring only. (#257, P1, approved from council discussion #51, 2026-03-11)
+**Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — `needs-design-spec`
+- Extract 3 severity hex values to named CSS tokens; shared component file; fix Smart Market Alerts card header from bg-danger
 
-### Remaining Candidates (Feature Issues pending)
+**Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — `ready-for-pr`
+- Wire get_latest_credit_summary() into generate_daily_summary() and generate_portfolio_market_context(); ~10 lines mechanical wiring
 
-| Candidate | Depends On |
-|-----------|-----------|
-| Alert replacement implementation | Phase 8 Researcher finding something worth building |
-| AI briefing data pre-processing | Phase 8 Engineer Council proposal approved by CEO |
-| Portfolio UX polish | Phase 8 Designer Council findings |
+**Feature #258**: Contextual AI Entry Points — Section-Level and Sentence-Level Drill-In (P2) — `needs-design-spec`
+- Part 1: AI icon per section → opens chatbot pre-loaded with section data. Part 2: sentence-level drill-in from AI briefings
+
+**Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — `needs-design-spec`
+- Tavily API fetch+store → aggregate AI summary → /news page + feeds AI briefings and chatbot. Feature B (custom feeds) deferred.
+
+### Backlog Candidates (not yet created as issues)
+
+| Candidate | Status |
+|-----------|--------|
+| AI briefing data pre-processing | Engineer Council proposal pending |
+| Portfolio UX polish | Designer Council findings pending |
 | General UX polish | Designer Council backlog items |
-| BDI (Baltic Dry Index) integration | Re-evaluate after FRED trade balance signal validated in Phase 7/8 |
-| Persistent news pipeline + news page | (#259, needs-human-approval) Feature A: scheduled fetch+store + AI-summarized news page; summaries feed AI briefings and chatbot. Feature B (deferred): custom RSS/feed management. Requires Tavily API. |
-| Contextual AI entry points | (#258, needs-human-approval) Part 1: section-level AI icon → opens chatbot pre-loaded with section data. Part 2: sentence-level drill-in from AI briefings (requires design spec). Both require design spec. |
+| BDI (Baltic Dry Index) integration | Re-evaluate after FRED trade balance signal validated |
 
 ---
 
