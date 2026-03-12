@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-12 (Phase transition: IDEATING → BUILDING — human approved scope for Phase 9; all 5 issues approved)
+**Last updated:** 2026-03-12 (PM run: #258 spec approved → 4 user stories created; #255/#256/#259 spec files missing from repo — designer notified)
 
 ---
 
@@ -143,19 +143,23 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ### Phase 9 Active Work
 
-**Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — `needs-design-spec`
+**Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — `needs-pm-approval` (spec file missing from repo — designer notified)
 - Case-Shiller HPI, CPI Rent trend, Rental Vacancy Rate, USDA NASS farmland $/acre; regime-contextualized; FRED/NASS only
 
-**Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — `needs-design-spec`
+**Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — `needs-pm-approval` (spec file missing from repo — designer notified)
 - Extract 3 severity hex values to named CSS tokens; shared component file; fix Smart Market Alerts card header from bg-danger
 
 **Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — `ready-for-pr`
 - Wire get_latest_credit_summary() into generate_daily_summary() and generate_portfolio_market_context(); ~10 lines mechanical wiring
 
-**Feature #258**: Contextual AI Entry Points — Section-Level and Sentence-Level Drill-In (P2) — `needs-design-spec`
+**Feature #258**: Contextual AI Entry Points — Section-Level and Sentence-Level Drill-In (P2) — stories in progress
 - Part 1: AI icon per section → opens chatbot pre-loaded with section data. Part 2: sentence-level drill-in from AI briefings
+- US-258.1 (#261): AI icon system migration — `needs-test-plan`
+- US-258.2 (#262): Section-level ghost pill buttons — `needs-test-plan`
+- US-258.3 (#263): Desktop sentence drill-in toolbar — `needs-test-plan`
+- US-258.4 (#264): Mobile sentence tap flow — `needs-test-plan`
 
-**Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — `needs-design-spec`
+**Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — `needs-pm-approval` (spec file missing from repo — designer notified)
 - Tavily API fetch+store → aggregate AI summary → /news page + feeds AI briefings and chatbot. Feature B (custom feeds) deferred.
 
 ### Backlog Candidates (not yet created as issues)
