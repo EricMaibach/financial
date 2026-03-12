@@ -1781,6 +1781,40 @@ def dollar():
     return render_template('dollar.html')
 
 
+@app.route('/news')
+def news():
+    """Daily macro news summary page."""
+    from urllib.parse import urlparse
+
+    # Pipeline not yet implemented — stub empty data structure.
+    # When the news pipeline is built, replace these stubs with real data lookups.
+    summary_text = None
+    sources = []
+    summary_date = None
+    is_stale = False
+    stale_date = None
+
+    # Domain extraction helper passed to template context
+    def extract_domain(url):
+        try:
+            netloc = urlparse(url).netloc
+            if netloc.startswith('www.'):
+                netloc = netloc[4:]
+            return netloc
+        except Exception:
+            return url
+
+    return render_template(
+        'news.html',
+        summary_text=summary_text,
+        sources=sources,
+        summary_date=summary_date,
+        is_stale=is_stale,
+        stale_date=stale_date,
+        extract_domain=extract_domain,
+    )
+
+
 @app.route('/portfolio')
 @login_required
 def portfolio():
