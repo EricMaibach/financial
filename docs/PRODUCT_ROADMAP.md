@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-11 (Phase 8 COMPLETE ✅ — milestone closed, release phase-8-complete created, transitioning to Phase 9 IDEATING)
+**Last updated:** 2026-03-11 (PM Council run — 3 council discussions converted to Phase 9 Feature/Bug issues: #255 Property Macro Panel, #256 Alert Severity Design Tokens, #257 Bug: Credit Briefing wiring)
 
 ---
 
@@ -143,20 +143,23 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 *Scope is intentionally open — defined by what Phase 8 council surfaces. Known candidates below.*
 
-### Known Candidates
+### Planned Work
+
+- **Property Macro Panel — Residential & Farmland Indicators** — Case-Shiller HPI, CPI Rent trend, rental vacancy rate, and USDA NASS farmland $/acre; all regime-contextualized, FRED/NASS only, no new paid data sources. Tier 2 (Zillow rent-to-price ratio, REIT-implied CRE proxies) at engineer's discretion. (#255, approved from council discussion #49, 2026-03-11)
+- **Alert Severity Design Tokens — CSS Component + Card Header Fix** — Extract three alert severity hex values to named CSS tokens (--alert-l1/2/3-color), shared component file, design-system doc update; fix Smart Market Alerts card header from bg-danger to neutral/brand-adjacent color. (#256, approved from council discussion #50, 2026-03-11)
+- **Bug: Credit briefing excluded from daily synthesis and portfolio context** — Wire get_latest_credit_summary() into both generate_daily_summary() and generate_portfolio_market_context(), matching existing pattern for crypto/equity/rates/dollar. ~10 lines, mechanical wiring only. (#257, P1, approved from council discussion #51, 2026-03-11)
+
+### Remaining Candidates (Feature Issues pending)
 
 | Candidate | Depends On |
 |-----------|-----------|
 | Alert replacement implementation | Phase 8 Researcher finding something worth building |
-| Property macro analysis | Phase 8 council confirming viable data sources |
 | AI briefing data pre-processing | Phase 8 Engineer Council proposal approved by CEO |
 | Portfolio UX polish | Phase 8 Designer Council findings |
 | General UX polish | Designer Council backlog items |
 | BDI (Baltic Dry Index) integration | Re-evaluate after FRED trade balance signal validated in Phase 7/8 |
 | Persistent news pipeline + news page | Human-approved candidate (Discussion #46). Feature A: scheduled fetch+store + AI-summarized news page, should fetch and store, summarize and store the summary, then use the summary to feed news to AI's.. Feature B (deferred): custom RSS/feed management. Requires Tavily API. Feature Issue to be created at Phase 9 kickoff. |
 | Contextual AI entry points | Human-approved candidate (Discussion #45). Part 1: section-level AI icon → opens chatbot pre-loaded with section data and tells the AI that the user is asking for more information on that section, chatbot should open with an explanation of the section. Part 2: sentence-level drill-in from AI briefings, this will require analysis by the designer of hiw best to implement the ai. Both require design spec. Feature Issue to be created at Phase 9 kickoff. |
-
-*Phase 9 scope will be finalized at Phase 8 completion.*
 
 ---
 
