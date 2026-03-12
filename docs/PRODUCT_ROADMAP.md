@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-11 (PM Council run — 3 council discussions converted to Phase 9 Feature/Bug issues: #255 Property Macro Panel, #256 Alert Severity Design Tokens, #257 Bug: Credit Briefing wiring)
+**Last updated:** 2026-03-12 (PM kickoff run — Phase 9 kickoff Feature Issues created: #258 Contextual AI Entry Points, #259 Persistent News Pipeline; both needs-human-approval)
 
 ---
 
@@ -158,8 +158,8 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | Portfolio UX polish | Phase 8 Designer Council findings |
 | General UX polish | Designer Council backlog items |
 | BDI (Baltic Dry Index) integration | Re-evaluate after FRED trade balance signal validated in Phase 7/8 |
-| Persistent news pipeline + news page | Human-approved candidate (Discussion #46). Feature A: scheduled fetch+store + AI-summarized news page, should fetch and store, summarize and store the summary, then use the summary to feed news to AI's.. Feature B (deferred): custom RSS/feed management. Requires Tavily API. Feature Issue to be created at Phase 9 kickoff. |
-| Contextual AI entry points | Human-approved candidate (Discussion #45). Part 1: section-level AI icon → opens chatbot pre-loaded with section data and tells the AI that the user is asking for more information on that section, chatbot should open with an explanation of the section. Part 2: sentence-level drill-in from AI briefings, this will require analysis by the designer of hiw best to implement the ai. Both require design spec. Feature Issue to be created at Phase 9 kickoff. |
+| Persistent news pipeline + news page | (#259, needs-human-approval) Feature A: scheduled fetch+store + AI-summarized news page; summaries feed AI briefings and chatbot. Feature B (deferred): custom RSS/feed management. Requires Tavily API. |
+| Contextual AI entry points | (#258, needs-human-approval) Part 1: section-level AI icon → opens chatbot pre-loaded with section data. Part 2: sentence-level drill-in from AI briefings (requires design spec). Both require design spec. |
 
 ---
 
