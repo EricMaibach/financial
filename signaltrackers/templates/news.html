@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}News — SignalTrackers{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/news.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="news-page">
+
+    <!-- Page Header -->
+    <div class="news-header">
+        <div class="news-header__title-row">
+            <h1 class="news-header__title">
+                <i class="bi bi-newspaper" aria-hidden="true"></i>
+                Today's Macro News
+            </h1>
+            {% if summary_date %}
+            <p class="news-header__date">{{ summary_date.strftime('%B %-d, %Y') }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stale Data Warning -->
+    {% if is_stale and stale_date %}
+    <div class="news-stale-banner" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        Showing news from {{ stale_date.strftime('%B %-d, %Y') }} — today's fetch is unavailable.
+    </div>
+    {% endif %}
+
+    {% if summary_text %}
+    <!-- Two-column layout (desktop) / stacked (mobile) -->
+    <div class="news-layout">
+
+        <!-- AI Summary -->
+        <section class="news-summary-card" role="region" aria-label="AI-generated news summary">
+            <h2 class="news-summary-card__label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false" style="display:inline-block;vertical-align:middle;margin-right:4px">
+                    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z" fill="currentColor"/>
+                </svg>
+                AI Summary
+            </h2>
+            <div class="news-summary-card__body">
+                <p>{{ summary_text }}</p>
+            </div>
+            <div class="news-summary-card__footer">
+                Generated from {{ sources | length }} source{{ 's' if sources | length != 1 else '' }}
+            </div>
+        </section>
+
+        <!-- Sources -->
+        {% if sources %}
+        <section class="news-sources" aria-label="Source articles">
+            <h2 class="news-sources__label">Sources ({{ sources | length }})</h2>
+            <div class="news-sources__list">
+                {% for source in sources %}
+                <a class="news-source-card"
+                   href="{{ source.url }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   aria-label="Read: {{ source.headline }} (opens in new tab)">
+                    <div class="news-source-card__content">
+                        <span class="news-source-card__headline">{{ source.headline }}</span>
+                        <span class="news-source-card__meta">
+                            {{ extract_domain(source.url) }}
+                            {% if source.timestamp %}
+                            &middot; {{ source.timestamp }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <i class="bi bi-arrow-up-right news-source-card__arrow" aria-hidden="true"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+    </div>
+
+    {% elif is_stale %}
+    <!-- API unavailable, no prior data -->
+    <div class="news-empty-state">
+        <i class="bi bi-wifi-off news-empty-state__icon" aria-hidden="true"></i>
+        <h2 class="news-empty-state__heading">News unavailable</h2>
+        <p class="news-empty-state__body">
+            We couldn't fetch today's news and have no prior summary to display.<br>
+            The pipeline will retry automatically tomorrow.
+        </p>
+    </div>
+
+    {% else %}
+    <!-- No data fetched yet -->
+    <div class="news-empty-state">
+        <i class="bi bi-newspaper news-empty-state__icon" aria-hidden="true"></i>
+        <h2 class="news-empty-state__heading">No news yet</h2>
+        <p class="news-empty-state__body">
+            The daily macro news pipeline hasn't run yet.<br>
+            Check back tomorrow morning.
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

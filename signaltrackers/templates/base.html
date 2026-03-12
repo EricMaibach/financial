@@ -50,6 +50,12 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'news' %}active{% endif %}" href="/news">
+                            <i class="bi bi-newspaper"></i> News
+                        </a>
+                    </li>
+
                     <!-- Markets Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.endpoint in ['equity', 'safe_havens', 'crypto', 'rates', 'dollar', 'credit'] %}active{% endif %}" href="#" role="button"
