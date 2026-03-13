@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-12 (PM run: #256 complete — all stories merged; queues otherwise clean)
+**Last updated:** 2026-03-13 (PM run: #259 complete — all 4 stories merged; #268 at ready-for-pr PR #280 open)
 
 ---
 
@@ -145,27 +145,29 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 **Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — stories in progress
 - Case-Shiller HPI, CPI Rent trend, Rental Vacancy Rate, USDA NASS farmland $/acre; regime-contextualized; FRED/NASS only
-- US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — `needs-test-plan`
-- US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — `needs-test-plan`
+- US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — `ready-for-pr` (PR #280 open)
+- US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — `ready-for-implementation`
 
 ✅ **Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — **Complete**
 - Extract 3 severity hex values to named CSS tokens; shared component file; fix Smart Market Alerts card header from bg-danger
 - US-256.1 (#265): Extract tokens, create component CSS, fix card header — merged
 
-**Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — `ready-for-pr`
-- Wire get_latest_credit_summary() into generate_daily_summary() and generate_portfolio_market_context(); ~10 lines mechanical wiring
+✅ **Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — **closed** (merged)
 
 **Feature #258**: Contextual AI Entry Points — Section-Level and Sentence-Level Drill-In (P2) — stories in progress
 - Part 1: AI icon per section → opens chatbot pre-loaded with section data. Part 2: sentence-level drill-in from AI briefings
-- US-258.1 (#261): AI icon system migration — `needs-test-plan`
-- US-258.2 (#262): Section-level ghost pill buttons — `needs-test-plan`
-- US-258.3 (#263): Desktop sentence drill-in toolbar — `needs-test-plan`
-- US-258.4 (#264): Mobile sentence tap flow — `needs-test-plan`
+- US-258.1 (#261): AI icon system migration — merged ✅
+- US-258.2 (#262): Section-level ghost pill buttons — merged ✅
+- US-258.3 (#263): Desktop sentence drill-in toolbar — `ready-for-implementation`
+- US-258.4 (#264): Mobile sentence tap flow — `ready-for-implementation`
+- US-258.5 (#277): Section AI buttons — AI-generated opening with live section data — `ready-for-implementation`
 
-**Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — stories in progress
+✅ **Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — **Complete**
 - Tavily API fetch+store → aggregate AI summary → /news page + feeds AI briefings and chatbot. Feature B (custom feeds) deferred.
-- US-259.1 (#266): News page backend route and data model — `needs-test-plan`
-- US-259.2 (#267): News page frontend template and CSS — `needs-test-plan`
+- US-259.1 (#266): News page backend route and data model — merged ✅
+- US-259.2 (#267): News page frontend template and CSS — merged ✅
+- US-259.3 (#275): News data pipeline — fetch, store, summarize — merged ✅
+- US-259.4 (#276): Wire news page and briefings to stored news data — merged ✅
 
 ### Backlog Candidates (not yet created as issues)
 
