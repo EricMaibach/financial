@@ -83,6 +83,68 @@
     gap: 4px;
 }
 
+/* ── Mobile confirm pill (US-258.4) ──────────────────────────────────────── */
+.ai-briefing-confirm-pill {
+    position: absolute;
+    z-index: 1090;
+    display: none;
+    background: #ffffff;
+    border: 1px solid var(--neutral-200, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+    /* Fade-in */
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    /* Prevent text selection on pill itself */
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.ai-briefing-confirm-pill.is-visible {
+    display: block;
+    opacity: 1;
+}
+
+.ai-briefing-confirm-pill.is-dismissing {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.ai-briefing-confirm-pill__btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ai-color, #6366F1);
+    cursor: pointer;
+    /* 44px+ touch target (14px top + 14px bottom + ~16px line-height = 44px) */
+    min-height: 44px;
+    white-space: nowrap;
+    transition: background-color 0.15s;
+}
+
+.ai-briefing-confirm-pill__btn:active {
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+.ai-briefing-confirm-pill__btn:focus-visible {
+    outline: 2px solid var(--ai-color, #6366F1);
+    outline-offset: -2px;
+}
+
+/* ── Sentence flash (amber) ───────────────────────────────────────────────── */
+.ai-sentence.is-flashing {
+    background-color: rgba(245, 158, 11, 0.2);
+    border-radius: 4px;
+    transition: background-color 0.2s ease-out;
+}
+
 /* ── Coarse-pointer (touch) devices ──────────────────────────────────────── */
 @media (pointer: coarse) {
     /* Toolbar is desktop-only — hide completely on touch devices */

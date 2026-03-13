@@ -183,6 +183,14 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- AI Briefing Confirm Pill: Mobile sentence tap flow (US-258.4) -->
+    <div id="ai-briefing-confirm-pill" class="ai-briefing-confirm-pill" role="dialog" aria-label="Ask AI about this sentence">
+        <button class="ai-briefing-confirm-pill__btn" type="button" aria-label="Ask AI about this sentence">
+            <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="#F59E0B"/></svg>
+            Ask AI about this
+        </button>
+    </div>
+
     <!-- AI Briefing Toolbar: Floating selection toolbar (US-258.3) -->
     <div id="ai-briefing-toolbar" class="ai-briefing-toolbar" role="toolbar" aria-label="Text selection actions">
         <button class="ai-briefing-toolbar__btn ai-briefing-toolbar__copy" type="button" aria-label="Copy selected text">
@@ -323,6 +331,7 @@
     <script src="{{ url_for('static', filename='js/components/chatbot.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-section-btn.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-briefing-toolbar.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/ai-briefing-mobile.js') }}"></script>
     <script src="{{ url_for('static', filename='js/regime-implications.js') }}"></script>
 
     <!-- Refresh Data Handler -->
