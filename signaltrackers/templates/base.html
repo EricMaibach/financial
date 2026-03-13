@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/trade-pulse.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/alert-severity.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/ai-section-btn.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/ai-briefing-toolbar.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -182,6 +183,18 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- AI Briefing Toolbar: Floating selection toolbar (US-258.3) -->
+    <div id="ai-briefing-toolbar" class="ai-briefing-toolbar" role="toolbar" aria-label="Text selection actions">
+        <button class="ai-briefing-toolbar__btn ai-briefing-toolbar__copy" type="button" aria-label="Copy selected text">
+            📋 Copy
+        </button>
+        <div class="ai-briefing-toolbar__divider" aria-hidden="true"></div>
+        <button class="ai-briefing-toolbar__btn ai-briefing-toolbar__ask-ai" type="button" aria-label="Ask AI about selected text">
+            <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="#6366F1"/></svg>
+            Ask AI
+        </button>
+    </div>
+
     <!-- Chatbot Widget: Floating Action Button (Closed State) -->
     <button
         id="chatbot-fab"
@@ -309,6 +322,7 @@
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/chatbot.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-section-btn.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/ai-briefing-toolbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/regime-implications.js') }}"></script>
 
     <!-- Refresh Data Handler -->

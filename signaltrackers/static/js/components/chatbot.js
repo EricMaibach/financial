@@ -536,6 +536,89 @@ class ChatbotWidget {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    /**
+     * Open chatbot and immediately fire an AI call for selected briefing text.
+     * US-258.3: Sentence-level drill-in (desktop selection toolbar).
+     *
+     * @param {string} selectedText - The text the user selected
+     * @param {string} briefingText - The full briefing text (for AI context)
+     */
+    async openWithTextDrillIn(selectedText, briefingText) {
+        // Expand chatbot if not already open
+        if (this.state !== 'expanded') {
+            this.expand();
+        } else {
+            // Already open — just ensure input is focused after interaction
+        }
+
+        const userMessage = `Please explain this from today's market briefing: "${selectedText}"`;
+
+        // Add user message to chat
+        this.addMessage('user', userMessage);
+        this.conversation.push({ role: 'user', content: userMessage });
+        this.messageCount++;
+        this.lastUserMessage = userMessage;
+
+        if (this.clearBtn) {
+            this.clearBtn.classList.add('visible');
+        }
+
+        if (this.messageCount === 30 && !this.performanceBannerDismissed) {
+            this.showPerformanceBanner();
+        }
+
+        this.showTypingIndicator();
+
+        if (this.form && this.form.querySelector('.chatbot-submit')) {
+            this.form.querySelector('.chatbot-submit').disabled = true;
+        }
+
+        try {
+            const response = await fetch('/api/chatbot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({
+                    message: userMessage,
+                    conversation: this.conversation,
+                    context: {
+                        page: window.location.pathname,
+                        section: 'briefing-section',
+                        section_name: 'AI Market Briefing',
+                        briefing_text: briefingText || null
+                    }
+                })
+            });
+
+            this.hideTypingIndicator();
+
+            if (!response.ok) {
+                throw new Error(response.status === 503 ? 'AI_UNAVAILABLE' : 'AI_REQUEST_FAILED');
+            }
+
+            const data = await response.json();
+            const aiResponse = data.response;
+            this.addMessage('ai', aiResponse);
+            this.conversation.push({ role: 'ai', content: aiResponse });
+            this.saveConversation();
+
+        } catch (error) {
+            this.hideTypingIndicator();
+            // Fallback: show selected text quoted as a user message so session is not broken
+            if (error.message === 'AI_UNAVAILABLE') {
+                this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
+            } else {
+                this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
+            }
+        } finally {
+            if (this.form && this.form.querySelector('.chatbot-submit')) {
+                this.form.querySelector('.chatbot-submit').disabled = false;
+            }
+        }
+    }
 }
 
 // Initialize when DOM is ready — expose instance globally for AI section buttons (US-258.2)

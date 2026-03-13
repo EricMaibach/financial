@@ -1,0 +1,101 @@
+/**
+ * AI Briefing Toolbar — Sentence-Level Drill-In (Desktop)
+ * US-258.3: Floating selection toolbar for AI briefing block
+ */
+
+/* ── Floating selection toolbar ──────────────────────────────────────────── */
+.ai-briefing-toolbar {
+    position: fixed;
+    z-index: 1080;
+    display: none; /* shown by JS when selection is active */
+    align-items: stretch;
+    background: #ffffff;
+    border: 1px solid var(--neutral-200, #e5e7eb);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.ai-briefing-toolbar.is-visible {
+    display: flex;
+}
+
+.ai-briefing-toolbar__btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.ai-briefing-toolbar__btn:focus-visible {
+    outline: 2px solid var(--ai-color, #6366F1);
+    outline-offset: -2px;
+}
+
+.ai-briefing-toolbar__copy {
+    color: var(--neutral-600, #4b5563);
+}
+
+.ai-briefing-toolbar__copy:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.ai-briefing-toolbar__ask-ai {
+    color: var(--ai-color, #6366F1);
+}
+
+.ai-briefing-toolbar__ask-ai:hover {
+    background-color: rgba(99, 102, 241, 0.08);
+}
+
+.ai-briefing-toolbar__divider {
+    width: 1px;
+    background-color: var(--neutral-200, #e5e7eb);
+    flex-shrink: 0;
+}
+
+/* ── Discoverability hints ───────────────────────────────────────────────── */
+.ai-briefing-hints {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--neutral-500, #6b7280);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ai-briefing-hint--desktop {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ai-briefing-hint--mobile {
+    display: none;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ── Coarse-pointer (touch) devices ──────────────────────────────────────── */
+@media (pointer: coarse) {
+    /* Toolbar is desktop-only — hide completely on touch devices */
+    .ai-briefing-toolbar {
+        display: none !important;
+    }
+
+    /* Swap hint copy: show mobile hint, hide desktop hint */
+    .ai-briefing-hint--desktop {
+        display: none;
+    }
+
+    .ai-briefing-hint--mobile {
+        display: flex;
+    }
+}
