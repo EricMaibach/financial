@@ -9,7 +9,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as _date
 import json
 import subprocess
 import threading
@@ -1785,14 +1785,27 @@ def dollar():
 def news():
     """Daily macro news summary page."""
     from urllib.parse import urlparse
+    from news_pipeline import get_stored_news
 
-    # Pipeline not yet implemented — stub empty data structure.
-    # When the news pipeline is built, replace these stubs with real data lookups.
-    summary_text = None
-    sources = []
-    summary_date = None
-    is_stale = False
-    stale_date = None
+    stored = get_stored_news()
+    today_str = _date.today().isoformat()
+
+    if stored:
+        summary_text = stored.get('summary')
+        sources = stored.get('articles', [])
+        record_date_str = stored.get('date', '')
+        try:
+            summary_date = _date.fromisoformat(record_date_str)
+        except (ValueError, TypeError):
+            summary_date = None
+        is_stale = bool(record_date_str and record_date_str != today_str)
+        stale_date = summary_date if is_stale else None
+    else:
+        summary_text = None
+        sources = []
+        summary_date = None
+        is_stale = False
+        stale_date = None
 
     # Domain extraction helper passed to template context
     def extract_domain(url):
