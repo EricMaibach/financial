@@ -2929,6 +2929,7 @@ def api_chatbot():
     page = context.get('page', '/')
     section = context.get('section') or None
     section_name = context.get('section_name') or None
+    briefing_text = context.get('briefing_text') or None
 
     try:
         client, provider = get_user_ai_client()
@@ -2941,10 +2942,15 @@ def api_chatbot():
         f" The user is focused on the '{section_name}' section of the dashboard."
         if section_name else ""
     )
+    briefing_context = (
+        f"\n\nThe full AI market briefing for today is:\n{briefing_text}"
+        if briefing_text else ""
+    )
     system_prompt = (
         "You are an AI assistant helping an individual investor understand macro financial markets. "
         "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
-        f"The user is currently viewing the dashboard page: {page}.{section_context} "
+        f"The user is currently viewing the dashboard page: {page}.{section_context}"
+        f"{briefing_context} "
         "Be helpful, accurate, and focused on the investor's understanding needs. "
         "Keep responses concise (2-4 paragraphs) unless more detail is clearly needed."
     )
