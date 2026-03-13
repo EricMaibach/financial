@@ -2367,6 +2367,15 @@ def run_data_collection():
         reload_status['last_reload'] = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
         print("Data reload completed successfully!")
 
+        # Fetch and store daily news BEFORE briefing generation so briefings can use it
+        reload_status['status'] = 'Fetching daily news...'
+        print("Fetching daily news...")
+        try:
+            from news_pipeline import run_news_pipeline
+            run_news_pipeline()
+        except Exception as news_pipeline_error:
+            print(f"News pipeline error (non-fatal): {news_pipeline_error}")
+
         # Generate market-specific briefings FIRST so they can be included in general summary
         # Generate Crypto AI summary
         reload_status['status'] = 'Generating Crypto AI summary...'
