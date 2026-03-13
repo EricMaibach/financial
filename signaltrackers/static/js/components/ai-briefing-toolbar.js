@@ -156,7 +156,7 @@
         const toolbarH = toolbarRect.height || 34;
 
         const midX = rect.left + rect.width / 2;
-        const topY = rect.top - toolbarH - 8 + window.scrollY;
+        const topY = rect.top - toolbarH - 8;
 
         // Clamp left edge: viewport margin of 8px
         const viewportW = window.innerWidth;
