@@ -448,6 +448,44 @@ def save_summary(date_str, summary_text, web_search_used=False, news_context=Non
     save_summaries(data)
 
 
+def _get_stored_news_context(topic: str | None = None) -> str | None:
+    """
+    Read news context from the stored news pipeline data.
+
+    If topic is None, returns the cross-market summary string (for daily briefing).
+    If topic is given (e.g. 'crypto'), returns formatted article snippets for that topic.
+    Returns None if no stored data is available or the topic has no matching articles.
+    """
+    try:
+        from news_pipeline import get_stored_news
+        stored = get_stored_news()
+    except Exception:
+        return None
+
+    if stored is None:
+        return None
+
+    if topic is None:
+        return stored.get('summary')
+
+    articles = [a for a in stored.get('articles', []) if a.get('topic') == topic]
+    if not articles:
+        return None
+
+    topic_label = topic.replace('_', ' ').title()
+    parts = [f"## Today's {topic_label} News"]
+    for art in articles[:8]:
+        headline = art.get('headline', '')
+        content = art.get('raw_content', '') or ''
+        snippet = content[:200] if content else ''
+        if snippet:
+            parts.append(f"- {headline}: {snippet}...")
+        else:
+            parts.append(f"- {headline}")
+
+    return '\n'.join(parts)
+
+
 def fetch_news_for_summary():
     """Fetch current financial news for summary context."""
     if not is_tavily_configured():
@@ -514,8 +552,8 @@ def generate_daily_summary(market_data_summary, top_movers):
                 if s["date"] != today:  # Don't include today if regenerating
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
 
-        # Fetch current news
-        news_context = fetch_news_for_summary()
+        # Read news context from stored pipeline data
+        news_context = _get_stored_news_context()
         news_section = ""
         if news_context:
             news_section = f"\n\n## TODAY'S NEWS CONTEXT:\n{news_context}"
@@ -790,8 +828,8 @@ def generate_crypto_summary(crypto_data_summary):
                 if s["date"] != today:
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
 
-        # Fetch current crypto news
-        news_context = fetch_crypto_news()
+        # Read crypto news context from stored pipeline data
+        news_context = _get_stored_news_context(topic='crypto')
         news_section = ""
         if news_context:
             news_section = f"\n\n## TODAY'S CRYPTO NEWS:\n{news_context}"
@@ -1010,8 +1048,8 @@ def generate_equity_summary(equity_data_summary):
                 if s["date"] != today:
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
 
-        # Fetch current equity news
-        news_context = fetch_equity_news()
+        # Read equity news context from stored pipeline data
+        news_context = _get_stored_news_context(topic='equity')
         news_section = ""
         if news_context:
             news_section = f"\n\n## TODAY'S EQUITY NEWS:\n{news_context}"
@@ -1231,8 +1269,8 @@ def generate_rates_summary(rates_data_summary):
                 if s["date"] != today:
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
 
-        # Fetch current rates news
-        news_context = fetch_rates_news()
+        # Read rates news context from stored pipeline data
+        news_context = _get_stored_news_context(topic='rates')
         news_section = ""
         if news_context:
             news_section = f"\n\n## TODAY'S RATES NEWS:\n{news_context}"
@@ -1452,8 +1490,8 @@ def generate_dollar_summary(dollar_data_summary):
                 if s["date"] != today:
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
 
-        # Fetch current dollar news
-        news_context = fetch_dollar_news()
+        # Read dollar news context from stored pipeline data
+        news_context = _get_stored_news_context(topic='dollar')
         news_section = ""
         if news_context:
             news_section = f"\n\n## TODAY'S DOLLAR NEWS:\n{news_context}"
@@ -1665,7 +1703,8 @@ def generate_credit_summary(credit_data_summary):
                 if s["date"] != today:
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
 
-        news_context = fetch_credit_news()
+        # Read credit news context from stored pipeline data
+        news_context = _get_stored_news_context(topic='credit')
         news_section = ""
         if news_context:
             news_section = f"\n\n## TODAY'S CREDIT NEWS:\n{news_context}"
