@@ -139,20 +139,20 @@ class TestScopeBoundaries(unittest.TestCase):
         self.assertIn(expected_snippet, actual,
                       f'Line {lineno} expected to contain {expected_snippet!r}, got: {actual!r}')
 
-    def test_line_906_still_correct(self):
-        self._assert_line_contains(906, '* 100')
+    def test_line_907_still_correct(self):
+        self._assert_line_contains(907, '* 100')
 
-    def test_line_915_still_correct(self):
-        self._assert_line_contains(915, '* 100')
+    def test_line_916_still_correct(self):
+        self._assert_line_contains(916, '* 100')
 
-    def test_line_936_still_correct(self):
-        self._assert_line_contains(936, '* 100')
+    def test_line_937_still_correct(self):
+        self._assert_line_contains(937, '* 100')
 
-    def test_line_1007_still_correct(self):
-        self._assert_line_contains(1007, '* 100')
+    def test_line_1008_still_correct(self):
+        self._assert_line_contains(1008, '* 100')
 
-    def test_line_1047_still_correct(self):
-        self._assert_line_contains(1047, '* 100')
+    def test_line_1048_still_correct(self):
+        self._assert_line_contains(1048, '* 100')
 
     def test_line_1109_still_correct(self):
         self._assert_line_contains(1109, '* 100')

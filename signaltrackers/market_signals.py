@@ -93,6 +93,10 @@ class MarketSignalsTracker:
             'cli': 'USSLIND',  # Conference Board US Leading Index (monthly)
             # ISM Manufacturing PMI (Layer 2/3 Alert Engine — US-237.2)
             'ism_manufacturing': 'NAPM',  # ISM Manufacturing: PMI Composite Index
+            # Property Macro (US-255.1)
+            'property_hpi': 'CSUSHPISA',       # Case-Shiller National Home Price Index (monthly SA)
+            'property_cpi_rent': 'CUUR0000SEHA',  # CPI: Rent of Primary Residence (monthly)
+            'property_vacancy': 'RRVRUSQ156N',    # Rental Vacancy Rate (quarterly)
         }
 
         # ETF tickers organized by category
@@ -650,6 +654,81 @@ class MarketSignalsTracker:
             self.append_to_csv(spread_df, self.data_dir / "us_germany_10y_spread.csv")
             print("US-Germany 10Y spread (EUR/USD driver) calculated")
 
+    def fetch_usda_nass_farmland(self):
+        """Fetch USDA NASS farmland $/acre data (farm real estate, cropland, pasture).
+
+        Returns:
+            dict or None: {'year': int, 'farm_re': float, 'cropland': float, 'pasture': float}
+        """
+        api_key = os.environ.get('USDA_NASS_API_KEY')
+        if not api_key:
+            print("Skipping USDA NASS: USDA_NASS_API_KEY not set.")
+            return None
+
+        base_url = 'https://quickstats.nass.usda.gov/api/api_GET/'
+        commodity_map = {
+            'farm_re': 'FARM REAL ESTATE',
+            'cropland': 'CROPLAND',
+            'pasture': 'PASTURELAND',
+        }
+        result = {}
+
+        for field, commodity in commodity_map.items():
+            params = {
+                'key': api_key,
+                'source_desc': 'SURVEY',
+                'sector_desc': 'ECONOMICS',
+                'group_desc': 'INCOME',
+                'commodity_desc': commodity,
+                'statisticcat_desc': 'VALUE',
+                'unit_desc': '$ / ACRE',
+                'freq_desc': 'ANNUAL',
+                'agg_level_desc': 'NATIONAL',
+                'format': 'JSON',
+            }
+            try:
+                resp = requests.get(base_url, params=params, timeout=30)
+                resp.raise_for_status()
+                data = resp.json()
+                records = data.get('data', [])
+                if not records:
+                    print(f"USDA NASS: no data for {commodity}")
+                    continue
+                # Sort by year descending, pick most recent
+                records_sorted = sorted(
+                    [r for r in records if r.get('Value', '').replace(',', '').isdigit()],
+                    key=lambda r: int(r.get('year', 0)),
+                    reverse=True
+                )
+                if records_sorted:
+                    latest = records_sorted[0]
+                    result['year'] = int(latest['year'])
+                    result[field] = float(latest['Value'].replace(',', ''))
+            except Exception as e:
+                print(f"USDA NASS error for {commodity}: {e}")
+
+        if result:
+            print(f"USDA NASS farmland data fetched: {result}")
+            # Persist to CSV (one row per year)
+            filepath = self.data_dir / 'property_farmland.csv'
+            row = pd.DataFrame([{
+                'date': f"{result.get('year', 0)}-01-01",
+                'farm_re': result.get('farm_re'),
+                'cropland': result.get('cropland'),
+                'pasture': result.get('pasture'),
+            }])
+            if filepath.exists():
+                existing = pd.read_csv(filepath)
+                combined = pd.concat([existing, row], ignore_index=True)
+                combined['date'] = pd.to_datetime(combined['date'])
+                combined = combined.drop_duplicates(subset='date').sort_values('date')
+                combined.to_csv(filepath, index=False)
+            else:
+                row.to_csv(filepath, index=False)
+            return result
+
+        return None
+
     def run_daily_collection(self, lookback_days=12775):
         """Run the daily data collection process.
 
@@ -664,6 +743,7 @@ class MarketSignalsTracker:
         self.collect_etf_signals(lookback_days=lookback_days)
         self.collect_fear_greed_index()
         self.calculate_derived_metrics()
+        self.fetch_usda_nass_farmland()
 
         print("\n=== Collection Complete ===")
         print(f"Data saved to: {self.data_dir.absolute()}")

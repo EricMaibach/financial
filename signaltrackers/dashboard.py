@@ -54,6 +54,7 @@ from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
 from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
+from property_interpretation_config import get_property_interpretation
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -1779,6 +1780,134 @@ def rates():
 def dollar():
     """Dollar & Currency page."""
     return render_template('dollar.html')
+
+
+@app.route('/property')
+def property_macro():
+    """Property macro page — residential real estate and farmland indicators."""
+    ctx = {
+        # Case-Shiller HPI
+        'hpi_current': None,
+        'hpi_yoy_pct': None,
+        'hpi_percentile': None,
+        'hpi_percentile_label': 'unavailable',
+        # CPI Rent
+        'cpi_rent_current': None,
+        'cpi_rent_yoy_pct': None,
+        'cpi_rent_percentile': None,
+        'cpi_rent_percentile_label': 'unavailable',
+        # Rental Vacancy Rate
+        'vacancy_current': None,
+        'vacancy_prior': None,
+        'vacancy_direction': None,  # 'tightening' | 'loosening'
+        'vacancy_percentile': None,
+        'vacancy_percentile_label': 'unavailable',
+        # USDA Farmland
+        'farmland_year': None,
+        'farmland_farm_re': None,
+        'farmland_cropland': None,
+        'farmland_pasture': None,
+        'farmland_yoy_pct': None,
+        # Regime interpretation
+        'property_interpretation': None,
+        'property_interpretation_bucket': None,
+        'property_interpretation_regime': None,
+        # Dates
+        'hpi_date': None,
+        'rent_date': None,
+        'vacancy_date': None,
+    }
+
+    try:
+        # Case-Shiller HPI (CSUSHPISA → stored as property_hpi.csv)
+        hpi_df = load_csv_data('property_hpi.csv')
+        if hpi_df is not None and len(hpi_df) >= 13:
+            hpi_df = hpi_df.dropna(subset=['property_hpi'])
+            hpi_df = hpi_df.set_index('date').sort_index()
+            hpi_series = hpi_df['property_hpi']
+            hpi_current = float(hpi_series.iloc[-1])
+            hpi_year_ago = float(hpi_series.iloc[-13])  # 12 months prior
+            ctx['hpi_current'] = round(hpi_current, 1)
+            ctx['hpi_yoy_pct'] = round((hpi_current / hpi_year_ago - 1) * 100, 1)
+            ctx['hpi_percentile'] = round(calculate_percentile_rank(hpi_series, hpi_current), 1)
+            ctx['hpi_percentile_label'] = _percentile_label(ctx['hpi_percentile'])
+            ctx['hpi_date'] = hpi_df.index[-1].strftime('%B %Y')
+    except Exception:
+        pass
+
+    try:
+        # CPI Rent (CUUR0000SEHA → stored as property_cpi_rent.csv)
+        rent_df = load_csv_data('property_cpi_rent.csv')
+        if rent_df is not None and len(rent_df) >= 13:
+            rent_df = rent_df.dropna(subset=['property_cpi_rent'])
+            rent_df = rent_df.set_index('date').sort_index()
+            rent_series = rent_df['property_cpi_rent']
+            rent_current = float(rent_series.iloc[-1])
+            rent_year_ago = float(rent_series.iloc[-13])
+            ctx['cpi_rent_current'] = round(rent_current, 3)
+            ctx['cpi_rent_yoy_pct'] = round((rent_current / rent_year_ago - 1) * 100, 1)
+            ctx['cpi_rent_percentile'] = round(calculate_percentile_rank(rent_series, rent_current), 1)
+            ctx['cpi_rent_percentile_label'] = _percentile_label(ctx['cpi_rent_percentile'])
+            ctx['rent_date'] = rent_df.index[-1].strftime('%B %Y')
+    except Exception:
+        pass
+
+    try:
+        # Rental Vacancy Rate (RRVRUSQ156N → stored as property_vacancy.csv)
+        vacancy_df = load_csv_data('property_vacancy.csv')
+        if vacancy_df is not None and len(vacancy_df) >= 2:
+            vacancy_df = vacancy_df.dropna(subset=['property_vacancy'])
+            vacancy_df = vacancy_df.set_index('date').sort_index()
+            vacancy_series = vacancy_df['property_vacancy']
+            vacancy_current = float(vacancy_series.iloc[-1])
+            vacancy_prior = float(vacancy_series.iloc[-2])
+            ctx['vacancy_current'] = round(vacancy_current, 1)
+            ctx['vacancy_prior'] = round(vacancy_prior, 1)
+            ctx['vacancy_direction'] = 'tightening' if vacancy_current < vacancy_prior else 'loosening'
+            ctx['vacancy_percentile'] = round(calculate_percentile_rank(vacancy_series, vacancy_current), 1)
+            ctx['vacancy_percentile_label'] = _percentile_label(ctx['vacancy_percentile'])
+            ctx['vacancy_date'] = vacancy_df.index[-1].strftime('Q%q %Y') if hasattr(vacancy_df.index[-1], 'quarter') else vacancy_df.index[-1].strftime('%B %Y')
+    except Exception:
+        pass
+
+    try:
+        # USDA Farmland (property_farmland.csv)
+        farmland_path = DATA_DIR / 'property_farmland.csv'
+        if farmland_path.exists():
+            farmland_df = pd.read_csv(farmland_path)
+            farmland_df['date'] = pd.to_datetime(farmland_df['date'])
+            farmland_df = farmland_df.sort_values('date')
+            if len(farmland_df) >= 1:
+                latest = farmland_df.iloc[-1]
+                ctx['farmland_year'] = int(latest['date'].year)
+                ctx['farmland_farm_re'] = round(float(latest['farm_re']), 0) if pd.notna(latest.get('farm_re')) else None
+                ctx['farmland_cropland'] = round(float(latest['cropland']), 0) if pd.notna(latest.get('cropland')) else None
+                ctx['farmland_pasture'] = round(float(latest['pasture']), 0) if pd.notna(latest.get('pasture')) else None
+            if len(farmland_df) >= 2:
+                prev = farmland_df.iloc[-2]
+                if pd.notna(prev.get('farm_re')) and ctx['farmland_farm_re']:
+                    ctx['farmland_yoy_pct'] = round(
+                        (ctx['farmland_farm_re'] / float(prev['farm_re']) - 1) * 100, 1
+                    )
+    except Exception:
+        pass
+
+    # Regime-conditioned interpretation (US-255.1)
+    try:
+        regime = get_macro_regime()
+        regime_state = regime.get('state') if regime else None
+        interpretation, hpi_trend = get_property_interpretation(
+            regime_state, ctx['hpi_yoy_pct']
+        )
+        ctx['property_interpretation'] = interpretation
+        ctx['property_interpretation_bucket'] = hpi_trend
+        ctx['property_interpretation_regime'] = regime_state
+    except Exception:
+        ctx['property_interpretation'] = None
+        ctx['property_interpretation_bucket'] = None
+        ctx['property_interpretation_regime'] = None
+
+    return render_template('property.html', **ctx)
 
 
 @app.route('/news')
