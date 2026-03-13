@@ -158,20 +158,41 @@ async function addMobileOverrides(page) {
 
   // ─── 3. mobile-375-confirm-pill.png ──────────────────────────────────────
   // Shows confirm pill appearing near a tapped sentence.
+  //
+  // Approach: wait for networkidle so the briefing AJAX completes, then wrap the
+  // real loaded briefing paragraphs into .ai-sentence spans. The pill is forced to
+  // position:fixed (viewport-relative) so it stays within the viewport clip.
   {
     const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
-    await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
+    // Use networkidle so the briefing AJAX finishes before we manipulate the DOM.
+    // This prevents the AJAX handler from overwriting our injected spans.
+    await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' });
     await addMobileOverrides(page);
 
-    await page.evaluate((html) => {
-      const el = document.getElementById('briefing-narrative');
-      if (!el) return;
-      el.innerHTML = html;
+    const briefingSection = page.locator('#briefing-section');
+    await briefingSection.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
 
-      el.querySelectorAll('p').forEach((p) => {
+    // Wrap the real briefing paragraphs into .ai-sentence spans, then show the pill.
+    // The pill is forced to position:fixed so its top/left are viewport-relative.
+    await page.evaluate(() => {
+      const narrative = document.getElementById('briefing-narrative');
+      if (!narrative) return;
+
+      // Wrap each paragraph's sentences into .ai-sentence spans
+      narrative.querySelectorAll('p').forEach((p) => {
         const text = p.textContent || '';
         const sentences = text.split(/(?<=[.!?])\s+(?=[A-Z])/);
-        if (sentences.length <= 1) return;
+        if (sentences.length <= 1) {
+          // Single sentence — wrap the whole paragraph as one span
+          const span = document.createElement('span');
+          span.className = 'ai-sentence';
+          span.style.cssText = 'display: inline; cursor: pointer; border-radius: 4px; padding: 1px 0;';
+          span.textContent = text.trim();
+          p.innerHTML = '';
+          p.appendChild(span);
+          return;
+        }
         const frag = document.createDocumentFragment();
         sentences.forEach((s, i) => {
           const span = document.createElement('span');
@@ -185,37 +206,26 @@ async function addMobileOverrides(page) {
         p.appendChild(frag);
       });
 
-      const contentEl = document.getElementById('briefing-content');
-      const loadingEl = document.getElementById('briefing-loading');
-      if (contentEl) contentEl.style.display = 'block';
-      if (loadingEl) loadingEl.style.display = 'none';
-    }, STUB_BRIEFING_HTML);
-
-    await page.waitForTimeout(300);
-
-    const briefingSection = page.locator('#briefing-section');
-    await briefingSection.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(200);
-
-    // Get the first sentence span position and simulate the confirm pill appearing
-    await page.evaluate(() => {
+      // Position and show the confirm pill near the second sentence (more visible placement)
       const pill = document.getElementById('ai-briefing-confirm-pill');
-      const firstSentence = document.querySelector('.ai-sentence');
-      if (!pill || !firstSentence) return;
+      const sentences = document.querySelectorAll('.ai-sentence');
+      const targetSentence = sentences[1] || sentences[0];
+      if (!pill || !targetSentence) return;
 
-      const rect = firstSentence.getBoundingClientRect();
-      // Position pill below the first sentence
+      const rect = targetSentence.getBoundingClientRect();
       const pillW = 220;
       const margin = 8;
       const left = Math.max(margin, Math.min(rect.left + rect.width / 2 - pillW / 2, window.innerWidth - pillW - margin));
-      const top = rect.bottom + window.scrollY + margin;
+      const top = rect.bottom + margin; // viewport-relative (no scrollY)
 
+      // Force position:fixed — viewport-relative, stays in viewport screenshot clip
+      pill.style.position = 'fixed';
       pill.style.left = left + 'px';
       pill.style.top = top + 'px';
       pill.classList.add('is-visible');
 
-      // Flash the sentence
-      firstSentence.classList.add('is-flashing');
+      // Flash the sentence to show the tap state
+      targetSentence.classList.add('is-flashing');
     });
 
     await page.waitForTimeout(150);
@@ -225,6 +235,34 @@ async function addMobileOverrides(page) {
       path: path.join(OUT_DIR, 'mobile-375-confirm-pill.png'),
       clip: sectionBox
         ? { x: 0, y: sectionBox.y, width: 375, height: Math.min(sectionBox.height, 500) }
+        : undefined,
+    });
+    await page.close();
+  }
+
+  // ─── 5. mobile-375-hint.png ───────────────────────────────────────────────
+  // Shows the discoverability hint ('✦ Tap any sentence to explore with AI')
+  // below the briefing card on a 375px pointer:coarse viewport.
+  {
+    const page = await browser.newPage({ viewport: { width: 375, height: 812 } });
+    await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
+    await addMobileOverrides(page);
+
+    await page.waitForTimeout(300);
+
+    // boundingBox() on fullPage:true returns page-level coordinates
+    const hintsBox = await page.locator('.ai-briefing-hints').boundingBox();
+
+    await page.screenshot({
+      path: path.join(OUT_DIR, 'mobile-375-hint.png'),
+      fullPage: true,
+      clip: hintsBox
+        ? {
+            x: 0,
+            y: Math.max(0, hintsBox.y - 120),
+            width: 375,
+            height: hintsBox.height + 160,
+          }
         : undefined,
     });
     await page.close();
