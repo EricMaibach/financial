@@ -246,18 +246,28 @@ class TestTapInteraction:
         """Uses closest('.ai-sentence') for event delegation."""
         assert "closest('.ai-sentence')" in mobile_js
 
-    def test_flash_sentence_function(self, mobile_js):
-        """flashSentence function exists."""
-        assert 'flashSentence' in mobile_js
+    def test_set_active_sentence_function(self, mobile_js):
+        """setActiveSentence function exists for persistent amber highlight."""
+        assert 'setActiveSentence' in mobile_js
+
+    def test_clear_active_sentence_function(self, mobile_js):
+        """clearActiveSentence function exists to remove highlight on dismiss."""
+        assert 'clearActiveSentence' in mobile_js
 
     def test_adds_is_flashing_class(self, mobile_js):
-        """Adds is-flashing class to trigger amber flash."""
+        """Adds is-flashing class for persistent amber highlight."""
         assert 'is-flashing' in mobile_js
 
-    def test_removes_is_flashing_after_200ms(self, mobile_js):
-        """Removes is-flashing class after ~200ms."""
-        assert '200' in mobile_js
+    def test_highlight_persists_until_dismissed(self, mobile_js):
+        """Highlight is NOT removed by a setTimeout — it persists until dismiss or re-tap."""
+        # activeSentence tracks the highlighted span
+        assert 'activeSentence' in mobile_js
+        # clearActiveSentence removes the class on dismiss
         assert 'classList.remove' in mobile_js
+
+    def test_retap_same_sentence_toggles_off(self, mobile_js):
+        """Re-tapping the same sentence dismisses the pill and removes the highlight."""
+        assert 'span === activeSentence' in mobile_js
 
     def test_shows_confirm_pill(self, mobile_js):
         """showConfirmPill function exists."""

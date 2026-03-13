@@ -24,6 +24,7 @@
 
     let confirmPill = null;
     let dismissTimer = null;
+    let activeSentence = null;
 
     function init() {
         confirmPill = document.getElementById('ai-briefing-confirm-pill');
@@ -101,31 +102,42 @@
 
         e.stopPropagation();
 
-        const sentenceText = span.textContent.trim();
-
         // Cancel any pending dismiss
         if (dismissTimer) {
             clearTimeout(dismissTimer);
             dismissTimer = null;
         }
 
-        // Flash the tapped sentence
-        flashSentence(span);
+        // Re-tapping the same sentence toggles off the highlight and dismisses
+        if (span === activeSentence) {
+            clearActiveSentence();
+            hideConfirmPill(true);
+            return;
+        }
+
+        const sentenceText = span.textContent.trim();
+
+        // Highlight the tapped sentence (persistent until dismissed or re-tapped)
+        setActiveSentence(span);
 
         // Show confirm pill near tap point
         showConfirmPill(e.clientX, e.clientY, sentenceText);
     }
 
-    function flashSentence(span) {
-        // Remove flash from any previously flashed sentence
-        document.querySelectorAll('.ai-sentence.is-flashing').forEach(function (s) {
-            s.classList.remove('is-flashing');
-        });
-
+    function setActiveSentence(span) {
+        // Remove highlight from any previously active sentence
+        if (activeSentence) {
+            activeSentence.classList.remove('is-flashing');
+        }
+        activeSentence = span;
         span.classList.add('is-flashing');
-        setTimeout(function () {
-            span.classList.remove('is-flashing');
-        }, 200);
+    }
+
+    function clearActiveSentence() {
+        if (activeSentence) {
+            activeSentence.classList.remove('is-flashing');
+            activeSentence = null;
+        }
     }
 
     function showConfirmPill(tapX, tapY, sentenceText) {
@@ -163,6 +175,8 @@
     function hideConfirmPill(withFade) {
         if (!confirmPill) return;
         if (!confirmPill.classList.contains('is-visible')) return;
+
+        clearActiveSentence();
 
         if (withFade) {
             confirmPill.classList.add('is-dismissing');
