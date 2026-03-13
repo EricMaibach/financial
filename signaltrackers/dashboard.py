@@ -2996,6 +2996,335 @@ def api_chatbot():
 
 
 # ============================================================================
+# Section Opening API (US-258.5)
+# ============================================================================
+
+# Allowed section IDs — validated as dict key only, never used as file path,
+# SQL parameter, or shell argument.
+_SECTION_OPENING_ALLOWED = {
+    'macro-regime-section', 'briefing-section', 'sector-tone-section',
+    'market-conditions', 'movers-section', 'signals-section',
+    'recession-panel-section', 'trade-pulse-section', 'regime-implications',
+    'asset-credit', 'asset-equity', 'asset-rates', 'asset-dollar',
+    'asset-crypto', 'asset-safe-havens',
+}
+
+_SECTION_NAMES = {
+    'macro-regime-section': 'Macro Regime Score',
+    'briefing-section': 'AI Market Briefing',
+    'sector-tone-section': 'Sector Management Tone',
+    'market-conditions': 'Market Conditions at a Glance',
+    'movers-section': "What's Moving Today",
+    'signals-section': 'Cross-Market Indicators',
+    'recession-panel-section': 'Recession Probability',
+    'trade-pulse-section': 'Global Trade Pulse',
+    'regime-implications': 'Regime Implications',
+    'asset-credit': 'Credit Markets',
+    'asset-equity': 'Equity Markets',
+    'asset-rates': 'Rates & Fixed Income',
+    'asset-dollar': 'US Dollar',
+    'asset-crypto': 'Crypto / Bitcoin',
+    'asset-safe-havens': 'Safe Havens',
+}
+
+
+def _get_section_live_data(section_id: str) -> str:
+    """Return a plain-text summary of live data for the given section.
+
+    Injected into the AI system prompt so the model can reference real values.
+    Returns a generic fallback string if data is unavailable.
+    """
+    try:
+        if section_id == 'macro-regime-section':
+            regime = get_macro_regime()
+            if regime:
+                confidence = regime.get('confidence') or 'unknown'
+                summary = regime.get('summary', '')
+                signals = regime.get('highlighted_signals', [])
+                signal_text = '; '.join(
+                    f"{s['name']}: {s['annotation']}" for s in signals
+                ) if signals else 'no highlighted signals'
+                return (
+                    f"Current macro regime: {regime['state']} (confidence: {confidence}). "
+                    f"Summary: {summary} Key signals: {signal_text}."
+                )
+            return "Macro regime data not yet available."
+
+        if section_id == 'briefing-section':
+            from ai_summary import get_summary_for_display
+            briefing = get_summary_for_display()
+            if briefing and briefing.get('summary'):
+                date = briefing.get('date', 'today')
+                return f"Today's AI market briefing ({date}):\n{briefing['summary']}"
+            return "AI market briefing not yet generated for today."
+
+        if section_id == 'sector-tone-section':
+            cache_path = Path('data/sector_tone_cache.json')
+            if cache_path.exists():
+                import json as _json
+                with open(cache_path) as f:
+                    tone_data = _json.load(f)
+                sectors = tone_data.get('sectors', [])
+                if sectors:
+                    lines = [
+                        f"{s['short_name']}: {s['current_tone']}"
+                        for s in sectors
+                    ]
+                    quarter = tone_data.get('quarter', '')
+                    year = tone_data.get('year', '')
+                    return (
+                        f"Sector management tone ({quarter} {year}): "
+                        + ', '.join(lines) + '.'
+                    )
+            return "Sector tone data not yet available."
+
+        if section_id == 'recession-panel-section':
+            from recession_probability import get_recession_probability
+            rec = get_recession_probability()
+            if rec:
+                ensemble = rec.get('ensemble_probability')
+                ny_fed = rec.get('ny_fed')
+                cp = rec.get('chauvet_piger')
+                sos = rec.get('richmond_sos')
+                divergence = rec.get('divergence_flag', False)
+                parts = []
+                if ensemble is not None:
+                    parts.append(f"Ensemble probability: {ensemble:.1f}%")
+                if ny_fed is not None:
+                    parts.append(f"NY Fed 12-month model: {ny_fed:.1f}%")
+                if cp is not None:
+                    parts.append(f"Chauvet-Piger coincident: {cp:.1f}%")
+                if sos is not None:
+                    parts.append(f"Richmond SOS: {sos:.1f}%")
+                if divergence:
+                    parts.append("Models show significant divergence")
+                return 'Recession probability — ' + '; '.join(parts) + '.'
+            return "Recession probability data not yet available."
+
+        if section_id == 'trade-pulse-section':
+            ctx = _get_trade_balance_context()
+            regime = get_macro_regime()
+            regime_state = regime['state'] if regime else 'Unknown'
+            val = ctx.get('trade_balance_value')
+            period = ctx.get('trade_balance_period', '')
+            yoy = ctx.get('trade_balance_yoy_change')
+            interp = ctx.get('trade_balance_interpretation', '')
+            parts = [f"Current macro regime: {regime_state}"]
+            if val is not None:
+                parts.append(f"Trade balance: ${val:.1f}B ({period})")
+            if yoy is not None:
+                direction = 'improved' if yoy > 0 else 'worsened'
+                parts.append(f"YoY change: {direction} by ${abs(yoy):.1f}B")
+            if interp:
+                parts.append(f"Interpretation: {interp}")
+            return '; '.join(parts) + '.'
+
+        if section_id == 'regime-implications':
+            regime = get_macro_regime()
+            if regime:
+                state = regime['state']
+                from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
+                regime_key = REGIME_STATE_TO_KEY.get(state, state.lower())
+                impl_data = REGIME_IMPLICATIONS.get(regime_key)
+                if impl_data:
+                    asset_lines = []
+                    for ac in impl_data.get('asset_classes', []):
+                        name = ac.get('display_name', '')
+                        signal = ac.get('signal', '').replace('_', ' ')
+                        asset_lines.append(f"{name}: {signal}")
+                    return (
+                        f"Regime implications for {state} regime: "
+                        + '; '.join(asset_lines) + '.'
+                    )
+                return f"Current regime: {state}. Implications data loading."
+            return "Regime implications data not yet available."
+
+        if section_id == 'asset-credit':
+            hy_df = load_csv_data('high_yield_spread.csv')
+            ig_df = load_csv_data('investment_grade_spread.csv')
+            parts = []
+            if hy_df is not None and len(hy_df):
+                hy_val = hy_df.iloc[-1][hy_df.columns[1]] * 100
+                stats = get_metric_stats(hy_df)
+                pct = round(stats.get('percentile', 50), 0) if stats else None
+                parts.append(f"HY spread: {hy_val:.0f}bps" + (f" ({pct:.0f}th percentile)" if pct is not None else ''))
+            if ig_df is not None and len(ig_df):
+                ig_val = ig_df.iloc[-1][ig_df.columns[1]] * 100
+                stats = get_metric_stats(ig_df)
+                pct = round(stats.get('percentile', 50), 0) if stats else None
+                parts.append(f"IG spread: {ig_val:.0f}bps" + (f" ({pct:.0f}th percentile)" if pct is not None else ''))
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Credit market data: ' + '; '.join(parts) + '.') if parts else "Credit market data loading."
+
+        if section_id == 'asset-equity':
+            spy_df = load_csv_data('sp500_price.csv')
+            vix_df = load_csv_data('vix_price.csv')
+            parts = []
+            if spy_df is not None and len(spy_df) > 5:
+                price = spy_df.iloc[-1][spy_df.columns[1]]
+                chg_5d = ((price / spy_df.iloc[-6][spy_df.columns[1]]) - 1) * 100
+                parts.append(f"S&P 500: {price:.0f} ({chg_5d:+.1f}% 5-day)")
+            if vix_df is not None and len(vix_df):
+                vix = vix_df.iloc[-1][vix_df.columns[1]]
+                parts.append(f"VIX: {vix:.1f}")
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Equity market data: ' + '; '.join(parts) + '.') if parts else "Equity market data loading."
+
+        if section_id == 'asset-rates':
+            bei_df = load_csv_data('breakeven_inflation_10y.csv')
+            fed_df = load_csv_data('fed_funds_rate.csv')
+            parts = []
+            if bei_df is not None and len(bei_df):
+                bei = bei_df.iloc[-1][bei_df.columns[1]]
+                parts.append(f"10-year breakeven inflation: {bei:.2f}%")
+            if fed_df is not None and len(fed_df):
+                ffr = fed_df.iloc[-1][fed_df.columns[1]]
+                parts.append(f"Fed funds rate: {ffr:.2f}%")
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Rates data: ' + '; '.join(parts) + '.') if parts else "Rates data loading."
+
+        if section_id == 'asset-dollar':
+            dxy_df = load_csv_data('dollar_index_price.csv')
+            eurusd_df = load_csv_data('eurusd_price.csv')
+            parts = []
+            if dxy_df is not None and len(dxy_df):
+                dxy = dxy_df.iloc[-1][dxy_df.columns[1]]
+                stats = get_metric_stats(dxy_df)
+                pct = round(stats.get('percentile', 50), 0) if stats else None
+                parts.append(f"DXY: {dxy:.1f}" + (f" ({pct:.0f}th percentile)" if pct is not None else ''))
+            if eurusd_df is not None and len(eurusd_df):
+                eurusd = eurusd_df.iloc[-1][eurusd_df.columns[1]]
+                parts.append(f"EUR/USD: {eurusd:.4f}")
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Dollar data: ' + '; '.join(parts) + '.') if parts else "Dollar data loading."
+
+        if section_id == 'asset-crypto':
+            btc_df = load_csv_data('bitcoin_price.csv')
+            parts = []
+            if btc_df is not None and len(btc_df) > 5:
+                btc = btc_df.iloc[-1][btc_df.columns[1]]
+                peak = btc_df[btc_df.columns[1]].max()
+                decline = ((btc / peak) - 1) * 100
+                chg_5d = ((btc / btc_df.iloc[-6][btc_df.columns[1]]) - 1) * 100
+                parts.append(f"Bitcoin: ${btc:,.0f} ({chg_5d:+.1f}% 5-day)")
+                parts.append(f"Off peak: {decline:.1f}% (peak: ${peak:,.0f})")
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Crypto data: ' + '; '.join(parts) + '.') if parts else "Crypto data loading."
+
+        if section_id == 'asset-safe-havens':
+            gold_df = load_csv_data('gold_price.csv')
+            parts = []
+            if gold_df is not None and len(gold_df) > 5:
+                gold = gold_df.iloc[-1][gold_df.columns[1]] * 10
+                chg_5d = ((gold_df.iloc[-1][gold_df.columns[1]] / gold_df.iloc[-6][gold_df.columns[1]]) - 1) * 100
+                parts.append(f"Gold: ${gold:.0f}/oz ({chg_5d:+.1f}% 5-day)")
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Safe havens data: ' + '; '.join(parts) + '.') if parts else "Safe havens data loading."
+
+        # Generic fallback for market-conditions, movers-section, signals-section
+        regime = get_macro_regime()
+        if regime:
+            return (
+                f"Current macro regime: {regime['state']} "
+                f"(confidence: {regime.get('confidence', 'unknown')}). "
+                f"{regime.get('summary', '')}"
+            )
+        return "Dashboard data loading."
+
+    except Exception as e:
+        app.logger.warning(f'_get_section_live_data({section_id}) error: {e}')
+        return "Live data temporarily unavailable."
+
+
+@app.route('/api/chatbot/section-opening', methods=['POST'])
+@csrf.exempt
+@login_required
+def api_chatbot_section_opening():
+    """Generate an AI-powered opening message for a section AI button click.
+
+    US-258.5: Replaces static hardcoded opening text with a real AI-generated
+    response that includes live section data.
+    """
+    from services.ai_service import get_user_ai_client, get_user_ai_model, AIServiceError
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    section_id = data.get('section_id', '').strip()
+
+    # Validate — only allow known section keys; never use section_id as a
+    # file path, SQL parameter, or shell argument.
+    if not section_id or section_id not in _SECTION_OPENING_ALLOWED:
+        return jsonify({'error': 'Unknown section_id'}), 400
+
+    section_name = _SECTION_NAMES[section_id]
+
+    try:
+        client, provider = get_user_ai_client()
+    except AIServiceError as e:
+        return jsonify({'error': str(e)}), 400
+
+    model = get_user_ai_model()
+    live_data = _get_section_live_data(section_id)
+
+    system_prompt = (
+        "You are SignalTrackers AI, a financial market assistant helping an individual investor "
+        "understand macro financial markets. Provide clear, concise explanations of market "
+        "conditions, economic indicators, and financial concepts. Be direct and data-driven. "
+        "Keep your response to 2-3 short paragraphs."
+    )
+    user_message = (
+        f"The user just opened the '{section_name}' section of the SignalTrackers dashboard. "
+        f"Here is the current live data for this section:\n\n{live_data}\n\n"
+        "Give a holistic explanation of what this section shows and what the current data "
+        "means for investors in plain language. Reference the specific data values above. "
+        "Close with a brief invitation for the user to ask follow-up questions."
+    )
+
+    try:
+        if provider == 'anthropic':
+            response = client.messages.create(
+                model=model,
+                max_tokens=512,
+                system=system_prompt,
+                messages=[{'role': 'user', 'content': user_message}]
+            )
+            ai_response = response.content[0].text
+        else:  # OpenAI
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_message}
+                ],
+                max_tokens=512
+            )
+            ai_response = response.choices[0].message.content
+
+        return jsonify({
+            'response': ai_response,
+            'timestamp': datetime.now().isoformat()
+        })
+
+    except Exception as e:
+        app.logger.error(f'Section opening AI error (section={section_id}): {e}')
+        return jsonify({'error': 'AI service unavailable'}), 503
+
+
+# ============================================================================
 # Market Conditions Synthesis API (US-1.2.2)
 # ============================================================================
 
