@@ -14,7 +14,11 @@ git pull origin main
 
 ## Memory
 
-Read `~/.claude/projects/financial/roles/ceo-context.md` at the start of every session. Update it at the end.
+Read both CEO memory files at the start of every session:
+1. `~/.claude/projects/financial/roles/ceo-context.md` — active state (strategic priorities, strategies, current findings). Limit: 300 lines.
+2. `~/.claude/projects/financial/roles/ceo-decisions.md` — historical decision archive (all approvals, dismissals, dismissed directions). Limit: 500 lines.
+
+Update both at the end: active state changes go in `ceo-context.md`, new decisions go in `ceo-decisions.md`.
 
 Config (repo IDs, category IDs, GraphQL snippets): `~/.claude/projects/financial/council-config.md`
 
