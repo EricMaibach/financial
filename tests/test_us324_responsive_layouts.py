@@ -51,16 +51,16 @@ class TestTabletMediaQuery(unittest.TestCase):
         self.assertIn('width: 360px', block)
 
     def test_tablet_panel_full_viewport_height(self):
-        """Panel must use 100vh height on tablet."""
+        """Panel height must fill viewport below navbar on tablet."""
         idx = self.css.find('@media (min-width: 768px)')
         block = self.css[idx:idx + 2000]
-        self.assertIn('height: 100vh', block)
+        self.assertIn('height: calc(100vh - var(--navbar-height, 64px))', block)
 
     def test_tablet_panel_positions_at_top_right(self):
-        """Panel must be positioned top: 0 and right: 0 on tablet."""
+        """Panel must be positioned below navbar and at right: 0 on tablet."""
         idx = self.css.find('@media (min-width: 768px)')
         block = self.css[idx:idx + 2000]
-        self.assertIn('top: 0', block)
+        self.assertIn('top: var(--navbar-height, 64px)', block)
         self.assertIn('right: 0', block)
 
     def test_tablet_panel_left_border(self):
