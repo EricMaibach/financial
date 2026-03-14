@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-13 (PM run: #259 complete — all 4 stories merged; #268 at ready-for-pr PR #280 open)
+**Last updated:** 2026-03-14 (PM run: #258 complete — all 7 sub-issues merged; feature closed)
 
 ---
 
@@ -145,7 +145,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 **Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — stories in progress
 - Case-Shiller HPI, CPI Rent trend, Rental Vacancy Rate, USDA NASS farmland $/acre; regime-contextualized; FRED/NASS only
-- US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — `ready-for-pr` (PR #280 open)
+- US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — merged ✅
 - US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — `ready-for-implementation`
 
 ✅ **Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — **Complete**
@@ -154,13 +154,15 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ✅ **Bug #257**: Credit briefing excluded from daily synthesis and portfolio context (P1) — **closed** (merged)
 
-**Feature #258**: Contextual AI Entry Points — Section-Level and Sentence-Level Drill-In (P2) — stories in progress
+✅ **Feature #258**: Contextual AI Entry Points — Section-Level and Sentence-Level Drill-In (P2) — **Complete** (closed 2026-03-14)
 - Part 1: AI icon per section → opens chatbot pre-loaded with section data. Part 2: sentence-level drill-in from AI briefings
 - US-258.1 (#261): AI icon system migration — merged ✅
 - US-258.2 (#262): Section-level ghost pill buttons — merged ✅
-- US-258.3 (#263): Desktop sentence drill-in toolbar — `ready-for-implementation`
-- US-258.4 (#264): Mobile sentence tap flow — `ready-for-implementation`
-- US-258.5 (#277): Section AI buttons — AI-generated opening with live section data — `ready-for-implementation`
+- US-258.3 (#263): Desktop sentence drill-in toolbar — merged ✅
+- US-258.4 (#264): Mobile sentence tap flow — merged ✅
+- US-258.5 (#277): Section AI buttons — AI-generated opening with live section data — merged ✅
+- Bug #283: Off-screen toolbar fix — merged ✅
+- Bug #287: Chatbot close button fix — merged ✅
 
 ✅ **Feature #259**: Persistent News Pipeline — Scheduled Fetch, AI Summarization, and News Page (P2) — **Complete**
 - Tavily API fetch+store → aggregate AI summary → /news page + feeds AI briefings and chatbot. Feature B (custom feeds) deferred.
