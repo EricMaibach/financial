@@ -8,7 +8,7 @@
  *
  * Binary state model:
  *   closed   — FAB visible, panel hidden
- *   expanded — Panel visible, FAB hidden (mobile) or shifted (tablet/desktop)
+ *   expanded — Panel visible, FAB hidden (all viewports)
  */
 
 class ChatbotWidget {
@@ -135,7 +135,7 @@ class ChatbotWidget {
 
         this.state = 'expanded';
 
-        // Set aria-expanded (mobile: FAB hides via CSS, tablet/desktop: shifts)
+        // Set aria-expanded (FAB hides via CSS on all viewports)
         this.fab.setAttribute('aria-expanded', 'true');
 
         // Show panel

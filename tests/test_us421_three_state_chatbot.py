@@ -154,16 +154,13 @@ class TestBinaryModelCSS(unittest.TestCase):
         self.assertIn('opacity: 0', rule)
         self.assertIn('pointer-events: none', rule)
 
-    def test_fab_shifts_right_on_tablet(self):
-        """FAB [aria-expanded='true'] on tablet must shift left to accommodate panel."""
+    def test_fab_hidden_on_tablet_when_expanded(self):
+        """FAB must be hidden on tablet when expanded — no override keeping it visible (Bug #287)."""
         idx = self.css.find('@media (min-width: 768px)')
         self.assertGreater(idx, 0)
         block = self.css[idx:idx + 2000]
-        self.assertIn('.chatbot-fab[aria-expanded="true"]', block)
-        fab_expanded_idx = block.find('.chatbot-fab[aria-expanded="true"]')
-        rule = block[fab_expanded_idx:fab_expanded_idx + 200]
-        self.assertIn('opacity: 1', rule)
-        self.assertIn('pointer-events: auto', rule)
+        self.assertNotIn('.chatbot-fab[aria-expanded="true"]', block,
+            'Tablet media query must not override FAB expanded state')
 
     def test_panel_slides_down_when_hidden(self):
         """Panel must start with translateY(100%) to be hidden below viewport."""

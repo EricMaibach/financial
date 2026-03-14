@@ -51,16 +51,16 @@ class TestTabletMediaQuery(unittest.TestCase):
         self.assertIn('width: 360px', block)
 
     def test_tablet_panel_full_viewport_height(self):
-        """Panel must use 100vh height on tablet."""
+        """Panel height must fill viewport below navbar on tablet."""
         idx = self.css.find('@media (min-width: 768px)')
         block = self.css[idx:idx + 2000]
-        self.assertIn('height: 100vh', block)
+        self.assertIn('height: calc(100vh - var(--navbar-height, 64px))', block)
 
     def test_tablet_panel_positions_at_top_right(self):
-        """Panel must be positioned top: 0 and right: 0 on tablet."""
+        """Panel must be positioned below navbar and at right: 0 on tablet."""
         idx = self.css.find('@media (min-width: 768px)')
         block = self.css[idx:idx + 2000]
-        self.assertIn('top: 0', block)
+        self.assertIn('top: var(--navbar-height, 64px)', block)
         self.assertIn('right: 0', block)
 
     def test_tablet_panel_left_border(self):
@@ -91,48 +91,13 @@ class TestTabletMediaQuery(unittest.TestCase):
         header_block = block[header_idx:header_idx + 100]
         self.assertIn('border-radius: 0', header_block)
 
-    def test_tablet_fab_transition_includes_right(self):
-        """FAB must transition 'right' property for smooth position shift on tablet."""
+    def test_tablet_fab_hidden_when_panel_open(self):
+        """FAB must be hidden (no visibility override) when panel is open on tablet (Bug #287)."""
         idx = self.css.find('@media (min-width: 768px)')
         block = self.css[idx:idx + 2000]
-        # FAB transition override must include 'right'
-        fab_transition_idx = block.find('.chatbot-fab {')
-        self.assertGreater(fab_transition_idx, 0)
-        fab_block = block[fab_transition_idx:fab_transition_idx + 200]
-        self.assertIn('right', fab_block)
-        self.assertIn('transition:', fab_block)
-
-    def test_tablet_fab_visible_when_panel_open(self):
-        """FAB must remain visible (opacity: 1) when panel is open on tablet."""
-        idx = self.css.find('@media (min-width: 768px)')
-        block = self.css[idx:idx + 2000]
-        # aria-expanded true rule must set opacity: 1 (not 0)
-        expanded_idx = block.find('[aria-expanded="true"]')
-        self.assertGreater(expanded_idx, 0)
-        expanded_block = block[expanded_idx:expanded_idx + 200]
-        self.assertIn('opacity: 1', expanded_block)
-
-    def test_tablet_fab_pointer_events_auto_when_open(self):
-        """FAB must have pointer-events: auto when panel is open on tablet."""
-        idx = self.css.find('@media (min-width: 768px)')
-        block = self.css[idx:idx + 2000]
-        expanded_idx = block.find('[aria-expanded="true"]')
-        expanded_block = block[expanded_idx:expanded_idx + 200]
-        self.assertIn('pointer-events: auto', expanded_block)
-
-    def test_tablet_fab_shifts_right_376px_when_panel_open(self):
-        """FAB must be at right: 376px when panel is open on tablet (360px + 16px)."""
-        idx = self.css.find('@media (min-width: 768px)')
-        block = self.css[idx:idx + 2000]
-        self.assertIn('right: 376px', block)
-
-    def test_tablet_fab_transform_none_when_panel_open(self):
-        """FAB must reset transform to none when panel is open on tablet."""
-        idx = self.css.find('@media (min-width: 768px)')
-        block = self.css[idx:idx + 2000]
-        expanded_idx = block.find('[aria-expanded="true"]')
-        expanded_block = block[expanded_idx:expanded_idx + 200]
-        self.assertIn('transform: none', expanded_block)
+        # No aria-expanded="true" override should exist in the tablet media query
+        self.assertNotIn('.chatbot-fab[aria-expanded="true"]', block,
+            'Tablet media query must not override FAB expanded state — FAB should hide on all viewports')
 
 
 class TestDesktopMediaQuery(unittest.TestCase):
@@ -151,11 +116,12 @@ class TestDesktopMediaQuery(unittest.TestCase):
         block = self.css[idx:idx + 2000]
         self.assertIn('width: 440px', block)
 
-    def test_desktop_fab_shifts_right_456px_when_panel_open(self):
-        """FAB must be at right: 456px when panel is open on desktop (440px + 16px)."""
+    def test_desktop_fab_hidden_when_panel_open(self):
+        """FAB must be hidden (no visibility override) when panel is open on desktop (Bug #287)."""
         idx = self.css.find('@media (min-width: 1024px)')
         block = self.css[idx:idx + 2000]
-        self.assertIn('right: 456px', block)
+        self.assertNotIn('.chatbot-fab[aria-expanded="true"]', block,
+            'Desktop media query must not override FAB expanded state — FAB should hide on all viewports')
 
     def test_desktop_fab_hover_scale_108(self):
         """FAB hover must scale to 1.08 on desktop."""
