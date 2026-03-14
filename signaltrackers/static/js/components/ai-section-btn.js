@@ -71,6 +71,10 @@ const AI_SECTION_CONTEXTS = {
         name: 'Safe Havens',
         opening: "You're on the **Safe Havens** page — tracking gold, silver, and other defensive assets. Safe haven flows are an important signal of risk appetite and macro stress. What would you like to explore?",
     },
+    'asset-property': {
+        name: 'Property Macro',
+        opening: "You're on the **Property Macro** page — tracking residential real estate (Case-Shiller HPI, CPI Rent), rental vacancy rates, and USDA farmland values. Property markets are a key driver of consumer wealth, inflation, and credit conditions. What would you like to explore?",
+    },
 };
 
 // In-flight guard: prevents duplicate API calls from rapid button clicks.
