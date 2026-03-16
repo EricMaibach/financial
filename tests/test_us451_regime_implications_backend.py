@@ -378,7 +378,7 @@ class TestEquitiesSectorCallouts(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestCryptoCaveat(unittest.TestCase):
-    """Crypto annotation in every regime must include the 2010–2025 caveat."""
+    """Crypto annotations must reference liquidity-driven framing (Bug #292)."""
 
     def setUp(self):
         from regime_implications_config import REGIME_IMPLICATIONS
@@ -391,25 +391,21 @@ class TestCryptoCaveat(unittest.TestCase):
             if ac['key'] == 'crypto'
         )
 
-    def test_bull_crypto_caveat(self):
-        annotation = self._get_crypto_annotation('bull')
-        self.assertIn('2010', annotation)
-        self.assertIn('2025', annotation)
+    def test_bull_crypto_references_liquidity(self):
+        annotation = self._get_crypto_annotation('bull').lower()
+        self.assertTrue('liquidity' in annotation or 'm2' in annotation or 'monetary policy' in annotation)
 
-    def test_neutral_crypto_caveat(self):
-        annotation = self._get_crypto_annotation('neutral')
-        self.assertIn('2010', annotation)
-        self.assertIn('2025', annotation)
+    def test_neutral_crypto_references_liquidity(self):
+        annotation = self._get_crypto_annotation('neutral').lower()
+        self.assertTrue('liquidity' in annotation or 'cycle' in annotation)
 
-    def test_bear_crypto_caveat(self):
-        annotation = self._get_crypto_annotation('bear')
-        self.assertIn('2010', annotation)
-        self.assertIn('2025', annotation)
+    def test_bear_crypto_references_liquidity(self):
+        annotation = self._get_crypto_annotation('bear').lower()
+        self.assertTrue('liquidity' in annotation or 'monetary policy' in annotation or 'm2' in annotation)
 
-    def test_recession_watch_crypto_caveat(self):
-        annotation = self._get_crypto_annotation('recession_watch')
-        self.assertIn('2010', annotation)
-        self.assertIn('2025', annotation)
+    def test_recession_watch_crypto_references_liquidity(self):
+        annotation = self._get_crypto_annotation('recession_watch').lower()
+        self.assertTrue('liquidity' in annotation or 'qe' in annotation or 'policy' in annotation)
 
 
 # ---------------------------------------------------------------------------

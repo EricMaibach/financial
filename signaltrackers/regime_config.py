@@ -86,10 +86,10 @@ CATEGORY_REGIME_CONTEXT = {
         'Recession Watch': 'Safe-haven dollar demand typically spikes in contraction.',
     },
     'Crypto': {
-        'Bull': 'Risk-on regime supports crypto; beta to equities is high.',
-        'Neutral': 'Crypto follows equities; no regime-specific edge here.',
-        'Bear': 'Liquidity tightens; crypto faces outsized drawdown risk.',
-        'Recession Watch': 'Crypto is a high-risk asset; severe drawdowns are likely.',
+        'Bull': 'Crypto may benefit if liquidity is loose, but macro regime is not a reliable driver.',
+        'Neutral': 'Crypto driven by its own cycle dynamics; macro regime provides limited signal.',
+        'Bear': 'Direction depends on monetary policy response; may rally if liquidity expands.',
+        'Recession Watch': 'Expect volatility, but policy response (QE) historically triggers recovery.',
     },
     'Safe Havens': {
         'Bull': 'Gold and bonds underperform as risk appetite dominates.',
