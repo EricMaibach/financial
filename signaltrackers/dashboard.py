@@ -1794,6 +1794,7 @@ def property_macro():
         # CPI Rent
         'cpi_rent_current': None,
         'cpi_rent_yoy_pct': None,
+        'cpi_rent_mom_pct': None,
         'cpi_rent_percentile': None,
         'cpi_rent_percentile_label': 'unavailable',
         # Rental Vacancy Rate
@@ -1846,6 +1847,9 @@ def property_macro():
             rent_year_ago = float(rent_series.iloc[-13])
             ctx['cpi_rent_current'] = round(rent_current, 3)
             ctx['cpi_rent_yoy_pct'] = round((rent_current / rent_year_ago - 1) * 100, 1)
+            if len(rent_series) >= 2:
+                rent_prior_month = float(rent_series.iloc[-2])
+                ctx['cpi_rent_mom_pct'] = round((rent_current / rent_prior_month - 1) * 100, 2)
             ctx['cpi_rent_percentile'] = round(calculate_percentile_rank(rent_series, rent_current), 1)
             ctx['cpi_rent_percentile_label'] = _percentile_label(ctx['cpi_rent_percentile'])
             ctx['rent_date'] = rent_df.index[-1].strftime('%B %Y')
@@ -3006,7 +3010,7 @@ _SECTION_OPENING_ALLOWED = {
     'market-conditions', 'movers-section', 'signals-section',
     'recession-panel-section', 'trade-pulse-section', 'regime-implications',
     'asset-credit', 'asset-equity', 'asset-rates', 'asset-dollar',
-    'asset-crypto', 'asset-safe-havens',
+    'asset-crypto', 'asset-safe-havens', 'asset-property',
 }
 
 _SECTION_NAMES = {
@@ -3025,6 +3029,7 @@ _SECTION_NAMES = {
     'asset-dollar': 'US Dollar',
     'asset-crypto': 'Crypto / Bitcoin',
     'asset-safe-havens': 'Safe Havens',
+    'asset-property': 'Property Macro',
 }
 
 
@@ -3232,6 +3237,32 @@ def _get_section_live_data(section_id: str) -> str:
             if regime:
                 parts.append(f"Macro regime: {regime['state']}")
             return ('Safe havens data: ' + '; '.join(parts) + '.') if parts else "Safe havens data loading."
+
+        if section_id == 'asset-property':
+            parts = []
+            hpi_df = load_csv_data('property_hpi.csv')
+            if hpi_df is not None and len(hpi_df) >= 13:
+                hpi_df = hpi_df.dropna(subset=['property_hpi']).set_index('date').sort_index()
+                hpi_val = float(hpi_df['property_hpi'].iloc[-1])
+                hpi_ago = float(hpi_df['property_hpi'].iloc[-13])
+                hpi_yoy = (hpi_val / hpi_ago - 1) * 100
+                parts.append(f"Case-Shiller HPI: {hpi_val:.1f} ({hpi_yoy:+.1f}% YoY)")
+            rent_df = load_csv_data('property_cpi_rent.csv')
+            if rent_df is not None and len(rent_df) >= 13:
+                rent_df = rent_df.dropna(subset=['property_cpi_rent']).set_index('date').sort_index()
+                rent_val = float(rent_df['property_cpi_rent'].iloc[-1])
+                rent_ago = float(rent_df['property_cpi_rent'].iloc[-13])
+                rent_yoy = (rent_val / rent_ago - 1) * 100
+                parts.append(f"CPI Rent YoY: {rent_yoy:+.1f}%")
+            vacancy_df = load_csv_data('property_vacancy.csv')
+            if vacancy_df is not None and len(vacancy_df) >= 2:
+                vacancy_df = vacancy_df.dropna(subset=['property_vacancy']).set_index('date').sort_index()
+                vac = float(vacancy_df['property_vacancy'].iloc[-1])
+                parts.append(f"Rental vacancy: {vac:.1f}%")
+            regime = get_macro_regime()
+            if regime:
+                parts.append(f"Macro regime: {regime['state']}")
+            return ('Property data: ' + '; '.join(parts) + '.') if parts else "Property data loading."
 
         # Generic fallback for market-conditions, movers-section, signals-section
         regime = get_macro_regime()

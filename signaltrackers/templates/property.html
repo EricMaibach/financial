@@ -4,27 +4,17 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/asset-page-header.css') }}">
-<style>
-:root {
-    --category-color: #8B5CF6;  /* violet-500 — property */
-    --space-1: 0.25rem;
-    --space-2: 0.5rem;
-    --space-3: 0.75rem;
-    --space-4: 1rem;
-    --space-5: 1.5rem;
-    --space-6: 2rem;
-    --text-xs: 0.75rem;
-    --text-sm: 0.875rem;
-    --text-base: 1rem;
-}
-</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/property.css') }}">
 {% endblock %}
 
+{# Percentile zone class helper #}
+{% macro pct_zone_class(pct) %}{% if pct <= 20 %}property-pct-bar__fill--danger{% elif pct <= 40 %}property-pct-bar__fill--warning{% elif pct <= 60 %}property-pct-bar__fill--neutral{% elif pct <= 80 %}property-pct-bar__fill--info{% else %}property-pct-bar__fill--success{% endif %}{% endmacro %}
+
 {% block content %}
-<div class="container-fluid py-4">
+<main class="property-page">
 
     <!-- Page Header -->
-    <header class="asset-page-header mb-4">
+    <header class="asset-page-header">
         <h1 class="asset-page-header__title">
             <i class="bi bi-house-door" style="color: var(--category-color);" aria-hidden="true"></i>
             Property Macro
@@ -40,206 +30,251 @@
                 <span>—</span>
             {% endif %}
         </p>
+        <div class="asset-page-header__actions">
+            <button class="btn ai-section-btn" data-section-id="asset-property" aria-label="Ask AI about Property Macro"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+        </div>
     </header>
 
-    <!-- Residential Housing Section -->
-    <div class="card bg-dark border-secondary mb-3">
-        <div class="card-header">
-            <h5 class="mb-0">Residential Housing</h5>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
+    <!-- ============================== -->
+    <!-- Section 1: Residential Housing -->
+    <!-- ============================== -->
+    <div class="property-section" id="section-residential">
+        <button class="property-section__toggle"
+                aria-expanded="false"
+                aria-controls="residential-content"
+                id="residential-toggle">
+            <h2 class="property-section__title">Residential Housing</h2>
+            <svg class="property-section__chevron" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="property-section__content" id="residential-content" hidden>
+            <div class="property-metric-grid">
                 <!-- Case-Shiller HPI -->
-                <div class="col-12 col-md-6">
-                    <div class="p-3 border border-secondary rounded">
-                        <div class="text-uppercase text-muted" style="font-size: var(--text-xs); letter-spacing: 0.05em;">
-                            Case-Shiller HPI (National)
-                        </div>
-                        {% if hpi_current is not none %}
-                            <div class="mt-1" style="font-size: 2rem; font-family: monospace; font-weight: 600;">
-                                {{ hpi_current }}
+                <div class="property-metric-card">
+                    <div class="property-metric-card__label">Case-Shiller HPI (National)</div>
+                    {% if hpi_current is not none %}
+                        <div class="property-metric-card__value">{{ hpi_current }}</div>
+                        {% if hpi_yoy_pct is not none %}
+                            <div style="margin-top: 0.5rem;">
+                                <span class="property-badge {% if hpi_yoy_pct >= 0 %}property-badge--success{% else %}property-badge--danger{% endif %}">
+                                    {% if hpi_yoy_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+                                    {% if hpi_yoy_pct >= 0 %}+{% endif %}{{ hpi_yoy_pct }}% YoY
+                                </span>
                             </div>
-                            <div class="mt-1">
-                                {% if hpi_yoy_pct is not none %}
-                                    <span class="badge {% if hpi_yoy_pct >= 0 %}bg-success{% else %}bg-danger{% endif %}">
-                                        {% if hpi_yoy_pct >= 0 %}▲{% else %}▼{% endif %}
-                                        {{ hpi_yoy_pct | abs }}% YoY
-                                    </span>
-                                {% endif %}
-                            </div>
-                            {% if hpi_percentile is not none %}
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 8px;" role="progressbar"
-                                         aria-valuenow="{{ hpi_percentile }}" aria-valuemin="0" aria-valuemax="100"
-                                         aria-label="Case-Shiller HPI at {{ hpi_percentile }}th percentile">
-                                        <div class="progress-bar"
-                                             style="width: {{ hpi_percentile }}%; background-color: {% if hpi_percentile <= 20 %}#dc3545{% elif hpi_percentile <= 40 %}#ffc107{% elif hpi_percentile <= 60 %}#adb5bd{% elif hpi_percentile <= 80 %}#0dcaf0{% else %}#198754{% endif %};">
-                                        </div>
-                                    </div>
-                                    <div class="text-muted mt-1" style="font-size: var(--text-xs);">
-                                        {{ hpi_percentile }}th percentile · {{ hpi_percentile_label }}
-                                    </div>
-                                </div>
-                            {% endif %}
-                            {% if hpi_date %}
-                                <div class="text-muted mt-2" style="font-size: var(--text-xs);">{{ hpi_date }}</div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-muted mt-2">Data unavailable</div>
                         {% endif %}
-                    </div>
+                        {% if hpi_percentile is not none %}
+                            <div class="property-pct-bar">
+                                <div class="property-pct-bar__track"
+                                     role="progressbar"
+                                     aria-valuenow="{{ hpi_percentile }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100"
+                                     aria-label="Case-Shiller HPI at {{ hpi_percentile }}th percentile">
+                                    <div class="property-pct-bar__fill {{ pct_zone_class(hpi_percentile) }}"
+                                         style="width: {{ hpi_percentile }}%;"></div>
+                                </div>
+                                <div class="property-pct-bar__label">{{ hpi_percentile }}th percentile · {{ hpi_percentile_label }}</div>
+                            </div>
+                        {% endif %}
+                        {% if hpi_date %}
+                            <div class="property-metric-card__secondary" style="margin-top: 0.75rem;">{{ hpi_date }}</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="property-metric-card__secondary">Data unavailable</div>
+                    {% endif %}
                 </div>
 
                 <!-- CPI Rent -->
-                <div class="col-12 col-md-6">
-                    <div class="p-3 border border-secondary rounded">
-                        <div class="text-uppercase text-muted" style="font-size: var(--text-xs); letter-spacing: 0.05em;">
-                            CPI Rent (Primary Residence)
-                        </div>
-                        {% if cpi_rent_yoy_pct is not none %}
-                            <div class="mt-1" style="font-size: 2rem; font-family: monospace; font-weight: 600;">
-                                {% if cpi_rent_yoy_pct >= 0 %}+{% endif %}{{ cpi_rent_yoy_pct }}%
+                <div class="property-metric-card">
+                    <div class="property-metric-card__label">CPI Rent (Primary Residence)</div>
+                    {% if cpi_rent_yoy_pct is not none %}
+                        <div class="property-metric-card__value">{% if cpi_rent_yoy_pct >= 0 %}+{% endif %}{{ cpi_rent_yoy_pct }}%</div>
+                        <div class="property-metric-card__secondary">YoY change</div>
+                        {% if cpi_rent_mom_pct is not none %}
+                            <div style="margin-top: 0.25rem;">
+                                <span class="property-badge {% if cpi_rent_mom_pct >= 0 %}property-badge--warning{% else %}property-badge--info{% endif %}">
+                                    {% if cpi_rent_mom_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+                                    {% if cpi_rent_mom_pct >= 0 %}+{% endif %}{{ cpi_rent_mom_pct }}% MoM
+                                </span>
                             </div>
-                            <div class="mt-1 text-muted" style="font-size: var(--text-xs);">YoY change</div>
-                            {% if cpi_rent_percentile is not none %}
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 8px;" role="progressbar"
-                                         aria-valuenow="{{ cpi_rent_percentile }}" aria-valuemin="0" aria-valuemax="100"
-                                         aria-label="CPI Rent at {{ cpi_rent_percentile }}th percentile">
-                                        <div class="progress-bar"
-                                             style="width: {{ cpi_rent_percentile }}%; background-color: {% if cpi_rent_percentile <= 20 %}#dc3545{% elif cpi_rent_percentile <= 40 %}#ffc107{% elif cpi_rent_percentile <= 60 %}#adb5bd{% elif cpi_rent_percentile <= 80 %}#0dcaf0{% else %}#198754{% endif %};">
-                                        </div>
-                                    </div>
-                                    <div class="text-muted mt-1" style="font-size: var(--text-xs);">
-                                        {{ cpi_rent_percentile }}th percentile · {{ cpi_rent_percentile_label }}
-                                    </div>
+                        {% endif %}
+                        {% if cpi_rent_percentile is not none %}
+                            <div class="property-pct-bar">
+                                <div class="property-pct-bar__track"
+                                     role="progressbar"
+                                     aria-valuenow="{{ cpi_rent_percentile }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100"
+                                     aria-label="CPI Rent at {{ cpi_rent_percentile }}th percentile">
+                                    <div class="property-pct-bar__fill {{ pct_zone_class(cpi_rent_percentile) }}"
+                                         style="width: {{ cpi_rent_percentile }}%;"></div>
                                 </div>
-                            {% endif %}
-                            {% if rent_date %}
-                                <div class="text-muted mt-2" style="font-size: var(--text-xs);">{{ rent_date }}</div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-muted mt-2">Data unavailable</div>
+                                <div class="property-pct-bar__label">{{ cpi_rent_percentile }}th percentile · {{ cpi_rent_percentile_label }}</div>
+                            </div>
                         {% endif %}
-                    </div>
+                        {% if rent_date %}
+                            <div class="property-metric-card__secondary" style="margin-top: 0.75rem;">{{ rent_date }}</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="property-metric-card__secondary">Data unavailable</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Rental Market Section -->
-    <div class="card bg-dark border-secondary mb-3">
-        <div class="card-header">
-            <h5 class="mb-0">Rental Market</h5>
-        </div>
-        <div class="card-body">
-            <div class="p-3 border border-secondary rounded d-inline-block" style="min-width: 260px;">
-                <div class="text-uppercase text-muted" style="font-size: var(--text-xs); letter-spacing: 0.05em;">
-                    Rental Vacancy Rate
-                </div>
-                {% if vacancy_current is not none %}
-                    <div class="mt-1" style="font-size: 2rem; font-family: monospace; font-weight: 600;">
-                        {{ vacancy_current }}%
-                    </div>
-                    {% if vacancy_direction and vacancy_prior is not none %}
-                        <div class="mt-1">
-                            <span class="badge {% if vacancy_direction == 'tightening' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
-                                {% if vacancy_direction == 'tightening' %}▼ Tightening{% else %}▲ Loosening{% endif %}
-                                (was {{ vacancy_prior }}% prior)
-                            </span>
-                        </div>
-                    {% endif %}
-                    {% if vacancy_percentile is not none %}
-                        <div class="mt-2">
-                            <div class="progress" style="height: 8px;" role="progressbar"
-                                 aria-valuenow="{{ vacancy_percentile }}" aria-valuemin="0" aria-valuemax="100"
-                                 aria-label="Vacancy Rate at {{ vacancy_percentile }}th percentile">
-                                <div class="progress-bar"
-                                     style="width: {{ vacancy_percentile }}%; background-color: {% if vacancy_percentile <= 20 %}#dc3545{% elif vacancy_percentile <= 40 %}#ffc107{% elif vacancy_percentile <= 60 %}#adb5bd{% elif vacancy_percentile <= 80 %}#0dcaf0{% else %}#198754{% endif %};">
+    <!-- ======================== -->
+    <!-- Section 2: Rental Market -->
+    <!-- ======================== -->
+    <div class="property-section" id="section-rental">
+        <button class="property-section__toggle"
+                aria-expanded="false"
+                aria-controls="rental-content"
+                id="rental-toggle">
+            <h2 class="property-section__title">Rental Market</h2>
+            <svg class="property-section__chevron" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="property-section__content" id="rental-content" hidden>
+            <div class="property-metric-grid">
+                <div class="property-metric-card">
+                    <div class="property-metric-card__label">Rental Vacancy Rate</div>
+                    {% if vacancy_current is not none %}
+                        <div class="property-metric-card__value">{{ vacancy_current }}%</div>
+                        {% if vacancy_direction and vacancy_prior is not none %}
+                            <div style="margin-top: 0.5rem;">
+                                <span class="property-badge {% if vacancy_direction == 'tightening' %}property-badge--warning{% else %}property-badge--info{% endif %}">
+                                    {% if vacancy_direction == 'tightening' %}&#9660; Tightening{% else %}&#9650; Loosening{% endif %}
+                                    (was {{ vacancy_prior }}% prior qtr)
+                                </span>
+                            </div>
+                        {% endif %}
+                        {% if vacancy_percentile is not none %}
+                            <div class="property-pct-bar">
+                                <div class="property-pct-bar__track"
+                                     role="progressbar"
+                                     aria-valuenow="{{ vacancy_percentile }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100"
+                                     aria-label="Vacancy Rate at {{ vacancy_percentile }}th percentile">
+                                    <div class="property-pct-bar__fill {{ pct_zone_class(vacancy_percentile) }}"
+                                         style="width: {{ vacancy_percentile }}%;"></div>
                                 </div>
+                                <div class="property-pct-bar__label">{{ vacancy_percentile }}th percentile · {{ vacancy_percentile_label }}</div>
                             </div>
-                            <div class="text-muted mt-1" style="font-size: var(--text-xs);">
-                                {{ vacancy_percentile }}th percentile · {{ vacancy_percentile_label }}
-                            </div>
-                        </div>
+                        {% endif %}
+                        {% if vacancy_date %}
+                            <div class="property-metric-card__secondary" style="margin-top: 0.75rem;">{{ vacancy_date }} · Quarterly</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="property-metric-card__secondary">Data unavailable</div>
                     {% endif %}
-                    {% if vacancy_date %}
-                        <div class="text-muted mt-2" style="font-size: var(--text-xs);">{{ vacancy_date }} · Quarterly</div>
-                    {% endif %}
-                {% else %}
-                    <div class="text-muted mt-2">Data unavailable</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Farmland Section -->
-    <div class="card bg-dark border-secondary mb-3">
-        <div class="card-header">
-            <h5 class="mb-0">Farmland</h5>
-        </div>
-        <div class="card-body">
-            <div class="p-3 border border-secondary rounded d-inline-block" style="min-width: 260px;">
-                <div class="text-uppercase text-muted" style="font-size: var(--text-xs); letter-spacing: 0.05em;">
-                    USDA Farmland ($/Acre)
                 </div>
-                {% if farmland_farm_re is not none %}
-                    <dl class="mt-2 mb-0">
-                        <div class="d-flex gap-3">
-                            <dt class="text-muted" style="font-size: var(--text-sm); min-width: 100px;">Farm RE:</dt>
-                            <dd class="mb-0" style="font-family: monospace; font-weight: 600;">
-                                ${{ "{:,.0f}".format(farmland_farm_re) }}
-                            </dd>
-                        </div>
-                        {% if farmland_cropland is not none %}
-                        <div class="d-flex gap-3">
-                            <dt class="text-muted" style="font-size: var(--text-sm); min-width: 100px;">Cropland:</dt>
-                            <dd class="mb-0" style="font-family: monospace; font-weight: 600;">
-                                ${{ "{:,.0f}".format(farmland_cropland) }}
-                            </dd>
-                        </div>
-                        {% endif %}
-                        {% if farmland_pasture is not none %}
-                        <div class="d-flex gap-3">
-                            <dt class="text-muted" style="font-size: var(--text-sm); min-width: 100px;">Pasture:</dt>
-                            <dd class="mb-0" style="font-family: monospace; font-weight: 600;">
-                                ${{ "{:,.0f}".format(farmland_pasture) }}
-                            </dd>
-                        </div>
-                        {% endif %}
-                    </dl>
-                    {% if farmland_yoy_pct is not none %}
-                        <div class="mt-2">
-                            <span class="badge {% if farmland_yoy_pct >= 0 %}bg-success{% else %}bg-danger{% endif %}">
-                                {% if farmland_yoy_pct >= 0 %}▲ +{% else %}▼ {% endif %}{{ farmland_yoy_pct }}% YoY (Farm RE)
-                            </span>
-                        </div>
-                    {% endif %}
-                    {% if farmland_year %}
-                        <div class="text-muted mt-2" style="font-size: var(--text-xs);">{{ farmland_year }} · Annual</div>
-                    {% endif %}
-                {% else %}
-                    <div class="text-muted mt-2">Data unavailable — set USDA_NASS_API_KEY to enable</div>
-                {% endif %}
             </div>
         </div>
     </div>
 
-    <!-- Regime Interpretation Block -->
+    <!-- ====================== -->
+    <!-- Section 3: Farmland    -->
+    <!-- ====================== -->
+    <div class="property-section" id="section-farmland">
+        <button class="property-section__toggle"
+                aria-expanded="false"
+                aria-controls="farmland-content"
+                id="farmland-toggle">
+            <h2 class="property-section__title">Farmland</h2>
+            <svg class="property-section__chevron" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+        <div class="property-section__content" id="farmland-content" hidden>
+            <div class="property-metric-grid">
+                <div class="property-metric-card">
+                    <div class="property-metric-card__label">USDA Farmland ($/Acre)</div>
+                    {% if farmland_farm_re is not none %}
+                        <dl class="property-farmland-dl">
+                            <div class="property-farmland-dl__row">
+                                <dt>Farm RE:</dt>
+                                <dd>${{ "{:,.0f}".format(farmland_farm_re) }}</dd>
+                            </div>
+                            {% if farmland_cropland is not none %}
+                            <div class="property-farmland-dl__row">
+                                <dt>Cropland:</dt>
+                                <dd>${{ "{:,.0f}".format(farmland_cropland) }}</dd>
+                            </div>
+                            {% endif %}
+                            {% if farmland_pasture is not none %}
+                            <div class="property-farmland-dl__row">
+                                <dt>Pasture:</dt>
+                                <dd>${{ "{:,.0f}".format(farmland_pasture) }}</dd>
+                            </div>
+                            {% endif %}
+                        </dl>
+                        {% if farmland_yoy_pct is not none %}
+                            <div style="margin-top: 0.75rem;">
+                                <span class="property-badge {% if farmland_yoy_pct >= 0 %}property-badge--success{% else %}property-badge--danger{% endif %}">
+                                    {% if farmland_yoy_pct >= 0 %}&#9650; +{% else %}&#9660; {% endif %}{{ farmland_yoy_pct }}% YoY (Farm RE)
+                                </span>
+                            </div>
+                        {% endif %}
+                        {% if farmland_year %}
+                            <div class="property-metric-card__secondary" style="margin-top: 0.75rem;">{{ farmland_year }} · Annual</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="property-metric-card__secondary">Data unavailable — set USDA_NASS_API_KEY to enable</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================ -->
+    <!-- Regime Interpretation Block      -->
+    <!-- ================================ -->
     {% if property_interpretation %}
-    <div class="mb-4" style="border-left: 4px solid var(--category-color); background: rgba(255,255,255,0.04); border-radius: 0 8px 8px 0; padding: 1rem 1.25rem;">
-        <div class="text-uppercase text-muted mb-2" style="font-size: var(--text-xs); letter-spacing: 0.1em;">
-            <i class="bi bi-lightbulb" aria-hidden="true"></i>
-            Property Macro Outlook
+    <div class="property-interpretation">
+        <div class="property-interpretation__header">
+            <i class="bi bi-lightbulb" style="color: var(--category-color); font-size: 0.875rem;" aria-hidden="true"></i>
+            <span class="property-interpretation__label">
+                Property Macro Outlook
+            </span>
             {% if property_interpretation_regime %}
-                <span class="ms-2 badge bg-secondary" style="font-size: 0.65rem;">{{ property_interpretation_regime }}</span>
+                <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: var(--neutral-200, #dee2e6); color: var(--neutral-600, #495057);">{{ property_interpretation_regime }}</span>
             {% endif %}
         </div>
-        <p class="mb-0" style="font-size: var(--text-sm); line-height: 1.6;">
+        <p class="property-interpretation__body">
             {{ property_interpretation }}
         </p>
     </div>
     {% endif %}
 
-</div>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var isTabletPlus = window.matchMedia('(min-width: 768px)').matches;
+    var toggles = document.querySelectorAll('.property-section__toggle');
+
+    toggles.forEach(function(toggle) {
+        var contentId = toggle.getAttribute('aria-controls');
+        var content = document.getElementById(contentId);
+
+        // Expand on tablet+ by default
+        if (isTabletPlus) {
+            toggle.setAttribute('aria-expanded', 'true');
+            content.hidden = false;
+        }
+
+        toggle.addEventListener('click', function() {
+            var expanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', String(!expanded));
+            content.hidden = expanded;
+        });
+    });
+});
+</script>
 {% endblock %}

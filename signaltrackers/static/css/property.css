@@ -1,0 +1,255 @@
+/* =============================================================
+   Property Macro Page — Feature 9.6 / US-255.2
+   Residential real estate and farmland indicators
+   ============================================================= */
+
+:root {
+    --category-color: #8B5CF6;  /* violet-500 — property */
+}
+
+/* --- Content page wrapper --- */
+.property-page {
+    min-height: calc(100vh - 64px);
+}
+
+/* --- Section card: collapsible container --- */
+.property-section {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+}
+
+.property-section__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 56px;
+    padding: var(--space-4);
+    background: var(--neutral-50, #f8f9fa);
+    border: none;
+    border-bottom: 1px solid var(--neutral-200, #dee2e6);
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 150ms ease-out;
+}
+
+.property-section__toggle:hover {
+    background: var(--neutral-100, #f1f3f5);
+}
+
+.property-section__toggle:focus {
+    outline: 2px solid var(--category-color);
+    outline-offset: 2px;
+    z-index: 1;
+}
+
+.property-section__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--neutral-700, #343a40);
+    margin: 0;
+}
+
+.property-section__chevron {
+    width: 20px;
+    height: 20px;
+    color: var(--neutral-500, #6c757d);
+    transition: transform 250ms ease-out;
+    flex-shrink: 0;
+    margin-left: var(--space-3, 0.75rem);
+}
+
+.property-section__toggle[aria-expanded="true"] .property-section__chevron {
+    transform: rotate(180deg);
+}
+
+.property-section__content {
+    padding: var(--space-4);
+}
+
+.property-section__content[hidden] {
+    display: none;
+}
+
+/* --- Metric card --- */
+.property-metric-card {
+    padding: var(--space-4);
+    border: 1px solid var(--neutral-200, #dee2e6);
+    border-radius: 8px;
+    border-left: 4px solid var(--category-color);
+}
+
+.property-metric-card__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--neutral-500, #6c757d);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.property-metric-card__value {
+    font-size: 2rem;
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--neutral-800, #212529);
+    line-height: 1.2;
+}
+
+.property-metric-card__secondary {
+    font-size: 0.75rem;
+    color: var(--neutral-500, #6c757d);
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* --- Metric card grid --- */
+.property-metric-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+/* --- Percentile bar (reusable pattern from Trade Pulse) --- */
+.property-pct-bar {
+    margin-top: var(--space-3, 0.75rem);
+}
+
+.property-pct-bar__track {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--neutral-200, #dee2e6);
+    overflow: hidden;
+}
+
+.property-pct-bar__fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease-out;
+}
+
+.property-pct-bar__label {
+    font-size: 0.75rem;
+    color: var(--neutral-500, #6c757d);
+    margin-top: var(--space-1, 0.25rem);
+}
+
+/* --- Percentile zone colors --- */
+.property-pct-bar__fill--danger   { background-color: #dc3545; }
+.property-pct-bar__fill--warning  { background-color: #ffc107; }
+.property-pct-bar__fill--neutral  { background-color: #adb5bd; }
+.property-pct-bar__fill--info     { background-color: #0dcaf0; }
+.property-pct-bar__fill--success  { background-color: #198754; }
+
+/* --- Farmland definition list --- */
+.property-farmland-dl {
+    margin: var(--space-2, 0.5rem) 0 0;
+}
+
+.property-farmland-dl__row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-1, 0.25rem) 0;
+}
+
+.property-farmland-dl__row dt {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--neutral-500, #6c757d);
+    min-width: 90px;
+}
+
+.property-farmland-dl__row dd {
+    font-family: monospace;
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--neutral-800, #212529);
+    margin: 0;
+}
+
+/* --- Interpretation block --- */
+.property-interpretation {
+    border-left: 4px solid var(--category-color);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 0 8px 8px 0;
+    padding: var(--space-4) var(--space-5, 1.5rem);
+    margin-bottom: var(--space-4);
+}
+
+.property-interpretation__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.property-interpretation__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--neutral-500, #6c757d);
+}
+
+.property-interpretation__body {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+/* --- Direction badge --- */
+.property-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.property-badge--success { background: #d1e7dd; color: #0f5132; }
+.property-badge--danger  { background: #f8d7da; color: #842029; }
+.property-badge--warning { background: #fff3cd; color: #664d03; }
+.property-badge--info    { background: #cff4fc; color: #055160; }
+
+/* --- Tablet+ (768px) --- */
+@media (min-width: 768px) {
+    .property-section__title {
+        font-size: 1.125rem;
+    }
+
+    .property-metric-grid {
+        flex-direction: row;
+        gap: var(--space-4, 1rem);
+    }
+
+    .property-metric-grid > * {
+        flex: 1;
+    }
+}
+
+/* --- Desktop (1024px+) --- */
+@media (min-width: 1024px) {
+    .property-section__toggle {
+        padding: var(--space-5, 1.5rem);
+    }
+
+    .property-section__content {
+        padding: var(--space-5, 1.5rem);
+    }
+
+    .property-metric-card__value {
+        font-size: 2.25rem;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .property-section__chevron,
+    .property-pct-bar__fill {
+        transition: none;
+    }
+}
