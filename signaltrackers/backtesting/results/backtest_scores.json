@@ -1,0 +1,398 @@
+{
+  "overall": {
+    "multi_asset_accuracy": 54.6,
+    "total_evaluations": 310,
+    "regime_accuracy_by_regime": {
+      "Bull": 45.2,
+      "Neutral": 80.4,
+      "Bear": 47.5,
+      "Recession Watch": 44.4
+    },
+    "sp500_return_ordering_correct": false,
+    "sp500_avg_90d_by_regime": {
+      "Bull": 3.14,
+      "Neutral": 3.4,
+      "Bear": 1.96,
+      "Recession Watch": -0.26
+    },
+    "drawdown_ordering_correct": true,
+    "sp500_avg_max_dd_by_regime": {
+      "Bull": -6.3,
+      "Neutral": -6.49,
+      "Bear": -8.07,
+      "Recession Watch": -11.02
+    },
+    "composite_score": 52.3
+  },
+  "per_regime": {
+    "Bull": {
+      "count": 81,
+      "multi_asset_accuracy": 45.2,
+      "sp500_avg_30d": 1.06,
+      "sp500_median_30d": 1.58,
+      "sp500_avg_60d": 2.03,
+      "sp500_median_60d": 2.65,
+      "sp500_avg_90d": 3.14,
+      "sp500_median_90d": 3.72,
+      "sp500_accuracy": 69.1,
+      "treasuries_avg_30d": 0.76,
+      "treasuries_median_30d": 0.96,
+      "treasuries_avg_60d": 1.75,
+      "treasuries_median_60d": 2.42,
+      "treasuries_avg_90d": 2.51,
+      "treasuries_median_90d": 3.95,
+      "treasuries_accuracy": 27.2,
+      "gold_avg_30d": 0.52,
+      "gold_median_30d": 0.0,
+      "gold_avg_60d": 1.04,
+      "gold_median_60d": 0.0,
+      "gold_avg_90d": 1.32,
+      "gold_median_90d": 0.0,
+      "gold_accuracy": 34.6,
+      "sp500_avg_max_dd_90d": -6.3,
+      "sp500_worst_max_dd_90d": -17.07
+    },
+    "Neutral": {
+      "count": 78,
+      "multi_asset_accuracy": 80.4,
+      "sp500_avg_30d": 1.22,
+      "sp500_median_30d": 1.69,
+      "sp500_avg_60d": 2.48,
+      "sp500_median_60d": 2.4,
+      "sp500_avg_90d": 3.4,
+      "sp500_median_90d": 4.0,
+      "sp500_accuracy": 75.0,
+      "treasuries_avg_30d": -0.18,
+      "treasuries_median_30d": 0.0,
+      "treasuries_avg_60d": -0.28,
+      "treasuries_median_60d": 0.0,
+      "treasuries_avg_90d": -0.3,
+      "treasuries_median_90d": 0.0,
+      "treasuries_accuracy": 88.5,
+      "gold_avg_30d": 0.54,
+      "gold_median_30d": 0.0,
+      "gold_avg_60d": 1.07,
+      "gold_median_60d": 0.0,
+      "gold_avg_90d": 1.61,
+      "gold_median_90d": 0.0,
+      "gold_accuracy": 78.8,
+      "sp500_avg_max_dd_90d": -6.49,
+      "sp500_worst_max_dd_90d": -27.66
+    },
+    "Bear": {
+      "count": 97,
+      "multi_asset_accuracy": 47.5,
+      "sp500_avg_30d": 0.47,
+      "sp500_median_30d": 1.12,
+      "sp500_avg_60d": 1.09,
+      "sp500_median_60d": 1.56,
+      "sp500_avg_90d": 1.96,
+      "sp500_median_90d": 2.86,
+      "sp500_accuracy": 33.0,
+      "treasuries_avg_30d": 0.18,
+      "treasuries_median_30d": 0.0,
+      "treasuries_avg_60d": 0.51,
+      "treasuries_median_60d": 0.0,
+      "treasuries_avg_90d": 0.72,
+      "treasuries_median_90d": 0.07,
+      "treasuries_accuracy": 50.5,
+      "gold_avg_30d": 0.91,
+      "gold_median_30d": 0.13,
+      "gold_avg_60d": 2.25,
+      "gold_median_60d": 0.9,
+      "gold_avg_90d": 3.72,
+      "gold_median_90d": 2.3,
+      "gold_accuracy": 61.9,
+      "sp500_avg_max_dd_90d": -8.07,
+      "sp500_worst_max_dd_90d": -33.72
+    },
+    "Recession Watch": {
+      "count": 54,
+      "multi_asset_accuracy": 44.4,
+      "sp500_avg_30d": 0.17,
+      "sp500_median_30d": 0.46,
+      "sp500_avg_60d": 0.15,
+      "sp500_median_60d": 2.12,
+      "sp500_avg_90d": -0.26,
+      "sp500_median_90d": 1.11,
+      "sp500_accuracy": 44.4,
+      "treasuries_avg_30d": 0.2,
+      "treasuries_median_30d": 0.0,
+      "treasuries_avg_60d": 0.75,
+      "treasuries_median_60d": 0.0,
+      "treasuries_avg_90d": 0.99,
+      "treasuries_median_90d": 0.0,
+      "treasuries_accuracy": 42.6,
+      "gold_avg_30d": 1.07,
+      "gold_median_30d": 0.0,
+      "gold_avg_60d": 2.03,
+      "gold_median_60d": 0.0,
+      "gold_avg_90d": 2.94,
+      "gold_median_90d": 0.0,
+      "gold_accuracy": 46.3,
+      "sp500_avg_max_dd_90d": -11.02,
+      "sp500_worst_max_dd_90d": -40.71
+    }
+  },
+  "per_asset": {
+    "sp500": {
+      "label": "S&P 500",
+      "weight": 0.375,
+      "accuracy": 55.0,
+      "count": 310
+    },
+    "treasuries": {
+      "label": "Treasuries (TLT)",
+      "weight": 0.3125,
+      "accuracy": 52.6,
+      "count": 310
+    },
+    "gold": {
+      "label": "Gold",
+      "weight": 0.3125,
+      "accuracy": 56.3,
+      "count": 310
+    }
+  },
+  "per_confidence": {
+    "Medium": {
+      "count": 207,
+      "multi_asset_accuracy": 53.5
+    },
+    "Low": {
+      "count": 103,
+      "multi_asset_accuracy": 57.0
+    }
+  },
+  "transitions": {
+    "count": 25,
+    "details": [
+      {
+        "date": "2001-04-30",
+        "from": "Recession Watch",
+        "to": "Bear",
+        "sp500_90d": -0.043158,
+        "treasuries_90d": 0.0,
+        "gold_90d": 0.0,
+        "multi_asset_score": 0.375
+      },
+      {
+        "date": "2001-09-30",
+        "from": "Bear",
+        "to": "Neutral",
+        "sp500_90d": 0.099963,
+        "treasuries_90d": 0.0,
+        "gold_90d": 0.0,
+        "multi_asset_score": 0.8125
+      },
+      {
+        "date": "2003-06-30",
+        "from": "Neutral",
+        "to": "Bull",
+        "sp500_90d": 0.03777,
+        "treasuries_90d": -0.049707,
+        "gold_90d": 0.0,
+        "multi_asset_score": 0.6875
+      },
+      {
+        "date": "2005-05-31",
+        "from": "Bull",
+        "to": "Neutral",
+        "sp500_90d": 0.022608,
+        "treasuries_90d": 0.006527,
+        "gold_90d": 0.046098,
+        "multi_asset_score": 1.0
+      },
+      {
+        "date": "2006-05-31",
+        "from": "Neutral",
+        "to": "Bear",
+        "sp500_90d": 0.028603,
+        "treasuries_90d": 0.05994,
+        "gold_90d": -0.051222,
+        "multi_asset_score": 0.3125
+      },
+      {
+        "date": "2007-08-31",
+        "from": "Bear",
+        "to": "Recession Watch",
+        "sp500_90d": 0.001953,
+        "treasuries_90d": 0.080334,
+        "gold_90d": 0.176789,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2009-08-31",
+        "from": "Recession Watch",
+        "to": "Bear",
+        "sp500_90d": 0.078115,
+        "treasuries_90d": 0.00988,
+        "gold_90d": 0.238116,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2009-11-30",
+        "from": "Bear",
+        "to": "Neutral",
+        "sp500_90d": 0.023216,
+        "treasuries_90d": -0.041956,
+        "gold_90d": -0.053701,
+        "multi_asset_score": 0.8438
+      },
+      {
+        "date": "2009-12-31",
+        "from": "Neutral",
+        "to": "Bull",
+        "sp500_90d": 0.054216,
+        "treasuries_90d": 0.00235,
+        "gold_90d": 0.015283,
+        "multi_asset_score": 0.375
+      },
+      {
+        "date": "2012-05-31",
+        "from": "Bull",
+        "to": "Neutral",
+        "sp500_90d": 0.081945,
+        "treasuries_90d": -0.011878,
+        "gold_90d": 0.059161,
+        "multi_asset_score": 0.6562
+      },
+      {
+        "date": "2013-11-30",
+        "from": "Neutral",
+        "to": "Bull",
+        "sp500_90d": 0.037508,
+        "treasuries_90d": 0.056838,
+        "gold_90d": 0.085389,
+        "multi_asset_score": 0.375
+      },
+      {
+        "date": "2014-12-31",
+        "from": "Bull",
+        "to": "Bear",
+        "sp500_90d": 0.008813,
+        "treasuries_90d": 0.042006,
+        "gold_90d": 0.000704,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2016-01-31",
+        "from": "Bear",
+        "to": "Recession Watch",
+        "sp500_90d": 0.079487,
+        "treasuries_90d": 0.015127,
+        "gold_90d": 0.140583,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2017-02-28",
+        "from": "Recession Watch",
+        "to": "Bear",
+        "sp500_90d": 0.025714,
+        "treasuries_90d": 0.025566,
+        "gold_90d": 0.007632,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2017-04-30",
+        "from": "Bear",
+        "to": "Neutral",
+        "sp500_90d": 0.038937,
+        "treasuries_90d": 0.028739,
+        "gold_90d": 0.009025,
+        "multi_asset_score": 1.0
+      },
+      {
+        "date": "2018-04-30",
+        "from": "Neutral",
+        "to": "Bear",
+        "sp500_90d": 0.063124,
+        "treasuries_90d": 0.006385,
+        "gold_90d": -0.071755,
+        "multi_asset_score": 0.3125
+      },
+      {
+        "date": "2019-01-31",
+        "from": "Bear",
+        "to": "Neutral",
+        "sp500_90d": 0.08582,
+        "treasuries_90d": 0.024664,
+        "gold_90d": -0.03487,
+        "multi_asset_score": 0.8125
+      },
+      {
+        "date": "2019-03-31",
+        "from": "Neutral",
+        "to": "Bear",
+        "sp500_90d": 0.039422,
+        "treasuries_90d": 0.069792,
+        "gold_90d": 0.074796,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2020-03-31",
+        "from": "Bear",
+        "to": "Recession Watch",
+        "sp500_90d": 0.18642,
+        "treasuries_90d": 0.002572,
+        "gold_90d": 0.125498,
+        "multi_asset_score": 0.625
+      },
+      {
+        "date": "2020-05-31",
+        "from": "Recession Watch",
+        "to": "Neutral",
+        "sp500_90d": 0.148248,
+        "treasuries_90d": 0.001731,
+        "gold_90d": 0.129354,
+        "multi_asset_score": 0.6562
+      },
+      {
+        "date": "2020-10-31",
+        "from": "Neutral",
+        "to": "Bear",
+        "sp500_90d": 0.125522,
+        "treasuries_90d": -0.039515,
+        "gold_90d": -0.02979,
+        "multi_asset_score": 0.0
+      },
+      {
+        "date": "2020-11-30",
+        "from": "Bear",
+        "to": "Bull",
+        "sp500_90d": 0.080596,
+        "treasuries_90d": -0.114578,
+        "gold_90d": -0.030839,
+        "multi_asset_score": 1.0
+      },
+      {
+        "date": "2022-03-31",
+        "from": "Bull",
+        "to": "Bear",
+        "sp500_90d": -0.154231,
+        "treasuries_90d": -0.133542,
+        "gold_90d": -0.061777,
+        "multi_asset_score": 0.375
+      },
+      {
+        "date": "2025-03-31",
+        "from": "Bear",
+        "to": "Neutral",
+        "sp500_90d": 0.107772,
+        "treasuries_90d": -0.01984,
+        "gold_90d": 0.057923,
+        "multi_asset_score": 0.6562
+      },
+      {
+        "date": "2025-10-31",
+        "from": "Neutral",
+        "to": "Bear",
+        "sp500_90d": 0.020571,
+        "treasuries_90d": -0.018784,
+        "gold_90d": 0.347115,
+        "multi_asset_score": 0.3125
+      }
+    ],
+    "directional_accuracy": 52.0
+  }
+}
