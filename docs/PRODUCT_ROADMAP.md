@@ -182,6 +182,59 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
+## Phase 10: Market Conditions Engine — PLANNED
+
+**Milestone goal:** Replace the k-means regime classifier (52.3/100 backtest score) with a multi-dimensional market conditions engine. Backend-only — no UI changes. Old regime system continues running in parallel.
+
+**Reference spec:** [MARKET-CONDITIONS-FRAMEWORK.md](MARKET-CONDITIONS-FRAMEWORK.md) — contains full calculation methodology, data requirements, scoring framework, and validation strategy.
+
+**Why this matters:** The current regime model has four structural failures: central bank intervention reverses expected outcomes (Bear regime saw S&P rise 67% of the time), stock-bond correlation flip (2022), gold's secular uptrend, and no distinction between demand crashes (2008: buy bonds) and inflation crashes (2022: sell bonds). These are not tunable — they require a fundamentally different approach.
+
+### Phase 10 Features
+
+| Feature | Title | Priority | Scope |
+|---------|-------|----------|-------|
+| #293 | Market Conditions Data Pipeline | P1 | Add ~18 new FRED series (global liquidity, growth/inflation, risk, policy stance), FX conversion for ECB/BOJ, unit alignment |
+| #294 | Market Conditions Calculation Engine | P1 | Four dimension engines (Liquidity, Growth×Inflation, Risk, Policy) + single verdict classifier in new `market_conditions.py` |
+| #295 | Market Conditions Backtest Validation | P1 | Extend walk-forward framework with new expectation tables, validate against 52.3/100 baseline, CPCV + DSR on winning config |
+| #296 | Surface New FRED Series in Explorer Page | P2 | Add all ~18 new FRED series to Explorer page, organized by conditions dimension |
+
+### Hard Gate
+
+**The backtest validation is a hard gate.** If the new model does not meaningfully beat 52.3/100 in walk-forward validation, do not proceed to Phase 11. Iterate on the model first.
+
+### Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Walk-forward composite score | Meaningfully above 52.3/100 (current k-means baseline) |
+| Quadrant stability | Average duration ≥ 3 months |
+| Economic plausibility | March 2020 ≠ Goldilocks, 2022 ≠ Deflation Risk |
+| Data pipeline reliability | All ~27 FRED series collecting without error |
+
+---
+
+## Phase 11: Market Conditions UI & Migration — PLANNED
+
+**Milestone goal:** Ship the market conditions framework to users. Redesign the homepage around the conditions engine, migrate all category pages, enhance AI briefings, and deprecate the old regime system.
+
+**Prerequisite:** Phase 10 backtest validation passes the hard gate.
+
+**Designer involvement required.** The [MARKET-CONDITIONS-FRAMEWORK.md](MARKET-CONDITIONS-FRAMEWORK.md) contains wireframes and design vision (Sections 7-9) as a starting point. Designer creates formal design specs for all UI features before implementation begins.
+
+### Anticipated Scope
+
+- **Homepage redesign** — AI briefing to top, conditions-at-a-glance (verdict + 4 dimension cards), dimension detail sections with progressive disclosure, portfolio implications matrix
+- **Conditions strip** — Replace regime strip on every page with verdict + dimension summary
+- **Category page migration** — Quadrant-based context sentences and signal annotations for all 6 category pages
+- **AI briefing enhancement** — Four-dimension conditions context, rule-based fallback narrative
+- **Old system deprecation** — **Required, not optional.** Remove `regime_detection.py`, `regime_config.py`, `regime_implications_config.py`, old cache files, regime-specific CSS/templates, and all dead code paths. Phase 11 does not ship with two parallel systems.
+- **AI integration (briefing + chatbot)** — Update daily briefing prompts and chatbot context to use new conditions engine data. Both surfaces must reason about all four dimensions, not just the old regime label.
+
+*Feature breakdown deferred until Phase 10 validates the model and Designer creates UI specs.*
+
+---
+
 ## What We Are NOT Building
 
 These directions have been evaluated and dismissed. Do not re-propose without new evidence:
@@ -200,6 +253,8 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Phase 4 | Alert engagement: % users with active alerts; alert visibility without dropdown |
 | Phase 5 | Regime accuracy: backtested signal performance in regime-conditioned vs. raw mode |
 | Phase 6 | Regime → action gap: users who view Regime Implications Panel after checking regime score |
+| Phase 10 | Model accuracy: walk-forward composite score meaningfully above 52.3/100 baseline |
+| Phase 11 | Conditions engagement: users who expand dimension details from verdict card |
 
 ---
 
