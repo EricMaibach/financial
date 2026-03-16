@@ -93,10 +93,10 @@ REGIME_IMPLICATIONS = {
             {
                 'key': 'crypto',
                 'display_name': 'Crypto',
-                'signal': 'outperform',
+                'signal': 'neutral',
                 'annotation': (
-                    'Risk appetite supports crypto alongside equities in bull conditions. '
-                    'Pattern based on 2010\u20132025 data.'
+                    'Crypto may benefit if liquidity conditions are loose, but macro regime alone '
+                    'is not a reliable predictor. Direction depends on global M2 and monetary policy.'
                 ),
                 'leading_sectors': None,
                 'lagging_sectors': None,
@@ -166,8 +166,8 @@ REGIME_IMPLICATIONS = {
                 'display_name': 'Crypto',
                 'signal': 'neutral',
                 'annotation': (
-                    'Correlation with equities moderates; limited directional bias. '
-                    'Pattern based on 2010\u20132025 data.'
+                    'Crypto driven primarily by its own halving/adoption cycle and global liquidity. '
+                    'Macro regime provides limited directional signal.'
                 ),
                 'leading_sectors': None,
                 'lagging_sectors': None,
@@ -235,10 +235,10 @@ REGIME_IMPLICATIONS = {
             {
                 'key': 'crypto',
                 'display_name': 'Crypto',
-                'signal': 'strong_underperform',
+                'signal': 'neutral',
                 'annotation': (
-                    'High beta to equities; crypto sells off sharply in risk-off conditions. '
-                    'Pattern based on 2010\u20132025 data.'
+                    'Crypto behavior depends on monetary policy response — may rally if central banks '
+                    'inject liquidity. Direction driven by M2, not risk sentiment alone.'
                 ),
                 'leading_sectors': None,
                 'lagging_sectors': None,
@@ -306,10 +306,10 @@ REGIME_IMPLICATIONS = {
             {
                 'key': 'crypto',
                 'display_name': 'Crypto',
-                'signal': 'underperform',
+                'signal': 'neutral',
                 'annotation': (
-                    'Risk-off sentiment weighs on crypto; correlates closely with equities. '
-                    'Pattern based on 2010\u20132025 data.'
+                    'Expect initial volatility, but policy response (QE/stimulus) historically triggers '
+                    'recovery. Direction depends on liquidity conditions, not risk sentiment alone.'
                 ),
                 'leading_sectors': None,
                 'lagging_sectors': None,
