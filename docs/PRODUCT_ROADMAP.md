@@ -24,7 +24,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 9 — Depth & Polish
+**Phase:** Phase 10 — Market Conditions Engine
 **State:** BUILDING
 
 ---
@@ -137,16 +137,16 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 9: Depth & Polish — IN PROGRESS
+## Phase 9: Depth & Polish ✅ COMPLETE
 
 **Milestone goal:** Build on Phase 8 council findings, add property macro coverage, a persistent news pipeline, contextual AI entry points, and address design system polish.
 
-### Phase 9 Active Work
+### Phase 9 Work
 
-**Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — stories in progress
+✅ **Feature #255**: Property Macro Panel — Residential & Farmland Indicators (P2) — **Complete**
 - Case-Shiller HPI, CPI Rent trend, Rental Vacancy Rate, USDA NASS farmland $/acre; regime-contextualized; FRED/NASS only
 - US-255.1 (#268): Backend data pipeline (FRED + NASS + interpretation config) — merged ✅
-- US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — `ready-for-implementation`
+- US-255.2 (#269): Property page frontend (template, metric cards, percentile bars, collapsible sections) — merged ✅
 
 ✅ **Feature #256**: Alert Severity Design Tokens — CSS Component + Card Header Fix (P3) — **Complete**
 - Extract 3 severity hex values to named CSS tokens; shared component file; fix Smart Market Alerts card header from bg-danger
