@@ -1,15 +1,16 @@
 """
-Tests for US-294.3: Verdict classifier, asset expectations, and cache output.
+Tests for market conditions engine: asset expectations, cache output, and integration.
+
+Updated for US-314.1: verdict classifier removed; quadrant is the headline.
 
 Tests cover:
-1. Dimension score mapping (-2 to +2)
-2. Weighted verdict score computation
-3. Verdict classification thresholds
-4. Stressed override rule
-5. Asset class expectations tables
-6. Cache output format and I/O
-7. compute_market_conditions() integration
-8. Backtest compatibility
+1. Asset class expectations tables
+2. compute_market_conditions() integration (quadrant as headline)
+3. Cache output format and I/O
+4. Realistic scenario tests
+5. Edge cases
+6. Market conditions history
+7. NROU deduplication
 """
 
 import json
@@ -27,18 +28,7 @@ if SIGNALTRACKERS_DIR not in sys.path:
     sys.path.insert(0, SIGNALTRACKERS_DIR)
 
 from market_conditions import (
-    _map_dimension_score,
-    _compute_verdict_score,
-    _classify_verdict,
     _build_asset_expectations,
-    _LIQUIDITY_SCORE_MAP,
-    _QUADRANT_SCORE_MAP,
-    _RISK_SCORE_MAP,
-    _POLICY_SCORE_MAP,
-    _WEIGHT_LIQUIDITY,
-    _WEIGHT_QUADRANT,
-    _WEIGHT_RISK,
-    _WEIGHT_POLICY,
     _QUADRANT_EXPECTATIONS,
     compute_market_conditions,
     update_market_conditions_cache,
@@ -58,187 +48,7 @@ from market_conditions import (
 
 
 # ============================================================================
-# 1. Dimension Score Mapping
-# ============================================================================
-
-class TestDimensionScoreMapping:
-    """Test that each dimension state maps to the correct -2 to +2 score."""
-
-    def test_liquidity_strongly_expanding(self):
-        assert _map_dimension_score('Strongly Expanding', _LIQUIDITY_SCORE_MAP) == 2.0
-
-    def test_liquidity_expanding(self):
-        assert _map_dimension_score('Expanding', _LIQUIDITY_SCORE_MAP) == 1.0
-
-    def test_liquidity_neutral(self):
-        assert _map_dimension_score('Neutral', _LIQUIDITY_SCORE_MAP) == 0.0
-
-    def test_liquidity_contracting(self):
-        assert _map_dimension_score('Contracting', _LIQUIDITY_SCORE_MAP) == -1.0
-
-    def test_liquidity_strongly_contracting(self):
-        assert _map_dimension_score('Strongly Contracting', _LIQUIDITY_SCORE_MAP) == -2.0
-
-    def test_quadrant_goldilocks(self):
-        assert _map_dimension_score('Goldilocks', _QUADRANT_SCORE_MAP) == 2.0
-
-    def test_quadrant_reflation(self):
-        assert _map_dimension_score('Reflation', _QUADRANT_SCORE_MAP) == 1.0
-
-    def test_quadrant_deflation_risk(self):
-        assert _map_dimension_score('Deflation Risk', _QUADRANT_SCORE_MAP) == -1.0
-
-    def test_quadrant_stagflation(self):
-        assert _map_dimension_score('Stagflation', _QUADRANT_SCORE_MAP) == -2.0
-
-    def test_risk_calm(self):
-        assert _map_dimension_score('Calm', _RISK_SCORE_MAP) == 1.0
-
-    def test_risk_normal(self):
-        assert _map_dimension_score('Normal', _RISK_SCORE_MAP) == 0.0
-
-    def test_risk_elevated(self):
-        assert _map_dimension_score('Elevated', _RISK_SCORE_MAP) == -1.0
-
-    def test_risk_stressed(self):
-        assert _map_dimension_score('Stressed', _RISK_SCORE_MAP) == -2.0
-
-    def test_policy_accommodative(self):
-        assert _map_dimension_score('Accommodative', _POLICY_SCORE_MAP) == 1.0
-
-    def test_policy_neutral(self):
-        assert _map_dimension_score('Neutral', _POLICY_SCORE_MAP) == 0.0
-
-    def test_policy_restrictive(self):
-        assert _map_dimension_score('Restrictive', _POLICY_SCORE_MAP) == -1.0
-
-    def test_unknown_state_returns_none(self):
-        assert _map_dimension_score('Unknown', _LIQUIDITY_SCORE_MAP) is None
-
-    def test_all_maps_cover_full_range(self):
-        """Each map should have scores spanning from negative to positive."""
-        for name, smap in [
-            ('liquidity', _LIQUIDITY_SCORE_MAP),
-            ('quadrant', _QUADRANT_SCORE_MAP),
-            ('risk', _RISK_SCORE_MAP),
-            ('policy', _POLICY_SCORE_MAP),
-        ]:
-            values = list(smap.values())
-            assert min(values) < 0, f'{name} map has no negative scores'
-            assert max(values) > 0, f'{name} map has no positive scores'
-
-
-# ============================================================================
-# 2. Weighted Verdict Score
-# ============================================================================
-
-class TestVerdictScore:
-    """Test the weighted composite computation."""
-
-    def test_weights_sum_to_one(self):
-        total = _WEIGHT_LIQUIDITY + _WEIGHT_QUADRANT + _WEIGHT_RISK + _WEIGHT_POLICY
-        assert abs(total - 1.0) < 1e-9
-
-    def test_all_max_positive(self):
-        """All dimensions at max positive → high score."""
-        score = _compute_verdict_score(2.0, 2.0, 1.0, 1.0)
-        # 0.35*2 + 0.35*2 + 0.20*1 + 0.10*1 = 0.7 + 0.7 + 0.2 + 0.1 = 1.7
-        assert abs(score - 1.7) < 1e-9
-
-    def test_all_max_negative(self):
-        """All dimensions at max negative → low score."""
-        score = _compute_verdict_score(-2.0, -2.0, -2.0, -1.0)
-        # 0.35*(-2) + 0.35*(-2) + 0.20*(-2) + 0.10*(-1) = -0.7 + -0.7 + -0.4 + -0.1 = -1.9
-        assert abs(score - (-1.9)) < 1e-9
-
-    def test_all_neutral(self):
-        """All neutral → score is 0."""
-        score = _compute_verdict_score(0.0, 0.0, 0.0, 0.0)
-        assert abs(score) < 1e-9
-
-    def test_liquidity_dominance(self):
-        """Liquidity alone at +2, rest neutral → 0.7."""
-        score = _compute_verdict_score(2.0, 0.0, 0.0, 0.0)
-        assert abs(score - 0.7) < 1e-9
-
-    def test_quadrant_dominance(self):
-        """Quadrant alone at +2, rest neutral → 0.7."""
-        score = _compute_verdict_score(0.0, 2.0, 0.0, 0.0)
-        assert abs(score - 0.7) < 1e-9
-
-    def test_risk_contribution(self):
-        """Risk alone at -2, rest neutral → -0.4."""
-        score = _compute_verdict_score(0.0, 0.0, -2.0, 0.0)
-        assert abs(score - (-0.4)) < 1e-9
-
-    def test_policy_contribution(self):
-        """Policy alone at +1, rest neutral → 0.1."""
-        score = _compute_verdict_score(0.0, 0.0, 0.0, 1.0)
-        assert abs(score - 0.1) < 1e-9
-
-    def test_mixed_scenario(self):
-        """Expanding liquidity, Reflation, Elevated risk, Restrictive policy."""
-        score = _compute_verdict_score(1.0, 1.0, -1.0, -1.0)
-        # 0.35*1 + 0.35*1 + 0.20*(-1) + 0.10*(-1) = 0.35 + 0.35 - 0.2 - 0.1 = 0.4
-        assert abs(score - 0.4) < 1e-9
-
-
-# ============================================================================
-# 3. Verdict Classification Thresholds
-# ============================================================================
-
-class TestVerdictClassification:
-    """Test verdict threshold boundaries."""
-
-    def test_favorable_above_075(self):
-        assert _classify_verdict(0.76, 'Normal') == 'Favorable'
-
-    def test_favorable_at_high(self):
-        assert _classify_verdict(1.7, 'Calm') == 'Favorable'
-
-    def test_mixed_at_076(self):
-        """0.75 is NOT > 0.75, so it's Mixed."""
-        assert _classify_verdict(0.75, 'Normal') == 'Mixed'
-
-    def test_mixed_at_zero(self):
-        assert _classify_verdict(0.0, 'Normal') == 'Mixed'
-
-    def test_mixed_at_neg_024(self):
-        assert _classify_verdict(-0.24, 'Normal') == 'Mixed'
-
-    def test_cautious_at_neg_025(self):
-        """−0.25 is NOT > −0.25, so it's Cautious."""
-        assert _classify_verdict(-0.25, 'Normal') == 'Cautious'
-
-    def test_cautious_at_neg_05(self):
-        assert _classify_verdict(-0.5, 'Elevated') == 'Cautious'
-
-    def test_cautious_at_neg_099(self):
-        assert _classify_verdict(-0.99, 'Normal') == 'Cautious'
-
-    def test_defensive_at_neg_10(self):
-        """−1.0 is NOT > −1.0, so it's Defensive."""
-        assert _classify_verdict(-1.0, 'Normal') == 'Defensive'
-
-    def test_defensive_at_neg_19(self):
-        assert _classify_verdict(-1.9, 'Normal') == 'Defensive'
-
-    def test_stressed_override_favorable_score(self):
-        """Even with a score of +1.7, Stressed → Defensive."""
-        assert _classify_verdict(1.7, 'Stressed') == 'Defensive'
-
-    def test_stressed_override_mixed_score(self):
-        assert _classify_verdict(0.5, 'Stressed') == 'Defensive'
-
-    def test_stressed_override_cautious_score(self):
-        assert _classify_verdict(-0.5, 'Stressed') == 'Defensive'
-
-    def test_stressed_override_already_defensive(self):
-        assert _classify_verdict(-1.5, 'Stressed') == 'Defensive'
-
-
-# ============================================================================
-# 4. Asset Class Expectations
+# 1. Asset Class Expectations
 # ============================================================================
 
 class TestAssetExpectations:
@@ -259,16 +69,12 @@ class TestAssetExpectations:
         """Worst case: Stagflation + Stressed."""
         exps = _build_asset_expectations('Stagflation', 'Strongly Contracting', 'Stressed')
         by_asset = {e['asset']: e for e in exps}
-        # S&P 500: already negative from stagflation, stays negative; override conviction
         assert by_asset['sp500']['direction'] == 'negative'
         assert by_asset['sp500']['conviction'] == 'override'
-        # Treasuries: negative from stagflation, weak magnitude
         assert by_asset['treasuries']['direction'] == 'negative'
         assert by_asset['treasuries']['magnitude'] == 'weak'
-        # Gold: positive from stagflation, not overridden to weak
         assert by_asset['gold']['direction'] == 'positive'
         assert by_asset['gold']['conviction'] == 'override'
-        # Bitcoin: negative from Strongly Contracting liquidity; Stressed → weak/override
         assert by_asset['bitcoin']['direction'] == 'negative'
         assert by_asset['bitcoin']['magnitude'] == 'weak'
         assert by_asset['bitcoin']['conviction'] == 'override'
@@ -365,7 +171,7 @@ class TestAssetExpectations:
 
 
 # ============================================================================
-# 5. compute_market_conditions() Integration
+# 2. compute_market_conditions() Integration
 # ============================================================================
 
 def _mock_liquidity(state='Expanding', score=0.8):
@@ -397,13 +203,13 @@ def _mock_policy(stance='Neutral', direction='Paused'):
 
 
 class TestComputeMarketConditions:
-    """Integration tests for the main entry point."""
+    """Integration tests — quadrant is the headline classification."""
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_favorable_conditions(self, mock_liq, mock_quad, mock_risk, mock_pol):
+    def test_goldilocks_quadrant(self, mock_liq, mock_quad, mock_risk, mock_pol):
         mock_liq.return_value = _mock_liquidity('Strongly Expanding')
         mock_quad.return_value = _mock_quadrant('Goldilocks')
         mock_risk.return_value = _mock_risk('Calm')
@@ -411,56 +217,83 @@ class TestComputeMarketConditions:
 
         result = compute_market_conditions()
         assert result is not None
-        assert result.verdict == 'Favorable'
-        # 0.35*2 + 0.35*2 + 0.20*1 + 0.10*1 = 1.7
-        assert abs(result.verdict_score - 1.7) < 1e-3
+        assert result.quadrant == 'Goldilocks'
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_defensive_stressed_override(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        """Even with good liquidity and quadrant, Stressed → Defensive."""
-        mock_liq.return_value = _mock_liquidity('Strongly Expanding')
-        mock_quad.return_value = _mock_quadrant('Goldilocks')
-        mock_risk.return_value = _mock_risk('Stressed', score=7)
-        mock_pol.return_value = _mock_policy('Accommodative')
-
-        result = compute_market_conditions()
-        assert result is not None
-        assert result.verdict == 'Defensive'
-
-    @patch('market_conditions.compute_policy')
-    @patch('market_conditions.compute_risk')
-    @patch('market_conditions.compute_quadrant')
-    @patch('market_conditions.compute_liquidity')
-    def test_mixed_conditions(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        mock_liq.return_value = _mock_liquidity('Expanding')
-        mock_quad.return_value = _mock_quadrant('Reflation')
+    def test_stagflation_quadrant(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        mock_liq.return_value = _mock_liquidity('Contracting')
+        mock_quad.return_value = _mock_quadrant('Stagflation')
         mock_risk.return_value = _mock_risk('Elevated')
         mock_pol.return_value = _mock_policy('Restrictive')
 
         result = compute_market_conditions()
         assert result is not None
-        # 0.35*1 + 0.35*1 + 0.20*(-1) + 0.10*(-1) = 0.4
-        assert result.verdict == 'Mixed'
-        assert abs(result.verdict_score - 0.4) < 1e-3
+        assert result.quadrant == 'Stagflation'
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_cautious_conditions(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        mock_liq.return_value = _mock_liquidity('Contracting')
-        mock_quad.return_value = _mock_quadrant('Stagflation')
+    def test_reflation_quadrant(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        mock_liq.return_value = _mock_liquidity('Expanding')
+        mock_quad.return_value = _mock_quadrant('Reflation')
         mock_risk.return_value = _mock_risk('Normal')
-        mock_pol.return_value = _mock_policy('Neutral')
+        mock_pol.return_value = _mock_policy('Accommodative')
 
         result = compute_market_conditions()
         assert result is not None
-        # 0.35*(-1) + 0.35*(-2) + 0.20*0 + 0.10*0 = -1.05
-        assert result.verdict == 'Defensive'
-        assert result.verdict_score < -1.0
+        assert result.quadrant == 'Reflation'
+
+    @patch('market_conditions.compute_policy')
+    @patch('market_conditions.compute_risk')
+    @patch('market_conditions.compute_quadrant')
+    @patch('market_conditions.compute_liquidity')
+    def test_deflation_risk_quadrant(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        mock_liq.return_value = _mock_liquidity('Neutral')
+        mock_quad.return_value = _mock_quadrant('Deflation Risk')
+        mock_risk.return_value = _mock_risk('Normal')
+        mock_pol.return_value = _mock_policy('Accommodative')
+
+        result = compute_market_conditions()
+        assert result is not None
+        assert result.quadrant == 'Deflation Risk'
+
+    @patch('market_conditions.compute_policy')
+    @patch('market_conditions.compute_risk')
+    @patch('market_conditions.compute_quadrant')
+    @patch('market_conditions.compute_liquidity')
+    def test_no_verdict_fields(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        """Result should NOT have verdict or verdict_score fields."""
+        mock_liq.return_value = _mock_liquidity()
+        mock_quad.return_value = _mock_quadrant()
+        mock_risk.return_value = _mock_risk()
+        mock_pol.return_value = _mock_policy()
+
+        result = compute_market_conditions()
+        assert result is not None
+        assert not hasattr(result, 'verdict')
+        assert not hasattr(result, 'verdict_score')
+
+    @patch('market_conditions.compute_policy')
+    @patch('market_conditions.compute_risk')
+    @patch('market_conditions.compute_quadrant')
+    @patch('market_conditions.compute_liquidity')
+    def test_no_mapped_score_fields(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        """Result should NOT have dimension mapped score fields (removed with verdict)."""
+        mock_liq.return_value = _mock_liquidity()
+        mock_quad.return_value = _mock_quadrant()
+        mock_risk.return_value = _mock_risk()
+        mock_pol.return_value = _mock_policy()
+
+        result = compute_market_conditions()
+        assert result is not None
+        assert not hasattr(result, 'liquidity_mapped')
+        assert not hasattr(result, 'quadrant_mapped')
+        assert not hasattr(result, 'risk_mapped')
+        assert not hasattr(result, 'policy_mapped')
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -499,7 +332,6 @@ class TestComputeMarketConditions:
         result = compute_market_conditions()
         assert result is not None
         assert result.risk_state == 'Normal'
-        assert result.risk_mapped == 0.0
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -515,7 +347,6 @@ class TestComputeMarketConditions:
         assert result is not None
         assert result.policy_stance == 'Neutral'
         assert result.policy_direction == 'Paused'
-        assert result.policy_mapped == 0.0
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -537,30 +368,7 @@ class TestComputeMarketConditions:
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_backtest_compatibility(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        """Result should have .verdict and .verdict_score for backtest scorer."""
-        mock_liq.return_value = _mock_liquidity()
-        mock_quad.return_value = _mock_quadrant()
-        mock_risk.return_value = _mock_risk()
-        mock_pol.return_value = _mock_policy()
-
-        result = compute_market_conditions()
-        assert result is not None
-        assert hasattr(result, 'verdict')
-        assert hasattr(result, 'verdict_score')
-        assert isinstance(result.verdict, str)
-        assert isinstance(result.verdict_score, float)
-
-    @patch('market_conditions.compute_policy')
-    @patch('market_conditions.compute_risk')
-    @patch('market_conditions.compute_quadrant')
-    @patch('market_conditions.compute_liquidity')
     def test_as_of_uses_today_not_dimension_dates(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        """Live mode uses today's date, not max(dimension dates).
-
-        Quarterly FRED series (NROU, GDPPOT) have forward-looking dates that
-        would key history entries in the future if we used max(dimension dates).
-        """
         from datetime import date as _date
 
         mock_liq.return_value = _mock_liquidity()
@@ -581,7 +389,6 @@ class TestComputeMarketConditions:
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
     def test_as_of_uses_explicit_date_for_backtest(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        """Backtest mode uses the provided as_of_date, not today."""
         mock_liq.return_value = _mock_liquidity()
         mock_quad.return_value = _mock_quadrant()
         mock_risk.return_value = _mock_risk()
@@ -593,7 +400,7 @@ class TestComputeMarketConditions:
 
 
 # ============================================================================
-# 6. Cache I/O
+# 3. Cache I/O
 # ============================================================================
 
 class TestCacheIO:
@@ -619,7 +426,9 @@ class TestCacheIO:
                  patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp_history):
                 cache_data = update_market_conditions_cache()
                 assert cache_data is not None
-                assert cache_data['verdict'] == 'Favorable'
+                assert cache_data['quadrant'] == 'Goldilocks'
+                assert 'verdict' not in cache_data
+                assert 'verdict_score' not in cache_data
                 assert 'dimensions' in cache_data
                 assert 'asset_expectations' in cache_data
                 assert 'updated_at' in cache_data
@@ -627,7 +436,7 @@ class TestCacheIO:
                 # Read back
                 loaded = get_market_conditions()
                 assert loaded is not None
-                assert loaded['verdict'] == 'Favorable'
+                assert loaded['quadrant'] == 'Goldilocks'
         finally:
             for p in (tmp_path, tmp_history):
                 if os.path.exists(p):
@@ -653,15 +462,16 @@ class TestCacheIO:
                  patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp_history):
                 cache_data = update_market_conditions_cache()
 
-                # Verify all required keys
-                assert 'verdict' in cache_data
-                assert 'verdict_score' in cache_data
+                # Verify all required keys (no verdict)
+                assert 'quadrant' in cache_data
+                assert 'verdict' not in cache_data
+                assert 'verdict_score' not in cache_data
                 assert 'dimensions' in cache_data
                 assert 'asset_expectations' in cache_data
                 assert 'as_of' in cache_data
                 assert 'updated_at' in cache_data
 
-                # Verify dimension structure
+                # Verify dimension structure (no mapped_score)
                 dims = cache_data['dimensions']
                 assert 'liquidity' in dims
                 assert 'quadrant' in dims
@@ -669,14 +479,11 @@ class TestCacheIO:
                 assert 'policy' in dims
 
                 assert dims['liquidity']['state'] == 'Neutral'
-                assert dims['liquidity']['mapped_score'] == 0.0
+                assert 'mapped_score' not in dims['liquidity']
                 assert dims['quadrant']['state'] == 'Reflation'
-                assert dims['quadrant']['mapped_score'] == 1.0
                 assert dims['risk']['state'] == 'Elevated'
-                assert dims['risk']['mapped_score'] == -1.0
                 assert dims['policy']['stance'] == 'Restrictive'
                 assert dims['policy']['direction'] == 'Paused'
-                assert dims['policy']['mapped_score'] == -1.0
 
                 # Verify asset expectations
                 assert len(cache_data['asset_expectations']) == 4
@@ -698,7 +505,7 @@ class TestCacheIO:
 
 
 # ============================================================================
-# 7. Scenario Tests (Realistic Combinations)
+# 4. Scenario Tests (Realistic Combinations)
 # ============================================================================
 
 class TestRealisticScenarios:
@@ -717,8 +524,7 @@ class TestRealisticScenarios:
 
         result = compute_market_conditions()
         assert result is not None
-        # Stressed override → Defensive regardless of score
-        assert result.verdict == 'Defensive'
+        assert result.quadrant == 'Stagflation'
         # S&P 500 expectation should be negative (Stressed override)
         sp = next(e for e in result.asset_expectations if e['asset'] == 'sp500')
         assert sp['direction'] == 'negative'
@@ -736,7 +542,7 @@ class TestRealisticScenarios:
 
         result = compute_market_conditions()
         assert result is not None
-        assert result.verdict == 'Favorable'
+        assert result.quadrant == 'Reflation'
         sp = next(e for e in result.asset_expectations if e['asset'] == 'sp500')
         assert sp['direction'] == 'positive'
 
@@ -753,16 +559,19 @@ class TestRealisticScenarios:
 
         result = compute_market_conditions()
         assert result is not None
-        # 0.35*(-1) + 0.35*(-2) + 0.20*(-1) + 0.10*(-1) = -1.35
-        assert result.verdict == 'Defensive'
-        assert result.verdict_score < -1.0
+        assert result.quadrant == 'Stagflation'
+        # Stagflation expectations
+        sp = next(e for e in result.asset_expectations if e['asset'] == 'sp500')
+        assert sp['direction'] == 'negative'
+        treas = next(e for e in result.asset_expectations if e['asset'] == 'treasuries')
+        assert treas['direction'] == 'negative'  # Stagflation → bonds down too
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
     def test_goldilocks_mild(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        """Goldilocks but neutral everything else → Mixed."""
+        """Goldilocks with neutral everything else."""
         mock_liq.return_value = _mock_liquidity('Neutral')
         mock_quad.return_value = _mock_quadrant('Goldilocks')
         mock_risk.return_value = _mock_risk('Normal')
@@ -770,8 +579,7 @@ class TestRealisticScenarios:
 
         result = compute_market_conditions()
         assert result is not None
-        # 0.35*0 + 0.35*2 + 0.20*0 + 0.10*0 = 0.7
-        assert result.verdict == 'Mixed'  # 0.7 is NOT > 0.75
+        assert result.quadrant == 'Goldilocks'
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -786,15 +594,13 @@ class TestRealisticScenarios:
 
         result = compute_market_conditions()
         assert result is not None
-        # 0.35*0 + 0.35*(-1) + 0.20*0 + 0.10*1 ≈ -0.25 (fp: -0.2499...)
-        # Floating point makes this slightly > -0.25, so Mixed
-        assert result.verdict == 'Mixed'
+        assert result.quadrant == 'Deflation Risk'
         treas = next(e for e in result.asset_expectations if e['asset'] == 'treasuries')
         assert treas['direction'] == 'positive'  # Flight to safety in deflation
 
 
 # ============================================================================
-# 8. Edge Cases
+# 5. Edge Cases
 # ============================================================================
 
 class TestEdgeCases:
@@ -813,26 +619,9 @@ class TestEdgeCases:
 
         result = compute_market_conditions()
         assert result is not None
-        # 0.35*1 + 0.35*2 + 0.20*0 + 0.10*0 = 1.05
-        assert result.verdict == 'Favorable'
-
-    @patch('market_conditions.compute_policy')
-    @patch('market_conditions.compute_risk')
-    @patch('market_conditions.compute_quadrant')
-    @patch('market_conditions.compute_liquidity')
-    def test_verdict_score_is_rounded(self, mock_liq, mock_quad, mock_risk, mock_pol):
-        mock_liq.return_value = _mock_liquidity('Expanding')
-        mock_quad.return_value = _mock_quadrant('Reflation')
-        mock_risk.return_value = _mock_risk('Normal')
-        mock_pol.return_value = _mock_policy('Neutral')
-
-        result = compute_market_conditions()
-        assert result is not None
-        # Should be rounded to 4 decimal places
-        score_str = str(result.verdict_score)
-        if '.' in score_str:
-            decimals = len(score_str.split('.')[1])
-            assert decimals <= 4
+        assert result.quadrant == 'Goldilocks'
+        assert result.risk_state == 'Normal'
+        assert result.policy_stance == 'Neutral'
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -864,24 +653,27 @@ class TestEdgeCases:
 
         result = compute_market_conditions()
         assert result is not None
-        # Check all fields exist
-        assert hasattr(result, 'verdict')
-        assert hasattr(result, 'verdict_score')
-        assert hasattr(result, 'liquidity_state')
+        # Quadrant headline
         assert hasattr(result, 'quadrant')
+        # Supporting dimensions
+        assert hasattr(result, 'liquidity_state')
         assert hasattr(result, 'risk_state')
         assert hasattr(result, 'policy_stance')
         assert hasattr(result, 'policy_direction')
-        assert hasattr(result, 'liquidity_mapped')
-        assert hasattr(result, 'quadrant_mapped')
-        assert hasattr(result, 'risk_mapped')
-        assert hasattr(result, 'policy_mapped')
+        # Expectations and metadata
         assert hasattr(result, 'asset_expectations')
         assert hasattr(result, 'as_of')
+        # No verdict fields
+        assert not hasattr(result, 'verdict')
+        assert not hasattr(result, 'verdict_score')
+        assert not hasattr(result, 'liquidity_mapped')
+        assert not hasattr(result, 'quadrant_mapped')
+        assert not hasattr(result, 'risk_mapped')
+        assert not hasattr(result, 'policy_mapped')
 
 
 # ============================================================================
-# 9. Market Conditions History
+# 6. Market Conditions History
 # ============================================================================
 
 class TestConditionsHistory:
@@ -906,7 +698,7 @@ class TestConditionsHistory:
             tmp = f.name
         try:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
-                data = {'2025-01-15': {'verdict': 'Mixed', 'verdict_score': 0.4}}
+                data = {'2025-01-15': {'quadrant': 'Goldilocks'}}
                 _save_conditions_history(data)
                 loaded = _load_conditions_history()
                 assert loaded == data
@@ -919,17 +711,16 @@ class TestConditionsHistory:
         try:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
                 cache_data = {
-                    'verdict': 'Favorable',
-                    'verdict_score': 1.7,
-                    'dimensions': {'liquidity': {'state': 'Expanding', 'mapped_score': 1.0}},
+                    'quadrant': 'Goldilocks',
+                    'dimensions': {'liquidity': {'state': 'Expanding'}},
                     'asset_expectations': [{'asset': 'sp500', 'direction': 'positive'}],
                     'as_of': '2025-01-15',
                 }
                 _append_conditions_history(cache_data)
                 history = _load_conditions_history()
                 assert '2025-01-15' in history
-                assert history['2025-01-15']['verdict'] == 'Favorable'
-                assert history['2025-01-15']['verdict_score'] == 1.7
+                assert history['2025-01-15']['quadrant'] == 'Goldilocks'
+                assert 'verdict' not in history['2025-01-15']
         finally:
             os.unlink(tmp)
 
@@ -940,20 +731,19 @@ class TestConditionsHistory:
         try:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
                 base = {
-                    'verdict': 'Mixed',
-                    'verdict_score': 0.4,
+                    'quadrant': 'Reflation',
                     'dimensions': {},
                     'asset_expectations': [],
                     'as_of': '2025-01-15',
                 }
                 _append_conditions_history(base)
 
-                updated = dict(base, verdict='Favorable', verdict_score=1.0)
+                updated = dict(base, quadrant='Goldilocks')
                 _append_conditions_history(updated)
 
                 history = _load_conditions_history()
                 assert len(history) == 1
-                assert history['2025-01-15']['verdict'] == 'Favorable'
+                assert history['2025-01-15']['quadrant'] == 'Goldilocks'
         finally:
             os.unlink(tmp)
 
@@ -964,8 +754,7 @@ class TestConditionsHistory:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
                 for day in ['2025-01-15', '2025-01-16', '2025-01-17']:
                     _append_conditions_history({
-                        'verdict': 'Mixed',
-                        'verdict_score': 0.4,
+                        'quadrant': 'Reflation',
                         'dimensions': {},
                         'asset_expectations': [],
                         'as_of': day,
@@ -981,7 +770,7 @@ class TestConditionsHistory:
             tmp = f.name
         try:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
-                _append_conditions_history({'verdict': 'Mixed', 'verdict_score': 0.4})
+                _append_conditions_history({'quadrant': 'Goldilocks'})
                 history = _load_conditions_history()
                 assert len(history) == 0
         finally:
@@ -993,18 +782,19 @@ class TestConditionsHistory:
         try:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
                 _append_conditions_history({
-                    'verdict': 'Cautious',
-                    'verdict_score': -0.5,
+                    'quadrant': 'Stagflation',
                     'dimensions': {'liquidity': {'state': 'Contracting'}},
                     'asset_expectations': [{'asset': 'sp500'}],
                     'as_of': '2025-02-01',
                     'updated_at': '2025-02-01T12:00:00Z',
                 })
                 entry = _load_conditions_history()['2025-02-01']
-                assert 'verdict' in entry
-                assert 'verdict_score' in entry
+                assert 'quadrant' in entry
                 assert 'dimensions' in entry
                 assert 'asset_expectations' in entry
+                # verdict should NOT be in history
+                assert 'verdict' not in entry
+                assert 'verdict_score' not in entry
                 # updated_at should NOT be in history (ephemeral)
                 assert 'updated_at' not in entry
         finally:
@@ -1015,7 +805,7 @@ class TestConditionsHistory:
             tmp = f.name
         try:
             with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
-                _save_conditions_history({'2025-01-15': {'verdict': 'Mixed'}})
+                _save_conditions_history({'2025-01-15': {'quadrant': 'Goldilocks'}})
                 result = get_conditions_history()
                 assert '2025-01-15' in result
         finally:
@@ -1044,7 +834,8 @@ class TestConditionsHistory:
                 history = _load_conditions_history()
                 assert len(history) == 1
                 date_key = list(history.keys())[0]
-                assert history[date_key]['verdict'] == 'Favorable'
+                assert history[date_key]['quadrant'] == 'Goldilocks'
+                assert 'verdict' not in history[date_key]
         finally:
             for p in (tmp_cache, tmp_history):
                 if os.path.exists(p):
@@ -1064,8 +855,7 @@ class TestConditionsHistory:
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
             tmp_cache = f.name
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as f:
-            # Seed with existing history
-            json.dump({'2025-01-10': {'verdict': 'Cautious', 'verdict_score': -0.5}}, f)
+            json.dump({'2025-01-10': {'quadrant': 'Stagflation'}}, f)
             tmp_history = f.name
 
         try:
@@ -1075,7 +865,7 @@ class TestConditionsHistory:
                 history = _load_conditions_history()
                 assert len(history) == 2
                 assert '2025-01-10' in history
-                assert history['2025-01-10']['verdict'] == 'Cautious'
+                assert history['2025-01-10']['quadrant'] == 'Stagflation'
         finally:
             for p in (tmp_cache, tmp_history):
                 if os.path.exists(p):
@@ -1083,7 +873,7 @@ class TestConditionsHistory:
 
 
 # ============================================================================
-# 10. NROU Duplicate Date Handling
+# 7. NROU Duplicate Date Handling
 # ============================================================================
 
 class TestNROUDeduplication:
@@ -1101,7 +891,6 @@ class TestNROUDeduplication:
         dates_nrou_dup = dates_nrou.append(pd.DatetimeIndex([dates_nrou[0]]))
         nrou_vals = list(np.full(12, 4.0)) + [4.0]
 
-        # Mock _load_csv to return appropriate dataframes
         def load_csv_side_effect(key):
             if key == 'pce_price_index':
                 df = pd.DataFrame({
@@ -1136,4 +925,3 @@ class TestNROUDeduplication:
         result = compute_policy('2022-12-01')
         # Result may be None due to insufficient data for Taylor Rule,
         # but the important thing is no crash
-        # (no ValueError: cannot reindex on an axis with duplicate labels)
