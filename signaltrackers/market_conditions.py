@@ -1,0 +1,736 @@
+"""
+Market Conditions Engine — Global Liquidity and Growth×Inflation dimensions.
+
+Computes two of the four dimensions used by the Market Conditions Framework:
+  1. Global Liquidity (35% of verdict weight)
+  2. Growth × Inflation Quadrant (35% of verdict weight)
+
+Runs alongside the existing regime_detection.py system — no replacement yet.
+
+Reference: docs/MARKET-CONDITIONS-FRAMEWORK.md, Sections 4-5
+"""
+
+import os
+import logging
+from dataclasses import dataclass
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
+
+# ---------------------------------------------------------------------------
+# Data types
+# ---------------------------------------------------------------------------
+
+@dataclass
+class LiquidityResult:
+    """Output of the Global Liquidity engine."""
+    state: str          # Strongly Expanding / Expanding / Neutral / Contracting / Strongly Contracting
+    score: float        # Raw z-score composite
+    fed_nl_yoy: Optional[float] = None
+    ecb_yoy: Optional[float] = None
+    boj_yoy: Optional[float] = None
+    m2_yoy: Optional[float] = None
+    as_of: Optional[str] = None  # Date string of evaluation
+
+
+@dataclass
+class QuadrantResult:
+    """Output of the Growth×Inflation Quadrant engine."""
+    quadrant: str          # Goldilocks / Reflation / Stagflation / Deflation Risk
+    growth_composite: float
+    inflation_composite: float
+    raw_quadrant: str      # Before stability filter
+    stable: bool           # Whether the stability filter confirms the quadrant
+    as_of: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# CSV loading helpers
+# ---------------------------------------------------------------------------
+
+def _load_csv(filename: str) -> Optional[pd.DataFrame]:
+    """Load a CSV from the data directory, returning None if missing/empty."""
+    path = os.path.join(DATA_DIR, f'{filename}.csv')
+    if not os.path.exists(path):
+        logger.warning('Data file not found: %s', path)
+        return None
+    try:
+        df = pd.read_csv(path, parse_dates=['date'])
+        if df.empty:
+            return None
+        df = df.sort_values('date').reset_index(drop=True)
+        return df
+    except Exception:
+        logger.exception('Error loading %s', path)
+        return None
+
+
+def _to_series(df: Optional[pd.DataFrame], col: str) -> Optional[pd.Series]:
+    """Extract a date-indexed numeric Series from a DataFrame."""
+    if df is None or col not in df.columns:
+        return None
+    s = df.set_index('date')[col].dropna()
+    if s.empty:
+        return None
+    return s
+
+
+def _align_weekly(daily_series: pd.Series, weekly_index: pd.DatetimeIndex) -> pd.Series:
+    """Forward-fill a daily series onto a weekly date index (no lookahead)."""
+    combined = daily_series.reindex(daily_series.index.union(weekly_index))
+    combined = combined.sort_index().ffill()
+    return combined.reindex(weekly_index)
+
+
+def _align_monthly(higher_freq: pd.Series, monthly_index: pd.DatetimeIndex) -> pd.Series:
+    """Forward-fill a higher-frequency series onto a monthly date index."""
+    combined = higher_freq.reindex(higher_freq.index.union(monthly_index))
+    combined = combined.sort_index().ffill()
+    return combined.reindex(monthly_index)
+
+
+# ---------------------------------------------------------------------------
+# Z-score helpers
+# ---------------------------------------------------------------------------
+
+def _rolling_zscore(series: pd.Series, window: int) -> pd.Series:
+    """Compute rolling z-score with a given window size."""
+    roll_mean = series.rolling(window, min_periods=max(window // 2, 1)).mean()
+    roll_std = series.rolling(window, min_periods=max(window // 2, 1)).std()
+    # Avoid division by zero
+    roll_std = roll_std.replace(0, np.nan)
+    return (series - roll_mean) / roll_std
+
+
+# ---------------------------------------------------------------------------
+# Layer 1: Global Liquidity
+# ---------------------------------------------------------------------------
+
+def _compute_fed_net_liquidity() -> Optional[pd.Series]:
+    """
+    Fed Net Liquidity = WALCL - WDTGAL - (RRPONTSYD × 1000)
+
+    WALCL and WDTGAL are in millions USD.
+    RRPONTSYD is in billions USD — multiply by 1000 to align.
+    """
+    walcl_df = _load_csv('fed_balance_sheet')
+    wdtgal_df = _load_csv('treasury_general_account')
+    rrp_df = _load_csv('reverse_repo')
+
+    walcl = _to_series(walcl_df, 'fed_balance_sheet')
+    wdtgal = _to_series(wdtgal_df, 'treasury_general_account')
+    rrp = _to_series(rrp_df, 'reverse_repo')
+
+    if walcl is None or wdtgal is None or rrp is None:
+        logger.warning('Missing data for Fed Net Liquidity calculation')
+        return None
+
+    # Align all to WALCL's weekly Wednesday index (the binding frequency)
+    idx = walcl.index
+    wdtgal_aligned = _align_weekly(wdtgal, idx)
+    rrp_aligned = _align_weekly(rrp, idx)
+
+    fed_nl = walcl - wdtgal_aligned - (rrp_aligned * 1000)
+    return fed_nl.dropna()
+
+
+def _compute_ecb_usd() -> Optional[pd.Series]:
+    """ECB balance sheet in USD millions = ECBASSETSW × DEXUSEU."""
+    ecb_df = _load_csv('ecb_total_assets')
+    fx_df = _load_csv('fx_eur_usd')
+
+    ecb = _to_series(ecb_df, 'ecb_total_assets')
+    fx = _to_series(fx_df, 'fx_eur_usd')
+
+    if ecb is None or fx is None:
+        return None
+
+    fx_aligned = _align_weekly(fx, ecb.index)
+    return (ecb * fx_aligned).dropna()
+
+
+def _compute_boj_usd() -> Optional[pd.Series]:
+    """BOJ balance sheet in USD = (JPNASSETS × 100_000_000) / DEXJPUS."""
+    boj_df = _load_csv('boj_total_assets')
+    fx_df = _load_csv('fx_jpy_usd')
+
+    boj = _to_series(boj_df, 'boj_total_assets')
+    fx = _to_series(fx_df, 'fx_jpy_usd')
+
+    if boj is None or fx is None:
+        return None
+
+    fx_aligned = _align_monthly(fx, boj.index)
+    # JPNASSETS is in 100M JPY; DEXJPUS is JPY per USD
+    boj_usd = (boj * 100_000_000) / fx_aligned
+    return boj_usd.dropna()
+
+
+def _yoy_change(series: pd.Series, periods: int) -> pd.Series:
+    """Compute YoY rate of change: (current / prior) - 1."""
+    return series / series.shift(periods) - 1
+
+
+def _classify_liquidity(score: float) -> str:
+    """Map liquidity z-score composite to classification label."""
+    if score > 1.0:
+        return 'Strongly Expanding'
+    elif score > 0.5:
+        return 'Expanding'
+    elif score >= -0.5:
+        return 'Neutral'
+    elif score >= -1.0:
+        return 'Contracting'
+    else:
+        return 'Strongly Contracting'
+
+
+def compute_liquidity(as_of_date: Optional[str] = None) -> Optional[LiquidityResult]:
+    """
+    Compute the Global Liquidity dimension.
+
+    Steps:
+      1. Fed Net Liquidity (weekly) — YoY → z-score (260-week window)
+      2. ECB USD (weekly) — YoY → z-score (260-week window)
+      3. BOJ USD (monthly) — YoY → z-score (60-month window)
+      4. US M2 (monthly) — YoY → z-score (60-month window)
+      5. Weighted composite: Fed 40%, ECB 20%, BOJ 15%, M2 25%
+      6. Classify: Strongly Expanding / Expanding / Neutral / Contracting / Strongly Contracting
+
+    Args:
+        as_of_date: Optional date string (YYYY-MM-DD). If None, uses latest available.
+
+    Returns:
+        LiquidityResult or None if insufficient data.
+    """
+    # --- Fed Net Liquidity (weekly) ---
+    fed_nl = _compute_fed_net_liquidity()
+    if fed_nl is None or len(fed_nl) < 53:
+        logger.warning('Insufficient Fed Net Liquidity data')
+        return None
+
+    fed_nl_yoy = _yoy_change(fed_nl, 52)  # 52 weeks
+    fed_z = _rolling_zscore(fed_nl_yoy, 260)  # 5 years of weeks
+
+    # --- ECB in USD (weekly) ---
+    ecb_usd = _compute_ecb_usd()
+    ecb_z = None
+    if ecb_usd is not None and len(ecb_usd) >= 53:
+        ecb_yoy = _yoy_change(ecb_usd, 52)
+        ecb_z = _rolling_zscore(ecb_yoy, 260)
+
+    # --- BOJ in USD (monthly) ---
+    boj_usd = _compute_boj_usd()
+    boj_z = None
+    if boj_usd is not None and len(boj_usd) >= 13:
+        boj_yoy = _yoy_change(boj_usd, 12)
+        boj_z = _rolling_zscore(boj_yoy, 60)
+
+    # --- US M2 (monthly) ---
+    m2_df = _load_csv('m2_money_supply')
+    m2 = _to_series(m2_df, 'm2_money_supply')
+    m2_z = None
+    if m2 is not None and len(m2) >= 13:
+        m2_yoy = _yoy_change(m2, 12)
+        m2_z = _rolling_zscore(m2_yoy, 60)
+
+    # --- Align everything to weekly Fed index and compute composite ---
+    # Fed z-score is the anchor; align monthly series via forward-fill
+    idx = fed_z.dropna().index
+    if len(idx) == 0:
+        return None
+
+    # Determine as_of cutoff
+    if as_of_date is not None:
+        cutoff = pd.Timestamp(as_of_date)
+        idx = idx[idx <= cutoff]
+        if len(idx) == 0:
+            return None
+
+    # Build composite with available components
+    composite = pd.Series(0.0, index=idx)
+    total_weight = 0.0
+
+    # Fed (40%)
+    fed_aligned = fed_z.reindex(idx)
+    mask = fed_aligned.notna()
+    composite[mask] += 0.40 * fed_aligned[mask]
+    total_weight_series = pd.Series(0.0, index=idx)
+    total_weight_series[mask] += 0.40
+
+    # ECB (20%)
+    if ecb_z is not None:
+        ecb_aligned = _align_weekly(ecb_z, idx)
+        ecb_mask = ecb_aligned.notna()
+        composite[ecb_mask] += 0.20 * ecb_aligned[ecb_mask]
+        total_weight_series[ecb_mask] += 0.20
+
+    # BOJ (15%)
+    if boj_z is not None:
+        boj_aligned = _align_weekly(boj_z, idx)
+        boj_mask = boj_aligned.notna()
+        composite[boj_mask] += 0.15 * boj_aligned[boj_mask]
+        total_weight_series[boj_mask] += 0.15
+
+    # M2 (25%)
+    if m2_z is not None:
+        m2_aligned = _align_weekly(m2_z, idx)
+        m2_mask = m2_aligned.notna()
+        composite[m2_mask] += 0.25 * m2_aligned[m2_mask]
+        total_weight_series[m2_mask] += 0.25
+
+    # Renormalize by actual weight available (handle missing components)
+    total_weight_series = total_weight_series.replace(0, np.nan)
+    composite = composite / total_weight_series
+
+    # Get the evaluation point
+    valid = composite.dropna()
+    if len(valid) == 0:
+        return None
+
+    latest = valid.iloc[-1]
+    eval_date = str(valid.index[-1].date())
+
+    # Get component YoY values at evaluation date
+    def _latest_val(s, idx_val):
+        if s is None:
+            return None
+        aligned = s.reindex(s.index.union(pd.DatetimeIndex([idx_val]))).sort_index().ffill()
+        val = aligned.get(idx_val)
+        return float(val) if val is not None and not np.isnan(val) else None
+
+    eval_ts = valid.index[-1]
+
+    return LiquidityResult(
+        state=_classify_liquidity(latest),
+        score=float(latest),
+        fed_nl_yoy=_latest_val(fed_nl_yoy, eval_ts),
+        ecb_yoy=_latest_val(_yoy_change(ecb_usd, 52) if ecb_usd is not None else None, eval_ts),
+        boj_yoy=_latest_val(_yoy_change(boj_usd, 12) if boj_usd is not None else None, eval_ts),
+        m2_yoy=_latest_val(_yoy_change(m2, 12) if m2 is not None else None, eval_ts),
+        as_of=eval_date,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Layer 2: Growth × Inflation Quadrant
+# ---------------------------------------------------------------------------
+
+def _compute_acceleration(series: pd.Series, period: int) -> pd.Series:
+    """
+    Compute acceleration: change in YoY rate of change.
+
+    acceleration(t) = yoy(t) - yoy(t-1)
+
+    This is the Hedgeye "second derivative" approach — detects inflection
+    points earlier than level-based classification.
+    """
+    yoy_current = series / series.shift(period) - 1
+    yoy_prior = series.shift(1) / series.shift(period + 1) - 1
+    return yoy_current - yoy_prior
+
+
+def _load_growth_signals() -> dict[str, Optional[pd.Series]]:
+    """Load and compute z-scored acceleration for each growth indicator."""
+    signals = {}
+
+    # Initial Claims (ICSA) — weekly, INVERTED (falling = growth)
+    icsa_df = _load_csv('initial_claims')
+    icsa = _to_series(icsa_df, 'initial_claims')
+    if icsa is not None and len(icsa) >= 54:
+        accel = _compute_acceleration(icsa, 52)
+        z = _rolling_zscore(accel, 260)
+        signals['ICSA'] = -1 * z  # Inverted
+    else:
+        signals['ICSA'] = None
+
+    # Yield Curve 10Y-2Y (T10Y2Y) — daily, direct
+    # For spread data, use level change over 12 months (not acceleration of ratio)
+    yc_df = _load_csv('yield_curve_10y2y')
+    yc = _to_series(yc_df, 'yield_curve_10y2y')
+    if yc is not None and len(yc) >= 253:
+        level_change = yc.diff(252)  # ~12 months of trading days
+        z = _rolling_zscore(level_change, 1260)  # 5 years of trading days
+        signals['T10Y2Y'] = z
+    else:
+        signals['T10Y2Y'] = None
+
+    # NFCI — weekly, INVERTED (falling NFCI = looser conditions = growth)
+    nfci_df = _load_csv('nfci')
+    nfci = _to_series(nfci_df, 'nfci')
+    if nfci is not None and len(nfci) >= 54:
+        accel = _compute_acceleration(nfci, 52)
+        z = _rolling_zscore(accel, 260)
+        signals['NFCI'] = -1 * z  # Inverted
+    else:
+        signals['NFCI'] = None
+
+    # Industrial Production (INDPRO) — monthly, direct
+    indpro_df = _load_csv('industrial_production')
+    indpro = _to_series(indpro_df, 'industrial_production')
+    if indpro is not None and len(indpro) >= 14:
+        accel = _compute_acceleration(indpro, 12)
+        z = _rolling_zscore(accel, 60)
+        signals['INDPRO'] = z
+    else:
+        signals['INDPRO'] = None
+
+    # Building Permits (PERMIT) — monthly, direct
+    permit_df = _load_csv('building_permits')
+    permit = _to_series(permit_df, 'building_permits')
+    if permit is not None and len(permit) >= 14:
+        accel = _compute_acceleration(permit, 12)
+        z = _rolling_zscore(accel, 60)
+        signals['PERMIT'] = z
+    else:
+        signals['PERMIT'] = None
+
+    return signals
+
+
+def _load_inflation_signals() -> dict[str, Optional[pd.Series]]:
+    """Load and compute z-scored acceleration for each inflation indicator."""
+    signals = {}
+
+    # 10Y Breakeven (T10YIE) — daily, level change
+    t10yie_df = _load_csv('breakeven_inflation_10y')
+    t10yie = _to_series(t10yie_df, 'breakeven_inflation_10y')
+    if t10yie is not None and len(t10yie) >= 253:
+        level_change = t10yie.diff(252)
+        z = _rolling_zscore(level_change, 1260)
+        signals['T10YIE'] = z
+    else:
+        signals['T10YIE'] = None
+
+    # 5Y Breakeven (T5YIE) — daily, level change
+    t5yie_df = _load_csv('breakeven_inflation_5y')
+    t5yie = _to_series(t5yie_df, 'breakeven_inflation_5y')
+    if t5yie is not None and len(t5yie) >= 253:
+        level_change = t5yie.diff(252)
+        z = _rolling_zscore(level_change, 1260)
+        signals['T5YIE'] = z
+    else:
+        signals['T5YIE'] = None
+
+    # CPI (CPIAUCSL) — monthly, acceleration
+    cpi_df = _load_csv('cpi')
+    cpi = _to_series(cpi_df, 'cpi')
+    if cpi is not None and len(cpi) >= 14:
+        accel = _compute_acceleration(cpi, 12)
+        z = _rolling_zscore(accel, 60)
+        signals['CPIAUCSL'] = z
+    else:
+        signals['CPIAUCSL'] = None
+
+    # Core PCE (PCEPILFE) — monthly, acceleration
+    pce_df = _load_csv('core_pce_price_index')
+    pce = _to_series(pce_df, 'core_pce_price_index')
+    if pce is not None and len(pce) >= 14:
+        accel = _compute_acceleration(pce, 12)
+        z = _rolling_zscore(accel, 60)
+        signals['PCEPILFE'] = z
+    else:
+        signals['PCEPILFE'] = None
+
+    return signals
+
+
+def _compute_monthly_composite(signals: dict[str, Optional[pd.Series]]) -> Optional[pd.Series]:
+    """
+    Compute equal-weight composite from mixed-frequency z-scored signals.
+
+    Aligns all signals to a common monthly index via forward-fill.
+    At each date, averages only the available (non-NaN) signals.
+    """
+    available = {k: v for k, v in signals.items() if v is not None and len(v) > 0}
+    if not available:
+        return None
+
+    # Build a common monthly date range
+    all_dates = set()
+    for s in available.values():
+        all_dates.update(s.index)
+
+    if not all_dates:
+        return None
+
+    # Use a monthly frequency index spanning the full range
+    min_date = min(all_dates)
+    max_date = max(all_dates)
+
+    # Resample all signals to monthly (end of month), forward-filling higher freq
+    monthly_signals = {}
+    for name, s in available.items():
+        # Resample to month-end, taking the last available observation
+        monthly = s.resample('ME').last()
+        monthly_signals[name] = monthly
+
+    # Combine into DataFrame and compute row-wise mean (ignoring NaN)
+    combined = pd.DataFrame(monthly_signals)
+    composite = combined.mean(axis=1)
+    return composite.dropna()
+
+
+def _apply_stability_filter(
+    quadrant_series: pd.Series,
+    required_consecutive: int = 2,
+) -> pd.Series:
+    """
+    Apply quadrant stability filter: require N consecutive months in the
+    same quadrant before recognizing a transition.
+
+    Returns a Series of the same length with filtered quadrant labels.
+    """
+    if len(quadrant_series) == 0:
+        return quadrant_series
+
+    result = []
+    current_stable = quadrant_series.iloc[0]
+    consecutive_count = 1
+
+    for i, q in enumerate(quadrant_series):
+        if i == 0:
+            result.append(current_stable)
+            continue
+
+        if q == current_stable:
+            consecutive_count += 1
+            result.append(current_stable)
+        else:
+            # New quadrant detected
+            if consecutive_count == 0:
+                # Already in transition
+                if q == result[-1]:
+                    # Same as last provisional — don't count
+                    consecutive_count += 1
+                else:
+                    consecutive_count = 1
+            else:
+                consecutive_count = 1
+
+            # Check if we've hit the threshold
+            # Count backwards from current position
+            count = 1
+            for j in range(i - 1, max(i - required_consecutive, -1), -1):
+                if quadrant_series.iloc[j] == q:
+                    count += 1
+                else:
+                    break
+
+            if count >= required_consecutive:
+                current_stable = q
+                consecutive_count = count
+
+            result.append(current_stable)
+
+    return pd.Series(result, index=quadrant_series.index)
+
+
+def _classify_quadrant(growth: float, inflation: float) -> str:
+    """Classify into one of four quadrants based on growth and inflation composites."""
+    if growth > 0 and inflation <= 0:
+        return 'Goldilocks'
+    elif growth > 0 and inflation > 0:
+        return 'Reflation'
+    elif growth <= 0 and inflation > 0:
+        return 'Stagflation'
+    else:
+        return 'Deflation Risk'
+
+
+def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResult]:
+    """
+    Compute the Growth × Inflation Quadrant dimension.
+
+    Steps:
+      1. Compute acceleration-based z-scores for 5 growth indicators
+      2. Compute acceleration-based z-scores for 4 inflation indicators
+      3. Equal-weight composites for growth and inflation
+      4. Classify into quadrant
+      5. Apply stability filter (2+ consecutive months)
+
+    Args:
+        as_of_date: Optional date string (YYYY-MM-DD). If None, uses latest.
+
+    Returns:
+        QuadrantResult or None if insufficient data.
+    """
+    growth_signals = _load_growth_signals()
+    inflation_signals = _load_inflation_signals()
+
+    growth_composite = _compute_monthly_composite(growth_signals)
+    inflation_composite = _compute_monthly_composite(inflation_signals)
+
+    if growth_composite is None or inflation_composite is None:
+        logger.warning('Insufficient data for quadrant calculation')
+        return None
+
+    # Align growth and inflation to common dates
+    common_idx = growth_composite.index.intersection(inflation_composite.index)
+    if len(common_idx) == 0:
+        return None
+
+    growth_aligned = growth_composite.reindex(common_idx)
+    inflation_aligned = inflation_composite.reindex(common_idx)
+
+    # Classify each month into a raw quadrant
+    raw_quadrants = pd.Series(
+        [_classify_quadrant(g, i) for g, i in zip(growth_aligned, inflation_aligned)],
+        index=common_idx,
+    )
+
+    # Apply stability filter
+    stable_quadrants = _apply_stability_filter(raw_quadrants, required_consecutive=2)
+
+    # Determine as_of cutoff
+    if as_of_date is not None:
+        cutoff = pd.Timestamp(as_of_date)
+        mask = common_idx <= cutoff
+        if not mask.any():
+            return None
+        common_idx = common_idx[mask]
+        growth_aligned = growth_aligned.reindex(common_idx)
+        inflation_aligned = inflation_aligned.reindex(common_idx)
+        raw_quadrants = raw_quadrants.reindex(common_idx)
+        stable_quadrants = stable_quadrants.reindex(common_idx)
+
+    if len(common_idx) == 0:
+        return None
+
+    latest_idx = common_idx[-1]
+    g_val = float(growth_aligned.iloc[-1])
+    i_val = float(inflation_aligned.iloc[-1])
+    raw_q = raw_quadrants.iloc[-1]
+    stable_q = stable_quadrants.iloc[-1]
+
+    return QuadrantResult(
+        quadrant=stable_q,
+        growth_composite=g_val,
+        inflation_composite=i_val,
+        raw_quadrant=raw_q,
+        stable=(raw_q == stable_q),
+        as_of=str(latest_idx.date()),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Full historical series (for backtesting / spot-checks)
+# ---------------------------------------------------------------------------
+
+def compute_liquidity_history(start_date: Optional[str] = None) -> Optional[pd.DataFrame]:
+    """
+    Compute full liquidity history as a DataFrame.
+
+    Returns DataFrame with columns: date, score, state
+    """
+    fed_nl = _compute_fed_net_liquidity()
+    if fed_nl is None or len(fed_nl) < 53:
+        return None
+
+    fed_nl_yoy = _yoy_change(fed_nl, 52)
+    fed_z = _rolling_zscore(fed_nl_yoy, 260)
+
+    ecb_usd = _compute_ecb_usd()
+    ecb_z = None
+    if ecb_usd is not None and len(ecb_usd) >= 53:
+        ecb_z = _rolling_zscore(_yoy_change(ecb_usd, 52), 260)
+
+    boj_usd = _compute_boj_usd()
+    boj_z = None
+    if boj_usd is not None and len(boj_usd) >= 13:
+        boj_z = _rolling_zscore(_yoy_change(boj_usd, 12), 60)
+
+    m2_df = _load_csv('m2_money_supply')
+    m2 = _to_series(m2_df, 'm2_money_supply')
+    m2_z = None
+    if m2 is not None and len(m2) >= 13:
+        m2_z = _rolling_zscore(_yoy_change(m2, 12), 60)
+
+    idx = fed_z.dropna().index
+    if len(idx) == 0:
+        return None
+
+    if start_date:
+        idx = idx[idx >= pd.Timestamp(start_date)]
+
+    composite = pd.Series(0.0, index=idx)
+    weights = pd.Series(0.0, index=idx)
+
+    fed_aligned = fed_z.reindex(idx)
+    mask = fed_aligned.notna()
+    composite[mask] += 0.40 * fed_aligned[mask]
+    weights[mask] += 0.40
+
+    if ecb_z is not None:
+        ecb_aligned = _align_weekly(ecb_z, idx)
+        m = ecb_aligned.notna()
+        composite[m] += 0.20 * ecb_aligned[m]
+        weights[m] += 0.20
+
+    if boj_z is not None:
+        boj_aligned = _align_weekly(boj_z, idx)
+        m = boj_aligned.notna()
+        composite[m] += 0.15 * boj_aligned[m]
+        weights[m] += 0.15
+
+    if m2_z is not None:
+        m2_aligned = _align_weekly(m2_z, idx)
+        m = m2_aligned.notna()
+        composite[m] += 0.25 * m2_aligned[m]
+        weights[m] += 0.25
+
+    weights = weights.replace(0, np.nan)
+    composite = (composite / weights).dropna()
+
+    result = pd.DataFrame({
+        'date': composite.index,
+        'score': composite.values,
+        'state': [_classify_liquidity(s) for s in composite.values],
+    })
+    return result
+
+
+def compute_quadrant_history(start_date: Optional[str] = None) -> Optional[pd.DataFrame]:
+    """
+    Compute full quadrant history as a DataFrame.
+
+    Returns DataFrame with columns: date, growth, inflation, raw_quadrant, quadrant
+    """
+    growth_signals = _load_growth_signals()
+    inflation_signals = _load_inflation_signals()
+
+    growth_composite = _compute_monthly_composite(growth_signals)
+    inflation_composite = _compute_monthly_composite(inflation_signals)
+
+    if growth_composite is None or inflation_composite is None:
+        return None
+
+    common_idx = growth_composite.index.intersection(inflation_composite.index)
+    if len(common_idx) == 0:
+        return None
+
+    if start_date:
+        common_idx = common_idx[common_idx >= pd.Timestamp(start_date)]
+
+    growth_aligned = growth_composite.reindex(common_idx)
+    inflation_aligned = inflation_composite.reindex(common_idx)
+
+    raw_quadrants = pd.Series(
+        [_classify_quadrant(g, i) for g, i in zip(growth_aligned, inflation_aligned)],
+        index=common_idx,
+    )
+    stable_quadrants = _apply_stability_filter(raw_quadrants, required_consecutive=2)
+
+    return pd.DataFrame({
+        'date': common_idx,
+        'growth': growth_aligned.values,
+        'inflation': inflation_aligned.values,
+        'raw_quadrant': raw_quadrants.values,
+        'quadrant': stable_quadrants.values,
+    })
