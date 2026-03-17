@@ -1,9 +1,11 @@
 """
-Market Conditions Engine — Global Liquidity and Growth×Inflation dimensions.
+Market Conditions Engine — four-dimension framework.
 
-Computes two of the four dimensions used by the Market Conditions Framework:
+Computes the four dimensions used by the Market Conditions Framework:
   1. Global Liquidity (35% of verdict weight)
   2. Growth × Inflation Quadrant (35% of verdict weight)
+  3. Risk Regime (20% of verdict weight)
+  4. Policy Stance (10% of verdict weight)
 
 Runs alongside the existing regime_detection.py system — no replacement yet.
 
@@ -47,6 +49,33 @@ class QuadrantResult:
     inflation_composite: float
     raw_quadrant: str      # Before stability filter
     stable: bool           # Whether the stability filter confirms the quadrant
+    as_of: Optional[str] = None
+
+
+@dataclass
+class RiskResult:
+    """Output of the Risk Regime engine."""
+    state: str             # Calm / Normal / Elevated / Stressed
+    score: int             # Combined risk score (0-7)
+    vix_score: int         # VIX level score (0-3)
+    term_structure_score: int   # VIX term structure score (0-2)
+    correlation_score: int      # Stock-bond correlation score (0-2)
+    vix_level: Optional[float] = None
+    vix_ratio: Optional[float] = None
+    stock_bond_corr: Optional[float] = None
+    as_of: Optional[str] = None
+
+
+@dataclass
+class PolicyResult:
+    """Output of the Policy Stance engine."""
+    stance: str            # Accommodative / Neutral / Restrictive
+    direction: str         # Easing / Paused / Tightening
+    taylor_gap: float      # Actual rate - Taylor prescribed rate
+    taylor_prescribed: float
+    actual_rate: float
+    inflation_pct: Optional[float] = None
+    output_gap: Optional[float] = None
     as_of: Optional[str] = None
 
 
@@ -734,3 +763,546 @@ def compute_quadrant_history(start_date: Optional[str] = None) -> Optional[pd.Da
         'raw_quadrant': raw_quadrants.values,
         'quadrant': stable_quadrants.values,
     })
+
+
+# ---------------------------------------------------------------------------
+# Layer 3: Risk Regime
+# ---------------------------------------------------------------------------
+
+def _score_vix_level(vix: float) -> int:
+    """Map VIX level to score 0-3."""
+    if vix < 15:
+        return 0
+    elif vix < 20:
+        return 1
+    elif vix < 30:
+        return 2
+    else:
+        return 3
+
+
+def _score_term_structure(ratio: float) -> int:
+    """Map VIX/VIX3M ratio to score 0-2."""
+    if ratio < 0.95:
+        return 0  # Contango — calm
+    elif ratio <= 1.05:
+        return 1  # Flat — uncertain
+    else:
+        return 2  # Backwardation — stressed
+
+
+def _score_stock_bond_corr(corr: float) -> int:
+    """Map 63-day stock-bond rolling correlation to score 0-2."""
+    if corr < -0.3:
+        return 0  # Diversifying — bonds hedge stocks
+    elif corr <= 0.3:
+        return 1  # Transitional
+    else:
+        return 2  # Correlated — 2022-style
+
+
+def _classify_risk(score: int) -> str:
+    """Map combined risk score (0-7) to state label."""
+    if score <= 1:
+        return 'Calm'
+    elif score <= 3:
+        return 'Normal'
+    elif score <= 5:
+        return 'Elevated'
+    else:
+        return 'Stressed'
+
+
+def _compute_stock_bond_correlation(window: int = 63) -> Optional[pd.Series]:
+    """
+    Compute rolling correlation between equity returns and approximate bond returns.
+
+    Bond returns approximated via duration: -8.5 * daily yield change.
+    Uses SPY for equity returns and DGS10 for 10Y yield.
+    """
+    # Load S&P 500 price (SPY from Yahoo)
+    sp_df = _load_csv('sp500_price')
+    sp = _to_series(sp_df, 'sp500_price')
+
+    # Load 10Y Treasury yield (DGS10)
+    t10_df = _load_csv('treasury_10y')
+    t10 = _to_series(t10_df, 'treasury_10y')
+
+    if sp is None or t10 is None:
+        return None
+
+    # Align to common dates
+    common = sp.index.intersection(t10.index)
+    if len(common) < window + 1:
+        return None
+
+    sp_aligned = sp.reindex(common)
+    t10_aligned = t10.reindex(common)
+
+    # Compute returns
+    equity_returns = sp_aligned.pct_change()
+    # Approximate bond returns: duration ~8.5 years × daily yield change (in decimal)
+    bond_returns = -8.5 * t10_aligned.diff() / 100
+
+    # 63-day rolling correlation
+    rolling_corr = equity_returns.rolling(window, min_periods=window).corr(bond_returns)
+    return rolling_corr.dropna()
+
+
+def compute_risk(as_of_date: Optional[str] = None) -> Optional[RiskResult]:
+    """
+    Compute the Risk Regime dimension.
+
+    Uses three sub-scores:
+      1. VIX level (0-3)
+      2. VIX term structure: VIX/VIX3M ratio (0-2)
+      3. Stock-bond correlation: 63-day rolling (0-2)
+
+    Combined score (0-7) → Calm / Normal / Elevated / Stressed
+
+    Graceful degradation: if VIX3M unavailable, uses VIX level + correlation only.
+
+    Args:
+        as_of_date: Optional date string (YYYY-MM-DD). If None, uses latest.
+
+    Returns:
+        RiskResult or None if insufficient data.
+    """
+    # --- VIX level ---
+    # Use Yahoo VIX data (vix_price.csv) — longer history than FRED VIXCLS
+    vix_df = _load_csv('vix_price')
+    vix_series = _to_series(vix_df, 'vix_price')
+
+    if vix_series is None or len(vix_series) == 0:
+        logger.warning('No VIX data available for risk calculation')
+        return None
+
+    # --- VIX 3-month (VIX3M / VXVCLS) for term structure ---
+    vix3m_df = _load_csv('vix_3month')
+    vix3m_series = _to_series(vix3m_df, 'vix_3month')
+
+    # --- Stock-bond correlation ---
+    corr_series = _compute_stock_bond_correlation(63)
+
+    # Determine evaluation date
+    if as_of_date is not None:
+        cutoff = pd.Timestamp(as_of_date)
+        vix_series = vix_series[vix_series.index <= cutoff]
+        if vix3m_series is not None:
+            vix3m_series = vix3m_series[vix3m_series.index <= cutoff]
+        if corr_series is not None:
+            corr_series = corr_series[corr_series.index <= cutoff]
+
+    if len(vix_series) == 0:
+        return None
+
+    # Get latest VIX
+    vix_val = float(vix_series.iloc[-1])
+    eval_date = vix_series.index[-1]
+    v_score = _score_vix_level(vix_val)
+
+    # Term structure score
+    ts_score = 0
+    vix_ratio_val = None
+    if vix3m_series is not None and len(vix3m_series) > 0:
+        # Align VIX3M to VIX date
+        vix3m_at_date = vix3m_series.reindex(
+            vix3m_series.index.union(pd.DatetimeIndex([eval_date]))
+        ).sort_index().ffill()
+        vix3m_val = vix3m_at_date.get(eval_date)
+        if vix3m_val is not None and not np.isnan(vix3m_val) and vix3m_val > 0:
+            vix_ratio_val = vix_val / vix3m_val
+            ts_score = _score_term_structure(vix_ratio_val)
+
+    # Correlation score
+    corr_score = 0
+    corr_val = None
+    if corr_series is not None and len(corr_series) > 0:
+        # Get latest correlation at or before eval_date
+        corr_at_date = corr_series.reindex(
+            corr_series.index.union(pd.DatetimeIndex([eval_date]))
+        ).sort_index().ffill()
+        c = corr_at_date.get(eval_date)
+        if c is not None and not np.isnan(c):
+            corr_val = float(c)
+            corr_score = _score_stock_bond_corr(corr_val)
+
+    # Combined score
+    combined = v_score + ts_score + corr_score
+
+    return RiskResult(
+        state=_classify_risk(combined),
+        score=combined,
+        vix_score=v_score,
+        term_structure_score=ts_score,
+        correlation_score=corr_score,
+        vix_level=vix_val,
+        vix_ratio=float(vix_ratio_val) if vix_ratio_val is not None else None,
+        stock_bond_corr=corr_val,
+        as_of=str(eval_date.date()),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Layer 4: Policy Stance
+# ---------------------------------------------------------------------------
+
+def _load_policy_rate() -> Optional[pd.Series]:
+    """
+    Load the effective policy rate.
+
+    Uses DFEDTARU (Fed Funds Upper Target, daily) as primary source.
+    Falls back to FEDFUNDS (effective rate, monthly) for pre-2009 periods.
+    """
+    # Try DFEDTARU first (daily, post-Dec 2008)
+    target_df = _load_csv('fed_funds_upper_target')
+    target = _to_series(target_df, 'fed_funds_upper_target')
+
+    # FEDFUNDS as fallback (monthly, full history)
+    ff_df = _load_csv('fed_funds_rate')
+    ff = _to_series(ff_df, 'fed_funds_rate')
+
+    if target is not None and ff is not None:
+        # Combine: use FEDFUNDS before DFEDTARU starts, then DFEDTARU
+        target_start = target.index.min()
+        ff_before = ff[ff.index < target_start]
+        # Forward-fill monthly FEDFUNDS to daily for alignment
+        combined = pd.concat([ff_before, target]).sort_index()
+        return combined
+    elif target is not None:
+        return target
+    elif ff is not None:
+        return ff
+    else:
+        return None
+
+
+def _compute_taylor_rule(
+    inflation_pct: pd.Series,
+    output_gap: pd.Series,
+) -> pd.Series:
+    """
+    Compute Taylor Rule prescribed rate.
+
+    i = 1.0 + 1.5 * π + 0.5 * output_gap
+
+    Where r* = 2%, π* = 2% (simplified Taylor 1993).
+    """
+    return 1.0 + 1.5 * inflation_pct + 0.5 * output_gap
+
+
+def _classify_policy_stance(taylor_gap: float) -> str:
+    """Classify Taylor gap into policy stance."""
+    if taylor_gap > 1.0:
+        return 'Restrictive'
+    elif taylor_gap >= -0.5:
+        return 'Neutral'
+    else:
+        return 'Accommodative'
+
+
+def _classify_policy_direction(rate_change_3m: float) -> str:
+    """Classify 3-month fed funds change into direction."""
+    if rate_change_3m > 0.25:
+        return 'Tightening'
+    elif rate_change_3m < -0.25:
+        return 'Easing'
+    else:
+        return 'Paused'
+
+
+def compute_policy(as_of_date: Optional[str] = None) -> Optional[PolicyResult]:
+    """
+    Compute the Policy Stance dimension.
+
+    Steps:
+      1. Compute YoY Core PCE inflation (%)
+      2. Compute output gap via Okun's Law: -2 × (UNRATE - NROU)
+      3. Taylor Rule prescribed rate: i = 1.0 + 1.5π + 0.5(output_gap)
+      4. Taylor gap = actual rate - prescribed rate
+      5. Classify stance: Accommodative / Neutral / Restrictive
+      6. Direction overlay: Easing / Paused / Tightening (3-month rate change)
+
+    Args:
+        as_of_date: Optional date string (YYYY-MM-DD). If None, uses latest.
+
+    Returns:
+        PolicyResult or None if insufficient data.
+    """
+    # --- Core PCE for inflation ---
+    pce_df = _load_csv('core_pce_price_index')
+    pce = _to_series(pce_df, 'core_pce_price_index')
+    if pce is None or len(pce) < 13:
+        logger.warning('Insufficient Core PCE data for policy calculation')
+        return None
+
+    # YoY inflation as percentage
+    inflation_pct = ((pce / pce.shift(12)) - 1) * 100
+
+    # --- Output gap via Okun's Law ---
+    unrate_df = _load_csv('unemployment_rate')
+    unrate = _to_series(unrate_df, 'unemployment_rate')
+
+    nrou_df = _load_csv('natural_unemployment_rate')
+    nrou = _to_series(nrou_df, 'natural_unemployment_rate')
+
+    if unrate is None or nrou is None:
+        logger.warning('Insufficient unemployment data for policy calculation')
+        return None
+
+    # NROU is quarterly — forward-fill to monthly to align with UNRATE
+    nrou_monthly = nrou.resample('MS').ffill()
+    # Align to UNRATE index
+    common_idx = unrate.index.intersection(nrou_monthly.index)
+    if len(common_idx) == 0:
+        # Try forward-filling onto unrate's index
+        nrou_aligned = _align_monthly(nrou_monthly, unrate.index)
+        common_idx = unrate.index[nrou_aligned.notna()]
+        if len(common_idx) == 0:
+            return None
+        unrate_aligned = unrate.reindex(common_idx)
+        nrou_aligned = nrou_aligned.reindex(common_idx)
+    else:
+        unrate_aligned = unrate.reindex(common_idx)
+        nrou_aligned = nrou_monthly.reindex(common_idx)
+
+    output_gap = -2 * (unrate_aligned - nrou_aligned)
+
+    # --- Align inflation and output gap ---
+    inf_common = inflation_pct.dropna().index.intersection(output_gap.dropna().index)
+    if len(inf_common) == 0:
+        return None
+
+    inflation_aligned = inflation_pct.reindex(inf_common)
+    output_gap_aligned = output_gap.reindex(inf_common)
+
+    # --- Taylor Rule ---
+    taylor_prescribed = _compute_taylor_rule(inflation_aligned, output_gap_aligned)
+
+    # --- Policy rate ---
+    policy_rate = _load_policy_rate()
+    if policy_rate is None:
+        logger.warning('No policy rate data available')
+        return None
+
+    # Align policy rate to the monthly evaluation dates
+    rate_aligned = _align_monthly(policy_rate, inf_common)
+
+    # Apply as_of cutoff
+    if as_of_date is not None:
+        cutoff = pd.Timestamp(as_of_date)
+        mask = inf_common <= cutoff
+        if not mask.any():
+            return None
+        inf_common = inf_common[mask]
+        inflation_aligned = inflation_aligned.reindex(inf_common)
+        output_gap_aligned = output_gap_aligned.reindex(inf_common)
+        taylor_prescribed = taylor_prescribed.reindex(inf_common)
+        rate_aligned = rate_aligned.reindex(inf_common)
+
+    # Find latest date where all components are available
+    valid_mask = (
+        inflation_aligned.notna()
+        & output_gap_aligned.notna()
+        & taylor_prescribed.notna()
+        & rate_aligned.notna()
+    )
+    valid_dates = inf_common[valid_mask]
+    if len(valid_dates) == 0:
+        return None
+
+    eval_date = valid_dates[-1]
+    actual_rate = float(rate_aligned.loc[eval_date])
+    prescribed = float(taylor_prescribed.loc[eval_date])
+    gap = actual_rate - prescribed
+    inf_val = float(inflation_aligned.loc[eval_date])
+    og_val = float(output_gap_aligned.loc[eval_date])
+
+    # --- Direction overlay (3-month rate change) ---
+    # For monthly data, shift(3) = 3 months; for daily, shift(63) ≈ 3 months
+    # Use the policy rate series directly for direction calculation
+    if as_of_date is not None:
+        rate_for_dir = policy_rate[policy_rate.index <= pd.Timestamp(as_of_date)]
+    else:
+        rate_for_dir = policy_rate
+
+    if rate_for_dir is not None and len(rate_for_dir) > 63:
+        latest_rate = float(rate_for_dir.iloc[-1])
+        prior_rate = float(rate_for_dir.iloc[-64])  # ~3 months ago
+        rate_change_3m = latest_rate - prior_rate
+    elif rate_for_dir is not None and len(rate_for_dir) > 3:
+        # Monthly fallback
+        latest_rate = float(rate_for_dir.iloc[-1])
+        prior_rate = float(rate_for_dir.iloc[-4])  # 3 months ago
+        rate_change_3m = latest_rate - prior_rate
+    else:
+        rate_change_3m = 0.0
+
+    direction = _classify_policy_direction(rate_change_3m)
+
+    return PolicyResult(
+        stance=_classify_policy_stance(gap),
+        direction=direction,
+        taylor_gap=gap,
+        taylor_prescribed=prescribed,
+        actual_rate=actual_rate,
+        inflation_pct=inf_val,
+        output_gap=og_val,
+        as_of=str(eval_date.date()),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Risk history (for backtesting / spot-checks)
+# ---------------------------------------------------------------------------
+
+def compute_risk_history(start_date: Optional[str] = None) -> Optional[pd.DataFrame]:
+    """
+    Compute full risk history as a DataFrame.
+
+    Returns DataFrame with columns: date, vix_score, term_structure_score,
+    correlation_score, score, state
+    """
+    # VIX level series
+    vix_df = _load_csv('vix_price')
+    vix_series = _to_series(vix_df, 'vix_price')
+    if vix_series is None or len(vix_series) == 0:
+        return None
+
+    # VIX 3-month for term structure
+    vix3m_df = _load_csv('vix_3month')
+    vix3m_series = _to_series(vix3m_df, 'vix_3month')
+
+    # Stock-bond correlation
+    corr_series = _compute_stock_bond_correlation(63)
+
+    # Build on VIX date index
+    idx = vix_series.index
+    if start_date:
+        idx = idx[idx >= pd.Timestamp(start_date)]
+
+    records = []
+    for dt in idx:
+        vix_val = float(vix_series.loc[dt])
+        v_score = _score_vix_level(vix_val)
+
+        # Term structure
+        ts_score = 0
+        if vix3m_series is not None and len(vix3m_series) > 0:
+            v3m = vix3m_series.reindex(
+                vix3m_series.index.union(pd.DatetimeIndex([dt]))
+            ).sort_index().ffill()
+            v3m_val = v3m.get(dt)
+            if v3m_val is not None and not np.isnan(v3m_val) and v3m_val > 0:
+                ts_score = _score_term_structure(vix_val / v3m_val)
+
+        # Correlation
+        c_score = 0
+        if corr_series is not None and len(corr_series) > 0:
+            c = corr_series.reindex(
+                corr_series.index.union(pd.DatetimeIndex([dt]))
+            ).sort_index().ffill()
+            c_val = c.get(dt)
+            if c_val is not None and not np.isnan(c_val):
+                c_score = _score_stock_bond_corr(float(c_val))
+
+        combined = v_score + ts_score + c_score
+        records.append({
+            'date': dt,
+            'vix_score': v_score,
+            'term_structure_score': ts_score,
+            'correlation_score': c_score,
+            'score': combined,
+            'state': _classify_risk(combined),
+        })
+
+    return pd.DataFrame(records)
+
+
+# ---------------------------------------------------------------------------
+# Policy history (for backtesting / spot-checks)
+# ---------------------------------------------------------------------------
+
+def compute_policy_history(start_date: Optional[str] = None) -> Optional[pd.DataFrame]:
+    """
+    Compute full policy history as a DataFrame.
+
+    Returns DataFrame with columns: date, actual_rate, taylor_prescribed,
+    taylor_gap, stance, direction
+    """
+    pce_df = _load_csv('core_pce_price_index')
+    pce = _to_series(pce_df, 'core_pce_price_index')
+    if pce is None or len(pce) < 13:
+        return None
+
+    inflation_pct = ((pce / pce.shift(12)) - 1) * 100
+
+    unrate_df = _load_csv('unemployment_rate')
+    unrate = _to_series(unrate_df, 'unemployment_rate')
+    nrou_df = _load_csv('natural_unemployment_rate')
+    nrou = _to_series(nrou_df, 'natural_unemployment_rate')
+
+    if unrate is None or nrou is None:
+        return None
+
+    nrou_monthly = nrou.resample('MS').ffill()
+    common_idx = unrate.index.intersection(nrou_monthly.index)
+    if len(common_idx) == 0:
+        nrou_aligned = _align_monthly(nrou_monthly, unrate.index)
+        common_idx = unrate.index[nrou_aligned.notna()]
+        if len(common_idx) == 0:
+            return None
+        unrate_aligned = unrate.reindex(common_idx)
+        nrou_aligned = nrou_aligned.reindex(common_idx)
+    else:
+        unrate_aligned = unrate.reindex(common_idx)
+        nrou_aligned = nrou_monthly.reindex(common_idx)
+
+    output_gap = -2 * (unrate_aligned - nrou_aligned)
+
+    inf_common = inflation_pct.dropna().index.intersection(output_gap.dropna().index)
+    if len(inf_common) == 0:
+        return None
+
+    inflation_aligned = inflation_pct.reindex(inf_common)
+    output_gap_aligned = output_gap.reindex(inf_common)
+    taylor_prescribed = _compute_taylor_rule(inflation_aligned, output_gap_aligned)
+
+    policy_rate = _load_policy_rate()
+    if policy_rate is None:
+        return None
+
+    rate_aligned = _align_monthly(policy_rate, inf_common)
+
+    if start_date:
+        mask = inf_common >= pd.Timestamp(start_date)
+        inf_common = inf_common[mask]
+
+    records = []
+    for dt in inf_common:
+        prescribed = taylor_prescribed.get(dt)
+        rate = rate_aligned.get(dt)
+        if prescribed is None or rate is None or np.isnan(prescribed) or np.isnan(rate):
+            continue
+
+        gap = float(rate) - float(prescribed)
+
+        # Direction: check 3-month rate change
+        rate_before = policy_rate[policy_rate.index <= dt]
+        if len(rate_before) > 63:
+            rate_change = float(rate_before.iloc[-1]) - float(rate_before.iloc[-64])
+        elif len(rate_before) > 3:
+            rate_change = float(rate_before.iloc[-1]) - float(rate_before.iloc[-4])
+        else:
+            rate_change = 0.0
+
+        records.append({
+            'date': dt,
+            'actual_rate': float(rate),
+            'taylor_prescribed': float(prescribed),
+            'taylor_gap': gap,
+            'stance': _classify_policy_stance(gap),
+            'direction': _classify_policy_direction(rate_change),
+        })
+
+    return pd.DataFrame(records) if records else None
