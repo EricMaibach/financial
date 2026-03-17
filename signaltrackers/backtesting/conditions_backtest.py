@@ -3,8 +3,11 @@ Market Conditions Backtest — Walk-Forward Validation
 
 Validates the multi-dimensional Market Conditions engine against the
 52.3/100 k-means baseline. Uses the same scoring infrastructure as
-regime_backtest.py but replaces k-means with the four-dimension
-verdict classifier.
+regime_backtest.py but scores using a verdict classifier defined locally
+in this module (the engine itself no longer produces verdicts — the
+quadrant is now the headline classification).
+
+US-314.2 will replace this verdict-based scoring with quadrant-led scoring.
 
 Usage:
     PYTHONPATH=signaltrackers python3 signaltrackers/backtesting/conditions_backtest.py
@@ -36,17 +39,10 @@ from signaltrackers.backtesting.regime_backtest import (
     compute_max_drawdown,
 )
 
-# Market conditions engine
+# Market conditions engine (quadrant-led; no verdict in engine)
 from signaltrackers.market_conditions import (
     compute_market_conditions,
     _QUADRANT_EXPECTATIONS,
-    _classify_verdict,
-    _compute_verdict_score,
-    _map_dimension_score,
-    _LIQUIDITY_SCORE_MAP,
-    _QUADRANT_SCORE_MAP,
-    _RISK_SCORE_MAP,
-    _POLICY_SCORE_MAP,
     compute_liquidity_history,
     compute_quadrant_history,
     compute_risk_history,
@@ -94,6 +90,77 @@ WEIGHT_CONFIGS = [
     {'liquidity': 0.40, 'quadrant': 0.40, 'risk': 0.10, 'policy': 0.10, 'label': 'Macro-dominant (40/40/10/10)'},
     {'liquidity': 0.35, 'quadrant': 0.35, 'risk': 0.25, 'policy': 0.05, 'label': 'Low-policy (35/35/25/5)'},
 ]
+
+# ---------------------------------------------------------------------------
+# Verdict scoring (local to backtest — removed from engine in US-314.1)
+# US-314.2 will replace this with quadrant-led scoring.
+# ---------------------------------------------------------------------------
+
+_LIQUIDITY_SCORE_MAP = {
+    'Strongly Expanding': 2.0,
+    'Expanding': 1.0,
+    'Neutral': 0.0,
+    'Contracting': -1.0,
+    'Strongly Contracting': -2.0,
+}
+
+_QUADRANT_SCORE_MAP = {
+    'Goldilocks': 2.0,
+    'Reflation': 1.0,
+    'Deflation Risk': -1.0,
+    'Stagflation': -2.0,
+}
+
+_RISK_SCORE_MAP = {
+    'Calm': 1.0,
+    'Normal': 0.0,
+    'Elevated': -1.0,
+    'Stressed': -2.0,
+}
+
+_POLICY_SCORE_MAP = {
+    'Accommodative': 1.0,
+    'Neutral': 0.0,
+    'Restrictive': -1.0,
+}
+
+
+def _map_dimension_score(state: str, score_map: dict) -> Optional[float]:
+    """Map a dimension state label to its numeric score."""
+    return score_map.get(state)
+
+
+def _compute_verdict_score(
+    liquidity_mapped: float,
+    quadrant_mapped: float,
+    risk_mapped: float,
+    policy_mapped: float,
+    weights: Optional[dict] = None,
+) -> float:
+    """Weighted composite of four dimension scores."""
+    if weights is None:
+        weights = DEFAULT_WEIGHTS
+    return (
+        weights['liquidity'] * liquidity_mapped
+        + weights['quadrant'] * quadrant_mapped
+        + weights['risk'] * risk_mapped
+        + weights['policy'] * policy_mapped
+    )
+
+
+def _classify_verdict(score: float, risk_state: str) -> str:
+    """Classify verdict from composite score. Stressed → always Defensive."""
+    if risk_state == 'Stressed':
+        return 'Defensive'
+    if score > 0.75:
+        return 'Favorable'
+    elif score > -0.25:
+        return 'Mixed'
+    elif score > -1.0:
+        return 'Cautious'
+    else:
+        return 'Defensive'
+
 
 # Expected asset directions per verdict
 # Verdicts map to quadrant-based expectations (quadrant drives direction)
