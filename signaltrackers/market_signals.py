@@ -307,31 +307,31 @@ class MarketSignalsTracker:
             existing_df = pd.read_csv(filepath)
             existing_df[date_column] = pd.to_datetime(existing_df[date_column])
 
-            # Separate today's data from historical data
-            existing_historical = existing_df[existing_df[date_column].dt.normalize() < today]
+            # Remove today's row from existing so it can be replaced by fresh data
+            existing_without_today = existing_df[existing_df[date_column].dt.normalize() != today]
 
-            # Get new data that doesn't exist in historical records
-            new_data = df[~df[date_column].isin(existing_historical[date_column])]
+            # Dedup against ALL existing dates (not just < today) to prevent
+            # future-dated projections (e.g., NROU, GDPPOT) from being re-appended
+            new_data = df[~df[date_column].isin(existing_without_today[date_column])]
 
             if new_data.empty:
                 print(f"No new data to append to {filepath.name}")
                 return
 
-            # Check if we're updating today's data
             today_in_new = new_data[new_data[date_column].dt.normalize() == today]
             today_in_existing = existing_df[existing_df[date_column].dt.normalize() == today]
+            new_non_today = len(new_data) - len(today_in_new)
+
+            # Combine: existing (minus today) + all genuinely new data (includes today if present)
+            combined_df = pd.concat([existing_without_today, new_data], ignore_index=True)
+            combined_df = combined_df.sort_values(date_column)
+            combined_df.to_csv(filepath, index=False)
 
             if not today_in_new.empty and not today_in_existing.empty:
-                # We're updating today's data
-                combined_df = pd.concat([existing_historical, new_data], ignore_index=True)
-                combined_df = combined_df.sort_values(date_column)
-                combined_df.to_csv(filepath, index=False)
-                print(f"Updated today's data + added {len(new_data) - len(today_in_new)} new rows to {filepath.name}")
+                print(f"Updated today's data + added {new_non_today} new rows to {filepath.name}")
+            elif not today_in_new.empty:
+                print(f"Added today's data + {new_non_today} new rows to {filepath.name}")
             else:
-                # Normal append (no update needed)
-                combined_df = pd.concat([existing_df, new_data], ignore_index=True)
-                combined_df = combined_df.sort_values(date_column)
-                combined_df.to_csv(filepath, index=False)
                 print(f"Added {len(new_data)} new rows to {filepath.name}")
         else:
             df = df.sort_values(date_column)
