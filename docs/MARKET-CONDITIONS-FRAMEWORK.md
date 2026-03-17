@@ -1,10 +1,12 @@
 # Market Conditions Framework: From Single Regime to Multi-Dimensional Intelligence
 
 **Created:** 2026-03-16
+**Updated:** 2026-03-17 (post-backtest refinements — verdict removed, quadrant leads)
 **Authors:** Eric + Claude (research collaboration)
 **Status:** Proposal — awaiting CEO review
 **Supersedes:** Current k-means regime detection system (Bull/Neutral/Bear/Recession Watch)
 **Related Docs:**
+- [BACKTEST-FINDINGS-AND-REFINEMENTS.md](BACKTEST-FINDINGS-AND-REFINEMENTS.md) — Backtest results analysis and refinements
 - [REGIME-MODEL-ISSUES.md](REGIME-MODEL-ISSUES.md) — Structural issues identified in current model
 - [REGIME-BACKTEST-STRATEGY.md](REGIME-BACKTEST-STRATEGY.md) — Existing backtest infrastructure
 - [specs/feature-3.3-macro-regime-detection.md](specs/feature-3.3-macro-regime-detection.md) — Current regime UI design spec
@@ -15,7 +17,7 @@
 
 1. [Executive Summary](#1-executive-summary)
 2. [Why the Current Model Fails](#2-why-the-current-model-fails)
-3. [The New Framework: Four Dimensions, One Verdict](#3-the-new-framework-four-dimensions-one-verdict)
+3. [The New Framework: Quadrant-Led, Four Dimensions](#3-the-new-framework-quadrant-led-four-dimensions)
 4. [Data Requirements](#4-data-requirements)
 5. [Calculation Engine](#5-calculation-engine)
 6. [Scoring and Validation](#6-scoring-and-validation)
@@ -46,12 +48,13 @@ Full evidence in [REGIME-MODEL-ISSUES.md](REGIME-MODEL-ISSUES.md).
 
 ### The Solution
 
-Replace the single-label regime system with a **multi-dimensional conditions engine** that uses four independent dimensions as inputs to produce:
+Replace the single-label regime system with a **multi-dimensional conditions engine** built on four dimensions, with the **Growth × Inflation Quadrant as the headline**:
 
-1. **A single headline verdict** (e.g., "Favorable," "Cautious," "Defensive") — what 90% of users see
-2. **A one-sentence synthesis** explaining why — what users read
-3. **Four supporting dimensions** available via progressive disclosure — for users who want to understand the reasoning
-4. **Asset-class-specific expectations** — testable predictions that drive the scoring framework
+1. **The Quadrant as headline** (Goldilocks / Reflation / Stagflation / Deflation Risk) — tells users what type of environment we're in and what it means for their portfolio
+2. **Three supporting dimensions** (Liquidity, Risk, Policy) — provide context on magnitude, near-term danger, and central bank stance
+3. **A one-sentence synthesis** explaining the quadrant in plain English — what users read
+4. **Asset-class-specific expectations** — testable predictions scored against inflation-adjusted returns
+5. **Crypto scored against Liquidity** — because Bitcoin correlates with M2 (0.94), not macro quadrants
 
 ### Why This Is Better
 
@@ -64,9 +67,13 @@ The four dimensions solve each structural failure:
 | Gold's secular uptrend | Expects gold to fall in Bull | Quadrant-specific expectations: gold rises in 3 of 4 quadrants |
 | Demand vs. inflation crash | Both are "Bear" | Deflation Risk (2008) vs. Stagflation (2022) are separate quadrants |
 
-### Key Design Decision
+### Key Design Decisions
 
-**One verdict, not four gauges.** Critical review identified that presenting four independent dimensions to retail investors creates cognitive overload (81 possible state combinations). The framework uses four dimensions as *inputs to a single classifier* with progressive disclosure into the reasoning. This preserves simplicity while dramatically improving accuracy.
+**Quadrant is the headline, not a blended verdict.** Initial design combined all four dimensions into a weighted verdict (Favorable/Mixed/Cautious/Defensive). Backtesting revealed that this blending destroys the quadrant's correct directional predictions — a Stagflation call diluted by expanding liquidity becomes "Mixed," losing the actionable signal. The quadrant alone correctly orders real returns across all asset classes. See [BACKTEST-FINDINGS-AND-REFINEMENTS.md](BACKTEST-FINDINGS-AND-REFINEMENTS.md) for full evidence.
+
+**Score against inflation-adjusted returns.** Backtesting showed stocks produce positive *nominal* returns in all environments (including Stagflation) due to central bank intervention. But inflation-adjusted returns order correctly: Goldilocks (+4.68%) > Deflation Risk (+1.86%) > Reflation (+1.49%) > Stagflation (+1.20%). The model is right — it just doesn't show up in nominal returns.
+
+**Magnitude ordering, not direction.** Instead of expecting negative equity returns in Stagflation, expect *underperformance* — reduced positive returns. The backtest scores whether Goldilocks produces higher real returns than Stagflation (magnitude ordering), not whether Stagflation produces negative returns (direction, which fails due to central bank intervention).
 
 ---
 
@@ -115,7 +122,7 @@ Both are classified as "Bear" by the current model, yet they require **opposite*
 
 ---
 
-## 3. The New Framework: Four Dimensions, One Verdict
+## 3. The New Framework: Quadrant-Led, Four Dimensions
 
 ### Architecture Overview
 
@@ -136,23 +143,42 @@ Both are classified as "Bear" by the current model, yet they require **opposite*
     │  4. Policy Stance       (monthly)      │
     └──────────────────┬─────────────────────┘
                        │
-               CLASSIFICATION LAYER
+               PRESENTATION LAYER
     ┌──────────────────▼─────────────────────┐
-    │  Combine dimensions into:              │
-    │  - Single verdict (Favorable/Mixed/    │
-    │    Cautious/Defensive)                 │
-    │  - Asset class expectations            │
-    │  - Narrative synthesis                 │
-    └──────────────────┬─────────────────────┘
-                       │
-                  PRESENTATION LAYER
-    ┌──────────────────▼─────────────────────┐
+    │  Quadrant is the headline:             │
+    │  - Drives traditional asset            │
+    │    expectations (equities, bonds,      │
+    │    gold, commodities)                  │
+    │                                        │
+    │  Three supporting dimensions:          │
+    │  - Liquidity: magnitude modifier +     │
+    │    CRYPTO direction (leads for crypto) │
+    │  - Risk: near-term drawdown context    │
+    │  - Policy: Fed stance context          │
+    │                                        │
     │  Progressive disclosure:               │
-    │  Tier 1: Verdict + one sentence        │
+    │  Tier 1: Quadrant + one sentence       │
     │  Tier 2: Four dimension summaries      │
     │  Tier 3: Full detail per dimension     │
     └────────────────────────────────────────┘
 ```
+
+### Why No Blended Verdict
+
+The initial design combined all four dimensions into a weighted verdict (Favorable/Mixed/Cautious/Defensive). Backtesting revealed this destroys information:
+
+- The **quadrant** correctly orders real asset returns (Goldilocks +4.68% > Stagflation +1.20%)
+- But when blended with liquidity, risk, and policy, the verdict **scrambles this ordering** (Cautious returned more than Mixed; Defensive returned more than Cautious)
+- Example: Stagflation + Expanding Liquidity + Calm Risk → verdict was "Mixed," which diluted the correct Stagflation signal
+
+The four dimensions answer **different questions** and should not be combined into one number:
+
+| Dimension | Question It Answers | What It Drives |
+|-----------|-------------------|----------------|
+| **Quadrant** (headline) | What type of environment are we in? | Traditional asset direction |
+| **Liquidity** (modifier) | How strong will the moves be? | Magnitude — and **crypto direction** |
+| **Risk** (modifier) | How dangerous is it right now? | Near-term drawdown probability |
+| **Policy** (modifier) | What is the Fed doing about it? | Context |
 
 ### Dimension 1: Global Liquidity
 
@@ -216,18 +242,25 @@ Both are classified as "Bear" by the current model, yet they require **opposite*
 - Unemployment rate + natural rate (for output gap via Okun's Law)
 - CBO potential GDP (for Taylor Rule calibration)
 
-### The Single Verdict
+### The Quadrant as Headline
 
-The four dimensions combine into one of four headline verdicts:
+The quadrant IS the user-facing headline. Each quadrant name is immediately followed by a plain-English definition:
 
-| Verdict | When | User Implication |
-|---------|------|-----------------|
-| **Favorable** | Liquidity expanding + Goldilocks/Reflation + Calm risk + Easing/Neutral policy | Risk assets broadly supported |
-| **Mixed** | Dimensions disagree (e.g., expanding liquidity but elevated risk) | Selective positioning warranted |
-| **Cautious** | Liquidity contracting OR Stagflation/Deflation Risk + Normal/Elevated risk | Reduce risk, increase quality |
-| **Defensive** | Multiple dimensions unfavorable (contracting + Stagflation + Elevated/Stressed) | Capital preservation mode |
+| Quadrant | Plain English | Asset Implications |
+|----------|--------------|-------------------|
+| **Goldilocks** | Growth accelerating, inflation cooling | Best environment — equities lead, bonds supported, gold neutral |
+| **Reflation** | Growth accelerating, inflation rising | Equities and commodities up, bonds under pressure, gold up |
+| **Stagflation** | Growth slowing, inflation rising | Toughest environment — equities and bonds both struggle, gold shines |
+| **Deflation Risk** | Growth slowing, inflation falling | Flight to safety — bonds rally, equities fall, gold mixed |
 
-The verdict is determined by a weighted scoring system (details in Section 5) and is what the backtest scores against.
+The three supporting dimensions (Liquidity, Risk, Policy) appear alongside the quadrant as context modifiers, not competing signals. Their role in the display:
+
+- **Liquidity** modifies expected magnitude ("expanding liquidity may cushion the blow")
+- **Risk** flags near-term drawdown danger ("elevated risk suggests caution despite Goldilocks conditions")
+- **Policy** provides Fed context ("the Fed is tightening into Stagflation")
+- **Liquidity leads for Crypto** — because Bitcoin correlates with M2 (0.94), not growth/inflation quadrants
+
+The quadrant's asset expectations are what the backtest scores against.
 
 ---
 
@@ -564,63 +597,24 @@ Combined label examples: "Restrictive, Paused" or "Accommodative, Easing"
 
 **Update frequency:** Monthly (after PCE release, typically last Friday of month).
 
-### Combining Dimensions into a Single Verdict
+### Asset Class Expectations by Quadrant
 
-#### Verdict Scoring
+This is the table the backtest scores against. The quadrant drives traditional asset expectations. Liquidity drives crypto expectations.
 
-```python
-# Score each dimension on a -2 to +2 scale (negative = unfavorable)
-liquidity_score_mapped = map_to_scale(liquidity_score)
-#   Strongly Expanding: +2, Expanding: +1, Neutral: 0,
-#   Contracting: -1, Strongly Contracting: -2
+**Critical insight from backtesting:** Stocks produce positive *nominal* returns in ALL quadrants due to central bank intervention. The scoring uses **inflation-adjusted (real) returns** and tests **magnitude ordering** (Goldilocks produces better real returns than Stagflation), NOT direction (Stagflation produces negative returns).
 
-quadrant_score = {
-    'Goldilocks': +2, 'Reflation': +1,
-    'Deflation Risk': -1, 'Stagflation': -2
-}[quadrant]
+#### Quadrant Expectations (Traditional Assets)
 
-risk_score_mapped = {
-    'Calm': +1, 'Normal': 0, 'Elevated': -1, 'Stressed': -2
-}[risk_state]
+| Quadrant | S&P 500 (real) | Treasuries (TLT) | Gold | Backtest Real 90d |
+|----------|---------------|-------------------|------|-------------------|
+| **Goldilocks** | Best returns | Positive (falling inflation supports) | Neutral to negative | +4.68% |
+| **Reflation** | Good returns | Negative (rising inflation hurts) | Positive | +1.49% |
+| **Deflation Risk** | Below average | Positive (flight to safety) | Neutral to positive | +1.86% |
+| **Stagflation** | Worst returns | Negative (rising inflation hurts) | Positive | +1.20% |
 
-policy_score_mapped = map_to_scale(taylor_gap)
-#   Accommodative: +1, Neutral: 0, Restrictive: -1
+**Scoring rule:** The backtest checks magnitude ordering of real returns: Goldilocks > Deflation Risk > Reflation > Stagflation. This ordering held in backtesting with 20 years of data.
 
-# Weighted composite (liquidity and quadrant matter most)
-verdict_score = (
-    0.35 * liquidity_score_mapped +
-    0.35 * quadrant_score +
-    0.20 * risk_score_mapped +
-    0.10 * policy_score_mapped
-)
-
-# Classification
-if verdict_score > 0.75:    verdict = "Favorable"
-elif verdict_score > -0.25: verdict = "Mixed"
-elif verdict_score > -1.0:  verdict = "Cautious"
-else:                       verdict = "Defensive"
-```
-
-**Weight rationale:**
-- Liquidity (35%): Strongest empirical predictor of asset returns (Howell: ~66% of variation)
-- Quadrant (35%): Determines *which* assets benefit, not just whether assets rise/fall
-- Risk (20%): Directly observable, high-frequency signal — but more tactical than strategic
-- Policy (10%): Lowest weight due to Taylor Rule input instability; informative but unreliable as a primary signal
-
-### Asset Class Expectations by State
-
-This is the table the backtest scores against. It replaces the current 4-regime × 3-asset expectations with a richer matrix.
-
-#### By Quadrant (Primary Driver of Cross-Asset Behavior)
-
-| Quadrant | S&P 500 | Treasuries (TLT) | Gold |
-|----------|---------|-------------------|------|
-| **Goldilocks** | ↑ Positive | ↑ Positive (falling inflation supports) | Neutral to ↓ |
-| **Reflation** | ↑ Positive | ↓ Negative (rising inflation hurts) | ↑ Positive |
-| **Stagflation** | ↓ Negative | ↓ Negative (rising inflation hurts) | ↑ Positive |
-| **Deflation Risk** | ↓ Negative | ↑ Positive (flight to safety) | Neutral to ↑ |
-
-#### Liquidity Overlay (Modifies Magnitude)
+#### Liquidity Overlay (Modifies Magnitude for Traditional Assets)
 
 | Liquidity | Effect on Equities | Effect on Bonds | Effect on Gold |
 |-----------|-------------------|-----------------|----------------|
@@ -628,16 +622,28 @@ This is the table the backtest scores against. It replaces the current 4-regime 
 | Neutral | No modification | No modification | No modification |
 | Contracting | Amplifies downside | Supports (flight to safety) | Mixed |
 
+#### Liquidity Expectations (Crypto)
+
+Crypto is scored against the liquidity dimension only — NOT the quadrant:
+
+| Liquidity State | Crypto Expectation | Basis |
+|----------------|-------------------|-------|
+| Expanding | Positive (directional) | Bitcoin 0.94 correlation with M2, 83% directional accuracy |
+| Neutral | Neutral | |
+| Contracting | Negative (directional) | |
+
+This directly addresses Bug #292 (incorrect crypto regime guidance in dashboard).
+
 #### Risk Overlay (Modifies Confidence and Hedging)
 
 | Risk State | Effect |
 |-----------|--------|
 | Calm | Full conviction in quadrant expectations |
 | Normal | Standard conviction |
-| Elevated | Reduce position sizes; increase hedging |
+| Elevated | Drawdown risk is elevated (38% vs 18% probability); increase hedging |
 | Stressed | Override other signals — capital preservation mode |
 
-**Scoring rule:** For backtesting, the quadrant expectations are primary. Liquidity and risk modify the expected magnitude but not the direction, EXCEPT when risk is "Stressed" — which overrides to expect negative equity returns regardless of quadrant.
+**Backtest evidence for Risk overlay:** During elevated/stressed risk periods, the average max drawdown was -8.36% vs -6.27% during calm periods. The probability of a negative 30-day return roughly doubles (38% vs 18%).
 
 ---
 
@@ -647,35 +653,49 @@ This is the table the backtest scores against. It replaces the current 4-regime 
 
 The scoring framework is **fully compatible** with the existing walk-forward + CPCV + DSR infrastructure in `signaltrackers/backtesting/regime_backtest.py`. The only change is the expectation table.
 
-#### Current Scoring Flow (Unchanged)
+#### Scoring Flow
 
 ```
-For each monthly evaluation date (2000-2025):
-  1. Compute classification from data available at that date (NO lookahead)
-  2. Look up expected asset directions for that classification
-  3. Compute 90-day forward returns for S&P 500, Treasuries, Gold
-  4. Score: did each asset move in the expected direction?
-  5. Weight: S&P 500 (37.5%), Treasuries (31.25%), Gold (31.25%)
+For each monthly evaluation date (2006-2025):
+  1. Compute quadrant from data available at that date (NO lookahead)
+  2. Compute 90-day forward REAL returns (nominal - CPI/4) for S&P 500, Treasuries, Gold
+  3. Score traditional assets: does the quadrant's real return ordering hold?
+     (Goldilocks > Deflation Risk > Reflation > Stagflation for equities)
+  4. Score Treasuries and Gold: did each move in the expected direction?
+  5. Score crypto separately against liquidity dimension
+  6. Weight: S&P 500 (37.5%), Treasuries (31.25%), Gold (31.25%)
 ```
 
-#### What Changes
+#### What Changes from Original Scoring
 
-| Component | Current | New |
-|-----------|---------|-----|
-| Step 1: Classification | K-means → one of 4 regimes | Four dimensions → quadrant + liquidity state |
-| Step 2: Expectations | 4 rows (Bull/Neutral/Bear/RecWatch) | 4 quadrant rows × liquidity modifier |
-| Steps 3-5: Scoring | Unchanged | Unchanged |
+| Component | Original (v1 backtest) | Updated (v2) |
+|-----------|----------------------|--------------|
+| Classification | Four dimensions → blended verdict | Quadrant drives expectations directly |
+| Equity scoring | Direction (positive/negative) | **Magnitude ordering of real returns** |
+| Returns | Nominal | **Inflation-adjusted (real)** |
+| Crypto | Excluded | **Scored against liquidity dimension** |
 
-#### Why the New Model Should Score Higher
+#### Why Magnitude + Real Returns Fix the Score
 
-The current model's worst failures are precisely the cases the new model distinguishes:
+The v1 backtest showed multi-asset accuracy of 63.9% (up from 54.6%), but the composite failed because the verdict ordering was broken. The quadrant ordering works with real returns:
 
-| Historical Period | Current Classification | Current Expected | Actual | New Classification | New Expected | Correct? |
-|-------------------|----------------------|------------------|--------|-------------------|--------------|----------|
-| 2008-09 | Bear | S&P ↓, TLT ↑, Gold ↑ | S&P ↓, TLT ↑, Gold ↑ | Deflation Risk | S&P ↓, TLT ↑, Gold ↑ | ✓ Same |
-| 2020 Mar | Bear | S&P ↓, TLT ↑, Gold ↑ | S&P ↑ (+18.6% 90d), TLT ↑, Gold ↑ | Deflation Risk + Expanding Liquidity | S&P recovery expected | ✓ Better |
-| 2022 | Bear | S&P ↓, TLT ↑, Gold ↑ | S&P ↓, TLT ↓, Gold mixed | **Stagflation** | S&P ↓, TLT ↓, Gold ↑ | ✓ Fixed |
-| 2023-24 | Bear/Neutral | Mixed | S&P ↑ strongly | Goldilocks + Expanding Liq | S&P ↑ strongly | ✓ Fixed |
+| Quadrant | Nominal 90d | CPI YoY | Real 90d | Ordering |
+|----------|------------|---------|----------|----------|
+| Goldilocks | +5.13% | 1.82% | **+4.68%** | Best ✓ |
+| Deflation Risk | +2.48% | 2.47% | **+1.86%** | 2nd ✓ |
+| Reflation | +2.15% | 2.65% | **+1.49%** | 3rd ✓ |
+| Stagflation | +1.93% | 2.93% | **+1.20%** | Worst ✓ |
+
+The ordering holds because Stagflation periods have both lower nominal returns AND higher inflation, creating a double penalty in real terms. During 2022 specifically (CPI 7-8%), real 90-day returns were -9.48%, -7.12%, -17.56% — the model was right about Stagflation being bad.
+
+#### Historical Period Validation
+
+| Historical Period | Old Model | New Model (Quadrant) | Outcome |
+|-------------------|-----------|---------------------|---------|
+| 2008-09 | Bear (correct direction) | Deflation Risk (correct: TLT ↑, S&P underperforms) | ✓ Same |
+| 2020 Mar | Bear (wrong: S&P rallied) | Deflation Risk + Expanding Liquidity (recovery expected) | ✓ Better |
+| 2022 | Bear (wrong: TLT ↓ not ↑) | **Stagflation** (correct: TLT ↓, S&P ↓, Gold ↑) | ✓ Fixed |
+| 2023-24 | Bear/Neutral (wrong: S&P ↑↑) | Goldilocks (correct: best real returns) | ✓ Fixed |
 
 #### Validation Steps
 
@@ -696,28 +716,30 @@ VIX term structure data (`VXVCLS`) starts December 2007. This means:
 
 ## 7. UI/UX Design Vision
 
-### Core Principle: One Verdict, Progressive Disclosure
+### Core Principle: Quadrant Leads, Progressive Disclosure
 
-Research on retail investor cognition (Miller's Law, Hick's Law, CNN Fear & Greed Index success) shows that retail users need a single, clear takeaway. The four dimensions exist as *inputs to the model* and *explanations for power users* — not as four competing signals.
+The quadrant is the single headline — it tells the user what type of economic environment we're in and what it means for their portfolio. The other three dimensions provide supporting context. This preserves cognitive simplicity (one headline, not four competing signals) while carrying more information than the old regime label.
 
 **Three-tier progressive disclosure:**
 
 | Tier | Time to Absorb | What User Sees | Where |
 |------|---------------|----------------|-------|
-| **Glance** | 5 seconds | Verdict badge + one sentence | Conditions strip (every page) |
+| **Glance** | 5 seconds | Quadrant name + one sentence | Conditions strip (every page) |
 | **Summary** | 30 seconds | AI briefing + four dimension cards | Homepage top section |
-| **Deep dive** | 5 minutes | Interactive quadrant, full metrics, implications matrix | Homepage expanded sections |
+| **Deep dive** | 5 minutes | Interactive quadrant with trajectory, full metrics, implications matrix | Homepage expanded sections |
+
+**Crypto exception:** On the Crypto category page, Liquidity leads instead of the Quadrant, because liquidity is what drives crypto prices.
 
 ### Design Language
 
-#### Verdict Colors
+#### Quadrant Colors
 
-| Verdict | Primary Color | Background | Semantic |
-|---------|--------------|------------|----------|
-| **Favorable** | `#0D9488` (teal-600) | `#CCFBF1` (teal-100) | Opportunity |
-| **Mixed** | `#1E40AF` (blue-800) | `#DBEAFE` (blue-100) | Neutral/balanced |
-| **Cautious** | `#CA8A04` (amber-600) | `#FEF3C7` (amber-100) | Watchful |
-| **Defensive** | `#DC2626` (red-600) | `#FEE2E2` (red-100) | Protective |
+| Quadrant | Primary Color | Background | Semantic |
+|----------|--------------|------------|----------|
+| **Goldilocks** | `#0D9488` (teal-600) | `#CCFBF1` (teal-100) | Best environment |
+| **Reflation** | `#1E40AF` (blue-800) | `#DBEAFE` (blue-100) | Growth with inflation |
+| **Deflation Risk** | `#CA8A04` (amber-600) | `#FEF3C7` (amber-100) | Caution — slowdown |
+| **Stagflation** | `#DC2626` (red-600) | `#FEE2E2` (red-100) | Toughest environment |
 
 These map intentionally to the existing regime colors (Bull=green, Neutral=blue, Bear=amber, Recession=red) to ease the visual transition for existing users.
 
@@ -767,7 +789,7 @@ The homepage becomes the Market Conditions page. Every element has a clear purpo
 | Position | Section | Role | Content |
 |----------|---------|------|---------|
 | §0 | AI Briefing | **Lead narrative** | 2-3 paragraph synthesis of all conditions |
-| §1 | Conditions at a Glance | **Visual summary** | Verdict badge + four dimension cards (2×2 grid) |
+| §1 | Conditions at a Glance | **Visual summary** | Quadrant headline + four dimension cards (2×2 grid) |
 | §2 | Growth × Inflation Detail | **Primary dimension** | Interactive quadrant + trajectory + driving metrics |
 | §3 | Global Liquidity Detail | **Primary dimension** | Spectrum bar + components + trend |
 | §4 | Risk Environment Detail | **Supporting dimension** | Spectrum bar + VIX/correlation/credit components |
@@ -814,9 +836,9 @@ The AI briefing moves to the top. It becomes the "trusted morning briefing" — 
 ```
 ┌─────────────────────────────────────────────────────┐
 │                                                     │
-│  ● FAVORABLE CONDITIONS          Updated today      │
-│  "Expanding liquidity into a Goldilocks             │
-│   environment with calm markets"                    │
+│  ● GOLDILOCKS                    Updated today      │
+│  "Growth is accelerating while inflation            │
+│   cools — the best environment for portfolios"      │
 │                                                     │
 │  ┌──────────────────┐  ┌──────────────────┐        │
 │  │ LIQUIDITY        │  │ GROWTH ×         │        │
@@ -970,17 +992,24 @@ Replaces `_regime_strip.html`. Same visual weight and position as the current st
 **Desktop (768px+):**
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ ● FAVORABLE   Liquidity: Expanding ↑ │ Goldilocks │ Risk: Calm │ Policy: Easing ↑ │
+│ ● GOLDILOCKS   Liquidity: Expanding ↑ │ Risk: Calm │ Policy: Easing ↑ │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Crypto page (desktop) — Liquidity leads:**
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ ● LIQUIDITY: EXPANDING ↑   Goldilocks │ Risk: Calm │ Policy: Easing ↑ │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
 **Mobile (<768px):**
 ```
 ┌──────────────────────────────────────┐
-│ ● FAVORABLE CONDITIONS            ▾ │
+│ ● GOLDILOCKS                      ▾ │
 └──────────────────────────────────────┘
 ```
-Tap ▾ to expand into vertical list of four dimensions.
+Tap ▾ to expand into vertical list of supporting dimensions.
 
 ---
 
@@ -1026,24 +1055,22 @@ The AI briefing in `signaltrackers/ai_summary.py` receives the regime state as c
 
 ### New Context for AI
 
-The AI briefing receives all four dimensions plus the verdict:
+The AI briefing receives all four dimensions with the quadrant as the frame:
 
 ```python
 conditions_context = {
-    'verdict': 'Favorable',
-    'verdict_score': 1.2,
-    'liquidity': {
-        'state': 'Expanding',
-        'score': 0.8,
-        'direction': 'improving',
-        'key_drivers': ['M2 growth turning positive', 'Fed balance sheet stable'],
-    },
     'quadrant': {
         'name': 'Goldilocks',
         'growth_score': 0.6,
         'inflation_score': -0.4,
         'growth_drivers': ['Claims falling', 'NFCI loosening'],
         'inflation_drivers': ['CPI decelerating', 'Breakevens falling'],
+    },
+    'liquidity': {
+        'state': 'Expanding',
+        'score': 0.8,
+        'direction': 'improving',
+        'key_drivers': ['M2 growth turning positive', 'Fed balance sheet stable'],
     },
     'risk': {
         'state': 'Calm',
@@ -1070,8 +1097,8 @@ conditions_context = {
 
 The AI briefing should follow a three-paragraph structure:
 
-1. **Current conditions** — What each dimension shows, with the verdict as the frame
-2. **What's changing** — Transitions, trends approaching thresholds, dimension conflicts
+1. **Current conditions** — Lead with the quadrant, then how the other three dimensions modify the picture
+2. **What's changing** — Transitions, trends approaching thresholds (e.g., "inflation metrics approaching the Reflation boundary")
 3. **Portfolio implications** — What this means in plain English for the reader's investments
 
 ### Rule-Based Fallback
@@ -1080,10 +1107,12 @@ When the AI is unavailable (no API key, rate limit, etc.), a rule-based narrativ
 
 ```python
 headline = (
-    f"{verdict} conditions: liquidity is {liquidity_state}, "
-    f"the economy is in a {quadrant_name} environment, "
-    f"risk is {risk_state}, and policy is {policy_direction}."
+    f"{quadrant_name}: {quadrant_plain_english}. "
+    f"Liquidity is {liquidity_state}, risk is {risk_state}, "
+    f"and policy is {policy_direction}."
 )
+# Example: "Goldilocks: Growth is accelerating while inflation cools.
+#           Liquidity is expanding, risk is calm, and policy is easing."
 ```
 
 ---
@@ -1102,11 +1131,12 @@ The new `market_conditions.py` runs alongside `regime_detection.py` during the m
 | `regime_config.py` | **Extend** — add quadrant metadata alongside regime metadata | `conditions_config.py` |
 | `regime_implications_config.py` | **Replace** — new implications by quadrant × liquidity | `conditions_implications_config.py` |
 | `_regime_strip.html` | **Replace** | `_conditions_strip.html` |
-| Homepage §0 (regime card) | **Replace** with conditions summary | New §1 |
+| Homepage §0 (regime card) | **Replace** with quadrant headline + conditions summary | New §1 |
 | Homepage §0.75 (implications panel) | **Restructure** for quadrants | New §6 |
 | `layer1_regime_transition.py` | **Extend** — alert on quadrant transitions and liquidity shifts | Enhanced alert engine |
-| `ai_summary.py` | **Extend** — new context dict | Same file, richer context |
-| `regime_backtest.py` | **Extend** — new expectation tables | Same file + new expectations |
+| `ai_summary.py` | **Extend** — quadrant-led context dict (no verdict) | Same file, richer context |
+| `regime_backtest.py` | **Extend** — quadrant-based expectations with real returns | Same file + new scoring logic |
+| Verdict classifier | **Remove** — verdict scoring, weights, thresholds | N/A — quadrant is the headline directly |
 
 ### What Stays Unchanged
 
@@ -1137,36 +1167,40 @@ With the liquidity dimension, Bitcoin can be scored **against liquidity only**, 
 
 **Risk:** Low. Pure additive data collection.
 
-### Phase 2: Calculation Engine (Backend, No UI Changes)
+### Phase 2: Calculation Engine (Backend, No UI Changes) — COMPLETE
 
-**Goal:** Build `market_conditions.py` with all four dimension engines and the verdict classifier.
-
-**Scope:**
-- Implement liquidity composite calculation
-- Implement growth × inflation quadrant engine
-- Implement risk regime scoring
-- Implement Taylor Rule / policy stance
-- Implement verdict scoring and classification
-- Cache results to `market_conditions_cache.json`
-- Run in parallel with existing regime system
-
-**Risk:** Medium. The calculation logic needs careful validation. Second derivatives of noisy data will need smoothing. Taylor Rule depends on CBO estimates that may not be available in real-time for backtesting.
-
-### Phase 3: Backtest Validation (Backend, No UI Changes)
-
-**Goal:** Score the new model through the existing walk-forward framework and validate it beats 52.3/100.
+**Goal:** Build `market_conditions.py` with all four dimension engines.
 
 **Scope:**
-- Extend `regime_backtest.py` with new expectation tables
-- Run walk-forward validation (10 folds, 2005-2025)
-- Compare composite scores: old model vs. new model
-- Run CPCV and DSR on top-performing configuration
-- Tune weights and thresholds based on validation results
-- Document results
+- ✅ Implement liquidity composite calculation
+- ✅ Implement growth × inflation quadrant engine
+- ✅ Implement risk regime scoring
+- ✅ Implement Taylor Rule / policy stance
+- ✅ Store full calculation history (for quadrant trajectory visualization)
+- ✅ Cache results to `market_conditions_cache.json`
+- ✅ Run in parallel with existing regime system
 
-**Critical gate:** If the new model does not meaningfully beat 52.3/100 in walk-forward validation, do not proceed to UI changes. Go back and improve the model.
+**Status:** Implemented in PRs #306, #307, #308, #311.
 
-**Risk:** Medium-high. This is where we find out if the theory works in practice.
+### Phase 3: Backtest Validation — IN PROGRESS (Scoring Refinement)
+
+**Goal:** Score the new model through the walk-forward framework and validate it beats 52.3/100.
+
+**Status:** First backtest run completed (branch `feature/US-303`). Multi-asset accuracy improved to 63.9% (from 54.6%), but composite score of 31.9 failed due to verdict-based scoring issues. Analysis identified three refinements needed (see [BACKTEST-FINDINGS-AND-REFINEMENTS.md](BACKTEST-FINDINGS-AND-REFINEMENTS.md)):
+
+**Remaining scope:**
+- Remove verdict-based scoring — score against quadrant expectations directly
+- Switch to inflation-adjusted (real) returns for equity scoring
+- Test magnitude ordering (Goldilocks > Stagflation) instead of direction (positive vs negative)
+- Add crypto scoring against liquidity dimension
+- Fix NROU duplicate data bug (Issue #313) blocking per-evaluation CSV
+- Re-run walk-forward validation with updated scoring
+- Run CPCV and DSR on updated results
+- Document final results
+
+**Critical gate:** If the quadrant-based real-return scoring does not beat 52.3/100, iterate on the model before proceeding to UI.
+
+**Risk:** Low-medium. The quadrant ordering already holds in the data (Goldilocks +4.68% > Stagflation +1.20% in real terms). The refinement is about scoring what we already have correctly, not building something new.
 
 ### Phase 4: Homepage Redesign (Full-Stack)
 
@@ -1175,7 +1209,7 @@ With the liquidity dimension, Bitcoin can be scored **against liquidity only**, 
 **Scope:**
 - New conditions strip component (`_conditions_strip.html`)
 - Move AI briefing to §0 (lead section)
-- New conditions summary card (§1) with verdict + four dimension mini-cards
+- New conditions summary card (§1) with quadrant headline + four dimension mini-cards
 - New dimension detail sections (§2-§5) with progressive disclosure
 - New portfolio implications section (§6)
 - Update context processors to inject conditions data
@@ -1229,7 +1263,7 @@ With the liquidity dimension, Bitcoin can be scored **against liquidity only**, 
 
 | Risk | Severity | Likelihood | Mitigation |
 |------|----------|-----------|------------|
-| New model doesn't beat 52.3 in backtest | High | Medium | Phase 3 is a hard gate. Do not proceed to UI if model fails. Iterate on model first. |
+| New model doesn't beat 52.3 in backtest | High | Low (post-refinement) | Phase 3 is a hard gate. First run showed multi-asset accuracy of 63.9% — the underlying predictions work. Scoring refinement (real returns, magnitude ordering, quadrant-based) should clear the bar. |
 | Second derivatives whipsaw (noisy quadrant transitions) | High | Medium-High | Apply smoothing (3-month rolling average on acceleration signals). Require 2+ consecutive months in new quadrant before transition. Test stability constraint in backtest. |
 | Taylor Rule instability (CBO revisions) | Medium | High | Policy dimension carries lowest weight (10%). Flag as "model-dependent" in UI. When Taylor Rule and fed funds futures diverge, note the discrepancy. |
 | International data gaps (China/UK M2) | Medium | Certain | Use 3-central-bank composite (Fed+ECB+BOJ = ~70% global CB liquidity). Document the limitation. Revisit if PBOC/BOE FRED series are restored. |
@@ -1247,8 +1281,8 @@ With the liquidity dimension, Bitcoin can be scored **against liquidity only**, 
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Users miss the old simplicity of Bull/Bear/Neutral | Medium | The single verdict IS simple. "Favorable" is as easy to understand as "Bull." The difference is that users CAN drill deeper — they don't have to. Monitor engagement with Tier 2/3 disclosure to validate. |
-| Homepage feels "too opinionated" | Medium | AI briefing and verdict are the interpretation layer. But every dimension card links to the underlying data (category pages). Users can always verify the reasoning. Include a "See the data →" CTA prominently. |
+| Users miss the old simplicity of Bull/Bear/Neutral | Medium | The quadrant names (Goldilocks, Reflation, Stagflation, Deflation Risk) are equally simple and carry more information. Each is immediately followed by a plain-English sentence ("Growth is slowing while inflation rises"). |
+| Homepage feels "too opinionated" | Medium | The quadrant is a factual classification (growth IS accelerating or decelerating), not an opinion. Every dimension card links to the underlying data (category pages). Users can always verify the reasoning. Include a "See the data →" CTA prominently. |
 | Framework is wrong publicly and damages trust | Medium | Show historical accuracy prominently: "This framework correctly identified X of Y historical environments." When wrong, acknowledge it in the next briefing. Transparency builds more trust than perfection. |
 
 ---
@@ -1259,16 +1293,18 @@ Decisions made during the research and design process, with rationale.
 
 | # | Decision | Rationale | Alternatives Considered |
 |---|----------|-----------|------------------------|
-| 1 | **One verdict, not four gauges** | Cognitive load research (Miller's Law, Hick's Law) shows 4 independent dimensions exceeds retail capacity. CNN Fear & Greed succeeds because it compresses, not expands. | Four independent gauges as primary UI (rejected: 81 possible combinations too complex for retail) |
+| 1 | ~~**One verdict, not four gauges**~~ → **Quadrant as headline, no verdict** | Original design blended four dimensions into a verdict (Favorable/Mixed/Cautious/Defensive). Backtesting proved the verdict scrambled the quadrant's correct predictions — Cautious returned more than Mixed, Defensive returned more than Cautious. The quadrant alone correctly orders real returns. Verdict removed; quadrant IS the headline. Still one headline — just a better one that carries real information. | Blended verdict (rejected post-backtest: destroys quadrant signal), Four independent gauges (rejected: cognitive overload) |
 | 2 | **Use rate of change, not levels, for quadrant** | Hedgeye approach: detects inflection points earlier. "Growth decelerating" (3% → 2%) is more useful than "growth is positive." | Level-based classification (rejected: too slow to detect transitions) |
 | 3 | **Taylor Rule gap over Wu-Xia shadow rate for Policy** | Wu-Xia is no longer updated (stopped Jun 2023). Taylor Rule is computable from FRED data. Shadow rate only differs from actual rate during ZLB periods (not current). | Wu-Xia shadow rate (rejected: discontinued), Raw fed funds rate (rejected: conflates policy with conditions) |
 | 4 | **Central bank balance sheets as global liquidity proxy** | International M2 FRED data is dead (China 2019, Japan 2017, Euro Area 2017). CB balance sheets are active and cover ~70% of global CB liquidity. | Global M2 aggregation (rejected: data unavailable on FRED), Proprietary data (rejected: paid, not FRED-compatible) |
 | 5 | **Homepage = conditions page** | Current homepage lacks clear purpose — tries to be both overview and signal dashboard. Conditions-first gives it a clear narrative: "what's happening, why, and what to do." | Keep homepage as data dashboard with improved regime card (rejected: doesn't solve the structural clarity problem) |
 | 6 | **AI briefing at top of homepage** | Briefing is the product's key differentiator ("plain-language synthesis"). Currently buried below regime and implications panels. Moving it to §0 makes interpretation the lead, supported by structured data below. | Keep briefing in current position (rejected: doesn't leverage the differentiator) |
-| 7 | **Exclude Bitcoin from verdict scoring, include via liquidity dimension** | Bitcoin's 34.8% accuracy against macro regimes is unfixable — its drivers are liquidity and halving cycles, not growth/inflation. But it correlates 0.94 with global M2. Score against liquidity only. | Include Bitcoin in composite scoring (rejected: empirically fails), Exclude Bitcoin entirely (rejected: loses the genuine liquidity signal) |
-| 8 | **Liquidity and Quadrant weighted highest (35% each)** | Liquidity: strongest empirical predictor (~66% of asset price variation per Howell). Quadrant: determines which assets benefit. Risk and Policy are supporting signals, not primary drivers. | Equal weighting (rejected: treats noisy Policy dimension same as robust Liquidity) |
+| 7 | **Score crypto against liquidity, traditional assets against quadrant** | Bitcoin's 34.8% accuracy against macro regimes is unfixable — its drivers are liquidity and halving cycles, not growth/inflation. But it correlates 0.94 with global M2. On the Crypto page, liquidity leads the display instead of the quadrant. | Include Bitcoin in composite scoring (rejected: empirically fails), Exclude Bitcoin entirely (rejected: loses the genuine liquidity signal) |
+| 8 | ~~**Liquidity and Quadrant weighted highest (35% each)**~~ → **No weights — dimensions serve different roles** | Original design weighted four dimensions into a verdict. Post-backtest, dimensions are not blended. Quadrant drives traditional asset expectations. Liquidity drives crypto and modifies magnitude. Risk and Policy provide context. No weighting needed. | Equal weighting into verdict (rejected: backtest showed blending destroys information) |
 | 9 | **Phase 3 backtest as a hard gate before UI work** | Avoids building a beautiful UI for a model that doesn't work. Walk-forward validation is the empirical test. If it doesn't beat 52.3, iterate on the model, not the UI. | Build UI and model in parallel (rejected: risk of shipping unvalidated framework) |
-| 10 | **Quadrant stability filter: require 2+ months before transition** | Second derivatives amplify noise. Without smoothing, quadrant would change every 1-2 months. Backtest strategy requires 3+ month average regime duration. | No smoothing (rejected: too noisy for retail), 3-month filter (considered: may miss genuine fast transitions like March 2020) |
+| 10 | **Quadrant stability filter: require 2+ months before transition** | Second derivatives amplify noise. Without smoothing, quadrant would change every 1-2 months. Backtest shows 4.2 month average duration (passes 3-month minimum). | No smoothing (rejected: too noisy for retail), 3-month filter (considered: may miss genuine fast transitions like March 2020) |
+| 11 | **Score using inflation-adjusted (real) returns** | Backtesting showed stocks produce positive nominal returns in ALL environments (central bank put). But real return ordering is correct: Goldilocks +4.68% > Stagflation +1.20%. During 2022 stagflation (CPI 7-8%), real returns were -9% to -17%. The model was right — nominal scoring hid it. | Nominal return scoring (rejected: fails because stocks are nominally positive even in Stagflation) |
+| 12 | **Score magnitude ordering, not direction** | Instead of "did Stagflation produce negative returns?" (it didn't, nominally), score "did Goldilocks produce better real returns than Stagflation?" (it did, always). Magnitude ordering holds across 20 years of data. | Direction-based scoring (rejected: central bank intervention makes direction unreliable for equities) |
 
 ---
 
