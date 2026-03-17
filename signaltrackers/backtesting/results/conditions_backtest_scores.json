@@ -1,0 +1,521 @@
+{
+  "overall": {
+    "multi_asset_accuracy": 63.9,
+    "total_evaluations": 231,
+    "drawdown_ordering_correct": false,
+    "sp500_avg_max_dd_by_verdict": {
+      "Favorable": -6.27,
+      "Mixed": -8.5,
+      "Cautious": -6.41,
+      "Defensive": -8.36
+    },
+    "sp500_return_ordering_correct": false,
+    "sp500_avg_90d_by_verdict": {
+      "Favorable": 4.83,
+      "Mixed": 2.22,
+      "Cautious": 2.71,
+      "Defensive": 3.17
+    },
+    "composite_score": 31.9
+  },
+  "walk_forward": {
+    "fold_details": [
+      {
+        "fold": 1,
+        "test_start": "2005-01-01",
+        "test_end": "2006-12-31",
+        "evaluations": 5,
+        "score": 50.0,
+        "verdict_counts": {
+          "Cautious": 5
+        }
+      },
+      {
+        "fold": 2,
+        "test_start": "2007-01-01",
+        "test_end": "2008-12-31",
+        "evaluations": 24,
+        "score": 62.2,
+        "verdict_counts": {
+          "Mixed": 16,
+          "Favorable": 6,
+          "Cautious": 2
+        }
+      },
+      {
+        "fold": 3,
+        "test_start": "2009-01-01",
+        "test_end": "2010-12-31",
+        "evaluations": 24,
+        "score": 62.6,
+        "verdict_counts": {
+          "Mixed": 9,
+          "Favorable": 6,
+          "Cautious": 5,
+          "Defensive": 4
+        }
+      },
+      {
+        "fold": 4,
+        "test_start": "2011-01-01",
+        "test_end": "2012-12-31",
+        "evaluations": 24,
+        "score": 72.3,
+        "verdict_counts": {
+          "Mixed": 15,
+          "Cautious": 7,
+          "Favorable": 2
+        }
+      },
+      {
+        "fold": 5,
+        "test_start": "2013-01-01",
+        "test_end": "2014-12-31",
+        "evaluations": 24,
+        "score": 65.5,
+        "verdict_counts": {
+          "Favorable": 11,
+          "Mixed": 7,
+          "Cautious": 3,
+          "Defensive": 3
+        }
+      },
+      {
+        "fold": 6,
+        "test_start": "2015-01-01",
+        "test_end": "2016-12-31",
+        "evaluations": 24,
+        "score": 53.5,
+        "verdict_counts": {
+          "Cautious": 15,
+          "Mixed": 9
+        }
+      },
+      {
+        "fold": 7,
+        "test_start": "2017-01-01",
+        "test_end": "2018-12-31",
+        "evaluations": 24,
+        "score": 73.8,
+        "verdict_counts": {
+          "Mixed": 12,
+          "Defensive": 7,
+          "Cautious": 5
+        }
+      },
+      {
+        "fold": 8,
+        "test_start": "2019-01-01",
+        "test_end": "2020-12-31",
+        "evaluations": 24,
+        "score": 69.0,
+        "verdict_counts": {
+          "Mixed": 12,
+          "Favorable": 7,
+          "Cautious": 5
+        }
+      },
+      {
+        "fold": 9,
+        "test_start": "2021-01-01",
+        "test_end": "2022-12-31",
+        "evaluations": 24,
+        "score": 55.6,
+        "verdict_counts": {
+          "Cautious": 11,
+          "Defensive": 6,
+          "Favorable": 5,
+          "Mixed": 2
+        }
+      },
+      {
+        "fold": 10,
+        "test_start": "2023-01-01",
+        "test_end": "2024-12-31",
+        "evaluations": 24,
+        "score": 59.6,
+        "verdict_counts": {
+          "Mixed": 17,
+          "Cautious": 6,
+          "Defensive": 1
+        }
+      }
+    ],
+    "fold_scores": [
+      50.0,
+      62.2,
+      62.6,
+      72.3,
+      65.5,
+      53.5,
+      73.8,
+      69.0,
+      55.6,
+      59.6
+    ],
+    "mean": 62.4,
+    "std": 7.9,
+    "sharpe": 7.86,
+    "n_folds": 10
+  },
+  "per_verdict": {
+    "Favorable": {
+      "count": 39,
+      "multi_asset_accuracy": 78.2,
+      "sp500_avg_30d": 2.77,
+      "sp500_avg_60d": 4.25,
+      "sp500_avg_90d": 4.83,
+      "sp500_accuracy": 84.6,
+      "treasuries_avg_30d": -0.07,
+      "treasuries_avg_60d": 0.31,
+      "treasuries_avg_90d": 1.12,
+      "treasuries_accuracy": 73.1,
+      "gold_avg_30d": -0.22,
+      "gold_avg_60d": 0.18,
+      "gold_avg_90d": 1.35,
+      "gold_accuracy": 75.6,
+      "sp500_avg_max_dd_90d": -6.27,
+      "sp500_worst_max_dd_90d": -35.4
+    },
+    "Mixed": {
+      "count": 107,
+      "multi_asset_accuracy": 74.4,
+      "sp500_avg_30d": 0.31,
+      "sp500_avg_60d": 1.12,
+      "sp500_avg_90d": 2.22,
+      "sp500_accuracy": 71.5,
+      "treasuries_avg_30d": 0.86,
+      "treasuries_avg_60d": 1.72,
+      "treasuries_avg_90d": 2.15,
+      "treasuries_accuracy": 80.8,
+      "gold_avg_30d": 1.62,
+      "gold_avg_60d": 3.22,
+      "gold_avg_90d": 4.42,
+      "gold_accuracy": 71.5,
+      "sp500_avg_max_dd_90d": -8.5,
+      "sp500_worst_max_dd_90d": -40.71
+    },
+    "Cautious": {
+      "count": 64,
+      "multi_asset_accuracy": 39.8,
+      "sp500_avg_30d": 1.1,
+      "sp500_avg_60d": 1.98,
+      "sp500_avg_90d": 2.71,
+      "sp500_accuracy": 28.1,
+      "treasuries_avg_30d": -0.67,
+      "treasuries_avg_60d": -0.57,
+      "treasuries_avg_90d": -1.15,
+      "treasuries_accuracy": 46.9,
+      "gold_avg_30d": 0.14,
+      "gold_avg_60d": 0.42,
+      "gold_avg_90d": 0.71,
+      "gold_accuracy": 46.9,
+      "sp500_avg_max_dd_90d": -6.41,
+      "sp500_worst_max_dd_90d": -19.74
+    },
+    "Defensive": {
+      "count": 21,
+      "multi_asset_accuracy": 57.1,
+      "sp500_avg_30d": 0.73,
+      "sp500_avg_60d": 1.67,
+      "sp500_avg_90d": 3.17,
+      "sp500_accuracy": 33.3,
+      "treasuries_avg_30d": 0.32,
+      "treasuries_avg_60d": 0.0,
+      "treasuries_avg_90d": 0.98,
+      "treasuries_accuracy": 57.1,
+      "gold_avg_30d": 1.19,
+      "gold_avg_60d": 2.42,
+      "gold_avg_90d": 4.01,
+      "gold_accuracy": 85.7,
+      "sp500_avg_max_dd_90d": -8.36,
+      "sp500_worst_max_dd_90d": -19.2
+    }
+  },
+  "per_asset": {
+    "sp500": {
+      "label": "S&P 500",
+      "weight": 0.375,
+      "accuracy": 58.2,
+      "count": 231
+    },
+    "treasuries": {
+      "label": "Treasuries (TLT)",
+      "weight": 0.3125,
+      "accuracy": 68.0,
+      "count": 231
+    },
+    "gold": {
+      "label": "Gold",
+      "weight": 0.3125,
+      "accuracy": 66.7,
+      "count": 231
+    }
+  },
+  "plausibility": {
+    "all_pass": true,
+    "checks": {
+      "march_2020_not_favorable": {
+        "pass": true,
+        "dominant_verdict": "Mixed",
+        "verdicts_found": [
+          "Mixed",
+          "Favorable"
+        ],
+        "verdict_distribution": {
+          "Mixed": 1,
+          "Favorable": 1
+        }
+      },
+      "2022_stagflation_present": {
+        "pass": true,
+        "quadrants_found": [
+          "Deflation Risk",
+          "Stagflation"
+        ],
+        "quadrant_distribution": {
+          "Deflation Risk": 8,
+          "Stagflation": 4
+        }
+      },
+      "verdict_stability": {
+        "pass": true,
+        "avg_duration_months": 4.2,
+        "total_transitions": 54,
+        "min_duration": 1,
+        "max_duration": 21
+      }
+    }
+  },
+  "cpcv": {
+    "pbo": 0.467,
+    "n_paths": 15,
+    "oos_mean": 63.9,
+    "oos_std": 2.4,
+    "is_mean": 64.0,
+    "oos_scores": [
+      65.5,
+      60.3,
+      65.4,
+      64.9,
+      61.9,
+      62.7,
+      67.8,
+      67.3,
+      64.2,
+      62.5,
+      62.0,
+      59.2,
+      67.2,
+      64.1,
+      63.6
+    ]
+  },
+  "dsr": {
+    "dsr": 42.4204,
+    "p_value": 0.0,
+    "significant": true,
+    "observed_sharpe": 7.86,
+    "expected_max_sharpe": 0.6858,
+    "n_trials": 7,
+    "n_observations": 10
+  },
+  "sensitivity": [
+    {
+      "label": "Default (35/35/20/10)",
+      "weights": {
+        "liquidity": 0.35,
+        "quadrant": 0.35,
+        "risk": 0.2,
+        "policy": 0.1
+      },
+      "composite_score": 31.9,
+      "multi_asset_accuracy": 63.9,
+      "wf_mean": 62.4,
+      "wf_std": 7.9,
+      "wf_sharpe": 7.86,
+      "fold_scores": [
+        50.0,
+        62.2,
+        62.6,
+        72.3,
+        65.5,
+        53.5,
+        73.8,
+        69.0,
+        55.6,
+        59.6
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    },
+    {
+      "label": "Liquidity-heavy (40/30/20/10)",
+      "weights": {
+        "liquidity": 0.4,
+        "quadrant": 0.3,
+        "risk": 0.2,
+        "policy": 0.1
+      },
+      "composite_score": 31.9,
+      "multi_asset_accuracy": 63.7,
+      "wf_mean": 62.3,
+      "wf_std": 7.9,
+      "wf_sharpe": 7.89,
+      "fold_scores": [
+        50.0,
+        62.2,
+        62.6,
+        72.3,
+        63.9,
+        53.5,
+        73.8,
+        69.0,
+        55.6,
+        59.6
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    },
+    {
+      "label": "Quadrant-heavy (30/40/20/10)",
+      "weights": {
+        "liquidity": 0.3,
+        "quadrant": 0.4,
+        "risk": 0.2,
+        "policy": 0.1
+      },
+      "composite_score": 31.4,
+      "multi_asset_accuracy": 62.8,
+      "wf_mean": 61.3,
+      "wf_std": 7.7,
+      "wf_sharpe": 7.92,
+      "fold_scores": [
+        50.0,
+        57.7,
+        62.6,
+        68.9,
+        62.5,
+        52.7,
+        73.8,
+        69.8,
+        55.6,
+        59.6
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    },
+    {
+      "label": "Risk+Policy up (30/30/25/15)",
+      "weights": {
+        "liquidity": 0.3,
+        "quadrant": 0.3,
+        "risk": 0.25,
+        "policy": 0.15
+      },
+      "composite_score": 32.5,
+      "multi_asset_accuracy": 65.1,
+      "wf_mean": 63.6,
+      "wf_std": 7.0,
+      "wf_sharpe": 9.11,
+      "fold_scores": [
+        50.0,
+        63.0,
+        62.6,
+        72.3,
+        63.9,
+        61.1,
+        73.8,
+        68.2,
+        56.9,
+        64.2
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    },
+    {
+      "label": "Risk-heavy (25/25/30/20)",
+      "weights": {
+        "liquidity": 0.25,
+        "quadrant": 0.25,
+        "risk": 0.3,
+        "policy": 0.2
+      },
+      "composite_score": 32.4,
+      "multi_asset_accuracy": 64.8,
+      "wf_mean": 65.9,
+      "wf_std": 8.1,
+      "wf_sharpe": 8.11,
+      "fold_scores": [
+        83.1,
+        63.0,
+        56.6,
+        70.2,
+        64.7,
+        61.1,
+        73.8,
+        66.5,
+        56.1,
+        64.2
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    },
+    {
+      "label": "Macro-dominant (40/40/10/10)",
+      "weights": {
+        "liquidity": 0.4,
+        "quadrant": 0.4,
+        "risk": 0.1,
+        "policy": 0.1
+      },
+      "composite_score": 30.9,
+      "multi_asset_accuracy": 61.9,
+      "wf_mean": 60.4,
+      "wf_std": 7.2,
+      "wf_sharpe": 8.44,
+      "fold_scores": [
+        50.0,
+        56.1,
+        62.6,
+        60.5,
+        62.5,
+        53.5,
+        73.8,
+        69.0,
+        55.6,
+        60.4
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    },
+    {
+      "label": "Low-policy (35/35/25/5)",
+      "weights": {
+        "liquidity": 0.35,
+        "quadrant": 0.35,
+        "risk": 0.25,
+        "policy": 0.05
+      },
+      "composite_score": 31.2,
+      "multi_asset_accuracy": 62.4,
+      "wf_mean": 61.1,
+      "wf_std": 7.7,
+      "wf_sharpe": 7.98,
+      "fold_scores": [
+        50.0,
+        58.5,
+        62.6,
+        68.9,
+        60.9,
+        53.5,
+        73.8,
+        69.0,
+        54.0,
+        59.6
+      ],
+      "drawdown_ordering": false,
+      "return_ordering": false
+    }
+  ]
+}
