@@ -251,6 +251,7 @@ class TestAssetExpectations:
         assert by_asset['sp500']['direction'] == 'positive'
         assert by_asset['treasuries']['direction'] == 'positive'
         assert by_asset['gold']['direction'] == 'neutral'
+        assert by_asset['bitcoin']['direction'] == 'positive'
         assert by_asset['sp500']['conviction'] == 'high'
         assert by_asset['sp500']['magnitude'] == 'moderate'
 
@@ -267,6 +268,10 @@ class TestAssetExpectations:
         # Gold: positive from stagflation, not overridden to weak
         assert by_asset['gold']['direction'] == 'positive'
         assert by_asset['gold']['conviction'] == 'override'
+        # Bitcoin: negative from Strongly Contracting liquidity; Stressed → weak/override
+        assert by_asset['bitcoin']['direction'] == 'negative'
+        assert by_asset['bitcoin']['magnitude'] == 'weak'
+        assert by_asset['bitcoin']['conviction'] == 'override'
 
     def test_reflation_normal(self):
         exps = _build_asset_expectations('Reflation', 'Neutral', 'Normal')
@@ -290,12 +295,12 @@ class TestAssetExpectations:
         assert by_asset['sp500']['direction'] == 'negative'
         assert by_asset['sp500']['conviction'] == 'override'
 
-    def test_all_quadrants_return_three_assets(self):
+    def test_all_quadrants_return_four_assets(self):
         for quad in _QUADRANT_EXPECTATIONS:
             exps = _build_asset_expectations(quad, 'Neutral', 'Normal')
-            assert len(exps) == 3
+            assert len(exps) == 4
             assets = {e['asset'] for e in exps}
-            assert assets == {'sp500', 'treasuries', 'gold'}
+            assert assets == {'sp500', 'treasuries', 'gold', 'bitcoin'}
 
     def test_liquidity_magnitude_mapping(self):
         """Each liquidity state produces a different magnitude."""
@@ -312,6 +317,51 @@ class TestAssetExpectations:
             exps = _build_asset_expectations('Goldilocks', 'Neutral', risk_state)
             convictions.add(exps[0]['conviction'])
         assert len(convictions) == 3
+
+    def test_bitcoin_expanding_liquidity_positive(self):
+        """Bitcoin direction positive when liquidity is Expanding."""
+        exps = _build_asset_expectations('Goldilocks', 'Expanding', 'Normal')
+        by_asset = {e['asset']: e for e in exps}
+        assert by_asset['bitcoin']['direction'] == 'positive'
+        assert by_asset['bitcoin']['magnitude'] == 'moderate'
+        assert by_asset['bitcoin']['conviction'] == 'standard'
+
+    def test_bitcoin_strongly_expanding_positive(self):
+        exps = _build_asset_expectations('Goldilocks', 'Strongly Expanding', 'Calm')
+        by_asset = {e['asset']: e for e in exps}
+        assert by_asset['bitcoin']['direction'] == 'positive'
+        assert by_asset['bitcoin']['magnitude'] == 'strong'
+
+    def test_bitcoin_neutral_liquidity_neutral(self):
+        exps = _build_asset_expectations('Stagflation', 'Neutral', 'Normal')
+        by_asset = {e['asset']: e for e in exps}
+        assert by_asset['bitcoin']['direction'] == 'neutral'
+
+    def test_bitcoin_contracting_liquidity_negative(self):
+        exps = _build_asset_expectations('Reflation', 'Contracting', 'Elevated')
+        by_asset = {e['asset']: e for e in exps}
+        assert by_asset['bitcoin']['direction'] == 'negative'
+        assert by_asset['bitcoin']['magnitude'] == 'reduced'
+
+    def test_bitcoin_strongly_contracting_negative(self):
+        exps = _build_asset_expectations('Deflation Risk', 'Strongly Contracting', 'Normal')
+        by_asset = {e['asset']: e for e in exps}
+        assert by_asset['bitcoin']['direction'] == 'negative'
+        assert by_asset['bitcoin']['magnitude'] == 'weak'
+
+    def test_bitcoin_stressed_override(self):
+        """Stressed risk → bitcoin gets weak magnitude and override conviction."""
+        exps = _build_asset_expectations('Goldilocks', 'Expanding', 'Stressed')
+        by_asset = {e['asset']: e for e in exps}
+        assert by_asset['bitcoin']['magnitude'] == 'weak'
+        assert by_asset['bitcoin']['conviction'] == 'override'
+
+    def test_bitcoin_independent_of_quadrant(self):
+        """Bitcoin direction depends on liquidity, not quadrant."""
+        for quad in _QUADRANT_EXPECTATIONS:
+            exps = _build_asset_expectations(quad, 'Expanding', 'Normal')
+            by_asset = {e['asset']: e for e in exps}
+            assert by_asset['bitcoin']['direction'] == 'positive'
 
 
 # ============================================================================
@@ -479,9 +529,9 @@ class TestComputeMarketConditions:
 
         result = compute_market_conditions()
         assert result is not None
-        assert len(result.asset_expectations) == 3
+        assert len(result.asset_expectations) == 4
         assets = {e['asset'] for e in result.asset_expectations}
-        assert assets == {'sp500', 'treasuries', 'gold'}
+        assert assets == {'sp500', 'treasuries', 'gold', 'bitcoin'}
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -607,7 +657,7 @@ class TestCacheIO:
                 assert dims['policy']['mapped_score'] == -1.0
 
                 # Verify asset expectations
-                assert len(cache_data['asset_expectations']) == 3
+                assert len(cache_data['asset_expectations']) == 4
         finally:
             for p in (tmp_path, tmp_history):
                 if os.path.exists(p):

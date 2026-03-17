@@ -1479,6 +1479,27 @@ def _build_asset_expectations(
             'conviction': asset_conv,
         })
 
+    # Bitcoin/crypto: liquidity-driven (primary signal per framework §8 §6)
+    btc_direction_map = {
+        'Strongly Expanding': 'positive',
+        'Expanding': 'positive',
+        'Neutral': 'neutral',
+        'Contracting': 'negative',
+        'Strongly Contracting': 'negative',
+    }
+    btc_dir = btc_direction_map.get(liquidity_state, 'neutral')
+    btc_mag = magnitude
+    btc_conv = conviction
+    if risk_state == 'Stressed':
+        btc_conv = 'override'
+        btc_mag = 'weak'
+    expectations.append({
+        'asset': 'bitcoin',
+        'direction': btc_dir,
+        'magnitude': btc_mag,
+        'conviction': btc_conv,
+    })
+
     return expectations
 
 
