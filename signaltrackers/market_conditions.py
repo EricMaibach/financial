@@ -1598,12 +1598,16 @@ def compute_market_conditions(as_of_date: Optional[str] = None) -> Optional[Mark
         quadrant.quadrant, liquidity.state, risk_state
     )
 
-    # Determine as_of date
-    dates = []
-    for dim in [liquidity, quadrant, risk, policy]:
-        if dim is not None and dim.as_of:
-            dates.append(dim.as_of)
-    as_of = max(dates) if dates else (as_of_date or None)
+    # Determine as_of date.
+    # Use the explicit backtest date if provided; otherwise use today's date.
+    # Do NOT use max(dimension dates) — quarterly FRED series (NROU, GDPPOT)
+    # have forward-looking observation dates that would key history entries
+    # in the future, causing overwrites and lost daily snapshots.
+    if as_of_date is not None:
+        as_of = as_of_date
+    else:
+        from datetime import date as _date
+        as_of = str(_date.today())
 
     return MarketConditionsResult(
         verdict=verdict,

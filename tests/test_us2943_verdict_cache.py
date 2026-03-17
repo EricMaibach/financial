@@ -555,7 +555,14 @@ class TestComputeMarketConditions:
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_as_of_uses_latest_dimension_date(self, mock_liq, mock_quad, mock_risk, mock_pol):
+    def test_as_of_uses_today_not_dimension_dates(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        """Live mode uses today's date, not max(dimension dates).
+
+        Quarterly FRED series (NROU, GDPPOT) have forward-looking dates that
+        would key history entries in the future if we used max(dimension dates).
+        """
+        from datetime import date as _date
+
         mock_liq.return_value = _mock_liquidity()
         mock_liq.return_value.as_of = '2025-01-10'
         mock_quad.return_value = _mock_quadrant()
@@ -567,7 +574,22 @@ class TestComputeMarketConditions:
 
         result = compute_market_conditions()
         assert result is not None
-        assert result.as_of == '2025-01-15'
+        assert result.as_of == str(_date.today())
+
+    @patch('market_conditions.compute_policy')
+    @patch('market_conditions.compute_risk')
+    @patch('market_conditions.compute_quadrant')
+    @patch('market_conditions.compute_liquidity')
+    def test_as_of_uses_explicit_date_for_backtest(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        """Backtest mode uses the provided as_of_date, not today."""
+        mock_liq.return_value = _mock_liquidity()
+        mock_quad.return_value = _mock_quadrant()
+        mock_risk.return_value = _mock_risk()
+        mock_pol.return_value = _mock_policy()
+
+        result = compute_market_conditions('2024-06-15')
+        assert result is not None
+        assert result.as_of == '2024-06-15'
 
 
 # ============================================================================
