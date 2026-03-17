@@ -1052,7 +1052,9 @@ def compute_policy(as_of_date: Optional[str] = None) -> Optional[PolicyResult]:
         logger.warning('Insufficient unemployment data for policy calculation')
         return None
 
-    # NROU is quarterly — forward-fill to monthly to align with UNRATE
+    # NROU is quarterly — deduplicate (FRED sometimes has duplicate dates),
+    # then forward-fill to monthly to align with UNRATE
+    nrou = nrou[~nrou.index.duplicated(keep='last')]
     nrou_monthly = nrou.resample('MS').ffill()
     # Align to UNRATE index
     common_idx = unrate.index.intersection(nrou_monthly.index)
@@ -1315,6 +1317,7 @@ def compute_policy_history(start_date: Optional[str] = None) -> Optional[pd.Data
 # ---------------------------------------------------------------------------
 
 MARKET_CONDITIONS_CACHE_FILE = os.path.join(DATA_DIR, 'market_conditions_cache.json')
+MARKET_CONDITIONS_HISTORY_FILE = os.path.join(DATA_DIR, 'market_conditions_history.json')
 
 # Dimension → numeric score mapping (per framework spec Section 5)
 
@@ -1650,6 +1653,10 @@ def update_market_conditions_cache() -> Optional[dict]:
 
         logger.info('Market conditions cache updated: verdict=%s score=%.4f',
                      result.verdict, result.verdict_score)
+
+        # Append to daily history (separate from snapshot cache)
+        _append_conditions_history(cache_data)
+
         return cache_data
 
     except Exception:
@@ -1667,3 +1674,62 @@ def get_market_conditions() -> Optional[dict]:
     except Exception:
         logger.exception('Error reading market conditions cache')
         return None
+
+
+# ---------------------------------------------------------------------------
+# Market Conditions History (append-only, one entry per day)
+# ---------------------------------------------------------------------------
+
+
+def _load_conditions_history() -> dict:
+    """Load the daily market conditions history from file.
+
+    Returns a dict mapping ISO date strings to snapshot dicts.
+    """
+    try:
+        if os.path.exists(MARKET_CONDITIONS_HISTORY_FILE):
+            with open(MARKET_CONDITIONS_HISTORY_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as exc:
+        logger.warning('Failed to read market conditions history: %s', exc)
+    return {}
+
+
+def _save_conditions_history(history: dict) -> None:
+    """Persist the daily market conditions history to file."""
+    try:
+        os.makedirs(os.path.dirname(MARKET_CONDITIONS_HISTORY_FILE), exist_ok=True)
+        with open(MARKET_CONDITIONS_HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+    except Exception as exc:
+        logger.warning('Failed to write market conditions history: %s', exc)
+
+
+def _append_conditions_history(cache_data: dict) -> None:
+    """Append a daily snapshot to the conditions history file.
+
+    Keyed by the as_of date. Overwrites same-day entries (idempotent).
+    No pruning — all history retained indefinitely.
+    """
+    as_of = cache_data.get('as_of')
+    if not as_of:
+        return
+
+    history = _load_conditions_history()
+    history[as_of] = {
+        'verdict': cache_data['verdict'],
+        'verdict_score': cache_data['verdict_score'],
+        'dimensions': cache_data['dimensions'],
+        'asset_expectations': cache_data['asset_expectations'],
+    }
+    _save_conditions_history(history)
+    logger.info('Market conditions history updated for %s (%d total entries)',
+                as_of, len(history))
+
+
+def get_conditions_history() -> dict:
+    """Read the full market conditions history.
+
+    Returns a dict mapping ISO date strings to snapshot dicts.
+    """
+    return _load_conditions_history()

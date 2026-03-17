@@ -43,7 +43,12 @@ from market_conditions import (
     compute_market_conditions,
     update_market_conditions_cache,
     get_market_conditions,
+    _load_conditions_history,
+    _save_conditions_history,
+    _append_conditions_history,
+    get_conditions_history,
     MARKET_CONDITIONS_CACHE_FILE,
+    MARKET_CONDITIONS_HISTORY_FILE,
     MarketConditionsResult,
     LiquidityResult,
     QuadrantResult,
@@ -534,9 +539,12 @@ class TestCacheIO:
 
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
             tmp_path = f.name
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp_history = f.name
 
         try:
-            with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', tmp_path):
+            with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', tmp_path), \
+                 patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp_history):
                 cache_data = update_market_conditions_cache()
                 assert cache_data is not None
                 assert cache_data['verdict'] == 'Favorable'
@@ -549,8 +557,9 @@ class TestCacheIO:
                 assert loaded is not None
                 assert loaded['verdict'] == 'Favorable'
         finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+            for p in (tmp_path, tmp_history):
+                if os.path.exists(p):
+                    os.unlink(p)
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -564,9 +573,12 @@ class TestCacheIO:
 
         with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
             tmp_path = f.name
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp_history = f.name
 
         try:
-            with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', tmp_path):
+            with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', tmp_path), \
+                 patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp_history):
                 cache_data = update_market_conditions_cache()
 
                 # Verify all required keys
@@ -597,8 +609,9 @@ class TestCacheIO:
                 # Verify asset expectations
                 assert len(cache_data['asset_expectations']) == 3
         finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
+            for p in (tmp_path, tmp_history):
+                if os.path.exists(p):
+                    os.unlink(p)
 
     @patch('market_conditions.compute_liquidity')
     def test_cache_update_returns_none_when_no_data(self, mock_liq):
@@ -793,3 +806,262 @@ class TestEdgeCases:
         assert hasattr(result, 'policy_mapped')
         assert hasattr(result, 'asset_expectations')
         assert hasattr(result, 'as_of')
+
+
+# ============================================================================
+# 9. Market Conditions History
+# ============================================================================
+
+class TestConditionsHistory:
+    """Test the append-only daily history file."""
+
+    def test_load_empty_when_no_file(self):
+        with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', '/nonexistent/path.json'):
+            assert _load_conditions_history() == {}
+
+    def test_load_empty_on_corrupt_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as f:
+            f.write('not valid json{{{')
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                assert _load_conditions_history() == {}
+        finally:
+            os.unlink(tmp)
+
+    def test_save_and_load_roundtrip(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                data = {'2025-01-15': {'verdict': 'Mixed', 'verdict_score': 0.4}}
+                _save_conditions_history(data)
+                loaded = _load_conditions_history()
+                assert loaded == data
+        finally:
+            os.unlink(tmp)
+
+    def test_append_creates_entry(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                cache_data = {
+                    'verdict': 'Favorable',
+                    'verdict_score': 1.7,
+                    'dimensions': {'liquidity': {'state': 'Expanding', 'mapped_score': 1.0}},
+                    'asset_expectations': [{'asset': 'sp500', 'direction': 'positive'}],
+                    'as_of': '2025-01-15',
+                }
+                _append_conditions_history(cache_data)
+                history = _load_conditions_history()
+                assert '2025-01-15' in history
+                assert history['2025-01-15']['verdict'] == 'Favorable'
+                assert history['2025-01-15']['verdict_score'] == 1.7
+        finally:
+            os.unlink(tmp)
+
+    def test_append_overwrites_same_day(self):
+        """Running twice on the same day overwrites (idempotent)."""
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                base = {
+                    'verdict': 'Mixed',
+                    'verdict_score': 0.4,
+                    'dimensions': {},
+                    'asset_expectations': [],
+                    'as_of': '2025-01-15',
+                }
+                _append_conditions_history(base)
+
+                updated = dict(base, verdict='Favorable', verdict_score=1.0)
+                _append_conditions_history(updated)
+
+                history = _load_conditions_history()
+                assert len(history) == 1
+                assert history['2025-01-15']['verdict'] == 'Favorable'
+        finally:
+            os.unlink(tmp)
+
+    def test_append_accumulates_different_days(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                for day in ['2025-01-15', '2025-01-16', '2025-01-17']:
+                    _append_conditions_history({
+                        'verdict': 'Mixed',
+                        'verdict_score': 0.4,
+                        'dimensions': {},
+                        'asset_expectations': [],
+                        'as_of': day,
+                    })
+                history = _load_conditions_history()
+                assert len(history) == 3
+                assert set(history.keys()) == {'2025-01-15', '2025-01-16', '2025-01-17'}
+        finally:
+            os.unlink(tmp)
+
+    def test_append_skips_missing_as_of(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                _append_conditions_history({'verdict': 'Mixed', 'verdict_score': 0.4})
+                history = _load_conditions_history()
+                assert len(history) == 0
+        finally:
+            os.unlink(tmp)
+
+    def test_history_entry_has_expected_keys(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                _append_conditions_history({
+                    'verdict': 'Cautious',
+                    'verdict_score': -0.5,
+                    'dimensions': {'liquidity': {'state': 'Contracting'}},
+                    'asset_expectations': [{'asset': 'sp500'}],
+                    'as_of': '2025-02-01',
+                    'updated_at': '2025-02-01T12:00:00Z',
+                })
+                entry = _load_conditions_history()['2025-02-01']
+                assert 'verdict' in entry
+                assert 'verdict_score' in entry
+                assert 'dimensions' in entry
+                assert 'asset_expectations' in entry
+                # updated_at should NOT be in history (ephemeral)
+                assert 'updated_at' not in entry
+        finally:
+            os.unlink(tmp)
+
+    def test_get_conditions_history_public_api(self):
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp = f.name
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp):
+                _save_conditions_history({'2025-01-15': {'verdict': 'Mixed'}})
+                result = get_conditions_history()
+                assert '2025-01-15' in result
+        finally:
+            os.unlink(tmp)
+
+    @patch('market_conditions.compute_policy')
+    @patch('market_conditions.compute_risk')
+    @patch('market_conditions.compute_quadrant')
+    @patch('market_conditions.compute_liquidity')
+    def test_cache_update_appends_history(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        """update_market_conditions_cache() should also append to history."""
+        mock_liq.return_value = _mock_liquidity('Expanding')
+        mock_quad.return_value = _mock_quadrant('Goldilocks')
+        mock_risk.return_value = _mock_risk('Calm')
+        mock_pol.return_value = _mock_policy('Accommodative')
+
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp_cache = f.name
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp_history = f.name
+
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', tmp_cache), \
+                 patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp_history):
+                update_market_conditions_cache()
+                history = _load_conditions_history()
+                assert len(history) == 1
+                date_key = list(history.keys())[0]
+                assert history[date_key]['verdict'] == 'Favorable'
+        finally:
+            for p in (tmp_cache, tmp_history):
+                if os.path.exists(p):
+                    os.unlink(p)
+
+    @patch('market_conditions.compute_policy')
+    @patch('market_conditions.compute_risk')
+    @patch('market_conditions.compute_quadrant')
+    @patch('market_conditions.compute_liquidity')
+    def test_cache_update_preserves_existing_history(self, mock_liq, mock_quad, mock_risk, mock_pol):
+        """History from previous days should not be overwritten."""
+        mock_liq.return_value = _mock_liquidity('Expanding')
+        mock_quad.return_value = _mock_quadrant('Goldilocks')
+        mock_risk.return_value = _mock_risk('Calm')
+        mock_pol.return_value = _mock_policy('Accommodative')
+
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False) as f:
+            tmp_cache = f.name
+        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as f:
+            # Seed with existing history
+            json.dump({'2025-01-10': {'verdict': 'Cautious', 'verdict_score': -0.5}}, f)
+            tmp_history = f.name
+
+        try:
+            with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', tmp_cache), \
+                 patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', tmp_history):
+                update_market_conditions_cache()
+                history = _load_conditions_history()
+                assert len(history) == 2
+                assert '2025-01-10' in history
+                assert history['2025-01-10']['verdict'] == 'Cautious'
+        finally:
+            for p in (tmp_cache, tmp_history):
+                if os.path.exists(p):
+                    os.unlink(p)
+
+
+# ============================================================================
+# 10. NROU Duplicate Date Handling
+# ============================================================================
+
+class TestNROUDeduplication:
+    """Test that compute_policy() handles duplicate NROU dates."""
+
+    @patch('market_conditions._load_csv')
+    def test_nrou_duplicates_do_not_crash(self, mock_load):
+        """NROU series with duplicate dates should not raise ValueError."""
+        import pandas as pd
+        import numpy as np
+
+        dates_unrate = pd.date_range('2020-01-01', periods=36, freq='MS')
+        dates_nrou = pd.date_range('2020-01-01', periods=12, freq='QS')
+        # Duplicate one date
+        dates_nrou_dup = dates_nrou.append(pd.DatetimeIndex([dates_nrou[0]]))
+        nrou_vals = list(np.full(12, 4.0)) + [4.0]
+
+        # Mock _load_csv to return appropriate dataframes
+        def load_csv_side_effect(key):
+            if key == 'pce_price_index':
+                df = pd.DataFrame({
+                    'date': dates_unrate,
+                    'pce_price_index': np.linspace(110, 120, 36),
+                })
+                return df
+            elif key == 'unemployment_rate':
+                df = pd.DataFrame({
+                    'date': dates_unrate,
+                    'unemployment_rate': np.full(36, 3.5),
+                })
+                return df
+            elif key == 'natural_unemployment_rate':
+                df = pd.DataFrame({
+                    'date': dates_nrou_dup,
+                    'natural_unemployment_rate': nrou_vals,
+                })
+                return df
+            elif key == 'fed_funds_rate':
+                df = pd.DataFrame({
+                    'date': dates_unrate,
+                    'fed_funds_rate': np.full(36, 5.0),
+                })
+                return df
+            return None
+
+        mock_load.side_effect = load_csv_side_effect
+
+        from market_conditions import compute_policy
+        # Should not raise ValueError about duplicate labels
+        result = compute_policy('2022-12-01')
+        # Result may be None due to insufficient data for Taylor Rule,
+        # but the important thing is no crash
+        # (no ValueError: cannot reindex on an axis with duplicate labels)
