@@ -55,6 +55,7 @@ from sector_tone_pipeline import get_sector_management_tone, update_sector_manag
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
 from property_interpretation_config import get_property_interpretation
+from market_conditions import update_market_conditions_cache
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -2508,6 +2509,14 @@ def run_data_collection():
             update_recession_probability()
         except Exception as recession_error:
             print(f"Recession probability update error (non-fatal): {recession_error}")
+
+        # Update market conditions cache (US-294.3)
+        reload_status['status'] = 'Updating market conditions...'
+        print("Updating market conditions...")
+        try:
+            update_market_conditions_cache()
+        except Exception as conditions_error:
+            print(f"Market conditions update error (non-fatal): {conditions_error}")
 
         eastern = pytz.timezone('US/Eastern')
         reload_status['last_reload'] = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
