@@ -1,13 +1,15 @@
 """
-Market Conditions Backtest — Walk-Forward Validation
+Market Conditions Backtest — Quadrant-Led Walk-Forward Validation
 
-Validates the multi-dimensional Market Conditions engine against the
-52.3/100 k-means baseline. Uses the same scoring infrastructure as
-regime_backtest.py but scores using a verdict classifier defined locally
-in this module (the engine itself no longer produces verdicts — the
-quadrant is now the headline classification).
+Scores the quadrant classification engine directly against forward asset
+returns.  The quadrant IS the headline — each quadrant has clear asset
+expectations (from MARKET-CONDITIONS-FRAMEWORK.md § 5).
 
-US-314.2 will replace this verdict-based scoring with quadrant-led scoring.
+Key scoring changes (US-314.2):
+  1. Score against quadrant expectations, not a verdict classifier.
+  2. S&P 500 scored on inflation-adjusted (real) 90-day returns.
+  3. Magnitude ordering test: Goldilocks real > Defl Risk > Reflation > Stagflation.
+  4. Treasuries and Gold scored on nominal directional accuracy per quadrant.
 
 Usage:
     PYTHONPATH=signaltrackers python3 signaltrackers/backtesting/conditions_backtest.py
@@ -41,8 +43,6 @@ from signaltrackers.backtesting.regime_backtest import (
 
 # Market conditions engine (quadrant-led; no verdict in engine)
 from signaltrackers.market_conditions import (
-    compute_market_conditions,
-    _QUADRANT_EXPECTATIONS,
     compute_liquidity_history,
     compute_quadrant_history,
     compute_risk_history,
@@ -64,129 +64,95 @@ RESULTS_DIR = Path(__file__).resolve().parent / 'results'
 FORWARD_WINDOWS = [30, 60, 90]
 EVAL_FREQUENCY_MONTHS = 1
 
-# Verdict labels (ordered from most favorable to most defensive)
-VERDICT_LABELS = ['Favorable', 'Mixed', 'Cautious', 'Defensive']
+# Quadrant labels in expected real-return ordering (best → worst)
+QUADRANT_LABELS = ['Goldilocks', 'Deflation Risk', 'Reflation', 'Stagflation']
 
 # Walk-forward fold configuration
 FOLD_START_YEAR = 2005
 FOLD_END_YEAR = 2025
 FOLD_TEST_MONTHS = 24  # 2-year test windows
 
-# Default dimension weights (from market_conditions.py)
-DEFAULT_WEIGHTS = {
-    'liquidity': 0.35,
-    'quadrant': 0.35,
-    'risk': 0.20,
-    'policy': 0.10,
-}
-
-# Weight configurations to test in sensitivity analysis
-WEIGHT_CONFIGS = [
-    {'liquidity': 0.35, 'quadrant': 0.35, 'risk': 0.20, 'policy': 0.10, 'label': 'Default (35/35/20/10)'},
-    {'liquidity': 0.40, 'quadrant': 0.30, 'risk': 0.20, 'policy': 0.10, 'label': 'Liquidity-heavy (40/30/20/10)'},
-    {'liquidity': 0.30, 'quadrant': 0.40, 'risk': 0.20, 'policy': 0.10, 'label': 'Quadrant-heavy (30/40/20/10)'},
-    {'liquidity': 0.30, 'quadrant': 0.30, 'risk': 0.25, 'policy': 0.15, 'label': 'Risk+Policy up (30/30/25/15)'},
-    {'liquidity': 0.25, 'quadrant': 0.25, 'risk': 0.30, 'policy': 0.20, 'label': 'Risk-heavy (25/25/30/20)'},
-    {'liquidity': 0.40, 'quadrant': 0.40, 'risk': 0.10, 'policy': 0.10, 'label': 'Macro-dominant (40/40/10/10)'},
-    {'liquidity': 0.35, 'quadrant': 0.35, 'risk': 0.25, 'policy': 0.05, 'label': 'Low-policy (35/35/25/5)'},
-]
-
 # ---------------------------------------------------------------------------
-# Verdict scoring (local to backtest — removed from engine in US-314.1)
-# US-314.2 will replace this with quadrant-led scoring.
+# Quadrant-led expectations (from MARKET-CONDITIONS-FRAMEWORK.md § 5)
 # ---------------------------------------------------------------------------
 
-_LIQUIDITY_SCORE_MAP = {
-    'Strongly Expanding': 2.0,
-    'Expanding': 1.0,
-    'Neutral': 0.0,
-    'Contracting': -1.0,
-    'Strongly Contracting': -2.0,
-}
-
-_QUADRANT_SCORE_MAP = {
-    'Goldilocks': 2.0,
-    'Reflation': 1.0,
-    'Deflation Risk': -1.0,
-    'Stagflation': -2.0,
-}
-
-_RISK_SCORE_MAP = {
-    'Calm': 1.0,
-    'Normal': 0.0,
-    'Elevated': -1.0,
-    'Stressed': -2.0,
-}
-
-_POLICY_SCORE_MAP = {
-    'Accommodative': 1.0,
-    'Neutral': 0.0,
-    'Restrictive': -1.0,
-}
-
-
-def _map_dimension_score(state: str, score_map: dict) -> Optional[float]:
-    """Map a dimension state label to its numeric score."""
-    return score_map.get(state)
-
-
-def _compute_verdict_score(
-    liquidity_mapped: float,
-    quadrant_mapped: float,
-    risk_mapped: float,
-    policy_mapped: float,
-    weights: Optional[dict] = None,
-) -> float:
-    """Weighted composite of four dimension scores."""
-    if weights is None:
-        weights = DEFAULT_WEIGHTS
-    return (
-        weights['liquidity'] * liquidity_mapped
-        + weights['quadrant'] * quadrant_mapped
-        + weights['risk'] * risk_mapped
-        + weights['policy'] * policy_mapped
-    )
-
-
-def _classify_verdict(score: float, risk_state: str) -> str:
-    """Classify verdict from composite score. Stressed → always Defensive."""
-    if risk_state == 'Stressed':
-        return 'Defensive'
-    if score > 0.75:
-        return 'Favorable'
-    elif score > -0.25:
-        return 'Mixed'
-    elif score > -1.0:
-        return 'Cautious'
-    else:
-        return 'Defensive'
-
-
-# Expected asset directions per verdict
-# Verdicts map to quadrant-based expectations (quadrant drives direction)
-# but the verdict itself determines the weight scoring
-VERDICT_EXPECTATIONS = {
-    'Favorable': {
+# Directional expectations per quadrant — used for Treasuries and Gold scoring.
+# S&P 500 is scored via magnitude ordering of real returns, not direction.
+QUADRANT_EXPECTATIONS = {
+    'Goldilocks': {
         'sp500': 'positive',
-        'treasuries': 'neutral',  # Mixed — sometimes up (Goldilocks), sometimes down (Reflation)
-        'gold': 'neutral',        # Mixed across favorable conditions
-    },
-    'Mixed': {
-        'sp500': 'neutral',
-        'treasuries': 'neutral',
+        'treasuries': 'positive',
         'gold': 'neutral',
     },
-    'Cautious': {
-        'sp500': 'negative',
-        'treasuries': 'positive',  # Flight to safety
-        'gold': 'positive',        # Safe haven
+    'Reflation': {
+        'sp500': 'positive',
+        'treasuries': 'negative',
+        'gold': 'positive',
     },
-    'Defensive': {
+    'Stagflation': {
         'sp500': 'negative',
-        'treasuries': 'positive',  # Strong flight to safety
-        'gold': 'positive',        # Strong safe haven
+        'treasuries': 'negative',
+        'gold': 'positive',
+    },
+    'Deflation Risk': {
+        'sp500': 'negative',
+        'treasuries': 'positive',
+        'gold': 'neutral',
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# CPI loading for real-return calculation
+# ---------------------------------------------------------------------------
+
+DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
+
+
+def load_cpi_series() -> Optional[pd.Series]:
+    """
+    Load CPI data and return a DatetimeIndex-ed Series.
+
+    Used to compute YoY inflation for real-return adjustment.
+    """
+    cpi_path = DATA_DIR / 'cpi.csv'
+    if not cpi_path.exists():
+        return None
+    df = pd.read_csv(cpi_path)
+    if df.empty or len(df.columns) < 2:
+        return None
+    df.columns = ['date', 'value']
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    df = df.dropna(subset=['date']).set_index('date').sort_index()
+    return df['value']
+
+
+def compute_cpi_yoy(cpi_series: pd.Series, eval_date: pd.Timestamp) -> Optional[float]:
+    """
+    Compute annualized CPI YoY% at eval_date (no lookahead).
+
+    Returns a decimal (e.g. 0.03 for 3% inflation) or None.
+    """
+    if cpi_series is None or cpi_series.empty:
+        return None
+
+    # Most recent CPI observation at or before eval_date
+    available = cpi_series[cpi_series.index <= eval_date]
+    if len(available) < 13:  # Need 12+ months of history
+        return None
+
+    current = available.iloc[-1]
+    # YoY: compare to observation ~12 months ago
+    one_year_ago = eval_date - pd.DateOffset(months=12)
+    past = cpi_series[cpi_series.index <= one_year_ago]
+    if past.empty:
+        return None
+
+    past_val = past.iloc[-1]
+    if past_val == 0:
+        return None
+
+    return (current - past_val) / past_val
 
 
 # ---------------------------------------------------------------------------
@@ -254,80 +220,55 @@ def _get_dimension_state_at(
 def classify_conditions(
     histories: dict[str, pd.DataFrame],
     eval_date: pd.Timestamp,
-    weights: Optional[dict] = None,
 ) -> Optional[dict]:
     """
     Classify market conditions at eval_date using precomputed histories.
 
-    Uses only data available at eval_date (no lookahead).
-    Returns dict with verdict, dimension states, and mapped scores,
-    or None if insufficient data.
-    """
-    if weights is None:
-        weights = DEFAULT_WEIGHTS
+    The quadrant is the headline classification. Expectations come
+    directly from QUADRANT_EXPECTATIONS — no verdict classifier.
 
-    # Get liquidity state
+    Risk state 'Stressed' overrides S&P 500 expectation to negative.
+    """
+    # Get quadrant state (required)
+    quad_state = None
+    if 'quadrant' in histories:
+        quad_state = _get_dimension_state_at(histories['quadrant'], eval_date, 'quadrant')
+    if quad_state is None:
+        return None
+
+    # Get liquidity state (optional, context only)
     liq_state = None
     if 'liquidity' in histories:
         liq_state = _get_dimension_state_at(histories['liquidity'], eval_date, 'state')
 
-    # Get quadrant state
-    quad_state = None
-    if 'quadrant' in histories:
-        quad_state = _get_dimension_state_at(histories['quadrant'], eval_date, 'quadrant')
-
-    # Require at least liquidity and quadrant
-    if liq_state is None or quad_state is None:
-        return None
-
-    liq_mapped = _map_dimension_score(liq_state, _LIQUIDITY_SCORE_MAP)
-    quad_mapped = _map_dimension_score(quad_state, _QUADRANT_SCORE_MAP)
-    if liq_mapped is None or quad_mapped is None:
-        return None
-
     # Risk state (graceful degradation)
     risk_state = 'Normal'
-    risk_mapped = 0.0
     if 'risk' in histories:
         rs = _get_dimension_state_at(histories['risk'], eval_date, 'state')
         if rs is not None:
             risk_state = rs
-            risk_mapped = _map_dimension_score(rs, _RISK_SCORE_MAP) or 0.0
 
     # Policy state (graceful degradation)
     policy_stance = 'Neutral'
-    policy_mapped = 0.0
     if 'policy' in histories:
         ps = _get_dimension_state_at(histories['policy'], eval_date, 'stance')
         if ps is not None:
             policy_stance = ps
-            policy_mapped = _map_dimension_score(ps, _POLICY_SCORE_MAP) or 0.0
 
-    # Compute weighted verdict score
-    v_score = (
-        weights['liquidity'] * liq_mapped
-        + weights['quadrant'] * quad_mapped
-        + weights['risk'] * risk_mapped
-        + weights['policy'] * policy_mapped
-    )
+    # Expectations directly from quadrant
+    expectations = dict(QUADRANT_EXPECTATIONS.get(
+        quad_state, QUADRANT_EXPECTATIONS['Goldilocks']
+    ))
 
-    verdict = _classify_verdict(v_score, risk_state)
-
-    # Use verdict-based expectations for scoring
-    # This makes weight sensitivity meaningful: different weights → different verdicts → different scores
-    expectations = VERDICT_EXPECTATIONS.get(verdict, VERDICT_EXPECTATIONS['Mixed'])
+    # Stressed override: S&P 500 → negative regardless of quadrant
+    if risk_state == 'Stressed':
+        expectations['sp500'] = 'negative'
 
     return {
-        'verdict': verdict,
-        'verdict_score': round(v_score, 4),
-        'liquidity_state': liq_state,
         'quadrant': quad_state,
+        'liquidity_state': liq_state,
         'risk_state': risk_state,
         'policy_stance': policy_stance,
-        'liq_mapped': liq_mapped,
-        'quad_mapped': quad_mapped,
-        'risk_mapped': risk_mapped,
-        'policy_mapped': policy_mapped,
         'expectations': expectations,
     }
 
@@ -340,20 +281,25 @@ def classify_conditions(
 def score_single_evaluation(
     expectations: dict[str, str],
     asset_returns: dict[str, Optional[float]],
+    real_sp500_return: Optional[float] = None,
 ) -> dict:
     """
     Score a single evaluation against forward returns.
 
-    Uses quadrant-based directional expectations (not verdict expectations)
-    because the quadrant more precisely captures which assets should move
-    in which direction.
+    S&P 500 is scored on directional accuracy using *real* (inflation-adjusted)
+    returns.  Treasuries and Gold use nominal returns per quadrant expectations.
     """
     asset_scores = {}
     weighted_sum = 0.0
     weight_sum = 0.0
 
     for asset_key, config in SCORING_ASSETS.items():
-        ret = asset_returns.get(asset_key)
+        # Use real return for S&P 500, nominal for everything else
+        if asset_key == 'sp500' and real_sp500_return is not None:
+            ret = real_sp500_return
+        else:
+            ret = asset_returns.get(asset_key)
+
         if ret is None:
             continue
 
@@ -433,7 +379,7 @@ def generate_folds(
 def run_backtest(
     histories: dict[str, pd.DataFrame],
     scoring_assets: dict[str, pd.Series],
-    weights: Optional[dict] = None,
+    cpi_series: Optional[pd.Series] = None,
     start_year: int = FOLD_START_YEAR,
     end_year: int = FOLD_END_YEAR,
 ) -> pd.DataFrame:
@@ -441,11 +387,8 @@ def run_backtest(
     Run the conditions backtest over all evaluation dates.
 
     Returns DataFrame with one row per evaluation date including
-    verdict, dimension states, forward returns, and scores.
+    quadrant, dimension states, forward returns (nominal + real), and scores.
     """
-    if weights is None:
-        weights = DEFAULT_WEIGHTS
-
     # Need 90 days of forward data
     last_dates = [s.index[-1] for s in scoring_assets.values()]
     last_data = min(last_dates)
@@ -460,21 +403,19 @@ def run_backtest(
 
     rows = []
     for eval_date in eval_dates:
-        result = classify_conditions(histories, eval_date, weights)
+        result = classify_conditions(histories, eval_date)
         if result is None:
             continue
 
         row = {
             'date': eval_date.strftime('%Y-%m-%d'),
-            'verdict': result['verdict'],
-            'verdict_score': result['verdict_score'],
-            'liquidity_state': result['liquidity_state'],
             'quadrant': result['quadrant'],
+            'liquidity_state': result['liquidity_state'],
             'risk_state': result['risk_state'],
             'policy_stance': result['policy_stance'],
         }
 
-        # Forward returns
+        # Forward returns (nominal)
         asset_returns_90d = {}
         for asset_key, price_series in scoring_assets.items():
             for w in FORWARD_WINDOWS:
@@ -483,15 +424,26 @@ def run_backtest(
                 if w == 90:
                     asset_returns_90d[asset_key] = ret
 
+        # S&P 500 real return = nominal - (cpi_yoy / 4) for 90-day window
+        sp500_nominal_90d = asset_returns_90d.get('sp500')
+        real_sp500_90d = None
+        cpi_yoy = compute_cpi_yoy(cpi_series, eval_date)
+        row['cpi_yoy'] = cpi_yoy
+
+        if sp500_nominal_90d is not None and cpi_yoy is not None:
+            real_sp500_90d = sp500_nominal_90d - (cpi_yoy / 4)
+        row['sp500_real_fwd_90d'] = real_sp500_90d
+
         # S&P 500 max drawdown
         if 'sp500' in scoring_assets:
             row['sp500_max_dd_90d'] = compute_max_drawdown(
                 scoring_assets['sp500'], eval_date, 90
             )
 
-        # Score using quadrant-based expectations
+        # Score using quadrant expectations + real returns for S&P 500
         eval_score = score_single_evaluation(
-            result['expectations'], asset_returns_90d
+            result['expectations'], asset_returns_90d,
+            real_sp500_return=real_sp500_90d,
         )
         row['multi_asset_score'] = eval_score['weighted_score']
         for asset_key, score in eval_score['asset_scores'].items():
@@ -543,8 +495,8 @@ def score_walk_forward(
         fold_score = float(valid_scores.mean()) * 100
         fold_scores.append(fold_score)
 
-        # Per-verdict counts in this fold
-        verdict_counts = fold_df['verdict'].value_counts().to_dict()
+        # Per-quadrant counts in this fold
+        quadrant_counts = fold_df['quadrant'].value_counts().to_dict()
 
         fold_details.append({
             'fold': fold['fold'],
@@ -552,7 +504,7 @@ def score_walk_forward(
             'test_end': fold['test_end'].strftime('%Y-%m-%d'),
             'evaluations': int(len(valid_scores)),
             'score': round(fold_score, 1),
-            'verdict_counts': verdict_counts,
+            'quadrant_counts': quadrant_counts,
         })
 
     if not fold_scores:
@@ -579,11 +531,13 @@ def score_walk_forward(
 
 def score_results(df: pd.DataFrame) -> dict:
     """
-    Compute aggregate accuracy metrics analogous to regime_backtest.score_results().
+    Compute aggregate accuracy metrics with quadrant-led scoring.
+
+    Composite = 50% multi-asset accuracy + 25% real-return ordering + 25% drawdown ordering.
     """
     report = {
         'overall': {},
-        'per_verdict': {},
+        'per_quadrant': {},
         'per_asset': {},
     }
 
@@ -610,23 +564,23 @@ def score_results(df: pd.DataFrame) -> dict:
             'count': int(len(valid)),
         }
 
-    # Per-verdict statistics
-    for verdict in VERDICT_LABELS:
-        mask = df['verdict'] == verdict
+    # Per-quadrant statistics
+    for quadrant in QUADRANT_LABELS:
+        mask = df['quadrant'] == quadrant
         subset = df[mask]
         if subset.empty:
-            report['per_verdict'][verdict] = {'count': 0}
+            report['per_quadrant'][quadrant] = {'count': 0}
             continue
 
         stats = {'count': int(len(subset))}
 
-        verdict_scores = subset['multi_asset_score'].dropna()
-        if not verdict_scores.empty:
+        quad_scores = subset['multi_asset_score'].dropna()
+        if not quad_scores.empty:
             stats['multi_asset_accuracy'] = round(
-                float(verdict_scores.mean()) * 100, 1
+                float(quad_scores.mean()) * 100, 1
             )
 
-        # Per-asset returns and accuracy for this verdict
+        # Per-asset returns and accuracy for this quadrant
         for asset_key in SCORING_ASSETS:
             for w in FORWARD_WINDOWS:
                 col = f'{asset_key}_fwd_{w}d'
@@ -645,6 +599,14 @@ def score_results(df: pd.DataFrame) -> dict:
                         float(valid.mean()) * 100, 1
                     )
 
+        # S&P 500 real return average for this quadrant
+        if 'sp500_real_fwd_90d' in subset.columns:
+            real_valid = subset['sp500_real_fwd_90d'].dropna()
+            if not real_valid.empty:
+                stats['sp500_real_avg_90d'] = round(
+                    float(real_valid.mean()) * 100, 2
+                )
+
         # S&P 500 drawdown
         dd_col = 'sp500_max_dd_90d'
         if dd_col in subset.columns:
@@ -653,45 +615,46 @@ def score_results(df: pd.DataFrame) -> dict:
                 stats['sp500_avg_max_dd_90d'] = round(float(dd_valid.mean()) * 100, 2)
                 stats['sp500_worst_max_dd_90d'] = round(float(dd_valid.min()) * 100, 2)
 
-        report['per_verdict'][verdict] = stats
+        report['per_quadrant'][quadrant] = stats
 
-    # Verdict ordering check: drawdowns should worsen from Favorable → Defensive
-    verdict_drawdowns = {}
-    for v in VERDICT_LABELS:
-        dd = report['per_verdict'].get(v, {}).get('sp500_avg_max_dd_90d')
+    # Magnitude ordering: real S&P 500 returns should follow QUADRANT_LABELS order
+    # Goldilocks > Deflation Risk > Reflation > Stagflation
+    quadrant_real_returns = {}
+    for q in QUADRANT_LABELS:
+        ret = report['per_quadrant'].get(q, {}).get('sp500_real_avg_90d')
+        if ret is not None:
+            quadrant_real_returns[q] = ret
+    if len(quadrant_real_returns) >= 3:
+        ordered = [quadrant_real_returns.get(q) for q in QUADRANT_LABELS if q in quadrant_real_returns]
+        report['overall']['real_return_ordering_correct'] = all(
+            ordered[i] >= ordered[i + 1] for i in range(len(ordered) - 1)
+        )
+        report['overall']['sp500_real_avg_90d_by_quadrant'] = quadrant_real_returns
+
+    # Drawdown ordering: should worsen Goldilocks → Stagflation
+    quadrant_drawdowns = {}
+    for q in QUADRANT_LABELS:
+        dd = report['per_quadrant'].get(q, {}).get('sp500_avg_max_dd_90d')
         if dd is not None:
-            verdict_drawdowns[v] = dd
-    if len(verdict_drawdowns) >= 3:
-        ordered = [verdict_drawdowns.get(v) for v in VERDICT_LABELS if v in verdict_drawdowns]
+            quadrant_drawdowns[q] = dd
+    if len(quadrant_drawdowns) >= 3:
+        ordered = [quadrant_drawdowns.get(q) for q in QUADRANT_LABELS if q in quadrant_drawdowns]
         report['overall']['drawdown_ordering_correct'] = all(
             ordered[i] >= ordered[i + 1] for i in range(len(ordered) - 1)
         )
-        report['overall']['sp500_avg_max_dd_by_verdict'] = verdict_drawdowns
+        report['overall']['sp500_avg_max_dd_by_quadrant'] = quadrant_drawdowns
 
-    # S&P return ordering: should decrease from Favorable → Defensive
-    verdict_returns = {}
-    for v in VERDICT_LABELS:
-        ret = report['per_verdict'].get(v, {}).get('sp500_avg_90d')
-        if ret is not None:
-            verdict_returns[v] = ret
-    if len(verdict_returns) >= 3:
-        ordered = [verdict_returns.get(v) for v in VERDICT_LABELS if v in verdict_returns]
-        report['overall']['sp500_return_ordering_correct'] = all(
-            ordered[i] >= ordered[i + 1] for i in range(len(ordered) - 1)
-        )
-        report['overall']['sp500_avg_90d_by_verdict'] = verdict_returns
-
-    # Composite score (same weighting as regime_backtest)
+    # Composite score: 50% accuracy + 25% real-return ordering + 25% drawdown ordering
     scores = []
     score_weights = []
     if 'multi_asset_accuracy' in report['overall']:
         scores.append(report['overall']['multi_asset_accuracy'])
         score_weights.append(0.50)
+    if report['overall'].get('real_return_ordering_correct') is not None:
+        scores.append(100.0 if report['overall']['real_return_ordering_correct'] else 0.0)
+        score_weights.append(0.25)
     if report['overall'].get('drawdown_ordering_correct') is not None:
         scores.append(100.0 if report['overall']['drawdown_ordering_correct'] else 0.0)
-        score_weights.append(0.25)
-    if report['overall'].get('sp500_return_ordering_correct') is not None:
-        scores.append(100.0 if report['overall']['sp500_return_ordering_correct'] else 0.0)
         score_weights.append(0.25)
 
     if scores and sum(score_weights) > 0:
@@ -714,35 +677,26 @@ def check_plausibility(df: pd.DataFrame) -> dict:
     """
     checks = {}
 
-    # Check 1: March 2020 must NOT have Favorable as the DOMINANT verdict
-    # The exact check date matters: monthly eval on Feb 28 or Mar 31.
-    # The crash unfolded late Feb through March — either month works.
-    # Allow Favorable to appear briefly (e.g., due to liquidity surge) as long
-    # as it's not the dominant signal during the crash period.
+    # Check 1: March 2020 must NOT have Goldilocks as DOMINANT quadrant
     mar_2020 = df[
         (df['date'] >= '2020-02-15') & (df['date'] <= '2020-04-15')
     ]
     if not mar_2020.empty:
-        mar_verdicts = mar_2020['verdict'].unique().tolist()
-        verdict_counts = mar_2020['verdict'].value_counts()
-        dominant = verdict_counts.index[0] if not verdict_counts.empty else None
-        checks['march_2020_not_favorable'] = {
-            'pass': dominant != 'Favorable',
-            'dominant_verdict': dominant,
-            'verdicts_found': mar_verdicts,
-            'verdict_distribution': verdict_counts.to_dict(),
+        quad_counts = mar_2020['quadrant'].value_counts()
+        dominant = quad_counts.index[0] if not quad_counts.empty else None
+        checks['march_2020_not_goldilocks'] = {
+            'pass': dominant != 'Goldilocks',
+            'dominant_quadrant': dominant,
+            'quadrants_found': mar_2020['quadrant'].unique().tolist(),
+            'quadrant_distribution': quad_counts.to_dict(),
         }
     else:
-        checks['march_2020_not_favorable'] = {
+        checks['march_2020_not_goldilocks'] = {
             'pass': True,
             'note': 'No evaluation dates in range',
         }
 
     # Check 2: 2022 must have Stagflation present
-    # The acceleration-based quadrant model will shift from Stagflation (H1)
-    # to Deflation Risk (H2) as inflation decelerates after the June 2022 peak.
-    # This is acceptable — the model detects the inflection correctly.
-    # The hard fail is if Stagflation NEVER appears in 2022.
     year_2022 = df[
         (df['date'] >= '2022-01-01') & (df['date'] <= '2022-12-31')
     ]
@@ -755,26 +709,26 @@ def check_plausibility(df: pd.DataFrame) -> dict:
             'quadrant_distribution': quad_counts.to_dict(),
         }
     else:
-        checks['2022_not_deflation_risk'] = {
+        checks['2022_stagflation_present'] = {
             'pass': True,
             'note': 'No evaluation dates in range',
         }
 
-    # Check 3: Verdict stability — average duration ≥ 3 months
+    # Check 3: Quadrant stability — average duration ≥ 3 months
     if not df.empty:
         df_sorted = df.sort_values('date').reset_index(drop=True)
         durations = []
-        current_verdict = df_sorted.iloc[0]['verdict']
+        current_quad = df_sorted.iloc[0]['quadrant']
         current_start = 0
         for i in range(1, len(df_sorted)):
-            if df_sorted.iloc[i]['verdict'] != current_verdict:
+            if df_sorted.iloc[i]['quadrant'] != current_quad:
                 durations.append(i - current_start)
-                current_verdict = df_sorted.iloc[i]['verdict']
+                current_quad = df_sorted.iloc[i]['quadrant']
                 current_start = i
         durations.append(len(df_sorted) - current_start)
 
         avg_duration = float(np.mean(durations)) if durations else 0.0
-        checks['verdict_stability'] = {
+        checks['quadrant_stability'] = {
             'pass': avg_duration >= 3.0,
             'avg_duration_months': round(avg_duration, 1),
             'total_transitions': len(durations) - 1,
@@ -955,70 +909,114 @@ def compute_dsr(
 
 
 # ---------------------------------------------------------------------------
-# Weight sensitivity analysis
+# Risk filter sensitivity analysis
 # ---------------------------------------------------------------------------
 
+# Configurations test how Stressed-override affects scoring.
+# Each config defines which risk states receive the Stressed S&P 500 override.
+RISK_FILTER_CONFIGS = [
+    {'label': 'No risk filter (quadrant only)', 'stressed_override': False},
+    {'label': 'Stressed override (default)', 'stressed_override': True},
+    {'label': 'Elevated+Stressed override', 'elevated_override': True},
+]
 
-def run_weight_sensitivity(
+
+def run_risk_filter_sensitivity(
     histories: dict[str, pd.DataFrame],
     scoring_assets: dict[str, pd.Series],
-    configs: list[dict] = WEIGHT_CONFIGS,
+    cpi_series: Optional[pd.Series] = None,
     start_year: int = FOLD_START_YEAR,
     end_year: int = FOLD_END_YEAR,
 ) -> list[dict]:
     """
-    Test multiple weight configurations and report scores for each.
+    Test how risk-state filtering affects quadrant-led scoring.
 
-    Returns list of dicts with config label, composite score, fold scores,
-    and Sharpe-like ratio.
+    Since the quadrant directly determines expectations (no weights to vary),
+    sensitivity analysis focuses on the impact of risk overrides.
     """
     folds = generate_folds(start_year, end_year)
     results = []
 
-    for config in configs:
-        weights = {
-            'liquidity': config['liquidity'],
-            'quadrant': config['quadrant'],
-            'risk': config['risk'],
-            'policy': config['policy'],
-        }
+    for config in RISK_FILTER_CONFIGS:
+        label = config['label']
+        print(f'  Testing: {label}...')
 
-        # Validate weights sum to 1.0
-        weight_sum = sum(weights.values())
-        if abs(weight_sum - 1.0) > 0.001:
-            results.append({
-                'label': config['label'],
-                'error': f'Weights sum to {weight_sum}, expected 1.0',
-            })
-            continue
-
-        print(f'  Testing: {config["label"]}...')
-        df = run_backtest(histories, scoring_assets, weights, start_year, end_year)
-
+        df = run_backtest(histories, scoring_assets, cpi_series, start_year, end_year)
         if df.empty:
-            results.append({
-                'label': config['label'],
-                'error': 'No results',
-            })
+            results.append({'label': label, 'error': 'No results'})
             continue
+
+        # Apply risk filter variant
+        if not config.get('stressed_override', True):
+            # No override: re-score without Stressed S&P override
+            df = _rescore_without_risk_override(df, cpi_series)
+        elif config.get('elevated_override', False):
+            # Elevated+Stressed: expand override to Elevated risk
+            df = _rescore_with_elevated_override(df, cpi_series)
 
         wf_scores = score_walk_forward(df, folds)
         agg_scores = score_results(df)
 
         results.append({
-            'label': config['label'],
-            'weights': weights,
+            'label': label,
             'composite_score': agg_scores['overall'].get('composite_score'),
             'multi_asset_accuracy': agg_scores['overall'].get('multi_asset_accuracy'),
             'wf_mean': wf_scores.get('mean'),
             'wf_std': wf_scores.get('std'),
             'wf_sharpe': wf_scores.get('sharpe'),
             'fold_scores': wf_scores.get('fold_scores', []),
+            'real_return_ordering': agg_scores['overall'].get('real_return_ordering_correct'),
             'drawdown_ordering': agg_scores['overall'].get('drawdown_ordering_correct'),
-            'return_ordering': agg_scores['overall'].get('sp500_return_ordering_correct'),
         })
 
     return results
+
+
+def _rescore_without_risk_override(df: pd.DataFrame, cpi_series: Optional[pd.Series]) -> pd.DataFrame:
+    """Re-score using pure quadrant expectations (no Stressed override)."""
+    df = df.copy()
+    for idx, row in df.iterrows():
+        quadrant = row['quadrant']
+        expectations = dict(QUADRANT_EXPECTATIONS.get(quadrant, QUADRANT_EXPECTATIONS['Goldilocks']))
+        # No Stressed override applied
+
+        real_sp500 = row.get('sp500_real_fwd_90d')
+        asset_returns = {}
+        for asset_key in SCORING_ASSETS:
+            col = f'{asset_key}_fwd_90d'
+            if col in df.columns:
+                asset_returns[asset_key] = row[col]
+
+        eval_score = score_single_evaluation(expectations, asset_returns, real_sp500_return=real_sp500)
+        df.at[idx, 'multi_asset_score'] = eval_score['weighted_score']
+        for asset_key, score in eval_score['asset_scores'].items():
+            df.at[idx, f'{asset_key}_correct'] = score
+    return df
+
+
+def _rescore_with_elevated_override(df: pd.DataFrame, cpi_series: Optional[pd.Series]) -> pd.DataFrame:
+    """Re-score with Elevated+Stressed both overriding S&P to negative."""
+    df = df.copy()
+    for idx, row in df.iterrows():
+        quadrant = row['quadrant']
+        risk_state = row['risk_state']
+        expectations = dict(QUADRANT_EXPECTATIONS.get(quadrant, QUADRANT_EXPECTATIONS['Goldilocks']))
+
+        if risk_state in ('Stressed', 'Elevated'):
+            expectations['sp500'] = 'negative'
+
+        real_sp500 = row.get('sp500_real_fwd_90d')
+        asset_returns = {}
+        for asset_key in SCORING_ASSETS:
+            col = f'{asset_key}_fwd_90d'
+            if col in df.columns:
+                asset_returns[asset_key] = row[col]
+
+        eval_score = score_single_evaluation(expectations, asset_returns, real_sp500_return=real_sp500)
+        df.at[idx, 'multi_asset_score'] = eval_score['weighted_score']
+        for asset_key, score in eval_score['asset_scores'].items():
+            df.at[idx, f'{asset_key}_correct'] = score
+    return df
 
 
 # ---------------------------------------------------------------------------
@@ -1038,11 +1036,14 @@ def generate_report(
 ) -> str:
     """Generate comprehensive markdown backtest report."""
     lines = []
-    lines.append('# Market Conditions Backtest Report')
+    lines.append('# Market Conditions Backtest Report (Quadrant-Led)')
     lines.append(f'\nGenerated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     lines.append(f'Evaluation period: {df["date"].iloc[0]} to {df["date"].iloc[-1]}')
     lines.append(f'Total evaluations: {len(df)}')
     lines.append(f'Baseline (k-means): {baseline_score}/100')
+    lines.append('')
+    lines.append('Scoring: S&P 500 uses real (inflation-adjusted) returns. '
+                 'Treasuries and Gold use nominal directional accuracy.')
 
     # === Overall Score ===
     overall = agg_scores.get('overall', {})
@@ -1055,12 +1056,12 @@ def generate_report(
         lines.append('Components:')
         if 'multi_asset_accuracy' in overall:
             lines.append(f'- Multi-asset accuracy (50% weight): {overall["multi_asset_accuracy"]}%')
+        if 'real_return_ordering_correct' in overall:
+            ret_order = 'PASS' if overall['real_return_ordering_correct'] else 'FAIL'
+            lines.append(f'- Real return magnitude ordering Goldilocks→Stagflation (25% weight): {ret_order}')
         if 'drawdown_ordering_correct' in overall:
             dd_order = 'PASS' if overall['drawdown_ordering_correct'] else 'FAIL'
-            lines.append(f'- Drawdown ordering Favorable→Defensive (25% weight): {dd_order}')
-        if 'sp500_return_ordering_correct' in overall:
-            ret_order = 'PASS' if overall['sp500_return_ordering_correct'] else 'FAIL'
-            lines.append(f'- S&P 500 return ordering Favorable→Defensive (25% weight): {ret_order}')
+            lines.append(f'- Drawdown ordering Goldilocks→Stagflation (25% weight): {dd_order}')
 
     # === Walk-Forward Results ===
     lines.append('\n## Walk-Forward Validation')
@@ -1095,43 +1096,48 @@ def generate_report(
             f'{stats["accuracy"]}% | {stats["count"]} |'
         )
 
-    # === Per-Verdict Summary ===
-    lines.append('\n## Per-Verdict Summary')
+    # === Per-Quadrant Summary ===
+    lines.append('\n## Per-Quadrant Summary')
     lines.append('')
-    lines.append('| Verdict | Count | Multi-Asset Accuracy | S&P 500 Avg 90d | S&P 500 Avg Max DD |')
-    lines.append('|---------|-------|---------------------|-----------------|-------------------|')
-    for verdict in VERDICT_LABELS:
-        stats = agg_scores['per_verdict'].get(verdict, {})
+    lines.append('| Quadrant | Count | Multi-Asset Accuracy | S&P 500 Real Avg 90d | S&P 500 Avg Max DD |')
+    lines.append('|----------|-------|---------------------|----------------------|-------------------|')
+    for quadrant in QUADRANT_LABELS:
+        stats = agg_scores['per_quadrant'].get(quadrant, {})
         count = stats.get('count', 0)
         if count == 0:
-            lines.append(f'| {verdict} | 0 | — | — | — |')
+            lines.append(f'| {quadrant} | 0 | — | — | — |')
             continue
         ma = stats.get('multi_asset_accuracy', '—')
-        sp_ret = stats.get('sp500_avg_90d', '—')
+        sp_real = stats.get('sp500_real_avg_90d', '—')
         sp_dd = stats.get('sp500_avg_max_dd_90d', '—')
         fmt = lambda v: f'{v}%' if isinstance(v, (int, float)) else v
         lines.append(
-            f'| {verdict} | {count} | {fmt(ma)} | {fmt(sp_ret)} | {fmt(sp_dd)} |'
+            f'| {quadrant} | {count} | {fmt(ma)} | {fmt(sp_real)} | {fmt(sp_dd)} |'
         )
 
-    # === Per-Verdict Detail ===
-    lines.append('\n## Per-Verdict Asset Detail')
-    for verdict in VERDICT_LABELS:
-        stats = agg_scores['per_verdict'].get(verdict, {})
+    # === Per-Quadrant Detail ===
+    lines.append('\n## Per-Quadrant Asset Detail')
+    for quadrant in QUADRANT_LABELS:
+        stats = agg_scores['per_quadrant'].get(quadrant, {})
         if stats.get('count', 0) == 0:
             continue
-        lines.append(f'\n### {verdict} (n={stats["count"]})')
+        expected = QUADRANT_EXPECTATIONS.get(quadrant, {})
+        lines.append(f'\n### {quadrant} (n={stats["count"]})')
         for asset_key, config in SCORING_ASSETS.items():
             accuracy = stats.get(f'{asset_key}_accuracy')
             if accuracy is None:
                 continue
+            direction = expected.get(asset_key, 'neutral')
             returns_parts = []
             for w in FORWARD_WINDOWS:
                 avg = stats.get(f'{asset_key}_avg_{w}d')
                 if avg is not None:
                     returns_parts.append(f'{w}d avg={avg}%')
+            real_avg = stats.get('sp500_real_avg_90d') if asset_key == 'sp500' else None
+            if real_avg is not None:
+                returns_parts.append(f'real 90d avg={real_avg}%')
             returns_str = ', '.join(returns_parts) if returns_parts else '—'
-            lines.append(f'- **{config["label"]}**: accuracy={accuracy}% | {returns_str}')
+            lines.append(f'- **{config["label"]}** (expect {direction}): accuracy={accuracy}% | {returns_str}')
 
     # === Economic Plausibility ===
     lines.append('\n## Economic Plausibility Checks')
@@ -1173,8 +1179,8 @@ def generate_report(
     else:
         lines.append('- DSR could not be computed')
 
-    # === Weight Sensitivity ===
-    lines.append('\n## Weight Sensitivity Analysis')
+    # === Risk Filter Sensitivity ===
+    lines.append('\n## Risk Filter Sensitivity Analysis')
     lines.append('')
     lines.append('| Configuration | Composite | Multi-Asset | WF Mean | WF Std | WF Sharpe | DD Order | Ret Order |')
     lines.append('|---------------|-----------|-------------|---------|--------|-----------|----------|-----------|')
@@ -1188,7 +1194,7 @@ def generate_report(
         wf_s = f'{s["wf_std"]}%' if s.get('wf_std') is not None else '—'
         wf_sh = f'{s["wf_sharpe"]}' if s.get('wf_sharpe') is not None else '—'
         dd = 'PASS' if s.get('drawdown_ordering') else 'FAIL'
-        ret = 'PASS' if s.get('return_ordering') else 'FAIL'
+        ret = 'PASS' if s.get('real_return_ordering') else 'FAIL'
         lines.append(f'| {s["label"]} | {comp} | {ma} | {wf_m} | {wf_s} | {wf_sh} | {dd} | {ret} |')
 
     # Find winning config
@@ -1197,13 +1203,11 @@ def generate_report(
         winner = max(valid_configs, key=lambda x: x['wf_sharpe'])
         lines.append(f'\n**Recommended configuration:** {winner["label"]}')
         lines.append(f'- Rationale: Highest walk-forward Sharpe ratio ({winner["wf_sharpe"]})')
-        lines.append(f'- Weights: Liq={winner["weights"]["liquidity"]}, Quad={winner["weights"]["quadrant"]}, Risk={winner["weights"]["risk"]}, Policy={winner["weights"]["policy"]}')
 
     # === Final Recommendation ===
     lines.append('\n## Final Recommendation')
     lines.append('')
 
-    # Gather pass/fail criteria
     passes_plausibility = plausibility.get('all_pass', False)
     passes_cpcv = cpcv_result.get('pbo') is not None and cpcv_result['pbo'] <= 0.5
     beats_baseline = composite is not None and composite > baseline_score
@@ -1238,13 +1242,13 @@ def main():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
     print('=' * 60)
-    print('  Market Conditions Backtest')
+    print('  Market Conditions Backtest (Quadrant-Led)')
     print('=' * 60)
 
     # Step 1: Load data
     histories = load_dimension_histories('2003-01-01')
-    if 'liquidity' not in histories or 'quadrant' not in histories:
-        print('ERROR: Cannot run backtest without liquidity and quadrant histories.')
+    if 'quadrant' not in histories:
+        print('ERROR: Cannot run backtest without quadrant history.')
         sys.exit(1)
 
     print('\nLoading scoring assets...')
@@ -1253,9 +1257,16 @@ def main():
         print('ERROR: No scoring asset data available.')
         sys.exit(1)
 
-    # Step 2: Run full backtest with default weights
+    print('\nLoading CPI for real-return calculation...')
+    cpi_series = load_cpi_series()
+    if cpi_series is not None:
+        print(f'  CPI: {cpi_series.index[0].strftime("%Y-%m-%d")} to {cpi_series.index[-1].strftime("%Y-%m-%d")} ({len(cpi_series)} points)')
+    else:
+        print('  WARNING: CPI data not available — S&P 500 will use nominal returns')
+
+    # Step 2: Run full backtest
     print('\nRunning full backtest...')
-    df = run_backtest(histories, scoring_assets)
+    df = run_backtest(histories, scoring_assets, cpi_series)
     if df.empty:
         print('ERROR: No results generated.')
         sys.exit(1)
@@ -1283,35 +1294,31 @@ def main():
     plausibility = check_plausibility(df)
     print(f'  All checks pass: {plausibility["all_pass"]}')
 
-    # Step 6: Weight sensitivity analysis
-    print('\nRunning weight sensitivity analysis...')
-    sensitivity = run_weight_sensitivity(histories, scoring_assets)
+    # Step 6: Risk filter sensitivity analysis
+    print('\nRunning risk filter sensitivity analysis...')
+    sensitivity = run_risk_filter_sensitivity(histories, scoring_assets, cpi_series)
 
-    # Find winning configuration
     valid_configs = [s for s in sensitivity if 'error' not in s and s.get('wf_sharpe') is not None]
     if valid_configs:
         winner = max(valid_configs, key=lambda x: x['wf_sharpe'])
         print(f'  Winner: {winner["label"]} (Sharpe={winner["wf_sharpe"]})')
-    else:
-        winner = None
 
-    # Step 7: CPCV on default config
+    # Step 7: CPCV
     print('\nRunning CPCV (k=6, p=2, purge=3mo, embargo=1mo)...')
     cpcv_result = run_cpcv(df)
     print(f'  PBO: {cpcv_result.get("pbo")}')
 
     # Step 8: DSR
     print('\nComputing Deflated Sharpe Ratio...')
-    n_trials = len(WEIGHT_CONFIGS)
+    n_trials = len(RISK_FILTER_CONFIGS)
     wf_sharpe = wf_scores.get('sharpe', 0.0)
     fold_scores_arr = np.array(wf_scores.get('fold_scores', []))
 
     if len(fold_scores_arr) > 1 and wf_sharpe is not None:
-        # Compute std of Sharpe ratios across all weight configs
         all_sharpes = [s.get('wf_sharpe', 0.0) for s in sensitivity if s.get('wf_sharpe') is not None]
         std_sharpe = float(np.std(all_sharpes, ddof=1)) if len(all_sharpes) > 1 else 1.0
         skewness = float(pd.Series(fold_scores_arr).skew())
-        kurtosis = float(pd.Series(fold_scores_arr).kurtosis()) + 3.0  # Convert excess to regular
+        kurtosis = float(pd.Series(fold_scores_arr).kurtosis()) + 3.0
 
         dsr_result = compute_dsr(
             observed_sharpe=wf_sharpe,
@@ -1343,7 +1350,7 @@ def main():
     structured = {
         'overall': agg_scores.get('overall', {}),
         'walk_forward': wf_scores,
-        'per_verdict': agg_scores.get('per_verdict', {}),
+        'per_quadrant': agg_scores.get('per_quadrant', {}),
         'per_asset': agg_scores.get('per_asset', {}),
         'plausibility': plausibility,
         'cpcv': cpcv_result,
@@ -1365,17 +1372,27 @@ def main():
         print(f'  COMPOSITE SCORE: {composite}/100 ({"+" if delta > 0 else ""}{delta:.1f} vs {baseline} baseline)')
     if 'multi_asset_accuracy' in overall:
         print(f'  Multi-asset accuracy: {overall["multi_asset_accuracy"]}%')
+    if 'real_return_ordering_correct' in overall:
+        ret = 'PASS' if overall['real_return_ordering_correct'] else 'FAIL'
+        print(f'  Real return ordering (Goldilocks→Stagflation): {ret}')
     if 'drawdown_ordering_correct' in overall:
         dd = 'PASS' if overall['drawdown_ordering_correct'] else 'FAIL'
         print(f'  Drawdown ordering: {dd}')
-    if 'sp500_return_ordering_correct' in overall:
-        ret = 'PASS' if overall['sp500_return_ordering_correct'] else 'FAIL'
-        print(f'  S&P return ordering: {ret}')
     print(f'  Plausibility: {"PASS" if plausibility["all_pass"] else "FAIL"}')
     if cpcv_result.get('pbo') is not None:
         print(f'  CPCV PBO: {cpcv_result["pbo"]} ({"PASS" if cpcv_result["pbo"] <= 0.5 else "FAIL"})')
     if dsr_result.get('p_value') is not None:
         print(f'  DSR p-value: {dsr_result["p_value"]} ({"SIGNIFICANT" if dsr_result["significant"] else "NOT SIGNIFICANT"})')
+
+    # Per-quadrant real returns
+    real_returns_by_quad = overall.get('sp500_real_avg_90d_by_quadrant', {})
+    if real_returns_by_quad:
+        print('')
+        print('  S&P 500 real 90d returns by quadrant:')
+        for q in QUADRANT_LABELS:
+            r = real_returns_by_quad.get(q)
+            if r is not None:
+                print(f'    {q}: {r}%')
 
     print('')
     for asset_key in SCORING_ASSETS:
