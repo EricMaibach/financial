@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-14 (PM run: #258 complete — all 7 sub-issues merged; feature closed)
+**Last updated:** 2026-03-16 (PM run: #293 data pipeline complete; Phase 10 in progress)
 
 ---
 
@@ -182,7 +182,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 10: Market Conditions Engine — PLANNED
+## Phase 10: Market Conditions Engine — IN PROGRESS
 
 **Milestone goal:** Replace the k-means regime classifier (52.3/100 backtest score) with a multi-dimensional market conditions engine. Backend-only — no UI changes. Old regime system continues running in parallel.
 
@@ -194,7 +194,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 | Feature | Title | Priority | Scope |
 |---------|-------|----------|-------|
-| #293 | Market Conditions Data Pipeline | P1 | Add ~18 new FRED series (global liquidity, growth/inflation, risk, policy stance), FX conversion for ECB/BOJ, unit alignment |
+| #293 | Market Conditions Data Pipeline | P1 | Complete ✅ — all ~18 new FRED series collecting |
 | #294 | Market Conditions Calculation Engine | P1 | Four dimension engines (Liquidity, Growth×Inflation, Risk, Policy) + single verdict classifier in new `market_conditions.py` |
 | #295 | Market Conditions Backtest Validation | P1 | Extend walk-forward framework with new expectation tables, validate against 52.3/100 baseline, CPCV + DSR on winning config |
 | #296 | Surface New FRED Series in Explorer Page | P2 | Add all ~18 new FRED series to Explorer page, organized by conditions dimension |
