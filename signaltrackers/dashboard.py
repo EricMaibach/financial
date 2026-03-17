@@ -627,7 +627,241 @@ METRIC_DESCRIPTIONS = {
         'what': 'US 10-Year Treasury yield minus Germany 10-Year Bund yield. The rate differential that drives EUR/USD flows.',
         'why': 'Wider spread = US yields more attractive = capital flows to USD = EUR/USD falls. Narrowing spread = euro support as European yields become more competitive.',
         'watch': 'Spread >1.5% typically supports dollar. Spread narrowing often coincides with EUR/USD strength. Watch Fed vs ECB policy trajectory.'
-    }
+    },
+    # --- Market Conditions Framework series (US-296.1) ---
+    'treasury_general_account': {
+        'what': 'US Treasury General Account (TGA) balance held at the Federal Reserve, in millions of dollars. The government\'s checking account.',
+        'why': 'TGA drawdowns inject liquidity into the banking system (reserves rise). TGA build-ups drain liquidity. Part of the Fed Net Liquidity calculation: WALCL − TGA − RRP.',
+        'watch': 'Declining TGA = liquidity injection (bullish for risk assets). Rising TGA (e.g., post-debt ceiling) = liquidity drain. Watch alongside WALCL and RRP for net liquidity picture.'
+    },
+    'ecb_total_assets': {
+        'what': 'European Central Bank total assets in millions of euros. Includes bonds purchased under QE programs, lending facilities, and other assets.',
+        'why': 'Measures ECB balance sheet size — proxy for European monetary stimulus. Expanding = ECB adding liquidity. Contracting = quantitative tightening. Converted to USD for global liquidity composite.',
+        'watch': 'ECB balance sheet peaked ~€8.8T in 2022. QT began mid-2023. Compare pace of ECB QT vs Fed QT for relative liquidity trends.'
+    },
+    'boj_total_assets': {
+        'what': 'Bank of Japan total assets in 100 million yen. Includes Japanese Government Bonds (JGBs), ETFs, and other assets from decades of monetary easing.',
+        'why': 'BOJ has the largest balance sheet relative to GDP of any major central bank. Changes in BOJ asset purchases affect global liquidity and yen carry trade dynamics.',
+        'watch': 'BOJ balance sheet has been largely flat since YCC adjustments began. Any acceleration or reduction signals major policy shift. Converted to USD for global liquidity composite.'
+    },
+    'fx_eur_usd': {
+        'what': 'EUR/USD spot exchange rate from FRED (daily). Number of US dollars per one euro.',
+        'why': 'Used to convert ECB total assets from EUR to USD for the global liquidity composite. Also reflects relative monetary policy stance between Fed and ECB.',
+        'watch': 'EUR/USD above 1.10 = euro strength (dollar weakness). Below 1.05 = dollar strength. Rate differentials between US and German 10Y bonds are the primary driver.'
+    },
+    'fx_jpy_usd': {
+        'what': 'JPY/USD spot exchange rate from FRED (daily). Number of Japanese yen per one US dollar.',
+        'why': 'Used to convert BOJ total assets from JPY to USD for the global liquidity composite. Reflects carry trade dynamics — yen weakens when rate differentials favor USD.',
+        'watch': 'USD/JPY above 150 = extreme yen weakness, carry trade extended. Sharp yen strengthening (USD/JPY dropping) = carry trade unwind risk, global risk-off catalyst.'
+    },
+    'industrial_production': {
+        'what': 'Industrial Production Index (INDPRO) — measures real output of manufacturing, mining, and utilities sectors. Base year 2017 = 100.',
+        'why': 'Hard economic data (not survey-based). YoY acceleration/deceleration feeds the Growth dimension of the Market Conditions quadrant. Declining IP often leads recessions.',
+        'watch': 'YoY growth >3% = strong expansion. Negative YoY = contraction warning. Compare to ISM Manufacturing PMI for leading vs coincident signals.'
+    },
+    'building_permits': {
+        'what': 'New privately-owned housing units authorized by building permits, in thousands of units (seasonally adjusted annual rate).',
+        'why': 'Leading indicator of housing activity and broader economic growth. Permits lead housing starts by 1-2 months. YoY changes feed the Growth dimension of Market Conditions.',
+        'watch': 'Sustained decline from peak = housing slowdown ahead. Below 1.2M SAAR = weak. Above 1.6M = strong. Compare to mortgage rates for affordability signal.'
+    },
+    'breakeven_inflation_5y': {
+        'what': '5-Year breakeven inflation rate — the difference between nominal 5-Year Treasury yield and 5-Year TIPS yield. Market\'s expected average inflation over next 5 years.',
+        'why': 'Shorter-horizon inflation expectations than the 10Y breakeven. More responsive to near-term inflation shocks. Feeds the Inflation dimension of the Market Conditions quadrant.',
+        'watch': 'Above 2.5% = elevated inflation expectations. Below 1.5% = deflation concerns. Compare to CPI and Core PCE for expectations vs reality gap.'
+    },
+    'core_pce_price_index': {
+        'what': 'Personal Consumption Expenditures Price Index excluding food and energy (Core PCE). The Fed\'s preferred inflation measure.',
+        'why': 'Core PCE is what the Fed actually targets at 2%. Less volatile than CPI because it excludes food/energy and adjusts for consumer substitution. Used in Taylor Rule calculations.',
+        'watch': 'Fed target: 2% YoY. Above 3% = Fed likely hawkish. Below 2% = room for easing. Watch for gap between Core PCE and CPI — divergence signals composition shifts.'
+    },
+    'vix_3month': {
+        'what': 'CBOE 3-Month Volatility Index (VIX3M, formerly VXV). Measures expected S&P 500 volatility over the next 3 months.',
+        'why': 'Used with VIX to compute the VIX term structure ratio (VIX/VIX3M). Ratio >1 = backwardation (near-term fear exceeds longer-term). Part of the Risk dimension in Market Conditions.',
+        'watch': 'VIX/VIX3M ratio >1.0 = inverted term structure (acute stress). Ratio <0.85 = steep contango (complacency). History starts Dec 2007.'
+    },
+    'stl_financial_stress': {
+        'what': 'St. Louis Fed Financial Stress Index (STLFSI4). Weekly composite of 18 financial market indicators including yield spreads, volatility, and funding costs.',
+        'why': 'Comprehensive measure of US financial system stress. Zero = average conditions. Positive = above-average stress. Feeds into the Risk dimension of Market Conditions alongside VIX.',
+        'watch': 'Below 0 = loose financial conditions. Above 1.0 = notable stress. Above 2.0 = severe stress (seen in 2008, 2020). Tends to spike before equity drawdowns.'
+    },
+    'fed_funds_upper_target': {
+        'what': 'Federal Funds Target Rate — Upper Limit (DFEDTARU). The top of the Fed\'s target range for overnight bank lending.',
+        'why': 'The Fed\'s primary policy tool. Used in Taylor Rule gap calculation: actual rate minus Taylor-implied rate. Positive gap = restrictive stance, negative = accommodative.',
+        'watch': 'Compare to Taylor Rule implied rate. If actual rate far exceeds Taylor rate → overly restrictive. If below → accommodative. Direction changes (cuts vs hikes) drive all asset classes.'
+    },
+    'pce_price_index': {
+        'what': 'Personal Consumption Expenditures Price Index (headline PCE). Broader than Core PCE — includes food and energy.',
+        'why': 'Input to the Taylor Rule calculation for inflation. YoY PCE change approximates the inflation term in i* = 1.0 + 1.5π + 0.5(output gap). Distinct from Core PCE.',
+        'watch': 'Used alongside Core PCE. Headline PCE diverging from Core signals food/energy shocks. Falling PCE = disinflation (supports rate cuts). Rising = Fed stays tight.'
+    },
+    'real_gdp': {
+        'what': 'Real Gross Domestic Product in billions of chained 2017 dollars (quarterly). Inflation-adjusted measure of total economic output.',
+        'why': 'Used to calculate the output gap (actual GDP vs potential GDP) for the Taylor Rule. Positive gap = overheating. Negative gap = slack. Released with ~1 month lag.',
+        'watch': 'QoQ annualized growth <0% for 2 quarters = recession. Above 3% = strong growth. Output gap = ln(Real GDP / Potential GDP) × 100 for Taylor Rule.'
+    },
+    'potential_gdp': {
+        'what': 'Congressional Budget Office (CBO) estimate of potential GDP in billions of dollars (quarterly). The economy\'s maximum sustainable output.',
+        'why': 'Benchmark for the output gap in Taylor Rule. Potential GDP is a smooth trend — actual GDP oscillates around it. Gap measures economic slack or overheating.',
+        'watch': 'Potential GDP grows ~2% per year. Subject to large revisions (CBO updates twice yearly). Compare to Real GDP: actual > potential = overheating, actual < potential = slack.'
+    },
+    'natural_unemployment_rate': {
+        'what': 'CBO Natural Rate of Unemployment (NAIRU) — the unemployment rate consistent with stable inflation (quarterly).',
+        'why': 'Used in Okun\'s Law to estimate the output gap: gap ≈ −2 × (actual unemployment − NAIRU). When unemployment is below NAIRU, economy is running hot.',
+        'watch': 'NAIRU is currently ~4.4%. Actual unemployment below NAIRU = tight labor market (inflationary). Above NAIRU = slack (disinflationary). Subject to CBO revision.'
+    },
+    'unemployment_rate': {
+        'what': 'US civilian unemployment rate as a percentage of the labor force (monthly, seasonally adjusted).',
+        'why': 'Key labor market indicator and input to Okun\'s Law output gap calculation. Low unemployment = tight labor market. Rising unemployment often confirms recession.',
+        'watch': 'Below 4% = historically tight. Above 5% = weakening. Sahm Rule: 0.5pp rise from 12-month low = recession signal. Compare to NAIRU for policy implications.'
+    },
+}
+
+
+# --- Market Conditions dimension categories for Explorer grouping (US-296.1) ---
+METRIC_CATEGORIES = {
+    # Market Conditions — Liquidity
+    'fed_balance_sheet': 'Conditions: Liquidity',
+    'treasury_general_account': 'Conditions: Liquidity',
+    'reverse_repo': 'Conditions: Liquidity',
+    'ecb_total_assets': 'Conditions: Liquidity',
+    'boj_total_assets': 'Conditions: Liquidity',
+    'fx_eur_usd': 'Conditions: Liquidity',
+    'fx_jpy_usd': 'Conditions: Liquidity',
+    'm2_money_supply': 'Conditions: Liquidity',
+    # Market Conditions — Growth × Inflation
+    'industrial_production': 'Conditions: Growth × Inflation',
+    'building_permits': 'Conditions: Growth × Inflation',
+    'breakeven_inflation_5y': 'Conditions: Growth × Inflation',
+    'cpi': 'Conditions: Growth × Inflation',
+    'core_pce_price_index': 'Conditions: Growth × Inflation',
+    # Market Conditions — Risk
+    'vix_3month': 'Conditions: Risk',
+    'stl_financial_stress': 'Conditions: Risk',
+    'vix_price': 'Conditions: Risk',
+    'nfci': 'Conditions: Risk',
+    # Market Conditions — Policy
+    'fed_funds_upper_target': 'Conditions: Policy',
+    'fed_funds_rate': 'Conditions: Policy',
+    'pce_price_index': 'Conditions: Policy',
+    'real_gdp': 'Conditions: Policy',
+    'potential_gdp': 'Conditions: Policy',
+    'unemployment_rate': 'Conditions: Policy',
+    'natural_unemployment_rate': 'Conditions: Policy',
+    # Credit
+    'high_yield_spread': 'Credit',
+    'investment_grade_spread': 'Credit',
+    'ccc_spread': 'Credit',
+    'high_yield_credit_price': 'Credit',
+    'investment_grade_credit_price': 'Credit',
+    'leveraged_loan_price': 'Credit',
+    'lqd_treasury_spread': 'Credit',
+    'hyg_treasury_spread': 'Credit',
+    'divergence_gap': 'Credit',
+    # Equities
+    'sp500_price': 'Equities',
+    'nasdaq_price': 'Equities',
+    'small_cap_price': 'Equities',
+    'market_breadth_ratio': 'Equities',
+    'smh_spy_ratio': 'Equities',
+    'xlk_spy_ratio': 'Equities',
+    'growth_value_ratio': 'Equities',
+    'iwm_spy_ratio': 'Equities',
+    'financials_sector_price': 'Equities',
+    'energy_sector_price': 'Equities',
+    'growth_price': 'Equities',
+    'value_price': 'Equities',
+    'sp500_equal_weight_price': 'Equities',
+    'semiconductor_price': 'Equities',
+    'tech_sector_price': 'Equities',
+    # Rates
+    'treasury_10y': 'Rates',
+    'treasury_20yr_price': 'Rates',
+    'treasury_7_10yr_price': 'Rates',
+    'treasury_short_price': 'Rates',
+    'tips_inflation_price': 'Rates',
+    'real_yield_10y': 'Rates',
+    'real_yield_proxy': 'Rates',
+    'breakeven_inflation_10y': 'Rates',
+    'yield_curve_10y2y': 'Rates',
+    'yield_curve_10y3m': 'Rates',
+    # Safe Havens
+    'gold_price': 'Safe Havens',
+    'silver_price': 'Safe Havens',
+    'gold_miners_price': 'Safe Havens',
+    'gold_silver_ratio': 'Safe Havens',
+    'gdx_gld_ratio': 'Safe Havens',
+    # Crypto
+    'bitcoin_price': 'Crypto',
+    'ethereum_price': 'Crypto',
+    'btc_gold_ratio': 'Crypto',
+    'fear_greed_index': 'Crypto',
+    # Dollar & FX
+    'dollar_index_price': 'Dollar & FX',
+    'eurusd_price': 'Dollar & FX',
+    'usdjpy_price': 'Dollar & FX',
+    'germany_10y_yield': 'Dollar & FX',
+    'japan_10y_yield': 'Dollar & FX',
+    'us_japan_10y_spread': 'Dollar & FX',
+    'us_germany_10y_spread': 'Dollar & FX',
+    # Economy
+    'consumer_confidence': 'Economy',
+    'initial_claims': 'Economy',
+    'continuing_claims': 'Economy',
+    'trade_balance': 'Economy',
+    # Commodities
+    'commodities_price': 'Commodities',
+    'oil_price': 'Commodities',
+}
+
+# Custom display names for metrics that need better labels than auto-generated title case
+METRIC_DISPLAY_NAMES = {
+    'boj_total_assets': 'BOJ Total Assets (100M JPY)',
+    'breakeven_inflation_5y': '5-Year Breakeven Inflation',
+    'breakeven_inflation_10y': '10-Year Breakeven Inflation',
+    'btc_gold_ratio': 'Bitcoin/Gold Ratio',
+    'ccc_spread': 'CCC Spread',
+    'cpi': 'CPI (Consumer Price Index)',
+    'core_pce_price_index': 'Core PCE Price Index',
+    'ecb_total_assets': 'ECB Total Assets (M EUR)',
+    'eurusd_price': 'EUR/USD Exchange Rate',
+    'fed_balance_sheet': 'Fed Balance Sheet (WALCL)',
+    'fed_funds_rate': 'Fed Funds Rate',
+    'fed_funds_upper_target': 'Fed Funds Upper Target Rate',
+    'fx_eur_usd': 'EUR/USD FX Rate (FRED)',
+    'fx_jpy_usd': 'JPY/USD FX Rate',
+    'gdx_gld_ratio': 'GDX/GLD Ratio (Miners vs Gold)',
+    'gold_silver_ratio': 'Gold/Silver Ratio',
+    'growth_value_ratio': 'Growth/Value Ratio',
+    'hyg_treasury_spread': 'HYG/Treasury Spread',
+    'iwm_spy_ratio': 'IWM/SPY Ratio (Small/Large Cap)',
+    'lqd_treasury_spread': 'LQD/Treasury Spread',
+    'm2_money_supply': 'M2 Money Supply',
+    'natural_unemployment_rate': 'Natural Unemployment Rate (NAIRU)',
+    'nfci': 'NFCI (Financial Conditions Index)',
+    'pce_price_index': 'PCE Price Index (Headline)',
+    'real_gdp': 'Real GDP',
+    'real_yield_10y': '10-Year Real Yield (TIPS)',
+    'real_yield_proxy': 'Real Yield Proxy',
+    'reverse_repo': 'Reverse Repo (RRP)',
+    'smh_spy_ratio': 'SMH/SPY Ratio (Semiconductors)',
+    'sp500_equal_weight_price': 'S&P 500 Equal Weight',
+    'sp500_price': 'S&P 500',
+    'stl_financial_stress': 'St. Louis Financial Stress Index',
+    'tips_inflation_price': 'TIPS (Inflation-Protected)',
+    'treasury_10y': '10-Year Treasury Yield',
+    'treasury_20yr_price': '20+ Year Treasury (TLT)',
+    'treasury_7_10yr_price': '7-10 Year Treasury (IEF)',
+    'treasury_general_account': 'Treasury General Account (TGA)',
+    'treasury_short_price': 'Short-Term Treasury (SHY)',
+    'us_germany_10y_spread': 'US-Germany 10Y Spread',
+    'us_japan_10y_spread': 'US-Japan 10Y Spread',
+    'usdjpy_price': 'USD/JPY Exchange Rate',
+    'vix_3month': 'VIX 3-Month (VIX3M)',
+    'vix_price': 'VIX (Volatility Index)',
+    'xlk_spy_ratio': 'XLK/SPY Ratio (Tech Sector)',
+    'yield_curve_10y2y': 'Yield Curve (10Y-2Y)',
+    'yield_curve_10y3m': 'Yield Curve (10Y-3M)',
+    'potential_gdp': 'Potential GDP (CBO Estimate)',
 }
 
 
@@ -2309,21 +2543,30 @@ def api_metrics_list():
 
     # Add calculated metrics first (not stored as CSV files)
     calculated_metrics = [
-        {'value': 'divergence_gap', 'label': 'Divergence Gap', 'filename': None, 'calculated': True},
+        {'value': 'divergence_gap', 'label': 'Divergence Gap', 'filename': None,
+         'calculated': True, 'category': METRIC_CATEGORIES.get('divergence_gap', '')},
     ]
     metrics.extend(calculated_metrics)
+
+    # Skip non-metric CSV files
+    skip_files = {'us_recessions.csv', 'property_farmland.csv'}
 
     # Add CSV-based metrics
     csv_files = sorted([f for f in os.listdir(DATA_DIR) if f.endswith('.csv')])
 
     for filename in csv_files:
+        if filename in skip_files:
+            continue
         metric_name = filename.replace('.csv', '')
-        # Create friendly name from filename
-        friendly_name = metric_name.replace('_', ' ').title()
+        # Use custom display name if available, otherwise auto-generate from filename
+        friendly_name = METRIC_DISPLAY_NAMES.get(
+            metric_name, metric_name.replace('_', ' ').title()
+        )
         metrics.append({
             'value': metric_name,
             'label': friendly_name,
-            'filename': filename
+            'filename': filename,
+            'category': METRIC_CATEGORIES.get(metric_name, ''),
         })
 
     return jsonify(metrics)
