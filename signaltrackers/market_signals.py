@@ -97,6 +97,31 @@ class MarketSignalsTracker:
             'property_hpi': 'CSUSHPISA',       # Case-Shiller National Home Price Index (monthly SA)
             'property_cpi_rent': 'CUUR0000SEHA',  # CPI: Rent of Primary Residence (monthly)
             'property_vacancy': 'RRVRUSQ156N',    # Rental Vacancy Rate (quarterly)
+            # --- Market Conditions Framework (US-293.1) ---
+            # Layer 1: Global Liquidity
+            # WALCL already collected as 'fed_balance_sheet' (millions USD, weekly Wed)
+            # RRPONTSYD already collected as 'reverse_repo' (BILLIONS USD — multiply by 1000 to align with WALCL/WDTGAL millions)
+            'treasury_general_account': 'WDTGAL',  # Treasury General Account (millions USD, weekly Wed)
+            'ecb_total_assets': 'ECBASSETSW',      # ECB Total Assets (millions EUR, weekly)
+            'boj_total_assets': 'JPNASSETS',        # BOJ Total Assets (100M JPY, monthly)
+            'fx_eur_usd': 'DEXUSEU',               # EUR/USD Exchange Rate (USD per EUR, daily) — for ECB→USD conversion
+            'fx_jpy_usd': 'DEXJPUS',               # JPY/USD Exchange Rate (JPY per USD, daily) — invert for BOJ→USD conversion
+            # Layer 2: Growth × Inflation
+            # CPIAUCSL already collected as 'cpi' (monthly)
+            'industrial_production': 'INDPRO',      # Industrial Production Index (monthly) — hard production data
+            'building_permits': 'PERMIT',            # Building Permits (monthly, thousands of units) — leading housing indicator
+            'breakeven_inflation_5y': 'T5YIE',      # 5Y Breakeven Inflation Rate (daily) — shorter-term inflation expectations
+            'core_pce_price_index': 'PCEPILFE',     # Core PCE Price Index (monthly) — Fed's preferred inflation measure
+            # Layer 3: Risk Regime
+            'vix_3month': 'VXVCLS',                 # CBOE VIX 3-Month (VIX3M, daily) — for VIX term structure ratio; history starts Dec 2007
+            'stl_financial_stress': 'STLFSI4',      # St. Louis Financial Stress Index (weekly) — 18-component stress composite
+            # Layer 4: Policy Stance
+            'fed_funds_upper_target': 'DFEDTARU',   # Fed Funds Upper Target Rate (daily) — current policy rate
+            'pce_price_index': 'PCEPI',             # PCE Price Index (monthly) — for Taylor Rule inflation input
+            'real_gdp': 'GDPC1',                    # Real GDP (quarterly, billions chained 2017 USD) — for output gap
+            'potential_gdp': 'GDPPOT',              # CBO Potential GDP (quarterly) — Taylor Rule calibration; subject to large revisions
+            'unemployment_rate': 'UNRATE',           # Unemployment Rate (monthly, %) — for Okun's Law output gap
+            'natural_unemployment_rate': 'NROU',     # CBO Natural Rate of Unemployment (quarterly, %) — for Okun's Law
         }
 
         # ETF tickers organized by category
