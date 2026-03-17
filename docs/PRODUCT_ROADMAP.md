@@ -195,8 +195,9 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | Feature | Title | Priority | Scope |
 |---------|-------|----------|-------|
 | #293 | Market Conditions Data Pipeline | P1 | Complete ✅ — all ~18 new FRED series collecting |
-| #294 | Market Conditions Calculation Engine | P1 | Complete ✅ — four dimension engines + verdict classifier in `market_conditions.py` |
-| #295 | Market Conditions Backtest Validation | P1 | Extend walk-forward framework with new expectation tables, validate against 52.3/100 baseline, CPCV + DSR on winning config |
+| #294 | Market Conditions Calculation Engine | P1 | Complete ✅ — four dimension engines in `market_conditions.py` |
+| #295 | Market Conditions Backtest Validation | P1 | First run complete — multi-asset accuracy 63.9% (up from 54.6%), but composite 31.9 failed due to verdict scoring. Findings documented. |
+| #314 | Backtest Scoring Refinement | P1 | Remove verdict, score against quadrant with real returns + magnitude ordering. Re-run backtest. **Hard gate.** |
 | #296 | Surface New FRED Series in Explorer Page | P2 | Add all ~18 new FRED series to Explorer page, organized by conditions dimension |
 
 ### Hard Gate
@@ -224,10 +225,10 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ### Anticipated Scope
 
-- **Homepage redesign** — AI briefing to top, conditions-at-a-glance (verdict + 4 dimension cards), dimension detail sections with progressive disclosure, portfolio implications matrix
-- **Conditions strip** — Replace regime strip on every page with verdict + dimension summary
-- **Category page migration** — Quadrant-based context sentences and signal annotations for all 6 category pages
-- **AI briefing enhancement** — Four-dimension conditions context, rule-based fallback narrative
+- **Homepage redesign** — AI briefing to top, quadrant as headline with three supporting dimension cards, dimension detail sections with progressive disclosure, portfolio implications matrix
+- **Conditions strip** — Replace regime strip on every page with quadrant headline + supporting dimensions (Liquidity leads on Crypto page)
+- **Category page migration** — Quadrant × liquidity context sentences and signal annotations for all 6 category pages
+- **AI briefing enhancement** — Quadrant-led conditions context, rule-based fallback narrative
 - **Old system deprecation** — **Required, not optional.** Remove `regime_detection.py`, `regime_config.py`, `regime_implications_config.py`, old cache files, regime-specific CSS/templates, and all dead code paths. Phase 11 does not ship with two parallel systems.
 - **AI integration (briefing + chatbot)** — Update daily briefing prompts and chatbot context to use new conditions engine data. Both surfaces must reason about all four dimensions, not just the old regime label.
 
