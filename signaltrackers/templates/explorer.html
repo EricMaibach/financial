@@ -508,12 +508,52 @@ fetch('/api/metrics/list')
         availableMetrics = metrics;
 
         const selector = document.getElementById('metricSelector');
+
+        // Group metrics by category for optgroup rendering
+        const categoryOrder = [
+            'Conditions: Liquidity', 'Conditions: Growth × Inflation',
+            'Conditions: Risk', 'Conditions: Policy',
+            'Credit', 'Equities', 'Rates', 'Safe Havens',
+            'Crypto', 'Dollar & FX', 'Economy', 'Commodities',
+        ];
+        const grouped = {};
+        const uncategorized = [];
         metrics.forEach(metric => {
-            const option = document.createElement('option');
-            option.value = metric.value;
-            option.textContent = metric.label;
-            selector.appendChild(option);
+            const cat = metric.category || '';
+            if (cat) {
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(metric);
+            } else {
+                uncategorized.push(metric);
+            }
         });
+
+        // Render categorized metrics in optgroups
+        categoryOrder.forEach(cat => {
+            if (!grouped[cat]) return;
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = cat;
+            grouped[cat].forEach(metric => {
+                const option = document.createElement('option');
+                option.value = metric.value;
+                option.textContent = metric.label;
+                optgroup.appendChild(option);
+            });
+            selector.appendChild(optgroup);
+        });
+
+        // Render any uncategorized metrics at the end
+        if (uncategorized.length > 0) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = 'Other';
+            uncategorized.forEach(metric => {
+                const option = document.createElement('option');
+                option.value = metric.value;
+                option.textContent = metric.label;
+                optgroup.appendChild(option);
+            });
+            selector.appendChild(optgroup);
+        }
 
         // Check for metric query parameter
         const urlParams = new URLSearchParams(window.location.search);
