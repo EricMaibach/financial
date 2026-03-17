@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-16 (PM run: #293 data pipeline complete; Phase 10 in progress)
+**Last updated:** 2026-03-17 (PM run: #294 Calculation Engine complete; Phase 10 in progress)
 
 ---
 
@@ -195,7 +195,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | Feature | Title | Priority | Scope |
 |---------|-------|----------|-------|
 | #293 | Market Conditions Data Pipeline | P1 | Complete ✅ — all ~18 new FRED series collecting |
-| #294 | Market Conditions Calculation Engine | P1 | Four dimension engines (Liquidity, Growth×Inflation, Risk, Policy) + single verdict classifier in new `market_conditions.py` |
+| #294 | Market Conditions Calculation Engine | P1 | Complete ✅ — four dimension engines + verdict classifier in `market_conditions.py` |
 | #295 | Market Conditions Backtest Validation | P1 | Extend walk-forward framework with new expectation tables, validate against 52.3/100 baseline, CPCV + DSR on winning config |
 | #296 | Surface New FRED Series in Explorer Page | P2 | Add all ~18 new FRED series to Explorer page, organized by conditions dimension |
 
