@@ -12,10 +12,12 @@ Runs alongside the existing regime_detection.py system — no replacement yet.
 Reference: docs/MARKET-CONDITIONS-FRAMEWORK.md, Sections 4-5
 """
 
+import json
 import os
 import logging
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, asdict
+from datetime import datetime, timezone
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -1050,7 +1052,9 @@ def compute_policy(as_of_date: Optional[str] = None) -> Optional[PolicyResult]:
         logger.warning('Insufficient unemployment data for policy calculation')
         return None
 
-    # NROU is quarterly — forward-fill to monthly to align with UNRATE
+    # NROU is quarterly — deduplicate (FRED sometimes has duplicate dates),
+    # then forward-fill to monthly to align with UNRATE
+    nrou = nrou[~nrou.index.duplicated(keep='last')]
     nrou_monthly = nrou.resample('MS').ffill()
     # Align to UNRATE index
     common_idx = unrate.index.intersection(nrou_monthly.index)
@@ -1306,3 +1310,451 @@ def compute_policy_history(start_date: Optional[str] = None) -> Optional[pd.Data
         })
 
     return pd.DataFrame(records) if records else None
+
+
+# ---------------------------------------------------------------------------
+# Section 5: Verdict Classifier
+# ---------------------------------------------------------------------------
+
+MARKET_CONDITIONS_CACHE_FILE = os.path.join(DATA_DIR, 'market_conditions_cache.json')
+MARKET_CONDITIONS_HISTORY_FILE = os.path.join(DATA_DIR, 'market_conditions_history.json')
+
+# Dimension → numeric score mapping (per framework spec Section 5)
+
+_LIQUIDITY_SCORE_MAP = {
+    'Strongly Expanding': 2.0,
+    'Expanding': 1.0,
+    'Neutral': 0.0,
+    'Contracting': -1.0,
+    'Strongly Contracting': -2.0,
+}
+
+_QUADRANT_SCORE_MAP = {
+    'Goldilocks': 2.0,
+    'Reflation': 1.0,
+    'Deflation Risk': -1.0,
+    'Stagflation': -2.0,
+}
+
+_RISK_SCORE_MAP = {
+    'Calm': 1.0,
+    'Normal': 0.0,
+    'Elevated': -1.0,
+    'Stressed': -2.0,
+}
+
+_POLICY_SCORE_MAP = {
+    'Accommodative': 1.0,
+    'Neutral': 0.0,
+    'Restrictive': -1.0,
+}
+
+# Weights
+_WEIGHT_LIQUIDITY = 0.35
+_WEIGHT_QUADRANT = 0.35
+_WEIGHT_RISK = 0.20
+_WEIGHT_POLICY = 0.10
+
+
+def _map_dimension_score(state: str, score_map: dict) -> Optional[float]:
+    """Map a dimension state label to its numeric score."""
+    return score_map.get(state)
+
+
+def _compute_verdict_score(
+    liquidity_mapped: float,
+    quadrant_mapped: float,
+    risk_mapped: float,
+    policy_mapped: float,
+) -> float:
+    """Weighted composite of four dimension scores."""
+    return (
+        _WEIGHT_LIQUIDITY * liquidity_mapped
+        + _WEIGHT_QUADRANT * quadrant_mapped
+        + _WEIGHT_RISK * risk_mapped
+        + _WEIGHT_POLICY * policy_mapped
+    )
+
+
+def _classify_verdict(score: float, risk_state: str) -> str:
+    """
+    Classify verdict from composite score.
+
+    Override: Risk "Stressed" → always "Defensive".
+    """
+    if risk_state == 'Stressed':
+        return 'Defensive'
+    if score > 0.75:
+        return 'Favorable'
+    elif score > -0.25:
+        return 'Mixed'
+    elif score > -1.0:
+        return 'Cautious'
+    else:
+        return 'Defensive'
+
+
+# ---------------------------------------------------------------------------
+# Section 5: Asset Class Expectations
+# ---------------------------------------------------------------------------
+
+# Quadrant → base expectations (direction for S&P 500, Treasuries, Gold)
+_QUADRANT_EXPECTATIONS = {
+    'Goldilocks': {
+        'sp500': 'positive',
+        'treasuries': 'positive',
+        'gold': 'neutral',
+    },
+    'Reflation': {
+        'sp500': 'positive',
+        'treasuries': 'negative',
+        'gold': 'positive',
+    },
+    'Stagflation': {
+        'sp500': 'negative',
+        'treasuries': 'negative',
+        'gold': 'positive',
+    },
+    'Deflation Risk': {
+        'sp500': 'negative',
+        'treasuries': 'positive',
+        'gold': 'neutral',
+    },
+}
+
+# Liquidity overlay: modifies magnitude description, not direction
+_LIQUIDITY_MAGNITUDE = {
+    'Strongly Expanding': 'strong',
+    'Expanding': 'moderate',
+    'Neutral': 'baseline',
+    'Contracting': 'reduced',
+    'Strongly Contracting': 'weak',
+}
+
+# Risk overlay: modifies conviction
+_RISK_CONVICTION = {
+    'Calm': 'high',
+    'Normal': 'standard',
+    'Elevated': 'low',
+    'Stressed': 'override',
+}
+
+
+def _build_asset_expectations(
+    quadrant: str,
+    liquidity_state: str,
+    risk_state: str,
+) -> List[Dict]:
+    """
+    Build asset class expectations from current conditions.
+
+    Returns list of dicts with keys: asset, direction, magnitude, conviction.
+    When Risk is Stressed, S&P 500 direction overridden to negative.
+    """
+    base = _QUADRANT_EXPECTATIONS.get(quadrant, _QUADRANT_EXPECTATIONS['Goldilocks'])
+    magnitude = _LIQUIDITY_MAGNITUDE.get(liquidity_state, 'baseline')
+    conviction = _RISK_CONVICTION.get(risk_state, 'standard')
+
+    expectations = []
+    for asset, direction in base.items():
+        asset_dir = direction
+        asset_mag = magnitude
+        asset_conv = conviction
+
+        # Stressed override: equities go negative regardless
+        if risk_state == 'Stressed' and asset == 'sp500':
+            asset_dir = 'negative'
+            asset_conv = 'override'
+
+        # Stressed override: reduce magnitude for all assets
+        if risk_state == 'Stressed':
+            asset_conv = 'override'
+            if asset != 'gold':
+                asset_mag = 'weak'
+
+        expectations.append({
+            'asset': asset,
+            'direction': asset_dir,
+            'magnitude': asset_mag,
+            'conviction': asset_conv,
+        })
+
+    # Bitcoin/crypto: liquidity-driven (primary signal per framework §8 §6)
+    btc_direction_map = {
+        'Strongly Expanding': 'positive',
+        'Expanding': 'positive',
+        'Neutral': 'neutral',
+        'Contracting': 'negative',
+        'Strongly Contracting': 'negative',
+    }
+    btc_dir = btc_direction_map.get(liquidity_state, 'neutral')
+    btc_mag = magnitude
+    btc_conv = conviction
+    if risk_state == 'Stressed':
+        btc_conv = 'override'
+        btc_mag = 'weak'
+    expectations.append({
+        'asset': 'bitcoin',
+        'direction': btc_dir,
+        'magnitude': btc_mag,
+        'conviction': btc_conv,
+    })
+
+    return expectations
+
+
+# ---------------------------------------------------------------------------
+# Verdict dataclass
+# ---------------------------------------------------------------------------
+
+@dataclass
+class MarketConditionsResult:
+    """Full market conditions verdict with all dimensions."""
+    verdict: str               # Favorable / Mixed / Cautious / Defensive
+    verdict_score: float       # Numeric composite score
+
+    # Dimension states
+    liquidity_state: str
+    quadrant: str
+    risk_state: str
+    policy_stance: str
+    policy_direction: str
+
+    # Dimension mapped scores (-2 to +2)
+    liquidity_mapped: float
+    quadrant_mapped: float
+    risk_mapped: float
+    policy_mapped: float
+
+    # Asset expectations
+    asset_expectations: List[Dict]
+
+    # Metadata
+    as_of: Optional[str] = None
+
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+
+def compute_market_conditions(as_of_date: Optional[str] = None) -> Optional[MarketConditionsResult]:
+    """
+    Compute full market conditions: four dimensions → verdict → asset expectations.
+
+    Returns MarketConditionsResult or None if insufficient data.
+    Compatible with backtest interface via .verdict and .verdict_score.
+    """
+    liquidity = compute_liquidity(as_of_date)
+    quadrant = compute_quadrant(as_of_date)
+    risk = compute_risk(as_of_date)
+    policy = compute_policy(as_of_date)
+
+    # Require at least liquidity and quadrant (the two 35% weights)
+    if liquidity is None or quadrant is None:
+        logger.warning('Cannot compute verdict: missing liquidity or quadrant data')
+        return None
+
+    # Map dimension states to numeric scores
+    liq_mapped = _map_dimension_score(liquidity.state, _LIQUIDITY_SCORE_MAP)
+    quad_mapped = _map_dimension_score(quadrant.quadrant, _QUADRANT_SCORE_MAP)
+
+    if liq_mapped is None or quad_mapped is None:
+        logger.warning('Unknown dimension state: liquidity=%s quadrant=%s',
+                        liquidity.state, quadrant.quadrant)
+        return None
+
+    # Risk and policy: graceful degradation if unavailable
+    if risk is not None:
+        risk_mapped = _map_dimension_score(risk.state, _RISK_SCORE_MAP)
+        risk_state = risk.state
+    else:
+        risk_mapped = 0.0  # Neutral assumption
+        risk_state = 'Normal'
+        logger.info('Risk data unavailable; defaulting to Normal (0.0)')
+
+    if policy is not None:
+        pol_mapped = _map_dimension_score(policy.stance, _POLICY_SCORE_MAP)
+        policy_stance = policy.stance
+        policy_direction = policy.direction
+    else:
+        pol_mapped = 0.0  # Neutral assumption
+        policy_stance = 'Neutral'
+        policy_direction = 'Paused'
+        logger.info('Policy data unavailable; defaulting to Neutral (0.0)')
+
+    if risk_mapped is None:
+        risk_mapped = 0.0
+    if pol_mapped is None:
+        pol_mapped = 0.0
+
+    # Compute weighted composite
+    v_score = _compute_verdict_score(liq_mapped, quad_mapped, risk_mapped, pol_mapped)
+
+    # Classify verdict (with Stressed override)
+    verdict = _classify_verdict(v_score, risk_state)
+
+    # Build asset expectations
+    expectations = _build_asset_expectations(
+        quadrant.quadrant, liquidity.state, risk_state
+    )
+
+    # Determine as_of date.
+    # Use the explicit backtest date if provided; otherwise use today's date.
+    # Do NOT use max(dimension dates) — quarterly FRED series (NROU, GDPPOT)
+    # have forward-looking observation dates that would key history entries
+    # in the future, causing overwrites and lost daily snapshots.
+    if as_of_date is not None:
+        as_of = as_of_date
+    else:
+        from datetime import date as _date
+        as_of = str(_date.today())
+
+    return MarketConditionsResult(
+        verdict=verdict,
+        verdict_score=round(v_score, 4),
+        liquidity_state=liquidity.state,
+        quadrant=quadrant.quadrant,
+        risk_state=risk_state,
+        policy_stance=policy_stance,
+        policy_direction=policy_direction,
+        liquidity_mapped=liq_mapped,
+        quadrant_mapped=quad_mapped,
+        risk_mapped=risk_mapped,
+        policy_mapped=pol_mapped,
+        asset_expectations=expectations,
+        as_of=as_of,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Cache management
+# ---------------------------------------------------------------------------
+
+def update_market_conditions_cache() -> Optional[dict]:
+    """
+    Compute current market conditions and write to cache file.
+
+    Called by run_data_collection() alongside update_macro_regime().
+    Returns the cache dict, or None on failure.
+    """
+    logger.info('Computing market conditions for cache update...')
+
+    try:
+        result = compute_market_conditions()
+        if result is None:
+            logger.warning('Market conditions computation returned None; skipping cache update')
+            return None
+
+        cache_data = {
+            'verdict': result.verdict,
+            'verdict_score': result.verdict_score,
+            'dimensions': {
+                'liquidity': {
+                    'state': result.liquidity_state,
+                    'mapped_score': result.liquidity_mapped,
+                },
+                'quadrant': {
+                    'state': result.quadrant,
+                    'mapped_score': result.quadrant_mapped,
+                },
+                'risk': {
+                    'state': result.risk_state,
+                    'mapped_score': result.risk_mapped,
+                },
+                'policy': {
+                    'stance': result.policy_stance,
+                    'direction': result.policy_direction,
+                    'mapped_score': result.policy_mapped,
+                },
+            },
+            'asset_expectations': result.asset_expectations,
+            'as_of': result.as_of,
+            'updated_at': datetime.now(timezone.utc).isoformat(),
+        }
+
+        os.makedirs(os.path.dirname(MARKET_CONDITIONS_CACHE_FILE), exist_ok=True)
+        with open(MARKET_CONDITIONS_CACHE_FILE, 'w') as f:
+            json.dump(cache_data, f, indent=2)
+
+        logger.info('Market conditions cache updated: verdict=%s score=%.4f',
+                     result.verdict, result.verdict_score)
+
+        # Append to daily history (separate from snapshot cache)
+        _append_conditions_history(cache_data)
+
+        return cache_data
+
+    except Exception:
+        logger.exception('Error updating market conditions cache')
+        return None
+
+
+def get_market_conditions() -> Optional[dict]:
+    """Read market conditions from cache file."""
+    if not os.path.exists(MARKET_CONDITIONS_CACHE_FILE):
+        return None
+    try:
+        with open(MARKET_CONDITIONS_CACHE_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        logger.exception('Error reading market conditions cache')
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Market Conditions History (append-only, one entry per day)
+# ---------------------------------------------------------------------------
+
+
+def _load_conditions_history() -> dict:
+    """Load the daily market conditions history from file.
+
+    Returns a dict mapping ISO date strings to snapshot dicts.
+    """
+    try:
+        if os.path.exists(MARKET_CONDITIONS_HISTORY_FILE):
+            with open(MARKET_CONDITIONS_HISTORY_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as exc:
+        logger.warning('Failed to read market conditions history: %s', exc)
+    return {}
+
+
+def _save_conditions_history(history: dict) -> None:
+    """Persist the daily market conditions history to file."""
+    try:
+        os.makedirs(os.path.dirname(MARKET_CONDITIONS_HISTORY_FILE), exist_ok=True)
+        with open(MARKET_CONDITIONS_HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+    except Exception as exc:
+        logger.warning('Failed to write market conditions history: %s', exc)
+
+
+def _append_conditions_history(cache_data: dict) -> None:
+    """Append a daily snapshot to the conditions history file.
+
+    Keyed by the as_of date. Overwrites same-day entries (idempotent).
+    No pruning — all history retained indefinitely.
+    """
+    as_of = cache_data.get('as_of')
+    if not as_of:
+        return
+
+    history = _load_conditions_history()
+    history[as_of] = {
+        'verdict': cache_data['verdict'],
+        'verdict_score': cache_data['verdict_score'],
+        'dimensions': cache_data['dimensions'],
+        'asset_expectations': cache_data['asset_expectations'],
+    }
+    _save_conditions_history(history)
+    logger.info('Market conditions history updated for %s (%d total entries)',
+                as_of, len(history))
+
+
+def get_conditions_history() -> dict:
+    """Read the full market conditions history.
+
+    Returns a dict mapping ISO date strings to snapshot dicts.
+    """
+    return _load_conditions_history()
