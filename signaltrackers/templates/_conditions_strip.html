@@ -1,0 +1,133 @@
+{# Market Conditions Strip — replaces _regime_strip.html (US-322.1)
+   Requires: market_conditions (from context processor)
+   Optional: conditions_strip_liquidity_leads (set true on Crypto page)
+#}
+{% if market_conditions %}
+{% set _dims = market_conditions.dimensions %}
+{% set _quadrant = _dims.quadrant.state if _dims.quadrant else '' %}
+{% set _liquidity = _dims.liquidity.state if _dims.liquidity else '' %}
+{% set _risk = _dims.risk.state if _dims.risk else '' %}
+{% set _policy_dir = _dims.policy.direction if _dims.policy else '' %}
+
+{# Display label mappings #}
+{% set _liq_labels = {
+    'Strongly Expanding': 'Expanding ↑↑',
+    'Expanding': 'Expanding ↑',
+    'Neutral': 'Neutral',
+    'Contracting': 'Contracting ↓',
+    'Strongly Contracting': 'Contracting ↓↓'
+} %}
+{% set _policy_labels = {
+    'Easing': 'Easing ↑',
+    'Paused': 'Paused',
+    'Tightening': 'Tightening ↓'
+} %}
+
+{# Quadrant CSS class and color #}
+{% set _quadrant_classes = {
+    'Goldilocks': 'conditions-strip--goldilocks',
+    'Reflation': 'conditions-strip--reflation',
+    'Deflation Risk': 'conditions-strip--deflation-risk',
+    'Stagflation': 'conditions-strip--stagflation'
+} %}
+{% set _quadrant_class = _quadrant_classes.get(_quadrant, '') %}
+
+{# Liquidity color class (for crypto page dot) #}
+{% set _liq_color_classes = {
+    'Strongly Expanding': 'conditions-strip--liq-expanding',
+    'Expanding': 'conditions-strip--liq-expanding',
+    'Neutral': 'conditions-strip--liq-neutral',
+    'Contracting': 'conditions-strip--liq-contracting',
+    'Strongly Contracting': 'conditions-strip--liq-contracting'
+} %}
+
+{% set _liq_display = _liq_labels.get(_liquidity, _liquidity) %}
+{% set _policy_display = _policy_labels.get(_policy_dir, _policy_dir) %}
+
+{% if conditions_strip_liquidity_leads is defined and conditions_strip_liquidity_leads %}
+{# Crypto page: Liquidity leads #}
+{% set _strip_class = _liq_color_classes.get(_liquidity, '') %}
+{% set _headline = 'LIQUIDITY: ' + _liq_display|upper %}
+{% set _secondary_items = [
+    {'label': _quadrant},
+    {'label': 'Risk', 'value': _risk},
+    {'label': 'Policy', 'value': _policy_display}
+] %}
+{% set _mobile_items = [
+    {'label': 'Quadrant', 'value': _quadrant},
+    {'label': 'Risk', 'value': _risk},
+    {'label': 'Policy', 'value': _policy_display}
+] %}
+{% else %}
+{# Standard: Quadrant leads #}
+{% set _strip_class = _quadrant_class %}
+{% set _headline = _quadrant|upper %}
+{% set _secondary_items = [
+    {'label': 'Liquidity', 'value': _liq_display},
+    {'label': 'Risk', 'value': _risk},
+    {'label': 'Policy', 'value': _policy_display}
+] %}
+{% set _mobile_items = _secondary_items %}
+{% endif %}
+
+<div class="conditions-strip {{ _strip_class }}" role="complementary" aria-label="Market conditions for this page">
+    <div class="conditions-strip__headline">
+        <span class="conditions-strip__dot" aria-hidden="true"></span>
+        <span class="conditions-strip__name" aria-live="polite">{{ _headline }}</span>
+    </div>
+
+    {# Desktop: inline dimensions #}
+    <div class="conditions-strip__dimensions">
+        {% for item in _secondary_items %}
+        {% if not loop.first %}
+        <span class="conditions-strip__separator" aria-hidden="true"></span>
+        {% endif %}
+        {% if item.value is defined %}
+        <span class="conditions-strip__dim">{{ item.label }}: {{ item.value }}</span>
+        {% else %}
+        <span class="conditions-strip__dim">{{ item.label }}</span>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {# Mobile: toggle + expand #}
+    <button class="conditions-strip__toggle" aria-expanded="false" aria-controls="conditions-strip-expand" aria-label="Show market conditions details">
+        <span class="conditions-strip__chevron" aria-hidden="true">&#9662;</span>
+    </button>
+    <div class="conditions-strip__expand" id="conditions-strip-expand" hidden>
+        {% for item in _mobile_items %}
+        <div class="conditions-strip__expand-row">
+            <span class="conditions-strip__expand-label">{{ item.label }}</span>
+            <span class="conditions-strip__expand-value">{{ item.value }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+(function() {
+    var toggle = document.querySelector('.conditions-strip__toggle');
+    if (!toggle) return;
+    var panel = document.getElementById('conditions-strip-expand');
+    if (!panel) return;
+    toggle.addEventListener('click', function() {
+        var expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        if (expanded) {
+            panel.setAttribute('hidden', '');
+        } else {
+            panel.removeAttribute('hidden');
+        }
+    });
+})();
+</script>
+
+{% else %}
+{# Fallback: cache missing or stale #}
+<div class="conditions-strip conditions-strip--unavailable" role="complementary" aria-label="Market conditions for this page">
+    <div class="conditions-strip__headline">
+        <span class="conditions-strip__dot" aria-hidden="true"></span>
+        <span class="conditions-strip__name">CONDITIONS UNAVAILABLE</span>
+    </div>
+</div>
+{% endif %}

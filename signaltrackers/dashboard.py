@@ -55,7 +55,7 @@ from sector_tone_pipeline import get_sector_management_tone, update_sector_manag
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
 from property_interpretation_config import get_property_interpretation
-from market_conditions import update_market_conditions_cache
+from market_conditions import update_market_conditions_cache, get_market_conditions
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -241,6 +241,25 @@ def inject_recession_probability():
     except Exception:
         data = None
     return {'recession_probability': data}
+
+
+@app.context_processor
+def inject_market_conditions():
+    """Inject market conditions data into all templates for conditions strip (US-322.1)."""
+    try:
+        data = get_market_conditions()
+        if data:
+            # Check staleness (>48 hours)
+            updated_at = data.get('updated_at', '')
+            if updated_at:
+                from datetime import timezone
+                updated_dt = datetime.fromisoformat(updated_at)
+                age = datetime.now(timezone.utc) - updated_dt
+                if age.total_seconds() > 48 * 3600:
+                    data = None
+    except Exception:
+        data = None
+    return {'market_conditions': data}
 
 
 @app.context_processor
