@@ -1965,6 +1965,37 @@ def index():
         pass
     ctx['quadrant_trajectory'] = trajectory
 
+    # Liquidity sparkline points for expanded card (last 14 weekly entries)
+    liq_sparkline_points = ''
+    try:
+        if not history:
+            history = get_conditions_history()
+        if history:
+            sorted_dates = sorted(history.keys())
+            liq_scores = []
+            for dt_str in sorted_dates:
+                entry = history[dt_str]
+                dims = entry.get('dimensions', {})
+                liq_dim = dims.get('liquidity', {})
+                sc = liq_dim.get('score')
+                if sc is not None:
+                    liq_scores.append(sc)
+            # Take last 14 entries (weekly cadence approximation from daily snapshots)
+            liq_scores = liq_scores[-14:]
+            if len(liq_scores) >= 2:
+                min_s = min(liq_scores)
+                max_s = max(liq_scores)
+                rng = max_s - min_s if max_s != min_s else 1.0
+                pts = []
+                for i, s in enumerate(liq_scores):
+                    x = round(i / (len(liq_scores) - 1) * 100, 1)
+                    y = round((1 - (s - min_s) / rng) * 32, 1)
+                    pts.append(f'{x},{y}')
+                liq_sparkline_points = ' '.join(pts)
+    except Exception:
+        pass
+    ctx['liq_sparkline_points'] = liq_sparkline_points
+
     # Recession probability summary for Risk expand card
     try:
         recession = get_recession_probability()

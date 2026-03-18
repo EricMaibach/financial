@@ -411,6 +411,24 @@ a.dimension-metric-row:hover {
     color: #94A3B8;
 }
 
+/* Sparkline (Liquidity expanded card) */
+.dimension-card__sparkline {
+    margin: 0.75rem 0;
+}
+.dimension-card__sparkline-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748B;
+    margin-bottom: 0.375rem;
+}
+.dimension-card__sparkline-svg {
+    display: block;
+    width: 100%;
+    height: 32px;
+}
+
 /* Interpretive text */
 .dimension-card__interp {
     font-size: 0.8125rem;
