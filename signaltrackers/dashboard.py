@@ -55,7 +55,7 @@ from sector_tone_pipeline import get_sector_management_tone, update_sector_manag
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
 from property_interpretation_config import get_property_interpretation
-from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history
+from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history, build_implications_matrix
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -2010,6 +2010,44 @@ def index():
             ctx['recession_highest'] = None
     except Exception:
         ctx['recession_highest'] = None
+
+    # §2 Portfolio Implications matrix (per-dimension signal breakdown)
+    implications = []
+    try:
+        if conditions:
+            dims = conditions.get('dimensions', {})
+            quad = conditions.get('quadrant', 'Goldilocks')
+            liq_state = dims.get('liquidity', {}).get('state', 'Neutral')
+            risk_state = dims.get('risk', {}).get('state', 'Normal')
+            pol_dir = dims.get('policy', {}).get('direction', 'Paused')
+            implications = build_implications_matrix(quad, liq_state, risk_state, pol_dir)
+    except Exception:
+        pass
+    ctx['implications'] = implications
+
+    # Historical context sentence for §2
+    ctx['implications_context'] = ''
+    try:
+        if conditions and trajectory:
+            quad = conditions.get('quadrant', '')
+            liq_dims = conditions.get('dimensions', {}).get('liquidity', {})
+            liq_state = liq_dims.get('state', '')
+            # Count matching periods in history
+            matching = 0
+            if history:
+                for entry in history.values():
+                    e_quad = entry.get('quadrant', entry.get('raw_quadrant', ''))
+                    e_liq = entry.get('dimensions', {}).get('liquidity', {}).get('state', '')
+                    if e_quad == quad and e_liq == liq_state:
+                        matching += 1
+            if matching > 1:
+                ctx['implications_context'] = (
+                    f"In prior {quad} + {liq_state} Liquidity periods "
+                    f"(n={matching} since 2003), conditions have historically "
+                    f"favored risk assets when sustained for 3+ months."
+                )
+    except Exception:
+        pass
 
     return render_template('index.html', **ctx)
 

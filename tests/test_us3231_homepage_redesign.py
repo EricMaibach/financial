@@ -434,19 +434,19 @@ class TestMoversStrip(unittest.TestCase):
             self.assertLess(implications_pos, movers_pos)
 
 
-class TestImplicationsPlaceholder(unittest.TestCase):
-    """§2 placeholder for US-323.2."""
+class TestImplicationsSection(unittest.TestCase):
+    """§2 implications matrix (replaced placeholder in US-323.2)."""
 
     @patch('dashboard.get_recession_probability', return_value=None)
     @patch('dashboard.get_conditions_history', return_value={})
     @patch('dashboard.get_market_conditions', return_value=_make_cache())
-    def test_implications_placeholder(self, mock_mc, mock_hist, mock_rec):
+    def test_implications_section_present(self, mock_mc, mock_hist, mock_rec):
         app = _get_app()
         with app.test_client() as c:
             html = c.get('/').data.decode()
             self.assertIn('id="implications-section"', html)
             self.assertIn('WHAT THIS MEANS FOR YOUR PORTFOLIO', html)
-            self.assertIn('coming soon', html)
+            self.assertIn('implications-table', html)
 
 
 # ─── Cache Extension Tests ───────────────────────────────────────────

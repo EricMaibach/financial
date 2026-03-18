@@ -1327,27 +1327,35 @@ MARKET_CONDITIONS_HISTORY_FILE = os.path.join(DATA_DIR, 'market_conditions_histo
 # Section 5: Asset Class Expectations
 # ---------------------------------------------------------------------------
 
-# Quadrant → base expectations (direction for S&P 500, Treasuries, Gold)
+# Quadrant → base expectations (direction for each asset class)
 _QUADRANT_EXPECTATIONS = {
     'Goldilocks': {
         'sp500': 'positive',
         'treasuries': 'positive',
         'gold': 'neutral',
+        'credit': 'positive',
+        'commodities': 'neutral',
     },
     'Reflation': {
         'sp500': 'positive',
         'treasuries': 'negative',
         'gold': 'positive',
+        'credit': 'neutral',
+        'commodities': 'positive',
     },
     'Stagflation': {
         'sp500': 'negative',
         'treasuries': 'negative',
         'gold': 'positive',
+        'credit': 'negative',
+        'commodities': 'positive',
     },
     'Deflation Risk': {
         'sp500': 'negative',
         'treasuries': 'positive',
         'gold': 'neutral',
+        'credit': 'negative',
+        'commodities': 'negative',
     },
 }
 
@@ -1430,6 +1438,169 @@ def _build_asset_expectations(
     })
 
     return expectations
+
+
+# Per-dimension signal breakdown for the implications matrix (§2 homepage)
+# Maps each (asset, dimension) → signal: 'strong_support', 'support', 'neutral',
+# 'headwind', 'strong_headwind'
+
+# Quadrant signal per asset class
+_QUADRANT_SIGNAL = {
+    'Goldilocks': {
+        'sp500': 'support', 'treasuries': 'support', 'gold': 'headwind',
+        'credit': 'support', 'commodities': 'headwind', 'bitcoin': 'neutral',
+    },
+    'Reflation': {
+        'sp500': 'support', 'treasuries': 'headwind', 'gold': 'support',
+        'credit': 'neutral', 'commodities': 'support', 'bitcoin': 'neutral',
+    },
+    'Stagflation': {
+        'sp500': 'headwind', 'treasuries': 'headwind', 'gold': 'support',
+        'credit': 'headwind', 'commodities': 'support', 'bitcoin': 'neutral',
+    },
+    'Deflation Risk': {
+        'sp500': 'headwind', 'treasuries': 'support', 'gold': 'neutral',
+        'credit': 'headwind', 'commodities': 'headwind', 'bitcoin': 'neutral',
+    },
+}
+
+# Liquidity signal per asset class (expanding = support for risk assets)
+_LIQUIDITY_SIGNAL = {
+    'positive': {  # Expanding / Strongly Expanding
+        'sp500': 'support', 'treasuries': 'support', 'gold': 'neutral',
+        'credit': 'support', 'commodities': 'neutral', 'bitcoin': 'strong_support',
+    },
+    'neutral': {
+        'sp500': 'neutral', 'treasuries': 'neutral', 'gold': 'neutral',
+        'credit': 'neutral', 'commodities': 'neutral', 'bitcoin': 'neutral',
+    },
+    'negative': {  # Contracting / Strongly Contracting
+        'sp500': 'headwind', 'treasuries': 'neutral', 'gold': 'neutral',
+        'credit': 'headwind', 'commodities': 'neutral', 'bitcoin': 'headwind',
+    },
+}
+
+# Risk signal (Calm = support for risk assets, Stressed = headwind)
+_RISK_SIGNAL = {
+    'Calm': {
+        'sp500': 'support', 'treasuries': 'neutral', 'gold': 'neutral',
+        'credit': 'support', 'commodities': 'neutral', 'bitcoin': 'support',
+    },
+    'Normal': {
+        'sp500': 'neutral', 'treasuries': 'neutral', 'gold': 'neutral',
+        'credit': 'neutral', 'commodities': 'neutral', 'bitcoin': 'neutral',
+    },
+    'Elevated': {
+        'sp500': 'headwind', 'treasuries': 'support', 'gold': 'support',
+        'credit': 'headwind', 'commodities': 'neutral', 'bitcoin': 'headwind',
+    },
+    'Stressed': {
+        'sp500': 'strong_headwind', 'treasuries': 'support', 'gold': 'strong_support',
+        'credit': 'strong_headwind', 'commodities': 'neutral', 'bitcoin': 'strong_headwind',
+    },
+}
+
+# Policy signal (Easing = support for duration-sensitive assets)
+_POLICY_SIGNAL = {
+    'Easing': {
+        'sp500': 'support', 'treasuries': 'support', 'gold': 'neutral',
+        'credit': 'neutral', 'commodities': 'neutral', 'bitcoin': 'neutral',
+    },
+    'Paused': {
+        'sp500': 'neutral', 'treasuries': 'neutral', 'gold': 'neutral',
+        'credit': 'neutral', 'commodities': 'neutral', 'bitcoin': 'neutral',
+    },
+    'Tightening': {
+        'sp500': 'headwind', 'treasuries': 'headwind', 'gold': 'neutral',
+        'credit': 'headwind', 'commodities': 'neutral', 'bitcoin': 'neutral',
+    },
+}
+
+# Signal strength ordering for overall computation
+_SIGNAL_RANK = {
+    'strong_support': 2, 'support': 1, 'neutral': 0,
+    'headwind': -1, 'strong_headwind': -2,
+}
+
+
+def build_implications_matrix(
+    quadrant: str,
+    liquidity_state: str,
+    risk_state: str,
+    policy_direction: str,
+) -> List[Dict]:
+    """Build per-dimension signal matrix for the portfolio implications table.
+
+    Returns a list of dicts, one per asset, each with:
+      asset, label, link, overall, quad, liq, risk, policy, why
+    """
+    # Map liquidity state to simplified direction
+    liq_dir = 'neutral'
+    if liquidity_state in ('Expanding', 'Strongly Expanding'):
+        liq_dir = 'positive'
+    elif liquidity_state in ('Contracting', 'Strongly Contracting'):
+        liq_dir = 'negative'
+
+    quad_signals = _QUADRANT_SIGNAL.get(quadrant, _QUADRANT_SIGNAL['Goldilocks'])
+    liq_signals = _LIQUIDITY_SIGNAL.get(liq_dir, _LIQUIDITY_SIGNAL['neutral'])
+    risk_signals = _RISK_SIGNAL.get(risk_state, _RISK_SIGNAL['Normal'])
+    policy_signals = _POLICY_SIGNAL.get(policy_direction, _POLICY_SIGNAL['Paused'])
+
+    assets = [
+        ('sp500', 'Equities', '/equity'),
+        ('treasuries', 'Bonds', '/rates'),
+        ('gold', 'Gold', '/safe-havens'),
+        ('bitcoin', 'Crypto', '/crypto'),
+        ('credit', 'Credit', '/credit'),
+        ('commodities', 'Commod.', '/equity'),
+    ]
+
+    rows = []
+    for asset_key, label, link in assets:
+        q = quad_signals.get(asset_key, 'neutral')
+        l = liq_signals.get(asset_key, 'neutral')
+        r = risk_signals.get(asset_key, 'neutral')
+        p = policy_signals.get(asset_key, 'neutral')
+
+        # Compute overall from average of dimension ranks
+        dims = [q, l, r, p]
+        avg_rank = sum(_SIGNAL_RANK.get(d, 0) for d in dims) / len(dims)
+        if avg_rank >= 1.5:
+            overall = 'strong_support'
+        elif avg_rank >= 0.5:
+            overall = 'support'
+        elif avg_rank > -0.5:
+            overall = 'neutral'
+        elif avg_rank > -1.5:
+            overall = 'headwind'
+        else:
+            overall = 'strong_headwind'
+
+        # Build "why" for mobile: list dominant dimensions
+        why_parts = []
+        if _SIGNAL_RANK.get(q, 0) >= 1:
+            why_parts.append('Quad')
+        if _SIGNAL_RANK.get(l, 0) >= 1:
+            why_parts.append('Liq')
+        if _SIGNAL_RANK.get(r, 0) >= 1:
+            why_parts.append('Risk')
+        if _SIGNAL_RANK.get(p, 0) >= 1:
+            why_parts.append('Pol')
+        why = '+'.join(why_parts) if why_parts else ''
+
+        rows.append({
+            'asset': asset_key,
+            'label': label,
+            'link': link,
+            'overall': overall,
+            'quad': q,
+            'liq': l,
+            'risk': r,
+            'policy': p,
+            'why': why,
+        })
+
+    return rows
 
 
 # ---------------------------------------------------------------------------
