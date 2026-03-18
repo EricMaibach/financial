@@ -1552,7 +1552,13 @@ def update_market_conditions_cache() -> Optional[dict]:
         )
 
         from datetime import date as _date
-        as_of = str(_date.today())
+        import calendar
+        today = _date.today()
+        # Key by month-end date so daily updates overwrite within the same
+        # month, matching the backfill cadence (QA issue #1 on bug #337).
+        month_end = _date(today.year, today.month,
+                          calendar.monthrange(today.year, today.month)[1])
+        as_of = str(month_end)
 
         cache_data = {
             'quadrant': quadrant_result.quadrant,
@@ -1586,15 +1592,14 @@ def update_market_conditions_cache() -> Optional[dict]:
             'updated_at': datetime.now(timezone.utc).isoformat(),
         }
 
-        os.makedirs(os.path.dirname(MARKET_CONDITIONS_CACHE_FILE), exist_ok=True)
-        with open(MARKET_CONDITIONS_CACHE_FILE, 'w') as f:
-            json.dump(cache_data, f, indent=2)
-
-        logger.info('Market conditions cache updated: quadrant=%s',
+        logger.info('Market conditions computed: quadrant=%s',
                      quadrant_result.quadrant)
 
-        # Append to daily history (separate from snapshot cache)
+        # Write to daily history (single source of truth — bug #337)
         _append_conditions_history(cache_data)
+
+        # Backfill 12 months of history if sparse (bug #337)
+        _backfill_history_if_needed()
 
         return cache_data
 
@@ -1604,15 +1609,33 @@ def update_market_conditions_cache() -> Optional[dict]:
 
 
 def get_market_conditions() -> Optional[dict]:
-    """Read market conditions from cache file."""
-    if not os.path.exists(MARKET_CONDITIONS_CACHE_FILE):
-        return None
-    try:
-        with open(MARKET_CONDITIONS_CACHE_FILE, 'r') as f:
-            return json.load(f)
-    except Exception:
-        logger.exception('Error reading market conditions cache')
-        return None
+    """Read the latest market conditions from the history file.
+
+    Returns the most recent entry in the same shape that consumers expect
+    (quadrant, dimensions, asset_expectations, as_of, updated_at).
+    Falls back to the legacy cache file if the history file is empty.
+    """
+    history = _load_conditions_history()
+    if history:
+        latest_date = max(history.keys())
+        entry = history[latest_date]
+        # Reconstruct the flat cache shape expected by callers
+        return {
+            'quadrant': entry.get('quadrant'),
+            'dimensions': entry.get('dimensions', {}),
+            'asset_expectations': entry.get('asset_expectations', []),
+            'as_of': latest_date,
+            'updated_at': entry.get('updated_at', ''),
+        }
+
+    # Legacy fallback: read old cache file if it exists
+    if os.path.exists(MARKET_CONDITIONS_CACHE_FILE):
+        try:
+            with open(MARKET_CONDITIONS_CACHE_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            logger.exception('Error reading legacy market conditions cache')
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -1645,24 +1668,124 @@ def _save_conditions_history(history: dict) -> None:
 
 
 def _append_conditions_history(cache_data: dict) -> None:
-    """Append a daily snapshot to the conditions history file.
+    """Append a snapshot to the conditions history file.
 
-    Keyed by the as_of date. Overwrites same-day entries (idempotent).
-    No pruning — all history retained indefinitely.
+    Keyed by the as_of date (month-end). Daily runs within the same month
+    overwrite the same entry (idempotent). No pruning — all history retained.
     """
     as_of = cache_data.get('as_of')
     if not as_of:
         return
 
     history = _load_conditions_history()
-    history[as_of] = {
+
+    # Extract growth/inflation composite scores from dimensions for quadrant
+    # trajectory visualisation (bug #337)
+    dims = cache_data.get('dimensions', {})
+    quad_dims = dims.get('quadrant', {})
+
+    entry = {
         'quadrant': cache_data['quadrant'],
-        'dimensions': cache_data['dimensions'],
+        'growth_score': quad_dims.get('growth_composite'),
+        'inflation_score': quad_dims.get('inflation_composite'),
+        'raw_quadrant': quad_dims.get('state', cache_data.get('quadrant')),
+        'dimensions': dims,
         'asset_expectations': cache_data.get('asset_expectations', []),
+        'updated_at': cache_data.get('updated_at'),
     }
+
+    history[as_of] = entry
     _save_conditions_history(history)
     logger.info('Market conditions history updated for %s (%d total entries)',
                 as_of, len(history))
+
+
+def _backfill_history_if_needed(min_entries: int = 12) -> None:
+    """Backfill history from computed dimension histories if sparse.
+
+    When the history file has fewer than *min_entries*, compute 12 months
+    of monthly snapshots using the *_history() functions and prepend them.
+    Existing entries are never overwritten.
+    """
+    history = _load_conditions_history()
+    if len(history) >= min_entries:
+        return
+
+    logger.info('History has %d entries (< %d); backfilling...', len(history), min_entries)
+
+    try:
+        from datetime import date as _date
+        # 12 months ago
+        today = _date.today()
+        start = _date(today.year - 1, today.month, today.day).isoformat()
+
+        quad_hist = compute_quadrant_history(start_date=start)
+        liq_hist = compute_liquidity_history(start_date=start)
+        risk_hist = compute_risk_history(start_date=start)
+        policy_hist = compute_policy_history(start_date=start)
+
+        if quad_hist is None or len(quad_hist) == 0:
+            logger.warning('Cannot backfill: quadrant history unavailable')
+            return
+
+        # Use end-of-month dates from quadrant history (monthly cadence)
+        quad_hist = quad_hist.copy()
+        quad_hist['month'] = quad_hist['date'].dt.to_period('M')
+        monthly = quad_hist.groupby('month').last().reset_index()
+
+        added = 0
+        for _, row in monthly.iterrows():
+            dt_str = str(row['date'].date())
+            if dt_str in history:
+                continue  # never overwrite existing entries
+
+            dims = {
+                'quadrant': {
+                    'state': row['quadrant'],
+                    'growth_composite': round(float(row['growth']), 4),
+                    'inflation_composite': round(float(row['inflation']), 4),
+                },
+            }
+
+            # Liquidity — find closest date
+            if liq_hist is not None and len(liq_hist) > 0:
+                liq_row = liq_hist.iloc[(liq_hist['date'] - row['date']).abs().argsort()[:1]]
+                dims['liquidity'] = {
+                    'state': str(liq_row.iloc[0]['state']),
+                    'score': round(float(liq_row.iloc[0]['score']), 4),
+                }
+
+            # Risk — find closest date
+            if risk_hist is not None and len(risk_hist) > 0:
+                risk_row = risk_hist.iloc[(risk_hist['date'] - row['date']).abs().argsort()[:1]]
+                dims['risk'] = {
+                    'state': str(risk_row.iloc[0]['state']),
+                    'score': int(risk_row.iloc[0]['score']),
+                }
+
+            # Policy — find closest date
+            if policy_hist is not None and len(policy_hist) > 0:
+                pol_row = policy_hist.iloc[(policy_hist['date'] - row['date']).abs().argsort()[:1]]
+                dims['policy'] = {
+                    'stance': str(pol_row.iloc[0]['stance']),
+                    'direction': str(pol_row.iloc[0]['direction']),
+                }
+
+            history[dt_str] = {
+                'quadrant': row['quadrant'],
+                'growth_score': round(float(row['growth']), 4),
+                'inflation_score': round(float(row['inflation']), 4),
+                'raw_quadrant': row.get('raw_quadrant', row['quadrant']),
+                'dimensions': dims,
+            }
+            added += 1
+
+        if added > 0:
+            _save_conditions_history(history)
+            logger.info('Backfilled %d monthly entries into conditions history', added)
+
+    except Exception:
+        logger.exception('Error during history backfill')
 
 
 def get_conditions_history() -> dict:
