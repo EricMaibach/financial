@@ -55,7 +55,7 @@ from sector_tone_pipeline import get_sector_management_tone, update_sector_manag
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
 from property_interpretation_config import get_property_interpretation
-from market_conditions import update_market_conditions_cache, get_market_conditions
+from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history
 from regime_config import (
     REGIME_METADATA,
     SIGNAL_REGIME_ANNOTATIONS,
@@ -1932,8 +1932,51 @@ def _get_trade_balance_context():
 
 @app.route('/')
 def index():
-    """Main dashboard page."""
+    """Main dashboard page (US-323.1 redesign)."""
     ctx = _get_trade_balance_context()
+
+    # Market conditions data for §1 hero card + dimension cards
+    try:
+        conditions = get_market_conditions()
+    except Exception:
+        conditions = None
+    ctx['conditions'] = conditions
+
+    # Trajectory trail for quadrant visualization (last 6 monthly entries)
+    trajectory = []
+    try:
+        history = get_conditions_history()
+        if history:
+            sorted_dates = sorted(history.keys(), reverse=True)
+            for dt_str in sorted_dates[:6]:
+                entry = history[dt_str]
+                dims = entry.get('dimensions', {})
+                quad_dims = dims.get('quadrant', {})
+                gc = quad_dims.get('growth_composite')
+                ic = quad_dims.get('inflation_composite')
+                if gc is not None and ic is not None:
+                    trajectory.append({
+                        'date': dt_str,
+                        'growth': gc,
+                        'inflation': ic,
+                        'quadrant': entry.get('quadrant', ''),
+                    })
+    except Exception:
+        pass
+    ctx['quadrant_trajectory'] = trajectory
+
+    # Recession probability summary for Risk expand card
+    try:
+        recession = get_recession_probability()
+        if recession:
+            probs = [recession.get(k) for k in ('ny_fed', 'chauvet_piger', 'richmond_sos')
+                     if recession.get(k) is not None]
+            ctx['recession_highest'] = round(max(probs), 1) if probs else None
+        else:
+            ctx['recession_highest'] = None
+    except Exception:
+        ctx['recession_highest'] = None
+
     return render_template('index.html', **ctx)
 
 
