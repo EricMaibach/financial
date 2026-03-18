@@ -2,20 +2,18 @@
 
 {% block title %}SignalTrackers - Macro Intelligence Platform{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/conditions-summary.css') }}">
+{% endblock %}
+
 {% block extra_nav %}
-{# Desktop sticky section quick-nav — US-171.1. Hidden on mobile via CSS. #}
+{# Desktop sticky section quick-nav — US-323.1. Hidden on mobile via CSS. #}
 <nav class="section-quick-nav" aria-label="Page sections">
     <div class="section-quick-nav__inner">
-        <button class="section-quick-nav__pill is-active" aria-current="true" data-target="#macro-regime-section">Regime</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#recession-panel-section">Recession</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#regime-implications">Implications</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#sector-tone-section">Sectors</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#market-conditions">Markets</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#trade-pulse-section">Trade</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#briefing-section">Briefing</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#movers-section">Movers</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#signals-section">Signals</button>
-        <button class="section-quick-nav__pill" aria-current="false" data-target="#prediction-section">Prediction</button>
+        <button class="section-quick-nav__pill is-active" aria-current="true" data-target="#briefing-section">Briefing</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#conditions-section">Conditions</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#implications-section">Implications</button>
+        <button class="section-quick-nav__pill" aria-current="false" data-target="#movers-strip">Movers</button>
     </div>
 </nav>
 
@@ -45,1069 +43,70 @@
         <button class="section-quick-nav-sheet__close" id="section-nav-sheet-close" aria-label="Close section navigator">&times;</button>
     </div>
     <div class="section-quick-nav-sheet__list" role="list">
-        <button class="section-quick-nav-sheet__item" data-target="#macro-regime-section" role="listitem">Regime</button>
-        <button class="section-quick-nav-sheet__item" data-target="#recession-panel-section" role="listitem">Recession</button>
-        <button class="section-quick-nav-sheet__item" data-target="#regime-implications" role="listitem">Implications</button>
-        <button class="section-quick-nav-sheet__item" data-target="#sector-tone-section" role="listitem">Sectors</button>
-        <button class="section-quick-nav-sheet__item" data-target="#market-conditions" role="listitem">Markets</button>
-        <button class="section-quick-nav-sheet__item" data-target="#trade-pulse-section" role="listitem">Trade</button>
         <button class="section-quick-nav-sheet__item" data-target="#briefing-section" role="listitem">Briefing</button>
-        <button class="section-quick-nav-sheet__item" data-target="#movers-section" role="listitem">Movers</button>
-        <button class="section-quick-nav-sheet__item" data-target="#signals-section" role="listitem">Signals</button>
-        <button class="section-quick-nav-sheet__item" data-target="#prediction-section" role="listitem">Prediction</button>
+        <button class="section-quick-nav-sheet__item" data-target="#conditions-section" role="listitem">Conditions</button>
+        <button class="section-quick-nav-sheet__item" data-target="#implications-section" role="listitem">Implications</button>
+        <button class="section-quick-nav-sheet__item" data-target="#movers-strip" role="listitem">Movers</button>
     </div>
 </div>
 {% endblock %}
 
 {% block content %}
-{#
-  LAYOUT CONVENTION: All homepage sections use direct <section> tags
-  as immediate children of the container-fluid main element.
-  Do NOT wrap sections in Bootstrap grid (row/col) — this adds gutters
-  and breaks alignment. Cards may be used inside sections freely.
-#}
-<!-- Conditions Strip -->
+{# Conditions Strip (shared component from US-322.1) #}
 {% include '_conditions_strip.html' %}
 
-<!-- Section 0: Macro Regime Score (US-4.1.2, US-5.1.2) -->
-{% if macro_regime %}
-<section aria-label="Macro Regime Score" id="macro-regime-section" class="mb-4">
+{# ════════════════════════════════════════════════════════════════════════
+   §0: AI BRIEFING — the daily draw
+   ════════════════════════════════════════════════════════════════════════ #}
+<section id="briefing-section" class="conditions-briefing mb-4" aria-label="Daily Briefing">
     <div class="section-header mb-3">
         <h3 class="section-title">
-            <i class="bi bi-globe2 me-2"></i>Macro Regime Score
+            <i class="bi bi-newspaper me-2"></i>DAILY BRIEFING
         </h3>
-        <button class="btn ai-section-btn" data-section-id="macro-regime-section" aria-label="Ask AI about Macro Regime Score"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+        <span class="conditions-briefing__date" id="briefing-date">--</span>
+        <button class="btn ai-section-btn" data-section-id="briefing-section" aria-label="Ask AI about Daily Briefing"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
     </div>
 
-    <div class="regime-card {{ macro_regime.css_class }}">
-
-        {# ── State header row ─────────────────────────────── #}
-        <div class="regime-state-row">
-            <div class="regime-state-left">
-                <span class="regime-dot" aria-hidden="true"></span>
-                <i class="bi {{ macro_regime.icon }} regime-icon" aria-hidden="true"></i>
-                <span class="regime-state-name" aria-live="polite">
-                    {{ macro_regime.state | upper }} REGIME
-                </span>
+    <div class="conditions-briefing__card">
+        {# Loading State #}
+        <div id="briefing-loading" class="briefing-skeleton">
+            <div class="d-flex align-items-center mb-3">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <span class="text-muted">Loading today's briefing...</span>
             </div>
-            {# Date shown inline on mobile only; hidden on tablet+ via CSS #}
-            {% if macro_regime.updated_display %}
-            <span class="regime-updated-inline">Updated {{ macro_regime.updated_display }}</span>
-            {% endif %}
+            <div class="skeleton-line skeleton-line-full mb-2"></div>
+            <div class="skeleton-line skeleton-line-full mb-2"></div>
+            <div class="skeleton-line skeleton-line-75 mb-3"></div>
         </div>
 
-        {# ── Trend direction + confidence row — mobile only (US-5.1.2) ── #}
-        {% if macro_regime.trend %}
-        <div class="regime-trend-row regime-trend-mobile"
-             aria-label="Trend: {{ macro_regime.trend | title }}">
-            <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}">
-                <i class="bi bi-arrow-{{ 'up-right' if macro_regime.trend == 'improving' else ('right' if macro_regime.trend == 'stable' else 'down-right') }}"
-                   aria-hidden="true"></i>
-                {{ macro_regime.trend | title }}
-            </span>
-            {% if macro_regime.confidence %}
-            <span class="regime-trend-confidence regime-confidence-{{ macro_regime.confidence | lower }}">
-                Confidence: {{ macro_regime.confidence }}
-            </span>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        {# ── Tablet+ 2-col body (state panel | summary) ───── #}
-        <div class="regime-body-2col">
-            <div class="regime-state-panel">
-                {% if macro_regime.updated_display %}
-                <div class="regime-updated-panel">{{ macro_regime.updated_display }}</div>
-                {% endif %}
-                {# ── Trend direction + confidence — tablet+ (US-5.1.2) ── #}
-                {% if macro_regime.trend %}
-                <div class="regime-trend-row regime-trend-panel"
-                     aria-label="Trend: {{ macro_regime.trend | title }}">
-                    <span class="regime-trend-arrow regime-trend-arrow--{{ macro_regime.trend }}">
-                        <i class="bi bi-arrow-{{ 'up-right' if macro_regime.trend == 'improving' else ('right' if macro_regime.trend == 'stable' else 'down-right') }}"
-                           aria-hidden="true"></i>
-                        {{ macro_regime.trend | title }}
-                    </span>
-                    {% if macro_regime.confidence %}
-                    <span class="regime-trend-confidence regime-confidence-{{ macro_regime.confidence | lower }}">
-                        Confidence: {{ macro_regime.confidence }}
-                    </span>
-                    {% endif %}
-                </div>
-                {% endif %}
-                {# ── Sparkline — tablet+, inside state panel (US-5.1.3) ── #}
-                {% if macro_regime.confidence_history and macro_regime.confidence_history | length >= 3 %}
-                <div class="regime-sparkline-section">
-                    <div class="regime-sparkline-label">14-Day Confidence Trend</div>
-                    <svg class="regime-sparkline"
-                         viewBox="0 0 100 32"
-                         preserveAspectRatio="none"
-                         aria-label="14-day confidence trend"
-                         role="img">
-                        <title>14-day confidence trend</title>
-                        <polyline
-                          fill="none"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          points="{{ macro_regime.confidence_sparkline_points }}" />
-                    </svg>
-                </div>
-                {% endif %}
-            </div>
-            <div class="regime-summary-panel">
-                <p class="regime-summary">{{ macro_regime.summary }}</p>
+        {# Briefing Content #}
+        <div id="briefing-content" style="display: none;">
+            <div id="briefing-narrative" class="conditions-briefing__narrative">
+                {# AI narrative paragraphs will be inserted here by JS #}
             </div>
         </div>
 
-        {# ── Mobile-only summary (hidden on tablet+ via CSS) ─ #}
-        <div class="regime-summary-mobile">
-            <hr class="regime-divider">
-            <p class="regime-summary">{{ macro_regime.summary }}</p>
-        </div>
-
-        {# ── Sparkline — mobile only (US-5.1.3) ── #}
-        {% if macro_regime.confidence_history and macro_regime.confidence_history | length >= 3 %}
-        <div class="regime-sparkline-mobile">
-            <hr class="regime-divider">
-            <div class="regime-sparkline-section">
-                <div class="regime-sparkline-label">14-Day Confidence Trend</div>
-                <svg class="regime-sparkline"
-                     viewBox="0 0 100 32"
-                     preserveAspectRatio="none"
-                     aria-label="14-day confidence trend"
-                     role="img">
-                    <title>14-day confidence trend</title>
-                    <polyline
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      points="{{ macro_regime.confidence_sparkline_points }}" />
-                </svg>
-            </div>
-        </div>
-        {% endif %}
-
-        <hr class="regime-divider-lg">
-
-        {# ── Regime-Highlighted Signals ───────────────────── #}
-        <div class="regime-signals-label">Regime-Highlighted Signals</div>
-        <div class="regime-signal-chips" role="list">
-            {% for signal in macro_regime.highlighted_signals %}
-            <a href="{{ signal.link }}"
-               class="regime-signal-chip"
-               role="listitem"
-               aria-label="{{ signal.name }}: loading, {{ signal.annotation }}">
-                <div class="regime-signal-name">{{ signal.name }}</div>
-                <div class="regime-signal-value"
-                     id="regime-chip-{{ signal.key }}"
-                     data-signal="{{ signal.key }}">--</div>
-                <div class="regime-signal-annotation">{{ signal.annotation }}</div>
-            </a>
-            {% endfor %}
-        </div>
-
-    </div>{# /.regime-card #}
-</section>
-{% endif %}{# /macro_regime #}
-
-<!-- Section 0.5: Recession Probability Panel (US-146.2) -->
-{% if recession_probability %}
-<section aria-label="Recession Probability" id="recession-panel-section" class="mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
-    <div class="recession-panel{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
-
-        {# ── Section header (standard SignalTrackers pattern) ─────────── #}
-        <div class="section-header mb-2">
-            <h3 class="section-title">
-                <i class="bi bi-bar-chart-steps me-2"></i>Recession Probability
-            </h3>
-            <button class="btn ai-section-btn" data-section-id="recession-panel-section" aria-label="Ask AI about Recession Probability"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-        </div>
-
-        {# ── Mobile toggle button (hidden on tablet+) ─────────────────── #}
-        <button class="recession-panel__toggle"
-                id="recession-panel-toggle"
-                aria-expanded="false"
-                aria-controls="recession-panel-content">
-            <span class="recession-panel__summary">{{ recession_probability.mobile_summary }}</span>
-            <i class="bi bi-chevron-down recession-panel__chevron" aria-hidden="true"></i>
-        </button>
-
-        {# ── Panel content ─────────────────────────────────────────────── #}
-        <div class="recession-panel__content" id="recession-panel-content">
-
-            {# ── Mobile: Stacked model rows (hidden on tablet+) ─────── #}
-            <div class="recession-model-rows">
-
-                {% if recession_probability.ny_fed is defined %}
-                <div class="recession-model-row">
-                    <div class="recession-model-name">NY FED 12-MONTH LEADING</div>
-                    <div class="recession-model-row-body">
-                        <span class="recession-model-desc">Prospective Risk (12-mo ahead)</span>
-                        <span class="recession-model-value recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed | round(1) }}%</span>
-                        <span class="recession-model-risk-label recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed_risk }}</span>
-                    </div>
-                    {% if recession_probability.ny_fed_lower is defined %}
-                    <div class="recession-model-range">Range: {{ recession_probability.ny_fed_lower | round(1) }}%–{{ recession_probability.ny_fed_upper | round(1) }}%</div>
-                    {% endif %}
-                    {% if recession_probability.ny_fed_date %}
-                    <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
-                    {% endif %}
-                </div>
-                <hr class="regime-divider">
-                {% endif %}
-
-                {% if recession_probability.chauvet_piger is defined %}
-                <div class="recession-model-row">
-                    <div class="recession-model-name">CHAUVET-PIGER COINCIDENT</div>
-                    <div class="recession-model-row-body">
-                        <span class="recession-model-desc">Current Activity (real-time)</span>
-                        <span class="recession-model-value recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger | round(1) }}%</span>
-                        <span class="recession-model-risk-label recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger_risk }}</span>
-                    </div>
-                    {% if recession_probability.chauvet_piger_date %}
-                    <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
-                    {% endif %}
-                </div>
-                <hr class="regime-divider">
-                {% endif %}
-
-                {% if recession_probability.richmond_sos is defined %}
-                <div class="recession-model-row">
-                    <div class="recession-model-name">RICHMOND FED SOS INDICATOR</div>
-                    <div class="recession-model-row-body">
-                        <span class="recession-model-desc">Weekly Labor Signal</span>
-                        <span class="recession-model-value recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos | round(1) }}%</span>
-                        <span class="recession-model-risk-label recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos_risk }}</span>
-                    </div>
-                    {% if recession_probability.richmond_sos_date %}
-                    <div class="recession-model-date">{{ recession_probability.richmond_sos_date }}</div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-            </div>{# /.recession-model-rows #}
-
-            {# ── Tablet+: 3-column card grid (hidden on mobile) ─────── #}
-            <div class="recession-card-grid">
-
-                {% if recession_probability.ny_fed is defined %}
-                {%- set _ny_clamped = [recession_probability.ny_fed, 50.0] | min -%}
-                {%- set _ny_bar = (_ny_clamped / 50.0 * 100) | round | int -%}
-                {%- if recession_probability.ny_fed_lower is defined -%}
-                {%- set _ny_lo = ([recession_probability.ny_fed_lower, 50.0] | min / 50.0 * 100) | round | int -%}
-                {%- set _ny_hi = ([recession_probability.ny_fed_upper, 50.0] | min / 50.0 * 100) | round | int -%}
-                {%- set _ny_band_w = _ny_hi - _ny_lo -%}
-                {%- endif -%}
-                <div class="recession-card">
-                    <div class="recession-model-name">NY FED 12-MONTH</div>
-                    <div class="recession-model-desc">Prospective Risk (12-mo ahead)</div>
-                    <div class="recession-model-value recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed | round(1) }}%</div>
-                    <div class="recession-model-risk-label recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed_risk }}</div>
-                    <div class="recession-bar-track" aria-hidden="true">
-                        {% if recession_probability.ny_fed_lower is defined %}
-                        <div class="recession-bar-fill recession-bar-fill--band"
-                             style="left: {{ _ny_lo }}%; width: {{ _ny_band_w }}%;"></div>
-                        {% endif %}
-                        <div class="recession-bar-marker" style="left: calc({{ _ny_bar }}% - 5px);"></div>
-                    </div>
-                    {% if recession_probability.ny_fed_lower is defined %}
-                    <div class="recession-model-range">Range: {{ recession_probability.ny_fed_lower | round(1) }}%–{{ recession_probability.ny_fed_upper | round(1) }}%</div>
-                    {% endif %}
-                    {% if recession_probability.ny_fed_date %}
-                    <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                {% if recession_probability.chauvet_piger is defined %}
-                {%- set _cp_clamped = [recession_probability.chauvet_piger, 50.0] | min -%}
-                {%- set _cp_bar = (_cp_clamped / 50.0 * 100) | round | int -%}
-                <div class="recession-card">
-                    <div class="recession-model-name">CHAUVET-PIGER</div>
-                    <div class="recession-model-desc">Current Activity (real-time)</div>
-                    <div class="recession-model-value recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger | round(1) }}%</div>
-                    <div class="recession-model-risk-label recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger_risk }}</div>
-                    <div class="recession-bar-track" aria-hidden="true">
-                        <div class="recession-bar-fill"
-                             style="left: 0; width: {{ _cp_bar }}%;"></div>
-                        <div class="recession-bar-marker" style="left: calc({{ _cp_bar }}% - 5px);"></div>
-                    </div>
-                    {% if recession_probability.chauvet_piger_date %}
-                    <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                {% if recession_probability.richmond_sos is defined %}
-                {%- set _sos_clamped = [recession_probability.richmond_sos, 50.0] | min -%}
-                {%- set _sos_bar = (_sos_clamped / 50.0 * 100) | round | int -%}
-                <div class="recession-card">
-                    <div class="recession-model-name">RICHMOND FED SOS</div>
-                    <div class="recession-model-desc">Weekly Labor Signal</div>
-                    <div class="recession-model-value recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos | round(1) }}%</div>
-                    <div class="recession-model-risk-label recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos_risk }}</div>
-                    <div class="recession-bar-track" aria-hidden="true">
-                        <div class="recession-bar-fill"
-                             style="left: 0; width: {{ _sos_bar }}%;"></div>
-                        <div class="recession-bar-marker" style="left: calc({{ _sos_bar }}% - 5px);"></div>
-                    </div>
-                    {% if recession_probability.richmond_sos_date %}
-                    <div class="recession-model-date">{{ recession_probability.richmond_sos_date }}</div>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-            </div>{# /.recession-card-grid #}
-
-            {# ── Plain-language footer (diverging state: warning styling) ── #}
-            <hr class="regime-divider">
-            <div class="recession-footer{% if recession_probability.divergence_pp >= 15 %} recession-footer--diverging{% endif %}">
-                {{ recession_probability.interpretation }}
-            </div>
-            <div class="recession-source">
-                Data: FRED API · Richmond Fed · Updated {{ recession_probability.updated }}
-            </div>
-
-            {# ── WHY THREE MODELS — progressive disclosure (collapsed by default) ── #}
-            <button class="recession-why-toggle"
-                    id="recession-why-toggle"
-                    aria-expanded="false"
-                    aria-controls="recession-why-content">
-                <span class="recession-why-toggle-line" aria-hidden="true"></span>
-                <span class="recession-why-toggle-label">
-                    <i class="bi bi-chevron-down recession-why-chevron" aria-hidden="true"></i>
-                    Why three models?
-                </span>
-                <span class="recession-why-toggle-line" aria-hidden="true"></span>
-            </button>
-            <div id="recession-why-content" class="recession-why-content" hidden>
-              <div class="bg-light border-start border-2 border-secondary rounded-2 p-3 mt-2">
-                <p class="text-xs text-uppercase fw-semibold text-secondary mb-1">
-                  <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Why three models?
-                </p>
-                <p class="small text-muted mb-0">
-                  Single indicators fail in practice. The yield curve inverted in 2022 and held through
-                  2024 — a textbook recession signal — while the expansion continued. Three
-                  methodologically distinct models are more reliable than any one, and when they diverge,
-                  the disagreement is itself the signal.
-                </p>
-              </div>
-            </div>
-
-        </div>{# /.recession-panel__content #}
-
-    </div>{# /.recession-panel #}
-</section>
-{% endif %}{# /recession_probability #}
-
-<!-- Section 0.75: Regime Implications Panel (US-145.2) -->
-{% if regime_implications %}
-<section id="regime-implications" aria-label="Regime Implications" class="mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
-    <div class="regime-implications-panel">
-
-        {# ── Section header (standard SignalTrackers pattern) ─────────── #}
-        <div class="section-header mb-2">
-            <h3 class="section-title">
-                <i class="bi bi-layers me-2"></i>Regime Implications
-            </h3>
-            <button class="btn ai-section-btn" data-section-id="regime-implications" aria-label="Ask AI about Regime Implications"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-        </div>
-
-        {# ── Mobile subtitle (hidden on tablet+) ──────────────────────── #}
-        <p class="regime-implications-subtitle" id="regime-implications-subtitle">
-            {{ regime_implications.regimes[regime_implications.current_regime].display_name }} · Historical patterns
-        </p>
-
-        {# ── Mobile toggle button (hidden on tablet+) ──────────────────── #}
-        <button class="regime-implications-toggle"
-                id="regime-implications-toggle"
-                aria-expanded="false"
-                aria-controls="regime-implications-content">
-            <span class="regime-implications-toggle-label" id="regime-implications-toggle-label">View Implications</span>
-            <i class="bi bi-chevron-down regime-implications-chevron" aria-hidden="true"></i>
-        </button>
-
-        {# ── Collapsible content (mobile: collapsed; tablet+: always visible) ── #}
-        <div id="regime-implications-content" class="regime-implications-content">
-
-            {# ── Tablet+ tab bar (hidden on mobile) ───────────────────── #}
-            <div class="regime-tab-bar" role="tablist" aria-label="Regime phases">
-                {% for key, regime_data in regime_implications.regimes.items() %}
-                {% set _is_active = (key == regime_implications.current_regime) %}
-                <button class="regime-tab regime-tab--{{ key }}"
-                        id="regime-tab-{{ key }}"
-                        role="tab"
-                        aria-selected="{{ 'true' if _is_active else 'false' }}"
-                        aria-controls="regime-panel-{{ key }}"
-                        tabindex="{{ '0' if _is_active else '-1' }}">
-                    {% if _is_active %}<span class="regime-tab-star" aria-hidden="true">★ </span>{% endif %}{{ regime_data.display_name }}
+        {# Error State #}
+        <div id="briefing-error" style="display: none;">
+            <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span id="briefing-error-message">Market briefing is being generated. Check back shortly.</span>
+                <button class="btn btn-sm btn-outline-primary ms-3" onclick="loadAISummary()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Retry
                 </button>
-                {% endfor %}
-            </div>
-
-            {# ── Tab panels — one per regime ───────────────────────────── #}
-            {% for key, regime_data in regime_implications.regimes.items() %}
-            {% set _is_active = (key == regime_implications.current_regime) %}
-            <div id="regime-panel-{{ key }}"
-                 role="tabpanel"
-                 aria-labelledby="regime-tab-{{ key }}"
-                 {% if not _is_active %}hidden{% endif %}>
-
-                <div class="implication-card-grid">
-                    {% for ac in regime_data.asset_classes %}
-                    <div class="implication-card implication-card--{{ ac.signal }}">
-                        <div class="implication-card-label">{{ ac.display_name | upper }}</div>
-                        <div class="implication-signal-row">
-                            {% if ac.signal == 'strong_outperform' %}
-                            <i class="bi bi-arrow-up-right-circle-fill signal-icon--strong_outperform" aria-hidden="true"></i>
-                            {% elif ac.signal == 'outperform' %}
-                            <i class="bi bi-arrow-up-right signal-icon--outperform" aria-hidden="true"></i>
-                            {% elif ac.signal == 'neutral' %}
-                            <i class="bi bi-dash-circle signal-icon--neutral" aria-hidden="true"></i>
-                            {% elif ac.signal == 'underperform' %}
-                            <i class="bi bi-arrow-down-right signal-icon--underperform" aria-hidden="true"></i>
-                            {% else %}
-                            <i class="bi bi-arrow-down-right-circle-fill signal-icon--strong_underperform" aria-hidden="true"></i>
-                            {% endif %}
-                            <span class="implication-signal-label implication-signal--{{ ac.signal }}">
-                                {% if ac.signal == 'strong_outperform' %}Strong Outperform
-                                {% elif ac.signal == 'outperform' %}Outperform
-                                {% elif ac.signal == 'neutral' %}Neutral
-                                {% elif ac.signal == 'underperform' %}Underperform
-                                {% else %}Strong Underperform
-                                {% endif %}
-                            </span>
-                        </div>
-                        <p class="implication-annotation">{{ ac.annotation }}</p>
-                        {% if ac.leading_sectors %}
-                        <div class="implication-sectors">
-                            <span class="implication-sectors-leading">Leading: {{ ac.leading_sectors | join(' · ') }}</span>
-                            <span class="implication-sectors-lagging">Lagging: {{ ac.lagging_sectors | join(' · ') }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-
-            </div>{# /tabpanel #}
-            {% endfor %}
-
-            {# ── Mobile regime switcher chips (hidden on tablet+) ─────── #}
-            <div class="regime-switcher" id="regime-switcher">
-                <span class="regime-switcher-label">View other regimes:</span>
-                <div class="regime-switcher-chips">
-                    {% for key, regime_data in regime_implications.regimes.items() %}
-                    <button class="regime-switcher-chip{% if key == regime_implications.current_regime %} regime-switcher-chip--hidden{% endif %}"
-                            data-regime="{{ key }}"
-                            data-regime-name="{{ regime_data.display_name }}">
-                        {{ regime_data.display_name }}
-                    </button>
-                    {% endfor %}
-                </div>
-            </div>
-
-            {# ── Educational footer ────────────────────────────────────── #}
-            <div class="regime-implications-footer">
-                <i class="bi bi-info-circle" aria-hidden="true"></i>
-                Historical pattern analysis (FRED-MD, 1960–2025). Patterns reflect historical averages, not guarantees of future performance. Not investment advice.
-            </div>
-
-        </div>{# /.regime-implications-content #}
-
-    </div>{# /.regime-implications-panel #}
-</section>
-{% endif %}{# /regime_implications #}
-
-<!-- Section 1.5: Sector Management Tone Panel (US-123.2) -->
-{% if sector_management_tone %}
-<section aria-label="Sector Management Tone" id="sector-tone-section" class="mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
-    <div class="sector-tone-panel">
-
-        {# ── Section header (standard SignalTrackers pattern) ─────────── #}
-        <div class="section-header mb-2 sector-tone-header-row">
-            <h3 class="section-title">
-                <i class="bi bi-building me-2"></i>Sector Management Tone
-            </h3>
-            <span class="sector-tone-header-right">Updated quarterly · {{ sector_management_tone.quarter }} {{ sector_management_tone.year }}</span>
-            <button class="btn ai-section-btn" data-section-id="sector-tone-section" aria-label="Ask AI about Sector Management Tone"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-        </div>
-
-        {# ── Regime bridge sentence (replaces old regime link after section reorder) ── #}
-        {% if macro_regime %}
-        <p class="narrative-bridge">
-          In a <span class="regime-pill regime-pill--{{ macro_regime.css_class | replace('regime-', '') }}"
-                     aria-label="Current regime: {{ macro_regime.state | title }}">{{ macro_regime.state | upper }}</span>
-          regime, {{ sector_tone_bridge[macro_regime.state] }}
-        </p>
-        {% endif %}
-
-        {% if sector_management_tone.data_available %}
-        {# ── Mobile toggle button (hidden on tablet+) ──────────────────── #}
-        <button class="sector-tone-toggle"
-                id="sector-tone-toggle"
-                aria-expanded="false"
-                aria-controls="sector-tone-content">
-            <span class="sector-tone-toggle-line" aria-hidden="true"></span>
-            <span class="sector-tone-toggle-label">
-                <i class="bi bi-chevron-down sector-tone-chevron" aria-hidden="true"></i>
-                <span id="sector-tone-toggle-text">Show Sectors</span>
-            </span>
-            <span class="sector-tone-toggle-line" aria-hidden="true"></span>
-        </button>
-
-        {# ── Collapsible content (mobile: collapsed; tablet+: always visible) ── #}
-        <div id="sector-tone-content" class="sector-tone-content">
-
-            {# ── Sector card grid (11 GICS sectors, sorted by backend) ──── #}
-            <div class="sector-card-grid">
-                {% for sector in sector_management_tone.sectors %}
-                {% set _tone = sector.current_tone %}
-                {% set _trend_len = sector.trend | length %}
-                {% set _placeholder_count = [4 - _trend_len, 0] | max %}
-                {# Build accessible tone label list for aria-label #}
-                {% set _tone_labels = [] %}
-                {% for _ in range(_placeholder_count) %}{% if _tone_labels.append('—') %}{% endif %}{% endfor %}
-                {% for t in sector.trend %}{% if _tone_labels.append(t.tone | title) %}{% endif %}{% endfor %}
-                <div class="sector-card sector-card--{{ _tone }}">
-                    {# ── Tone indicator row (icon + text — never color alone) ── #}
-                    <div class="sector-card__tone-row">
-                        {% if _tone == 'positive' %}
-                        <i class="bi bi-arrow-up-short sector-card__tone-icon sector-card__tone-icon--positive" aria-hidden="true"></i>
-                        <span class="sector-card__tone-label sector-card__tone-label--positive">Positive</span>
-                        {% elif _tone == 'negative' %}
-                        <i class="bi bi-arrow-down-short sector-card__tone-icon sector-card__tone-icon--negative" aria-hidden="true"></i>
-                        <span class="sector-card__tone-label sector-card__tone-label--negative">Negative</span>
-                        {% else %}
-                        <i class="bi bi-dash sector-card__tone-icon sector-card__tone-icon--neutral" aria-hidden="true"></i>
-                        <span class="sector-card__tone-label sector-card__tone-label--neutral">Neutral</span>
-                        {% endif %}
-                    </div>
-                    {# ── Sector name (short_name for mobile 2-col cards) ─────── #}
-                    <div class="sector-card__name">{{ sector.short_name }}</div>
-                    {# ── Trend sparkline — 4 quarterly dots, oldest first ──────── #}
-                    <div class="sector-card__sparkline"
-                         aria-label="Trend over last 4 quarters: {{ _tone_labels | join(', ') }}">
-                        {# Placeholder dots for missing prior quarters #}
-                        {% for _ in range(_placeholder_count) %}
-                        <span class="sector-sparkline-dot sector-sparkline-dot--placeholder"
-                              aria-hidden="true"
-                              title="Data not available"></span>
-                        {% endfor %}
-                        {# Filled dots for each recorded quarter (oldest → newest) #}
-                        {% for t in sector.trend %}
-                        <span class="sector-sparkline-dot sector-sparkline-dot--{{ t.tone }}"
-                              aria-hidden="true"
-                              title="{{ t.quarter }} {{ t.year }}: {{ t.tone | title }}"></span>
-                        {% endfor %}
-                    </div>
-                    {# ── Data currency label ──────────────────────────────────── #}
-                    <div class="sector-card__quarter">{{ sector_management_tone.quarter }} {{ sector_management_tone.year }}</div>
-                </div>
-                {% endfor %}
-            </div>{# /.sector-card-grid #}
-
-            {# ── Educational footer ──────────────────────────────────────── #}
-            <div class="sector-tone-footer">
-                <i class="bi bi-info-circle" aria-hidden="true"></i>
-                Aggregate management tone from {{ sector_management_tone.quarter }} {{ sector_management_tone.year }} earnings calls (S&amp;P 500 companies, SEC EDGAR 8-K filings, FinBERT). Sector aggregates only &mdash; not individual stock analysis.
-            </div>
-
-        </div>{# /.sector-tone-content #}
-
-        {% else %}
-        {# ── Empty state (data_available = False) ──────────────────────── #}
-        <div class="sector-tone-empty">
-            <i class="bi bi-info-circle" aria-hidden="true"></i>
-            Sector tone data will be available when {{ sector_management_tone.quarter }} {{ sector_management_tone.year }} earnings season completes. (Typically 6&ndash;8 weeks after quarter end)
-        </div>
-        {% endif %}
-
-    </div>{# /.sector-tone-panel #}
-</section>
-{% endif %}
-
-<!-- Section 1: Market Conditions at a Glance -->
-<section class="market-conditions-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}" id="market-conditions">
-    <!-- Section header -->
-    <div class="section-header mb-3">
-        <h3 class="section-title"><i class="bi bi-speedometer2 me-2"></i>Market Conditions at a Glance</h3>
-        <button class="btn ai-section-btn" data-section-id="market-conditions" aria-label="Ask AI about Market Conditions at a Glance"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-    </div>
-
-    <!-- Compact badges (default state) -->
-    {# US-4.1.4: Regime-relevance dots — derive variables once for all 6 cards #}
-    {% set _relevance = macro_regime.category_relevance if macro_regime else [] %}
-    {% set _regime_css = macro_regime.css_class if macro_regime else '' %}
-    {% set _regime_state = macro_regime.state if macro_regime else '' %}
-    <div class="market-badges-grid" id="market-badges">
-        <div class="badge-card{% if 'Credit' in _relevance %} regime-highlighted{% endif %}" data-category="credit"{% if 'Credit' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="CREDIT — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
-            {% if 'Credit' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
-            <i class="bi bi-bank2 badge-icon"></i>
-            <div class="badge-label">CREDIT</div>
-            <div class="badge-status" id="badge-credit-status">--</div>
-        </div>
-        <div class="badge-card{% if 'Equities' in _relevance %} regime-highlighted{% endif %}" data-category="equities"{% if 'Equities' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="EQUITIES — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
-            {% if 'Equities' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
-            <i class="bi bi-graph-up badge-icon"></i>
-            <div class="badge-label">EQUITIES</div>
-            <div class="badge-status" id="badge-equities-status">--</div>
-        </div>
-        <div class="badge-card{% if 'Rates' in _relevance %} regime-highlighted{% endif %}" data-category="rates"{% if 'Rates' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="RATES — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
-            {% if 'Rates' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
-            <i class="bi bi-graph-up-arrow badge-icon"></i>
-            <div class="badge-label">RATES</div>
-            <div class="badge-status" id="badge-rates-status">--</div>
-        </div>
-        <div class="badge-card{% if 'Safe Havens' in _relevance %} regime-highlighted{% endif %}" data-category="havens"{% if 'Safe Havens' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="SAFE HAVENS — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
-            {% if 'Safe Havens' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
-            <i class="bi bi-shield-check badge-icon"></i>
-            <div class="badge-label">SAFE HAVENS</div>
-            <div class="badge-status" id="badge-havens-status">--</div>
-        </div>
-        <div class="badge-card{% if 'Crypto' in _relevance %} regime-highlighted{% endif %}" data-category="crypto"{% if 'Crypto' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="CRYPTO — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
-            {% if 'Crypto' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
-            <i class="bi bi-currency-bitcoin badge-icon"></i>
-            <div class="badge-label">CRYPTO</div>
-            <div class="badge-status" id="badge-crypto-status">--</div>
-        </div>
-        <div class="badge-card{% if 'Dollar' in _relevance %} regime-highlighted{% endif %}" data-category="dollar"{% if 'Dollar' in _relevance %} title="Highly relevant in current {{ _regime_state }} regime" aria-label="DOLLAR — Highly relevant in current {{ _regime_state }} regime"{% endif %}>
-            {% if 'Dollar' in _relevance %}<span class="regime-dot {{ _regime_css }}" aria-hidden="true"></span>{% endif %}
-            <i class="bi bi-currency-dollar badge-icon"></i>
-            <div class="badge-label">DOLLAR</div>
-            <div class="badge-status" id="badge-dollar-status">--</div>
-        </div>
-    </div>
-
-    <!-- AI Synthesis (always visible) -->
-    <div class="ai-synthesis-container mb-3">
-        <p class="text-muted fst-italic mb-0">
-            <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-right:6px;vertical-align:-2px"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="#6366F1"/></svg>
-            <span id="market-synthesis-text">Loading market synthesis...</span>
-        </p>
-    </div>
-
-    <!-- Detailed cards (expanded state, hidden by default) -->
-    <div class="market-cards-grid" id="market-cards">
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            <!-- Credit Card -->
-            <div class="col">
-                <div class="card market-card category-credit h-100">
-                    <div class="card-header">
-                        <span class="category-icon">💳</span>
-                        <span class="category-name">CREDIT</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-row">
-                            <span class="metric-label">HY Spread</span>
-                            <span class="metric-value" id="grid-credit-hy-spread">--</span>
-                            <span class="metric-change" id="grid-credit-hy-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">IG Spread</span>
-                            <span class="metric-value" id="grid-credit-ig-spread">--</span>
-                            <span class="metric-change" id="grid-credit-ig-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">CCC/HY Ratio</span>
-                            <span class="metric-value" id="grid-credit-ccc-ratio">--</span>
-                            <span class="metric-change" id="grid-credit-ccc-change">--</span>
-                        </div>
-                        <div class="status-row mt-3">
-                            <span class="status-label">Status:</span>
-                            <span class="badge" id="grid-credit-status">--</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/credit" class="view-link">View Credit →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Equities Card -->
-            <div class="col">
-                <div class="card market-card category-equities h-100">
-                    <div class="card-header">
-                        <span class="category-icon">📈</span>
-                        <span class="category-name">EQUITIES</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-row">
-                            <span class="metric-label">S&P 500</span>
-                            <span class="metric-value" id="grid-equities-spy">--</span>
-                            <span class="metric-change" id="grid-equities-spy-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Russell 2000</span>
-                            <span class="metric-value" id="grid-equities-russell">--</span>
-                            <span class="metric-change" id="grid-equities-russell-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">VIX</span>
-                            <span class="metric-value" id="grid-equities-vix">--</span>
-                            <span class="metric-change" id="grid-equities-vix-change">--</span>
-                        </div>
-                        <div class="status-row mt-3">
-                            <span class="status-label">Status:</span>
-                            <span class="badge" id="grid-equities-status">--</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/equity" class="view-link">View Equities →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rates Card -->
-            <div class="col">
-                <div class="card market-card category-rates h-100">
-                    <div class="card-header">
-                        <span class="category-icon">📊</span>
-                        <span class="category-name">RATES</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-row">
-                            <span class="metric-label">10Y Yield</span>
-                            <span class="metric-value" id="grid-rates-10y">--</span>
-                            <span class="metric-change" id="grid-rates-10y-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">2Y Yield</span>
-                            <span class="metric-value" id="grid-rates-2y">--</span>
-                            <span class="metric-change" id="grid-rates-2y-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Curve (10Y-2Y)</span>
-                            <span class="metric-value" id="grid-rates-curve">--</span>
-                            <span class="metric-change" id="grid-rates-curve-change">--</span>
-                        </div>
-                        <div class="status-row mt-3">
-                            <span class="status-label">Status:</span>
-                            <span class="badge" id="grid-rates-status">--</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/rates" class="view-link">View Rates →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Safe Havens Card -->
-            <div class="col">
-                <div class="card market-card category-havens h-100">
-                    <div class="card-header">
-                        <span class="category-icon">🛡️</span>
-                        <span class="category-name">SAFE HAVENS</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-row">
-                            <span class="metric-label">Gold</span>
-                            <span class="metric-value" id="grid-havens-gold">--</span>
-                            <span class="metric-change" id="grid-havens-gold-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Silver</span>
-                            <span class="metric-value" id="grid-havens-silver">--</span>
-                            <span class="metric-change" id="grid-havens-silver-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">TLT (Long Treasuries)</span>
-                            <span class="metric-value" id="grid-havens-tlt">--</span>
-                            <span class="metric-change" id="grid-havens-tlt-change">--</span>
-                        </div>
-                        <div class="status-row mt-3">
-                            <span class="status-label">Status:</span>
-                            <span class="badge" id="grid-havens-status">--</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/safe-havens" class="view-link">View Safe Havens →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Crypto Card -->
-            <div class="col">
-                <div class="card market-card category-crypto h-100">
-                    <div class="card-header">
-                        <span class="category-icon">₿</span>
-                        <span class="category-name">CRYPTO</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-row">
-                            <span class="metric-label">Bitcoin</span>
-                            <span class="metric-value" id="grid-crypto-btc">--</span>
-                            <span class="metric-change" id="grid-crypto-btc-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">Ethereum</span>
-                            <span class="metric-value" id="grid-crypto-eth">--</span>
-                            <span class="metric-change" id="grid-crypto-eth-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">BTC Dominance</span>
-                            <span class="metric-value" id="grid-crypto-dom">--</span>
-                            <span class="metric-change" id="grid-crypto-dom-change">--</span>
-                        </div>
-                        <div class="status-row mt-3">
-                            <span class="status-label">Status:</span>
-                            <span class="badge" id="grid-crypto-status">--</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/crypto" class="view-link">View Crypto →</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Dollar Card -->
-            <div class="col">
-                <div class="card market-card category-dollar h-100">
-                    <div class="card-header">
-                        <span class="category-icon">💵</span>
-                        <span class="category-name">DOLLAR</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="metric-row">
-                            <span class="metric-label">DXY Index</span>
-                            <span class="metric-value" id="grid-dollar-dxy">--</span>
-                            <span class="metric-change" id="grid-dollar-dxy-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">EUR/USD</span>
-                            <span class="metric-value" id="grid-dollar-eurusd">--</span>
-                            <span class="metric-change" id="grid-dollar-eurusd-change">--</span>
-                        </div>
-                        <div class="metric-row">
-                            <span class="metric-label">USD/JPY</span>
-                            <span class="metric-value" id="grid-dollar-usdjpy">--</span>
-                            <span class="metric-change" id="grid-dollar-usdjpy-change">--</span>
-                        </div>
-                        <div class="status-row mt-3">
-                            <span class="status-label">Status:</span>
-                            <span class="badge" id="grid-dollar-status">--</span>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <a href="/dollar" class="view-link">View Dollar →</a>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- Expansion control -->
-    <div class="expansion-control" id="market-expansion-control">
-        <div class="divider-line"></div>
-        <button class="expansion-button" id="market-toggle" aria-expanded="false" aria-label="Toggle market conditions detail view">
-            <span class="expand-text">⌄ Show Details</span>
-            <span class="collapse-text" style="display: none;">⌃ Hide Details</span>
-        </button>
-        <div class="divider-line"></div>
-    </div>
-</section>
-
-<!-- Section 1.3: Global Trade Pulse (US-206.2) -->
-{% if trade_balance_value is not none %}
-<section id="trade-pulse-section"
-         class="mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}"
-         aria-label="Global Trade Pulse">
-
-    <div class="section-header mb-2">
-        <h3 class="section-title"><i class="bi bi-globe2 me-2"></i>Global Trade Pulse</h3>
-        <span class="section-header__subtitle" style="font-size:0.875rem;color:#697386;">US Goods Trade Balance (FRED BOPGSTB)</span>
-        <button class="btn ai-section-btn" data-section-id="trade-pulse-section" aria-label="Ask AI about Global Trade Pulse"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-    </div>
-
-    {# Mobile toggle button (hidden on tablet+) #}
-    <button class="trade-pulse-toggle"
-            id="trade-pulse-toggle"
-            aria-expanded="false"
-            aria-controls="trade-pulse-content">
-        <span class="trade-pulse-toggle-line" aria-hidden="true"></span>
-        <span class="trade-pulse-toggle-label">
-            <i class="bi bi-chevron-down trade-pulse-chevron" aria-hidden="true"></i>
-            <span id="trade-pulse-toggle-text">View Trade Data</span>
-        </span>
-        <span class="trade-pulse-toggle-line" aria-hidden="true"></span>
-    </button>
-
-    <div id="trade-pulse-content" class="trade-pulse-content">
-
-        {# Metric + Percentile two-column grid #}
-        <div class="trade-pulse-grid">
-
-            {# --- Metric panel --- #}
-            <div>
-                <div class="trade-pulse-current-value"
-                     style="font-size:1.5rem;font-family:var(--font-mono,monospace);color:#1A202C;line-height:1.2;">
-                    {% if trade_balance_value < 0 %}
-                        &minus;${{ "%.1f"|format(trade_balance_value|abs) }}b
-                    {% else %}
-                        +${{ "%.1f"|format(trade_balance_value) }}b
-                    {% endif %}
-                </div>
-                <div style="font-size:0.875rem;color:#697386;margin-top:3px;">
-                    {{ trade_balance_period }}
-                </div>
-
-                {# YoY change badge #}
-                {% if trade_yoy_change is not none %}
-                <div style="margin-top:8px;display:flex;align-items:center;gap:4px;min-height:44px;">
-                    {% if trade_yoy_direction == 'up' %}
-                        <i class="bi bi-arrow-up" style="color:#16A34A;" aria-hidden="true"></i>
-                        <span style="font-size:0.875rem;color:#16A34A;">+${{ "%.1f"|format(trade_yoy_change|abs) }}b</span>
-                    {% else %}
-                        <i class="bi bi-arrow-down" style="color:#DC2626;" aria-hidden="true"></i>
-                        <span style="font-size:0.875rem;color:#DC2626;">&minus;${{ "%.1f"|format(trade_yoy_change|abs) }}b</span>
-                    {% endif %}
-                    {% if trade_balance_period %}
-                    {% set _period_parts = trade_balance_period.split(' ') %}
-                    <span style="font-size:0.875rem;color:#697386;">vs. {{ _period_parts[0] }} {{ _period_parts[1]|int - 1 }}</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-
-            {# --- Percentile panel --- #}
-            {% if trade_percentile is not none %}
-            <div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                    <span style="font-size:0.875rem;color:#697386;">Percentile</span>
-                    <span style="font-size:0.875rem;font-weight:600;color:#2D3748;">{{ trade_percentile|round|int }}th pct.</span>
-                </div>
-
-                {# Percentile bar color based on tier #}
-                {% set _pct = trade_percentile|round|int %}
-                {% if _pct <= 25 %}
-                    {% set _pct_color = '#DC2626' %}
-                {% elif _pct <= 40 %}
-                    {% set _pct_color = '#CA8A04' %}
-                {% elif _pct <= 60 %}
-                    {% set _pct_color = '#9AA5B1' %}
-                {% elif _pct <= 75 %}
-                    {% set _pct_color = '#0284C7' %}
-                {% else %}
-                    {% set _pct_color = '#16A34A' %}
-                {% endif %}
-
-                <div class="trade-pulse-pct-bar-track"
-                     role="progressbar"
-                     aria-valuenow="{{ _pct }}"
-                     aria-valuemin="0"
-                     aria-valuemax="100"
-                     aria-label="Trade balance at {{ _pct }}th percentile of 10-year range">
-                    <div class="trade-pulse-pct-bar-fill"
-                         style="width:{{ _pct }}%;background:{{ _pct_color }};"></div>
-                </div>
-
-                <div style="font-size:0.75rem;color:#697386;margin-top:4px;">
-                    {% if _pct < 50 %}
-                        Weaker than {{ 100 - _pct }}% of months (10-year range)
-                    {% else %}
-                        Stronger than {{ _pct }}% of months (10-year range)
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-        </div>{# /.trade-pulse-grid #}
-
-        {# Regime-conditioned interpretation block #}
-        {% if trade_interpretation_body %}
-        <div style="margin-top:16px;">
-            <div style="border-left:4px solid #0D9488;background:#FAFBFC;border-radius:0 6px 6px 0;padding:1rem 1.5rem;">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <i class="bi bi-lightbulb-fill" style="color:#0D9488;font-size:0.875rem;" aria-hidden="true"></i>
-                    <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#697386;">
-                        {{ trade_interpretation_label }}
-                    </span>
-                </div>
-                <p style="margin:0;font-size:0.875rem;line-height:1.65;color:#2D3748;">
-                    {{ trade_interpretation_body }}
-                </p>
-            </div>
-        </div>
-        {% endif %}
-
-        {# Data freshness #}
-        {% if trade_last_updated %}
-        <div style="margin-top:12px;font-size:0.75rem;color:#9AA5B1;">
-            Last Updated: {{ trade_last_updated }} (FRED BOPGSTB)
-        </div>
-        {% endif %}
-
-    </div>{# /.trade-pulse-content #}
-
-</section>
-{% endif %}
-
-<!-- Section 2: Today's Market Briefing -->
-<section id="briefing-section" class="hero-briefing mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
-    <div class="section-header mb-3">
-        <h3 class="section-title">
-            <i class="bi bi-bar-chart-line-fill me-2"></i>Today's Market Briefing
-        </h3>
-        <span class="badge bg-light text-dark fs-6" id="briefing-date">--</span>
-        <button class="btn ai-section-btn" data-section-id="briefing-section" aria-label="Ask AI about AI Market Briefing"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-    </div>
-    {% if macro_regime %}
-    <p class="narrative-bridge narrative-bridge--compact">
-      Current regime:
-      <span class="regime-pill regime-pill--{{ macro_regime.css_class | replace('regime-', '') }}"
-            aria-label="Current regime: {{ macro_regime.state | title }}">{{ macro_regime.state | upper }}</span>
-    </p>
-    {% endif %}
-    <div class="briefing-content">
-            <!-- Loading State -->
-            <div id="briefing-loading" class="briefing-skeleton">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <span class="text-muted">Loading today's briefing...</span>
-                </div>
-                <div class="skeleton-line skeleton-line-full mb-2"></div>
-                <div class="skeleton-line skeleton-line-full mb-2"></div>
-                <div class="skeleton-line skeleton-line-75 mb-3"></div>
-                <div class="skeleton-line skeleton-line-full mb-2"></div>
-                <div class="skeleton-line skeleton-line-90 mb-2"></div>
-            </div>
-
-            <!-- Briefing Content -->
-            <div id="briefing-content" style="display: none;">
-                <div id="briefing-narrative" class="briefing-narrative mb-4">
-                    <!-- AI narrative paragraphs will be inserted here -->
-                </div>
-                <div id="briefing-key-points" class="briefing-key-points" style="display: none;">
-                    <h5 class="fw-semibold mb-3">Key Points</h5>
-                    <ul id="key-points-list">
-                        <!-- Bullet points will be inserted here -->
-                    </ul>
-                </div>
-            </div>
-
-            <!-- Error State -->
-            <div id="briefing-error" style="display: none;">
-                <div class="alert alert-warning mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <span id="briefing-error-message">Market briefing is being generated. Check back shortly.</span>
-                    <button class="btn btn-sm btn-outline-primary ms-3" onclick="loadAISummary()">
-                        <i class="bi bi-arrow-clockwise me-1"></i>Retry
-                    </button>
-                </div>
-            </div>
-        </div>
-    <div class="d-flex justify-content-between align-items-center mt-3">
+    <div class="conditions-briefing__footer">
         <small class="text-muted" id="briefing-attribution">
             <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-right:4px;vertical-align:-2px"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="#6366F1"/></svg>AI-generated based on current market data
         </small>
         <small class="text-muted" id="briefing-timestamp">Generated: --</small>
     </div>
-    <!-- Discoverability hints — desktop and mobile copies, controlled by pointer media query in CSS -->
+    {# Discoverability hints — desktop and mobile copies #}
     <div class="ai-briefing-hints">
         <span class="ai-briefing-hint--desktop">
             <svg width="12" height="12" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="#F59E0B"/></svg>
@@ -1120,177 +119,457 @@
     </div>
 </section>
 
-<!-- Section 3: What's Moving Today -->
-<section id="movers-section" class="whats-moving-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
-    <div class="section-header mb-3">
-        <div style="min-width:0;flex:1 1 auto;">
-            <h3 class="section-title mb-0" style="white-space:normal;"><i class="bi bi-lightning-fill me-2"></i>What's Moving Today</h3>
-            <small class="text-muted">Top movers across all 50+ metrics, ranked by statistical significance</small>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-            <a href="/explorer" class="btn btn-outline-secondary btn-sm">View All Metrics →</a>
-            <button class="btn ai-section-btn" data-section-id="movers-section" aria-label="Ask AI about What's Moving Today"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
-        </div>
-    </div>
-    {% if macro_regime %}
-    <p class="narrative-bridge narrative-bridge--whats-moving">
-      {{ whats_moving_context[macro_regime.state] }}
-    </p>
-    {% endif %}
+{# ════════════════════════════════════════════════════════════════════════
+   §1: MARKET CONDITIONS — quadrant hero card + 2×2 dimension grid
+   ════════════════════════════════════════════════════════════════════════ #}
+{% if conditions %}
+{% set dims = conditions.dimensions %}
+{% set quad = dims.quadrant %}
+{% set liq = dims.liquidity %}
+{% set risk = dims.risk %}
+{% set pol = dims.policy %}
+{% set quadrant_name = conditions.quadrant %}
 
-    <div class="row g-3" id="top-movers-row">
-        <!-- Loading state -->
-        <div class="col-12">
-            <div class="text-center text-muted py-4">
-                <div class="spinner-border spinner-border-sm me-2" role="status">
-                    <span class="visually-hidden">Loading...</span>
+{# Quadrant color mapping #}
+{% set _quad_color_map = {
+    'Goldilocks': 'goldilocks',
+    'Reflation': 'reflation',
+    'Stagflation': 'stagflation',
+    'Deflation Risk': 'deflation'
+} %}
+{% set _quad_key = _quad_color_map.get(quadrant_name, 'goldilocks') %}
+
+{# Quadrant descriptions #}
+{% set _quad_desc = {
+    'Goldilocks': 'Growth accelerating, inflation cooling — best environment for portfolios',
+    'Reflation': 'Growth accelerating, inflation rising — rising tide, watch for overheating',
+    'Stagflation': 'Growth slowing, inflation rising — toughest environment for portfolios',
+    'Deflation Risk': 'Growth slowing, inflation falling — flight to safety territory'
+} %}
+
+{# Liquidity direction arrow #}
+{% set _liq_state = liq.state %}
+{% set _liq_arrow = '↑' if 'Expanding' in _liq_state else ('↓' if 'Contracting' in _liq_state else '→') %}
+
+{# Policy direction arrow #}
+{% set _pol_arrow = '↑' if pol.direction == 'Easing' else ('↓' if pol.direction == 'Tightening' else '→') %}
+
+{# Risk score for spectrum bar (0-7, 0=calm, 7=stressed) #}
+{% set _risk_score = risk.get('score', 1) if risk.get is defined else 1 %}
+{% set _risk_pct = ((_risk_score / 7) * 100) | round | int %}
+
+{# Liquidity score for spectrum bar — normalize from z-score range (-2 to +2) #}
+{% set _liq_score_raw = liq.get('score', 0) if liq.get is defined else 0 %}
+{% set _liq_pct = ((2.0 - _liq_score_raw) / 4.0 * 100) | round | int %}
+{% if _liq_pct < 0 %}{% set _liq_pct = 0 %}{% endif %}
+{% if _liq_pct > 100 %}{% set _liq_pct = 100 %}{% endif %}
+
+{# Policy gap for spectrum bar — normalize from ~-3 to +3 #}
+{% set _pol_gap = pol.get('taylor_gap', 0) if pol.get is defined else 0 %}
+{% set _pol_pct = ((_pol_gap + 3.0) / 6.0 * 100) | round | int %}
+{% if _pol_pct < 0 %}{% set _pol_pct = 0 %}{% endif %}
+{% if _pol_pct > 100 %}{% set _pol_pct = 100 %}{% endif %}
+
+{# Crypto outlook from asset expectations #}
+{% set ns = namespace(crypto_direction='neutral') %}
+{% for exp in conditions.asset_expectations %}
+    {% if exp.asset == 'Bitcoin' %}{% set ns.crypto_direction = exp.direction %}{% endif %}
+{% endfor %}
+{% set _crypto_direction = ns.crypto_direction %}
+{% set _crypto_label = 'Favorable' if _crypto_direction == 'positive' else ('Unfavorable' if _crypto_direction == 'negative' else 'Neutral') %}
+{% set _crypto_arrow = '↑' if _crypto_direction == 'positive' else ('↓' if _crypto_direction == 'negative' else '→') %}
+
+<section id="conditions-section" class="conditions-summary mb-4" aria-label="Market Conditions">
+    <div class="section-header mb-3">
+        <h3 class="section-title">
+            <i class="bi bi-compass me-2"></i>MARKET CONDITIONS
+        </h3>
+        <button class="btn ai-section-btn" data-section-id="conditions-section" aria-label="Ask AI about Market Conditions"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+    </div>
+
+    {# ── Quadrant Hero Card ────────────────────────────────────── #}
+    <div class="quadrant-hero quadrant-hero--{{ _quad_key }}" aria-live="polite">
+        <div class="quadrant-hero__content">
+            <div class="quadrant-hero__text">
+                <div class="quadrant-hero__name">
+                    <span class="quadrant-hero__dot quadrant-dot--{{ _quad_key }}" aria-hidden="true"></span>
+                    {{ quadrant_name | upper }}
                 </div>
-                Market movements loading...
+                <p class="quadrant-hero__desc">{{ _quad_desc.get(quadrant_name, '') }}</p>
+
+                {# Favored / Watch strip — use list.append trick (returns None, always falsy) #}
+                {% set _favored = [] %}
+                {% set _watch = [] %}
+                {% for exp in conditions.asset_expectations %}
+                    {% if exp.direction == 'positive' %}{{ _favored.append(exp.asset) or '' }}{% elif exp.direction == 'negative' %}{{ _watch.append(exp.asset) or '' }}{% endif %}
+                {% endfor %}
+                <div class="quadrant-hero__signals">
+                    {% if _favored %}
+                    <div class="quadrant-hero__signal-row">
+                        <span class="quadrant-hero__signal-label">Favored:</span>
+                        <span class="quadrant-hero__signal-list">{{ _favored | join(', ') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if _watch %}
+                    <div class="quadrant-hero__signal-row">
+                        <span class="quadrant-hero__signal-label">Watch:</span>
+                        <span class="quadrant-hero__signal-list">{{ _watch | join(', ') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Quadrant 2×2 Visualization #}
+            <div class="quadrant-hero__viz">
+                <svg class="quadrant-viz" viewBox="0 0 300 250" role="img"
+                     aria-label="Quadrant visualization: currently in {{ quadrant_name }}{% if quadrant_trajectory %}, showing trajectory over {{ quadrant_trajectory | length }} data points{% endif %}">
+                    <title>Growth vs Inflation Quadrant — {{ quadrant_name }}</title>
+
+                    {# Quadrant background regions #}
+                    <rect x="0" y="0" width="150" height="125" class="quadrant-region quadrant-region--reflation{% if _quad_key == 'reflation' %} quadrant-region--active{% endif %}" />
+                    <rect x="150" y="0" width="150" height="125" class="quadrant-region quadrant-region--goldilocks{% if _quad_key == 'goldilocks' %} quadrant-region--active{% endif %}" />
+                    <rect x="0" y="125" width="150" height="125" class="quadrant-region quadrant-region--stagflation{% if _quad_key == 'stagflation' %} quadrant-region--active{% endif %}" />
+                    <rect x="150" y="125" width="150" height="125" class="quadrant-region quadrant-region--deflation{% if _quad_key == 'deflation' %} quadrant-region--active{% endif %}" />
+
+                    {# Center crosshair #}
+                    <line x1="150" y1="10" x2="150" y2="240" class="quadrant-axis" />
+                    <line x1="10" y1="125" x2="290" y2="125" class="quadrant-axis" />
+
+                    {# Axis labels #}
+                    <text x="150" y="8" class="quadrant-label quadrant-label--top">Growth ↑</text>
+                    <text x="150" y="248" class="quadrant-label quadrant-label--bottom">Growth ↓</text>
+                    <text x="295" y="122" class="quadrant-label quadrant-label--right">Infl ↓</text>
+                    <text x="5" y="122" class="quadrant-label quadrant-label--left">Infl ↑</text>
+
+                    {# Quadrant name labels #}
+                    <text x="75" y="40" class="quadrant-name-label">Reflation</text>
+                    <text x="225" y="40" class="quadrant-name-label">Goldilocks</text>
+                    <text x="75" y="215" class="quadrant-name-label">Stagflation</text>
+                    <text x="225" y="215" class="quadrant-name-label">Deflation</text>
+
+                    {# Trajectory trail (oldest to newest, fading opacity) #}
+                    {% if quadrant_trajectory and quadrant_trajectory | length > 1 %}
+                    {% set trail = quadrant_trajectory | reverse | list %}
+                    {% for i in range(trail | length - 1) %}
+                    {% set p1 = trail[i] %}
+                    {% set p2 = trail[i + 1] %}
+                    {# Map composites to SVG coords: inflation inverted on X (falling = right), growth on Y (rising = up) #}
+                    {% set x1 = (150 + (p1.inflation * -60)) | round | int %}
+                    {% set y1 = (125 - (p1.growth * 60)) | round | int %}
+                    {% set x2 = (150 + (p2.inflation * -60)) | round | int %}
+                    {% set y2 = (125 - (p2.growth * 60)) | round | int %}
+                    <line x1="{{ [10, [290, x1] | min] | max }}" y1="{{ [10, [240, y1] | min] | max }}" x2="{{ [10, [290, x2] | min] | max }}" y2="{{ [10, [240, y2] | min] | max }}"
+                          class="quadrant-trail-line" style="opacity: {{ 0.3 + (0.5 * i / (trail | length - 1)) }}" />
+                    {% endfor %}
+                    {% for point in trail %}
+                    {% set px = (150 + (point.inflation * -60)) | round | int %}
+                    {% set py = (125 - (point.growth * 60)) | round | int %}
+                    {% if not loop.last %}
+                    <circle cx="{{ [10, [290, px] | min] | max }}" cy="{{ [10, [240, py] | min] | max }}" r="4"
+                            class="quadrant-trail-dot" style="opacity: {{ 0.3 + (0.5 * loop.index0 / (trail | length - 1)) }}" />
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+
+                    {# Current position dot #}
+                    {% if quad.get('growth_composite') is not none and quad.get('inflation_composite') is not none %}
+                    {% set cx = (150 + (quad.inflation_composite * -60)) | round | int %}
+                    {% set cy = (125 - (quad.growth_composite * 60)) | round | int %}
+                    <circle cx="{{ [10, [290, cx] | min] | max }}" cy="{{ [10, [240, cy] | min] | max }}" r="7"
+                            class="quadrant-current-dot quadrant-dot--{{ _quad_key }}" />
+                    {% endif %}
+                </svg>
             </div>
         </div>
     </div>
-    <div class="mt-2">
-        <small class="text-muted">
-            <i class="bi bi-info-circle"></i> Rarity shows how unusual a move is compared to history. "Top 1% move" means this size move only happens ~1% of the time.
-        </small>
-    </div>
-</section>
 
-<!-- Expansion control -->
-<div class="expansion-control" id="movers-expansion-control">
-    <div class="divider-line"></div>
-    <button class="expansion-button" id="movers-toggle" aria-expanded="false" aria-label="Toggle top movers trend chart view">
-        <span class="expand-text">⌄ Show Trends Chart</span>
-        <span class="collapse-text" style="display: none;">⌃ Hide Chart</span>
-    </button>
-    <div class="divider-line"></div>
-</div>
+    {# ── 2×2 Dimension Card Grid ──────────────────────────────── #}
+    <div class="dimension-grid">
 
-<!-- Top Movers Chart (hidden by default) -->
-<section class="movers-chart-section mb-4" id="movers-chart-container" style="display: none;">
-    <div class="section-header mb-3 d-flex justify-content-between align-items-center">
-        <h3 class="section-title">
-            <i class="bi bi-graph-up"></i> Top Movers Trends
-        </h3>
-        <div class="btn-group btn-group-sm" role="group" id="movers-timeframe-selector">
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="7">1W</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="30">1M</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm active" data-timeframe="90">3M</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="180">6M</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="365">1Y</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="1825">5Y</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="3650">10Y</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="7300">20Y</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-timeframe="all">All</button>
+        {# ── Liquidity Card ── #}
+        <div class="dimension-card" id="dim-liquidity">
+            <button class="dimension-card__header"
+                    aria-expanded="false"
+                    aria-controls="dim-liquidity-expand"
+                    id="dim-liquidity-toggle">
+                <div class="dimension-card__title">LIQUIDITY</div>
+                <div class="dimension-card__summary">
+                    <div class="spectrum-bar spectrum-bar--liquidity">
+                        <div class="spectrum-bar__track">
+                            <div class="spectrum-bar__marker" style="left: {{ _liq_pct }}%"></div>
+                        </div>
+                    </div>
+                    <span class="dimension-card__state">{{ _liq_state }}</span>
+                    <span class="dimension-card__arrow dimension-card__arrow--{{ 'up' if 'Expanding' in _liq_state else ('down' if 'Contracting' in _liq_state else 'flat') }}">{{ _liq_arrow }}</span>
+                </div>
+                <i class="bi bi-chevron-down dimension-card__chevron" aria-hidden="true"></i>
+            </button>
+            <div class="dimension-card__expand" id="dim-liquidity-expand" role="region" aria-labelledby="dim-liquidity-toggle" hidden>
+                <hr class="dimension-card__divider">
+                <div class="dimension-card__metrics">
+                    <a href="/explorer?metric=WALCL" class="dimension-metric-row" aria-label="View Fed Net Liquidity in explorer">
+                        <span class="dimension-metric-row__label">Fed Net Liquidity</span>
+                        <span class="dimension-metric-row__value">--</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=M2SL" class="dimension-metric-row" aria-label="View US M2 Growth in explorer">
+                        <span class="dimension-metric-row__label">US M2 Growth</span>
+                        <span class="dimension-metric-row__value">--</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=ECBASSETSW" class="dimension-metric-row" aria-label="View ECB Balance Sheet in explorer">
+                        <span class="dimension-metric-row__label">ECB Balance Sheet</span>
+                        <span class="dimension-metric-row__value">--</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=JPNASSETS" class="dimension-metric-row" aria-label="View BOJ Balance Sheet in explorer">
+                        <span class="dimension-metric-row__label">BOJ Balance Sheet</span>
+                        <span class="dimension-metric-row__value">--</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                </div>
+                {% if liq_sparkline_points %}
+                <div class="dimension-card__sparkline" aria-label="Liquidity score trend over recent history">
+                    <div class="dimension-card__sparkline-label">LIQUIDITY TREND</div>
+                    <svg class="dimension-card__sparkline-svg" viewBox="0 0 100 32" preserveAspectRatio="none">
+                        <polyline points="{{ liq_sparkline_points }}" fill="none" stroke="var(--liquidity-favorable)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                {% endif %}
+                <p class="dimension-card__interp">
+                    Liquidity is {{ _liq_state | lower }}. Global central bank balance sheets and M2 money supply determine the flow of capital into risk assets over 1-3 months.
+                </p>
+                <div class="dimension-card__links">
+                    See more: <a href="/credit">Credit</a> · <a href="/rates">Rates</a>
+                </div>
+                <button class="dimension-card__collapse" aria-label="Collapse Liquidity card">
+                    <i class="bi bi-chevron-up" aria-hidden="true"></i>
+                </button>
+            </div>
         </div>
-    </div>
-    <div id="movers-chart-legend" class="mb-2 small"></div>
-    <canvas id="movers-chart"></canvas>
-    <div class="mt-2">
-        <small class="text-muted">
-            <i class="bi bi-info-circle"></i> Each metric normalized to show relative trend (0-100 scale). Hover for actual values. Grey bands indicate recession periods.
-        </small>
-    </div>
+
+        {# ── Risk Card ── #}
+        <div class="dimension-card" id="dim-risk">
+            <button class="dimension-card__header"
+                    aria-expanded="false"
+                    aria-controls="dim-risk-expand"
+                    id="dim-risk-toggle">
+                <div class="dimension-card__title">RISK</div>
+                <div class="dimension-card__summary">
+                    <div class="spectrum-bar spectrum-bar--risk">
+                        <div class="spectrum-bar__track">
+                            <div class="spectrum-bar__marker" style="left: {{ _risk_pct }}%"></div>
+                        </div>
+                    </div>
+                    <span class="dimension-card__state">{{ risk.state }}</span>
+                </div>
+                <i class="bi bi-chevron-down dimension-card__chevron" aria-hidden="true"></i>
+            </button>
+            <div class="dimension-card__expand" id="dim-risk-expand" role="region" aria-labelledby="dim-risk-toggle" hidden>
+                <hr class="dimension-card__divider">
+                <div class="dimension-card__metrics">
+                    <a href="/explorer?metric=VIXCLS" class="dimension-metric-row" aria-label="View VIX in explorer">
+                        <span class="dimension-metric-row__label">VIX</span>
+                        <span class="dimension-metric-row__value">{% if risk.get('vix_level') %}{{ risk.vix_level }}{% else %}--{% endif %}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=VXVCLS" class="dimension-metric-row" aria-label="View VIX Term Structure in explorer">
+                        <span class="dimension-metric-row__label">VIX Term Structure</span>
+                        <span class="dimension-metric-row__value">{% if risk.get('vix_ratio') %}{{ '%.2f' | format(risk.vix_ratio) }}{% else %}--{% endif %}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=sp500_price" class="dimension-metric-row" aria-label="View Stock-Bond Correlation in explorer">
+                        <span class="dimension-metric-row__label">Stock-Bond Corr.</span>
+                        <span class="dimension-metric-row__value">{% if risk.get('stock_bond_corr') is not none %}{{ '%.2f' | format(risk.stock_bond_corr) }}{% else %}--{% endif %}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    {% if recession_highest is not none %}
+                    <a href="/credit#recession-panel-section" class="dimension-metric-row" aria-label="View Recession Probability on Credit page">
+                        <span class="dimension-metric-row__label">Recession Prob.</span>
+                        <span class="dimension-metric-row__value">{{ recession_highest }}%</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    {% endif %}
+                </div>
+                {# Risk score segmented bar #}
+                <div class="risk-score-bar" aria-label="Risk score {{ _risk_score }} out of 7">
+                    <div class="risk-score-bar__label">Score: {{ _risk_score }} / 7</div>
+                    <div class="risk-score-bar__segments">
+                        <div class="risk-score-bar__segment risk-score-bar__segment--calm{% if risk.state == 'Calm' %} risk-score-bar__segment--active{% endif %}">Calm</div>
+                        <div class="risk-score-bar__segment risk-score-bar__segment--normal{% if risk.state == 'Normal' %} risk-score-bar__segment--active{% endif %}">Normal</div>
+                        <div class="risk-score-bar__segment risk-score-bar__segment--elevated{% if risk.state == 'Elevated' %} risk-score-bar__segment--active{% endif %}">Elevated</div>
+                        <div class="risk-score-bar__segment risk-score-bar__segment--stressed{% if risk.state == 'Stressed' %} risk-score-bar__segment--active{% endif %}">Stressed</div>
+                    </div>
+                </div>
+                <p class="dimension-card__interp">
+                    Risk environment is {{ risk.state | lower }}.
+                    {% if risk.state == 'Calm' %}All risk indicators are benign. VIX in contango — normal market conditions.
+                    {% elif risk.state == 'Normal' %}Risk indicators within normal ranges. Standard diversification applies.
+                    {% elif risk.state == 'Elevated' %}Elevated risk: VIX rising or correlations shifting. Defensive positioning may be warranted.
+                    {% else %}Stressed conditions: significant drawdown risk. Defensive assets tend to outperform.{% endif %}
+                </p>
+                <div class="dimension-card__links">
+                    See more: <a href="/equity">Equities</a> · <a href="/safe-havens">Safe Havens</a>
+                </div>
+                <button class="dimension-card__collapse" aria-label="Collapse Risk card">
+                    <i class="bi bi-chevron-up" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        {# ── Policy Card ── #}
+        <div class="dimension-card" id="dim-policy">
+            <button class="dimension-card__header"
+                    aria-expanded="false"
+                    aria-controls="dim-policy-expand"
+                    id="dim-policy-toggle">
+                <div class="dimension-card__title">POLICY</div>
+                <div class="dimension-card__summary">
+                    <div class="spectrum-bar spectrum-bar--policy">
+                        <div class="spectrum-bar__track">
+                            <div class="spectrum-bar__marker" style="left: {{ _pol_pct }}%"></div>
+                        </div>
+                    </div>
+                    <span class="dimension-card__state">{{ pol.direction }}</span>
+                    <span class="dimension-card__arrow dimension-card__arrow--{{ 'up' if pol.direction == 'Easing' else ('down' if pol.direction == 'Tightening' else 'flat') }}">{{ _pol_arrow }}</span>
+                </div>
+                <i class="bi bi-chevron-down dimension-card__chevron" aria-hidden="true"></i>
+            </button>
+            <div class="dimension-card__expand" id="dim-policy-expand" role="region" aria-labelledby="dim-policy-toggle" hidden>
+                <hr class="dimension-card__divider">
+                <div class="dimension-card__metrics">
+                    <a href="/explorer?metric=DFEDTARU" class="dimension-metric-row" aria-label="View Fed Funds Rate in explorer">
+                        <span class="dimension-metric-row__label">Fed Funds Rate</span>
+                        <span class="dimension-metric-row__value">{% if pol.get('actual_rate') is not none %}{{ '%.2f' | format(pol.actual_rate) }}%{% else %}--{% endif %}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=PCEPILFE" class="dimension-metric-row" aria-label="View Taylor Rule in explorer">
+                        <span class="dimension-metric-row__label">Taylor Rule Says</span>
+                        <span class="dimension-metric-row__value">{% if pol.get('taylor_prescribed') is not none %}{{ '%.2f' | format(pol.taylor_prescribed) }}%{% else %}--{% endif %}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <a href="/explorer?metric=UNRATE" class="dimension-metric-row" aria-label="View Taylor Gap in explorer">
+                        <span class="dimension-metric-row__label">Gap</span>
+                        <span class="dimension-metric-row__value">{% if pol.get('taylor_gap') is not none %}{{ '%+.2f' | format(pol.taylor_gap) }}%{% else %}--{% endif %}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                </div>
+                {# Policy stance segmented bar #}
+                <div class="policy-stance-bar" aria-label="Policy stance: {{ pol.stance }}">
+                    <div class="policy-stance-bar__segments">
+                        <div class="policy-stance-bar__segment policy-stance-bar__segment--accommodative{% if pol.stance == 'Accommodative' %} policy-stance-bar__segment--active{% endif %}">Accomm.</div>
+                        <div class="policy-stance-bar__segment policy-stance-bar__segment--neutral{% if pol.stance == 'Neutral' %} policy-stance-bar__segment--active{% endif %}">Neutral</div>
+                        <div class="policy-stance-bar__segment policy-stance-bar__segment--restrictive{% if pol.stance == 'Restrictive' %} policy-stance-bar__segment--active{% endif %}">Restrictive</div>
+                    </div>
+                </div>
+                <p class="dimension-card__interp">
+                    Policy is {{ pol.stance | lower }} and {{ pol.direction | lower }}.
+                    {% if pol.stance == 'Accommodative' %}The Fed is below the Taylor Rule prescribed rate — stimulative for growth and risk assets.
+                    {% elif pol.stance == 'Neutral' %}The Fed is roughly where the Taylor Rule prescribes — neither stimulating nor restricting.
+                    {% else %}The Fed is above the Taylor Rule prescribed rate — restrictive for growth.{% endif %}
+                </p>
+                <div class="dimension-card__caveat">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    Note: Taylor Rule estimates depend on CBO projections subject to revision.
+                </div>
+                <div class="dimension-card__links">
+                    See more: <a href="/rates">Rates</a>
+                </div>
+                <button class="dimension-card__collapse" aria-label="Collapse Policy card">
+                    <i class="bi bi-chevron-up" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+        {# ── Crypto Card ── #}
+        <div class="dimension-card dimension-card--crypto" id="dim-crypto">
+            <button class="dimension-card__header"
+                    aria-expanded="false"
+                    aria-controls="dim-crypto-expand"
+                    id="dim-crypto-toggle">
+                <div class="dimension-card__title">
+                    <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-right:4px;vertical-align:-1px"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="currentColor"/></svg>CRYPTO
+                </div>
+                <div class="dimension-card__summary dimension-card__summary--crypto">
+                    <span class="dimension-card__state">Liq: {{ _liq_state }}</span>
+                    <span class="dimension-card__arrow dimension-card__arrow--{{ 'up' if _crypto_direction == 'positive' else ('down' if _crypto_direction == 'negative' else 'flat') }}">{{ _crypto_arrow }}</span>
+                    <span class="dimension-card__crypto-label dimension-card__crypto-label--{{ _crypto_direction }}">{{ _crypto_label }}</span>
+                </div>
+                <i class="bi bi-chevron-down dimension-card__chevron" aria-hidden="true"></i>
+            </button>
+            <div class="dimension-card__expand" id="dim-crypto-expand" role="region" aria-labelledby="dim-crypto-toggle" hidden>
+                <hr class="dimension-card__divider">
+                <div class="dimension-card__explainer">
+                    <div class="dimension-card__explainer-title">WHY LIQUIDITY, NOT THE QUADRANT?</div>
+                    <p>Bitcoin correlates 0.94 with global M2 money supply, with a ~90-day lag. It does not follow the growth/inflation cycle that drives stocks and bonds.</p>
+                </div>
+                <div class="dimension-card__metrics">
+                    <a href="/explorer?metric=M2SL" class="dimension-metric-row" aria-label="View Liquidity State in explorer">
+                        <span class="dimension-metric-row__label">Liquidity State</span>
+                        <span class="dimension-metric-row__value">{{ _liq_state }} {{ _liq_arrow }}</span>
+                        <span class="dimension-metric-row__arrow">→</span>
+                    </a>
+                    <div class="dimension-metric-row dimension-metric-row--static">
+                        <span class="dimension-metric-row__label">Composite Score</span>
+                        <span class="dimension-metric-row__value">{% if liq.get('score') is not none %}{{ '%+.1f' | format(liq.score) }}{% else %}--{% endif %}</span>
+                    </div>
+                </div>
+                <p class="dimension-card__interp">
+                    {% if _crypto_direction == 'positive' %}Expanding liquidity has historically been favorable for Bitcoin. The ~90-day lag means current conditions may take 1-3 months to fully reflect in price.
+                    {% elif _crypto_direction == 'negative' %}Contracting liquidity is historically unfavorable for Bitcoin. Reduced capital flows typically pressure crypto prices over 1-3 months.
+                    {% else %}Neutral liquidity conditions — no strong directional signal for Bitcoin from the liquidity dimension.{% endif %}
+                </p>
+                <div class="dimension-card__links">
+                    See more: <a href="/crypto">Crypto</a>
+                </div>
+                <button class="dimension-card__collapse" aria-label="Collapse Crypto card">
+                    <i class="bi bi-chevron-up" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>{# /.dimension-grid #}
 </section>
-
-<!-- Expansion control (collapse chart) -->
-<div class="expansion-control" id="movers-collapse-control" style="display: none;">
-    <div class="divider-line"></div>
-    <button class="expansion-button" onclick="toggleMoversChart()" aria-label="Hide top movers trend chart">
-        <span class="collapse-text">⌃ Hide Chart</span>
-    </button>
-    <div class="divider-line"></div>
-</div>
-
-<!-- Section 4: Market Signals (US-1.1.4) -->
-<section id="signals-section" class="market-signals-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
+{% else %}
+{# Conditions unavailable fallback #}
+<section id="conditions-section" class="conditions-summary mb-4" aria-label="Market Conditions">
     <div class="section-header mb-3">
-        <div style="min-width:0;flex:1 1 auto;">
-            <h3 class="section-title mb-0" style="white-space:normal;">Cross-Market Indicators</h3>
-            <small class="text-muted">Cross-market indicators worth watching</small>
-        </div>
-        <button class="btn ai-section-btn" data-section-id="signals-section" aria-label="Ask AI about Cross-Market Indicators"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+        <h3 class="section-title"><i class="bi bi-compass me-2"></i>MARKET CONDITIONS</h3>
     </div>
-
-    <div class="row g-3">
-        <!-- Yield Curve Status -->
-        <div class="col-12 col-md-4">
-            <a href="/explorer?metric=yield_curve_10y2y" class="text-decoration-none">
-                <div class="signal-card h-100">
-                    <div class="signal-header">Yield Curve Status</div>
-                    <div class="signal-status" id="yieldcurve-status">
-                        <span class="signal-icon">--</span>
-                        <span class="signal-label">--</span>
-                    </div>
-                    <div class="signal-percentile" id="yieldcurve-percentile">
-                        -- Percentile
-                    </div>
-                    <div class="signal-description">
-                        An inverted yield curve (short rates higher than long rates) has
-                        historically preceded recessions. Currently tracking the 10Y-2Y spread.
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <!-- VIX Term Structure -->
-        <div class="col-12 col-md-4">
-            <a href="/explorer?metric=vix_price" class="text-decoration-none">
-                <div class="signal-card h-100">
-                    <div class="signal-header">VIX Term Structure</div>
-                    <div class="signal-status" id="vixterm-status">
-                        <span class="signal-icon">--</span>
-                        <span class="signal-label">--</span>
-                    </div>
-                    <div class="signal-percentile" id="vixterm-percentile">
-                        -- Percentile
-                    </div>
-                    <div class="signal-description">
-                        When near-term VIX exceeds longer-term VIX (backwardation), it signals
-                        acute market stress and demand for immediate protection.
-                    </div>
-                </div>
-            </a>
-        </div>
-
-        <!-- Gold/Credit Divergence -->
-        <div class="col-12 col-md-4">
-            <a href="/explorer?metric=divergence_gap" class="text-decoration-none">
-                <div class="signal-card h-100">
-                    <div class="signal-header">Gold/Credit Divergence</div>
-                    <div class="signal-status" id="divergence-status">
-                        <span class="signal-icon">--</span>
-                        <span class="signal-label">--</span>
-                    </div>
-                    <div class="signal-percentile" id="divergence-percentile">
-                        -- Percentile
-                    </div>
-                    <div class="signal-description">
-                        When gold prices rise while credit spreads remain stable, it suggests
-                        gold is pricing in risks that credit markets haven't acknowledged yet.
-                    </div>
-                </div>
-            </a>
-        </div>
+    <div class="conditions-unavailable">
+        <i class="bi bi-clock-history" aria-hidden="true"></i>
+        <p>Market conditions data is being computed. Check back after the next data collection cycle.</p>
     </div>
 </section>
+{% endif %}
 
-<!-- Additional Insights Section -->
-<!-- Prediction Markets -->
-<section id="prediction-section" class="prediction-markets-section mb-4 regime-thread{% if macro_regime %} {{ macro_regime.css_class }}{% endif %}">
+{# ════════════════════════════════════════════════════════════════════════
+   §2: WHAT THIS MEANS FOR YOUR PORTFOLIO — placeholder for US-323.2
+   ════════════════════════════════════════════════════════════════════════ #}
+<section id="implications-section" class="conditions-implications mb-4" aria-label="Portfolio Implications">
     <div class="section-header mb-3">
         <h3 class="section-title">
-            <i class="bi bi-graph-up-arrow"></i> Prediction Markets
-            <small class="ms-2 opacity-75 fw-normal">(via Kalshi)</small>
+            <i class="bi bi-briefcase me-2"></i>WHAT THIS MEANS FOR YOUR PORTFOLIO
         </h3>
     </div>
-    <div class="row" id="prediction-markets-container">
-        <div class="col text-center text-muted">Loading prediction markets...</div>
+    {% if conditions %}
+    <div class="implications-placeholder">
+        <i class="bi bi-info-circle" aria-hidden="true"></i>
+        <p>Portfolio implications matrix — coming soon.</p>
     </div>
-    <div class="mt-2">
-        <small class="text-muted">
-            <i class="bi bi-info-circle"></i> Real-money prediction market probabilities. Data from <a href="https://kalshi.com" target="_blank" class="text-decoration-none">Kalshi</a> (CFTC-regulated).
-        </small>
+    {% endif %}
+</section>
+
+{# ════════════════════════════════════════════════════════════════════════
+   FOOTER: TODAY'S MOVERS — lightweight strip
+   ════════════════════════════════════════════════════════════════════════ #}
+<section id="movers-strip" class="movers-strip" aria-label="Today's Movers">
+    <div class="movers-strip__header">
+        <span class="movers-strip__title">TODAY'S MOVERS</span>
+        <a href="/equity" class="movers-strip__see-all">See all →</a>
+    </div>
+    <div class="movers-strip__items" id="movers-strip-items">
+        <span class="text-muted" style="font-size:0.875rem;">Loading movers...</span>
     </div>
 </section>
 
@@ -1298,809 +577,19 @@
 
 {% block extra_js %}
 <script>
-let recessionData = []; // Store recession periods for shading
-
-// Fetch recession data on load
-fetch('/api/recessions')
-    .then(response => response.json())
-    .then(data => {
-        recessionData = data;
-    })
-    .catch(error => {
-        console.error('Error loading recession data:', error);
-    });
-
-// Generate recession annotations for chart
-function getRecessionAnnotations(startDate, endDate) {
-    if (!recessionData || recessionData.length === 0) return {};
-
-    const chartStart = new Date(startDate);
-    const chartEnd = new Date(endDate);
-    const annotations = {};
-
-    recessionData.forEach((recession, idx) => {
-        const recStart = new Date(recession.start_date);
-        const recEnd = new Date(recession.end_date);
-
-        // Check if recession overlaps with chart date range
-        if (recEnd >= chartStart && recStart <= chartEnd) {
-            // Clamp to chart boundaries
-            const displayStart = recStart < chartStart ? chartStart : recStart;
-            const displayEnd = recEnd > chartEnd ? chartEnd : recEnd;
-
-            annotations[`recession_${idx}`] = {
-                type: 'box',
-                xMin: displayStart.toISOString().split('T')[0],
-                xMax: displayEnd.toISOString().split('T')[0],
-                backgroundColor: 'rgba(128, 128, 128, 0.15)',
-                borderWidth: 0,
-                label: {
-                    display: false
-                }
-            };
-        }
-    });
-
-    return annotations;
-}
-
-// Load dashboard data
-async function loadDashboard() {
-    try {
-        const response = await fetch('/api/dashboard');
-        const data = await response.json();
-
-        // Update timestamp
-        const updateTimeEl = document.getElementById('update-time');
-        if (updateTimeEl) updateTimeEl.textContent = data.timestamp;
-
-        // Update top movers (What's Moving Today - US-1.1.3)
-        if (data.top_movers && data.top_movers.length > 0) {
-            renderTopMovers(data.top_movers);
-
-            // Load the movers chart with the top movers data
-            loadMoversChart(data.top_movers);
-        }
-
-        // Update metrics (legacy elements - check if they exist before updating)
-        if (data.metrics.hy_spread && document.getElementById('hy-spread')) {
-            document.getElementById('hy-spread').textContent = `${data.metrics.hy_spread.current} bp`;
-            document.getElementById('hy-change-5d').textContent =
-                (data.metrics.hy_spread.change_5d >= 0 ? '+' : '') + data.metrics.hy_spread.change_5d;
-            document.getElementById('hy-change-30d').textContent =
-                (data.metrics.hy_spread.change_30d >= 0 ? '+' : '') + data.metrics.hy_spread.change_30d;
-
-            const hyStatus = document.getElementById('hy-status');
-            if (hyStatus) {
-                if (data.metrics.hy_spread.status === 'tight') {
-                    hyStatus.textContent = 'TIGHT';
-                    hyStatus.className = 'badge bg-danger';
-                } else if (data.metrics.hy_spread.status === 'normal') {
-                    hyStatus.textContent = 'NORMAL';
-                    hyStatus.className = 'badge bg-success';
-                } else {
-                    hyStatus.textContent = 'WIDE';
-                    hyStatus.className = 'badge bg-warning';
-                }
-            }
-        }
-
-        if (data.metrics.gold && document.getElementById('gold-price')) {
-            document.getElementById('gold-price').textContent = `$${data.metrics.gold.price.toLocaleString()}`;
-            document.getElementById('gold-change-5d').textContent =
-                (data.metrics.gold.change_5d >= 0 ? '+' : '') + data.metrics.gold.change_5d.toFixed(1);
-            document.getElementById('gold-change-30d').textContent =
-                (data.metrics.gold.change_30d >= 0 ? '+' : '') + data.metrics.gold.change_30d.toFixed(1);
-        }
-
-        if (data.metrics.vix && document.getElementById('vix-level')) {
-            document.getElementById('vix-level').textContent = data.metrics.vix.current;
-            document.getElementById('vix-change-5d').textContent =
-                (data.metrics.vix.change_5d >= 0 ? '+' : '') + data.metrics.vix.change_5d.toFixed(1);
-            document.getElementById('vix-change-30d').textContent =
-                (data.metrics.vix.change_30d >= 0 ? '+' : '') + data.metrics.vix.change_30d.toFixed(1);
-
-            const vixStatus = document.getElementById('vix-status');
-            if (vixStatus) {
-                if (data.metrics.vix.status === 'low') {
-                    vixStatus.textContent = 'COMPLACENCY';
-                    vixStatus.className = 'badge bg-warning';
-                } else if (data.metrics.vix.status === 'normal') {
-                    vixStatus.textContent = 'NORMAL';
-                    vixStatus.className = 'badge bg-success';
-                } else {
-                    vixStatus.textContent = 'ELEVATED';
-                    vixStatus.className = 'badge bg-danger';
-                }
-            }
-        }
-
-        if (data.metrics.bitcoin && document.getElementById('btc-price')) {
-            document.getElementById('btc-price').textContent = `$${data.metrics.bitcoin.price.toLocaleString()}`;
-            document.getElementById('btc-peak').textContent = `$${data.metrics.bitcoin.peak.toLocaleString()}`;
-            document.getElementById('btc-decline').textContent = `${data.metrics.bitcoin.decline_from_peak.toFixed(1)}%`;
-            document.getElementById('btc-change-5d').textContent =
-                (data.metrics.bitcoin.change_5d >= 0 ? '+' : '') + data.metrics.bitcoin.change_5d.toFixed(1);
-            document.getElementById('btc-change-30d').textContent =
-                (data.metrics.bitcoin.change_30d >= 0 ? '+' : '') + data.metrics.bitcoin.change_30d.toFixed(1);
-        }
-
-        if (data.metrics.spy && document.getElementById('spy-price')) {
-            document.getElementById('spy-price').textContent = `$${data.metrics.spy.price.toFixed(2)}`;
-            document.getElementById('spy-change-5d').textContent =
-                (data.metrics.spy.change_5d >= 0 ? '+' : '') + data.metrics.spy.change_5d.toFixed(2);
-            document.getElementById('spy-change-30d').textContent =
-                (data.metrics.spy.change_30d >= 0 ? '+' : '') + data.metrics.spy.change_30d.toFixed(2);
-        }
-
-        if (data.metrics.ccc_hy_ratio && document.getElementById('ccc-ratio')) {
-            document.getElementById('ccc-ratio').textContent = data.metrics.ccc_hy_ratio.current.toFixed(2);
-            document.getElementById('ccc-change-5d').textContent =
-                (data.metrics.ccc_hy_ratio.change_5d >= 0 ? '+' : '') + data.metrics.ccc_hy_ratio.change_5d.toFixed(2);
-            document.getElementById('ccc-change-30d').textContent =
-                (data.metrics.ccc_hy_ratio.change_30d >= 0 ? '+' : '') + data.metrics.ccc_hy_ratio.change_30d.toFixed(2);
-        }
-
-        // Update Market Conditions Grid (US-1.1.2)
-        updateMarketConditionsGrid(data);
-
-        // Update Market Signals Section (US-1.1.4)
-        updateSignalsSection(data);
-
-    } catch (error) {
-        console.error('Error loading dashboard:', error);
-    }
-}
-
-// ========================================
-// Market Conditions Grid Functions (US-1.1.2)
-// ========================================
-
-// Helper function to format change with arrow
-function formatChange(value, unit = '%', decimals = 1) {
-    if (value === null || value === undefined || isNaN(value)) return '--';
-    const sign = value >= 0 ? '▲ +' : '▼ ';
-    const absValue = Math.abs(value).toFixed(decimals);
-    return `${sign}${absValue}${unit}`;
-}
-
-// Helper function to set element text with change class
-function setChangeElement(elementId, value, unit = '%', decimals = 1) {
-    const el = document.getElementById(elementId);
-    if (!el) return;
-    el.textContent = formatChange(value, unit, decimals);
-    el.className = 'metric-change ' + (value >= 0 ? 'positive' : 'negative');
-}
-
-// Calculate status for each category based on criteria from US-1.1.2
-function calculateMarketStatuses(data) {
-    const metrics = data.metrics || {};
-    const marketGrid = data.market_grid || {};
-
-    // Credit Status
-    const hySpread = metrics.hy_spread?.current || marketGrid.credit?.hy_spread?.value || 0;
-    let creditStatus = { text: 'NORMAL', class: 'status-normal' };
-    if (hySpread > 600) creditStatus = { text: 'CRISIS', class: 'status-crisis' };
-    else if (hySpread > 450) creditStatus = { text: 'STRESSED', class: 'status-stressed' };
-    else if (hySpread > 350) creditStatus = { text: 'TIGHT', class: 'status-elevated' };
-    else if (hySpread < 300) creditStatus = { text: 'CALM', class: 'status-calm' };
-
-    // Equities Status (based on VIX)
-    const vix = metrics.vix?.current || marketGrid.equities?.vix?.value || 0;
-    let equitiesStatus = { text: 'NEUTRAL', class: 'status-neutral' };
-    if (vix > 30) equitiesStatus = { text: 'FEAR', class: 'status-fear' };
-    else if (vix > 25) equitiesStatus = { text: 'RISK-OFF', class: 'status-risk-off' };
-    else if (vix > 20) equitiesStatus = { text: 'CAUTIOUS', class: 'status-cautious' };
-    else if (vix < 15) equitiesStatus = { text: 'RISK-ON', class: 'status-risk-on' };
-
-    // Rates Status (10Y - 2Y curve spread)
-    const treasury10y = marketGrid.rates?.treasury_10y?.value || 0;
-    const treasury2y = marketGrid.rates?.treasury_2y?.value || 0;
-    const curveSpread = treasury10y - treasury2y;
-    let ratesStatus = { text: 'NORMAL', class: 'status-normal' };
-    if (curveSpread < -0.5) ratesStatus = { text: 'DEEPLY INVERTED', class: 'status-deeply-inverted' };
-    else if (curveSpread < 0) ratesStatus = { text: 'INVERTED', class: 'status-inverted' };
-    else if (curveSpread > 1) ratesStatus = { text: 'STEEP', class: 'status-steep' };
-    else if (curveSpread < 0.25) ratesStatus = { text: 'FLAT', class: 'status-flat' };
-
-    // Safe Havens Status (based on Gold 30d change)
-    const goldChange30d = metrics.gold?.change_30d || marketGrid.havens?.gold?.change_30d || 0;
-    let havensStatus = { text: 'NORMAL', class: 'status-normal' };
-    if (goldChange30d > 8) havensStatus = { text: 'FLIGHT TO SAFETY', class: 'status-flight' };
-    else if (goldChange30d > 5) havensStatus = { text: 'ELEVATED DEMAND', class: 'status-elevated' };
-    else if (goldChange30d < -5) havensStatus = { text: 'RISK-ON', class: 'status-risk-on' };
-
-    // Crypto Status (based on Bitcoin 30d change)
-    const btcChange30d = metrics.bitcoin?.change_30d || marketGrid.crypto?.btc?.change_30d || 0;
-    let cryptoStatus = { text: 'NEUTRAL', class: 'status-neutral' };
-    if (btcChange30d > 20) cryptoStatus = { text: 'EUPHORIC', class: 'status-euphoric' };
-    else if (btcChange30d > 10) cryptoStatus = { text: 'BULLISH', class: 'status-bullish' };
-    else if (btcChange30d < -20) cryptoStatus = { text: 'CAPITULATION', class: 'status-capitulation' };
-    else if (btcChange30d < -10) cryptoStatus = { text: 'BEARISH', class: 'status-bearish' };
-
-    // Dollar Status (based on DXY)
-    const dxy = marketGrid.dollar?.dxy?.value || 100;
-    let dollarStatus = { text: 'NEUTRAL', class: 'status-neutral' };
-    if (dxy > 107) dollarStatus = { text: 'VERY STRONG', class: 'status-very-strong' };
-    else if (dxy > 104) dollarStatus = { text: 'STRONG', class: 'status-strong' };
-    else if (dxy < 97) dollarStatus = { text: 'VERY WEAK', class: 'status-very-weak' };
-    else if (dxy < 100) dollarStatus = { text: 'WEAK', class: 'status-weak' };
-
-    // Volatility Status (based on VIX level)
-    let volatilityStatus = { text: 'CALM', class: 'status-calm' };
-    if (vix > 30) volatilityStatus = { text: 'SPIKING', class: 'status-spiking' };
-    else if (vix > 20) volatilityStatus = { text: 'ELEVATED', class: 'status-elevated' };
-
-    // Liquidity Status (based on M2 YoY change)
-    const m2YoY = metrics.economic_indicators?.m2_money_supply?.yoy_change || 0;
-    let liquidityStatus = { text: 'STABLE', class: 'status-stable' };
-    if (m2YoY > 8) liquidityStatus = { text: 'EXPANDING', class: 'status-expanding' };
-    else if (m2YoY < 0) liquidityStatus = { text: 'CONTRACTING', class: 'status-contracting' };
-
-    return {
-        credit: creditStatus,
-        equities: equitiesStatus,
-        rates: ratesStatus,
-        havens: havensStatus,
-        crypto: cryptoStatus,
-        dollar: dollarStatus,
-        volatility: volatilityStatus,
-        liquidity: liquidityStatus
-    };
-}
-
-// Update Market Conditions Grid with data
-function updateMarketConditionsGrid(data) {
-    const metrics = data.metrics || {};
-    const marketGrid = data.market_grid || {};
-
-    // Calculate all statuses
-    const statuses = calculateMarketStatuses(data);
-
-    // === Credit Card ===
-    const hySpread = metrics.hy_spread?.current || marketGrid.credit?.hy_spread?.value || null;
-    const igSpread = marketGrid.credit?.ig_spread?.value || null;
-    const cccRatio = metrics.ccc_hy_ratio?.current || marketGrid.credit?.ccc_ratio?.value || null;
-
-    if (hySpread !== null) document.getElementById('grid-credit-hy-spread').textContent = `${Math.round(hySpread)} bp`;
-    if (igSpread !== null) document.getElementById('grid-credit-ig-spread').textContent = `${Math.round(igSpread)} bp`;
-    if (cccRatio !== null) document.getElementById('grid-credit-ccc-ratio').textContent = cccRatio.toFixed(2) + 'x';
-
-    setChangeElement('grid-credit-hy-change', metrics.hy_spread?.change_5d || marketGrid.credit?.hy_spread?.change_5d, ' bp', 0);
-    setChangeElement('grid-credit-ig-change', marketGrid.credit?.ig_spread?.change_5d, ' bp', 0);
-    setChangeElement('grid-credit-ccc-change', metrics.ccc_hy_ratio?.change_5d || marketGrid.credit?.ccc_ratio?.change_5d, '', 2);
-
-    const creditStatusEl = document.getElementById('grid-credit-status');
-    if (creditStatusEl) {
-        creditStatusEl.textContent = statuses.credit.text;
-        creditStatusEl.className = 'badge ' + statuses.credit.class;
-    }
-
-    // === Equities Card ===
-    const spyPrice = metrics.spy?.price || marketGrid.equities?.spy?.value || null;
-    const russellPrice = marketGrid.equities?.russell?.value || null;
-    const vixLevel = metrics.vix?.current || marketGrid.equities?.vix?.value || null;
-
-    if (spyPrice !== null) document.getElementById('grid-equities-spy').textContent = `$${spyPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-    if (russellPrice !== null) document.getElementById('grid-equities-russell').textContent = `$${russellPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-    if (vixLevel !== null) document.getElementById('grid-equities-vix').textContent = vixLevel.toFixed(1);
-
-    setChangeElement('grid-equities-spy-change', metrics.spy?.change_5d || marketGrid.equities?.spy?.change_5d);
-    setChangeElement('grid-equities-russell-change', marketGrid.equities?.russell?.change_5d);
-    setChangeElement('grid-equities-vix-change', metrics.vix?.change_5d || marketGrid.equities?.vix?.change_5d);
-
-    const equitiesStatusEl = document.getElementById('grid-equities-status');
-    if (equitiesStatusEl) {
-        equitiesStatusEl.textContent = statuses.equities.text;
-        equitiesStatusEl.className = 'badge ' + statuses.equities.class;
-    }
-
-    // === Rates Card ===
-    const treasury10y = marketGrid.rates?.treasury_10y?.value || null;
-    const treasury2y = marketGrid.rates?.treasury_2y?.value || null;
-    const curveSpread = (treasury10y !== null && treasury2y !== null) ? (treasury10y - treasury2y) : null;
-
-    if (treasury10y !== null) document.getElementById('grid-rates-10y').textContent = treasury10y.toFixed(2) + '%';
-    if (treasury2y !== null) document.getElementById('grid-rates-2y').textContent = treasury2y.toFixed(2) + '%';
-    if (curveSpread !== null) document.getElementById('grid-rates-curve').textContent = (curveSpread >= 0 ? '+' : '') + (curveSpread * 100).toFixed(0) + ' bp';
-
-    setChangeElement('grid-rates-10y-change', marketGrid.rates?.treasury_10y?.change_5d, ' bp', 0);
-    setChangeElement('grid-rates-2y-change', marketGrid.rates?.treasury_2y?.change_5d, ' bp', 0);
-    setChangeElement('grid-rates-curve-change', marketGrid.rates?.curve?.change_5d, ' bp', 0);
-
-    const ratesStatusEl = document.getElementById('grid-rates-status');
-    if (ratesStatusEl) {
-        ratesStatusEl.textContent = statuses.rates.text;
-        ratesStatusEl.className = 'badge ' + statuses.rates.class;
-    }
-
-    // === Safe Havens Card ===
-    const goldPrice = metrics.gold?.price || marketGrid.havens?.gold?.value || null;
-    const silverPrice = marketGrid.havens?.silver?.value || null;
-    const tltPrice = marketGrid.havens?.tlt?.value || null;
-
-    if (goldPrice !== null) document.getElementById('grid-havens-gold').textContent = `$${goldPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-    if (silverPrice !== null) document.getElementById('grid-havens-silver').textContent = `$${silverPrice.toFixed(2)}`;
-    if (tltPrice !== null) document.getElementById('grid-havens-tlt').textContent = `$${tltPrice.toFixed(2)}`;
-
-    setChangeElement('grid-havens-gold-change', metrics.gold?.change_5d || marketGrid.havens?.gold?.change_5d);
-    setChangeElement('grid-havens-silver-change', marketGrid.havens?.silver?.change_5d);
-    setChangeElement('grid-havens-tlt-change', marketGrid.havens?.tlt?.change_5d);
-
-    const havensStatusEl = document.getElementById('grid-havens-status');
-    if (havensStatusEl) {
-        havensStatusEl.textContent = statuses.havens.text;
-        havensStatusEl.className = 'badge ' + statuses.havens.class;
-    }
-
-    // === Crypto Card ===
-    const btcPrice = metrics.bitcoin?.price || marketGrid.crypto?.btc?.value || null;
-    const ethPrice = marketGrid.crypto?.eth?.value || null;
-    const btcDom = marketGrid.crypto?.btc_dominance?.value || null;
-
-    if (btcPrice !== null) document.getElementById('grid-crypto-btc').textContent = `$${btcPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-    if (ethPrice !== null) document.getElementById('grid-crypto-eth').textContent = `$${ethPrice.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
-    if (btcDom !== null) document.getElementById('grid-crypto-dom').textContent = btcDom.toFixed(1) + '%';
-
-    setChangeElement('grid-crypto-btc-change', metrics.bitcoin?.change_5d || marketGrid.crypto?.btc?.change_5d);
-    setChangeElement('grid-crypto-eth-change', marketGrid.crypto?.eth?.change_5d);
-    setChangeElement('grid-crypto-dom-change', marketGrid.crypto?.btc_dominance?.change_5d);
-
-    const cryptoStatusEl = document.getElementById('grid-crypto-status');
-    if (cryptoStatusEl) {
-        cryptoStatusEl.textContent = statuses.crypto.text;
-        cryptoStatusEl.className = 'badge ' + statuses.crypto.class;
-    }
-
-    // === Dollar Card ===
-    const dxy = marketGrid.dollar?.dxy?.value || null;
-    const eurusd = marketGrid.dollar?.eurusd?.value || null;
-    const usdjpy = metrics.carry_trade?.usdjpy?.current || marketGrid.dollar?.usdjpy?.value || null;
-
-    if (dxy !== null) document.getElementById('grid-dollar-dxy').textContent = dxy.toFixed(2);
-    if (eurusd !== null) document.getElementById('grid-dollar-eurusd').textContent = eurusd.toFixed(4);
-    if (usdjpy !== null) document.getElementById('grid-dollar-usdjpy').textContent = usdjpy.toFixed(2);
-
-    setChangeElement('grid-dollar-dxy-change', marketGrid.dollar?.dxy?.change_5d);
-    setChangeElement('grid-dollar-eurusd-change', marketGrid.dollar?.eurusd?.change_5d);
-    setChangeElement('grid-dollar-usdjpy-change', metrics.carry_trade?.usdjpy?.change_5d || marketGrid.dollar?.usdjpy?.change_5d);
-
-    const dollarStatusEl = document.getElementById('grid-dollar-status');
-    if (dollarStatusEl) {
-        dollarStatusEl.textContent = statuses.dollar.text;
-        dollarStatusEl.className = 'badge ' + statuses.dollar.class;
-    }
-
-    // Update Badge Statuses (US-2.0.3)
-    updateBadgeStatuses(statuses);
-
-    // Update Regime Signal Chip Values (US-4.1.2)
-    updateRegimeSignals(data);
-}
-
-// ========================================
-// Macro Regime Signal Chip Values (US-4.1.2)
-// ========================================
-
-// Maps each regime signal key to an extractor that reads the dashboard API response.
-// Returns a formatted string or null if data is unavailable.
-const regimeSignalValueExtractors = {
-    high_yield_spread: function(d) {
-        const v = d.metrics && d.metrics.hy_spread && d.metrics.hy_spread.current;
-        return v != null ? v + ' bps' : null;
-    },
-    vix: function(d) {
-        const v = d.metrics && d.metrics.vix && d.metrics.vix.current;
-        return v != null ? v.toFixed(1) : null;
-    },
-    gold: function(d) {
-        const v = d.metrics && d.metrics.gold && d.metrics.gold.price;
-        return v != null ? '$' + v.toLocaleString(undefined, {maximumFractionDigits: 0}) : null;
-    },
-    sp500: function(d) {
-        const v = d.metrics && d.metrics.spy && d.metrics.spy.price;
-        return v != null ? '$' + v.toLocaleString(undefined, {maximumFractionDigits: 0}) : null;
-    },
-    yield_curve_10y2y: function(d) {
-        const v = d.market_grid && d.market_grid.rates && d.market_grid.rates.curve && d.market_grid.rates.curve.value;
-        if (v == null) return null;
-        return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
-    },
-    initial_claims: function() { return null; },
-    nfci: function() { return null; },
-};
-
-function updateRegimeSignals(dashboardData) {
-    const chips = document.querySelectorAll('[id^="regime-chip-"]');
-    chips.forEach(function(el) {
-        const signalKey = el.getAttribute('data-signal');
-        if (!signalKey) return;
-        const extractor = regimeSignalValueExtractors[signalKey];
-        if (!extractor) return;
-        const value = extractor(dashboardData);
-        if (value != null) {
-            el.textContent = value;
-            // Update parent chip's aria-label with actual value
-            const chip = el.closest('.regime-signal-chip');
-            if (chip) {
-                const name = chip.querySelector('.regime-signal-name');
-                const annotation = chip.querySelector('.regime-signal-annotation');
-                if (name && annotation) {
-                    chip.setAttribute('aria-label',
-                        name.textContent.trim() + ': ' + value + ', ' + annotation.textContent.trim()
-                    );
-                }
-            }
-        }
-    });
-}
-
-// ========================================
-// Market Conditions Badge Statuses (US-2.0.3)
-// ========================================
-
-// Update badge statuses in the compact badge view
-function updateBadgeStatuses(statuses) {
-    const badgeCategories = ['credit', 'equities', 'rates', 'havens', 'crypto', 'dollar'];
-
-    badgeCategories.forEach(category => {
-        const badgeStatusEl = document.getElementById(`badge-${category}-status`);
-        if (badgeStatusEl && statuses[category]) {
-            badgeStatusEl.textContent = statuses[category].text;
-            badgeStatusEl.className = 'badge-status ' + statuses[category].class;
-        }
-    });
-}
-
-// Load and display AI market conditions synthesis
-async function loadMarketSynthesis() {
-    const synthesisTextEl = document.getElementById('market-synthesis-text');
-    if (!synthesisTextEl) return;
-
-    try {
-        const response = await fetch('/api/market-conditions-synthesis');
-        const data = await response.json();
-
-        if (data.synthesis) {
-            synthesisTextEl.textContent = data.synthesis;
-            synthesisTextEl.classList.remove('text-muted');
-            synthesisTextEl.classList.add('synthesis-text');
-        } else {
-            synthesisTextEl.textContent = 'Market synthesis unavailable. Check back shortly.';
-            synthesisTextEl.classList.add('text-muted');
-        }
-    } catch (error) {
-        console.error('Error loading market synthesis:', error);
-        synthesisTextEl.textContent = 'Market synthesis unavailable.';
-        synthesisTextEl.classList.add('text-muted');
-    }
-}
-
-// ========================================
-// Market Conditions Expansion Toggle (US-2.0.3)
-// ========================================
-
-// Toggle between compact badges and detailed cards
-function toggleMarketConditions() {
-    const badges = document.getElementById('market-badges');
-    const cards = document.getElementById('market-cards');
-    const toggleButton = document.getElementById('market-toggle');
-    const expandText = toggleButton.querySelector('.expand-text');
-    const collapseText = toggleButton.querySelector('.collapse-text');
-    const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
-
-    if (!isExpanded) {
-        // Expand: fade out badges, fade in cards
-        badges.classList.add('hidden');
-        cards.classList.add('visible');
-        expandText.style.display = 'none';
-        collapseText.style.display = 'inline';
-        toggleButton.setAttribute('aria-expanded', 'true');
-    } else {
-        // Collapse: fade out cards, fade in badges
-        cards.classList.remove('visible');
-        badges.classList.remove('hidden');
-        collapseText.style.display = 'none';
-        expandText.style.display = 'inline';
-        toggleButton.setAttribute('aria-expanded', 'false');
-    }
-}
-
-// Toggle Top Movers Chart (US-2.0.2)
-function toggleMoversChart() {
-    const chartContainer = document.getElementById('movers-chart-container');
-    const expansionControl = document.getElementById('movers-expansion-control');
-    const collapseControl = document.getElementById('movers-collapse-control');
-    const toggleButton = document.getElementById('movers-toggle');
-    const isExpanded = toggleButton.getAttribute('aria-expanded') === 'true';
-
-    if (!isExpanded) {
-        // Expand: show chart, hide expansion control, show collapse control
-        chartContainer.style.display = 'block';
-        expansionControl.style.display = 'none';
-        collapseControl.style.display = 'flex';
-        toggleButton.setAttribute('aria-expanded', 'true');
-
-        // Trigger window resize to ensure Chart.js renders properly
-        setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-        }, 50);
-    } else {
-        // Collapse: hide chart, show expansion control, hide collapse control
-        chartContainer.style.display = 'none';
-        expansionControl.style.display = 'flex';
-        collapseControl.style.display = 'none';
-        toggleButton.setAttribute('aria-expanded', 'false');
-    }
-}
-
-// Initialize expansion control event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Market Conditions toggle (US-2.0.3)
-    const marketToggle = document.getElementById('market-toggle');
-    if (marketToggle) {
-        marketToggle.addEventListener('click', toggleMarketConditions);
-    }
-
-    // Top Movers Chart toggle (US-2.0.2)
-    const moversToggle = document.getElementById('movers-toggle');
-    if (moversToggle) {
-        moversToggle.addEventListener('click', toggleMoversChart);
-    }
-
-    // Recession Probability Panel toggle (US-146.2)
-    const recessionToggle = document.getElementById('recession-panel-toggle');
-    if (recessionToggle) {
-        recessionToggle.addEventListener('click', function() {
-            const content = document.getElementById('recession-panel-content');
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', String(!expanded));
-            if (!expanded) {
-                content.classList.add('recession-panel__content--expanded');
-            } else {
-                content.classList.remove('recession-panel__content--expanded');
-            }
-        });
-    }
-
-    // WHY THREE MODELS progressive disclosure toggle (US-218.2)
-    const recessionWhyToggle = document.getElementById('recession-why-toggle');
-    if (recessionWhyToggle) {
-        recessionWhyToggle.addEventListener('click', function() {
-            const content = document.getElementById('recession-why-content');
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', String(!expanded));
-            if (!expanded) {
-                content.removeAttribute('hidden');
-            } else {
-                content.setAttribute('hidden', '');
-            }
-        });
-    }
-
-    // Sector Management Tone Panel toggle (US-123.2)
-    const sectorToneToggle = document.getElementById('sector-tone-toggle');
-    if (sectorToneToggle) {
-        sectorToneToggle.addEventListener('click', function() {
-            const content = document.getElementById('sector-tone-content');
-            const toggleText = document.getElementById('sector-tone-toggle-text');
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', String(!expanded));
-            if (!expanded) {
-                content.classList.add('sector-tone-content--expanded');
-                if (toggleText) { toggleText.textContent = 'Hide Sectors'; }
-            } else {
-                content.classList.remove('sector-tone-content--expanded');
-                if (toggleText) { toggleText.textContent = 'Show Sectors'; }
-            }
-        });
-    }
-
-    // Global Trade Pulse Panel toggle (US-206.2)
-    const tradePulseToggle = document.getElementById('trade-pulse-toggle');
-    if (tradePulseToggle) {
-        tradePulseToggle.addEventListener('click', function() {
-            const content = document.getElementById('trade-pulse-content');
-            const toggleText = document.getElementById('trade-pulse-toggle-text');
-            const expanded = this.getAttribute('aria-expanded') === 'true';
-            this.setAttribute('aria-expanded', String(!expanded));
-            if (!expanded) {
-                content.classList.add('trade-pulse-content--expanded');
-                if (toggleText) { toggleText.textContent = 'Hide'; }
-            } else {
-                content.classList.remove('trade-pulse-content--expanded');
-                if (toggleText) { toggleText.textContent = 'View Trade Data'; }
-            }
-        });
-    }
-});
-
-// ========================================
-// Market Signals Section Functions (US-1.1.4)
-// ========================================
-
-// Update all signal cards with current data
-function updateSignalsSection(data) {
-    const metrics = data.metrics || {};
-    const marketGrid = data.market_grid || {};
-
-    // Gold/Credit Divergence - data is in metrics.divergence
-    const divergence = metrics.divergence || {};
-    const divPercentile = divergence.percentile || 50;
-    const divStatus = getDivergenceStatus(divPercentile);
-    updateSignalCard('divergence', divStatus, divPercentile);
-
-    // Yield Curve Status
-    const treasury10y = marketGrid.rates?.treasury_10y?.value || metrics.treasury_10y?.value || 4.0;
-    const treasury2y = marketGrid.rates?.treasury_2y?.value || metrics.treasury_2y?.value || 4.0;
-    const curveSpread = treasury10y - treasury2y;
-    const yieldStatus = getYieldCurveStatus(curveSpread);
-    const yieldPercentile = calculateYieldCurvePercentile(curveSpread);
-    updateSignalCard('yieldcurve', yieldStatus, yieldPercentile);
-
-    // VIX Term Structure (using VIX level as proxy if term structure unavailable)
-    const vix = metrics.vix?.current || marketGrid.equities?.vix?.value || 15;
-    const vixStatus = getVIXTermStatus(vix);
-    // Use percentile from API if available, otherwise calculate from VIX level
-    const vixPercentile = metrics.vix?.percentile ?? calculateVIXPercentile(vix);
-    updateSignalCard('vixterm', vixStatus, vixPercentile);
-}
-
-// Get divergence signal status based on percentile
-function getDivergenceStatus(percentile) {
-    if (percentile > 90) return { icon: '🔴', label: 'CRITICAL', class: 'critical' };
-    if (percentile > 70) return { icon: '⚠️', label: 'ELEVATED', class: 'elevated' };
-    if (percentile > 50) return { icon: 'ℹ️', label: 'NOTABLE', class: 'notable' };
-    return { icon: '✓', label: 'NORMAL', class: 'normal' };
-}
-
-// Get yield curve signal status based on 10Y-2Y spread
-function getYieldCurveStatus(spread) {
-    if (spread < -0.5) return { icon: '🔴', label: 'DEEPLY INVERTED', class: 'critical' };
-    if (spread < 0) return { icon: '⚠️', label: 'INVERTED', class: 'elevated' };
-    if (spread < 0.25) return { icon: 'ℹ️', label: 'FLAT', class: 'notable' };
-    return { icon: '✓', label: 'NORMAL', class: 'normal' };
-}
-
-// Get VIX term structure status (using VIX level as proxy)
-function getVIXTermStatus(vix) {
-    if (vix > 30) return { icon: '🔴', label: 'FEAR SPIKE', class: 'critical' };
-    if (vix > 25) return { icon: '⚠️', label: 'STRESSED', class: 'elevated' };
-    if (vix > 20) return { icon: 'ℹ️', label: 'ELEVATED', class: 'notable' };
-    return { icon: '✓', label: 'NORMAL', class: 'normal' };
-}
-
-// Calculate yield curve percentile (simplified)
-// Historical range roughly: -1.0% to +2.5%
-// Inverted (negative) = high percentile (unusual)
-function calculateYieldCurvePercentile(spread) {
-    if (spread < -0.5) return 98;
-    if (spread < 0) return 90;
-    if (spread < 0.25) return 70;
-    if (spread < 0.5) return 50;
-    if (spread < 1.0) return 30;
-    return 15;
-}
-
-// Calculate VIX percentile based on level
-function calculateVIXPercentile(vix) {
-    if (vix > 35) return 98;
-    if (vix > 30) return 95;
-    if (vix > 25) return 85;
-    if (vix > 20) return 70;
-    if (vix > 15) return 50;
-    if (vix > 12) return 30;
-    return 15;
-}
-
-// Get ordinal suffix for percentile display
-function getOrdinalSuffix(n) {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = Math.round(n) % 100;
-    return s[(v - 20) % 10] || s[v] || s[0];
-}
-
-// Update a single signal card's display
-function updateSignalCard(id, status, percentile) {
-    const statusEl = document.getElementById(`${id}-status`);
-    const percentileEl = document.getElementById(`${id}-percentile`);
-
-    if (statusEl) {
-        statusEl.innerHTML = `
-            <span class="signal-icon">${status.icon}</span>
-            <span class="signal-label ${status.class}">${status.label}</span>
-        `;
-    }
-
-    if (percentileEl) {
-        const roundedPercentile = Math.round(percentile);
-        percentileEl.textContent = `${roundedPercentile}${getOrdinalSuffix(roundedPercentile)} Percentile`;
-    }
-}
-
-// Load prediction markets data from Kalshi
-async function loadPredictionMarkets() {
-    try {
-        const response = await fetch('/api/prediction-markets');
-        const data = await response.json();
-
-        const container = document.getElementById('prediction-markets-container');
-
-        if (data.error) {
-            container.innerHTML = `<div class="col text-center text-muted">Unable to load prediction markets</div>`;
-            return;
-        }
-
-        let html = '';
-
-        // Recession probability
-        if (data.recession && data.recession.probability !== null) {
-            const prob = (data.recession.probability * 100).toFixed(0);
-            const probColor = prob > 50 ? 'text-danger' : prob > 30 ? 'text-warning' : 'text-success';
-            html += `
-                <div class="col-md-6 mb-2">
-                    <div class="card h-100">
-                        <div class="card-body py-3">
-                            <h6 class="text-muted mb-1">RECESSION PROBABILITY</h6>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h3 class="mb-0 ${probColor}">${prob}%</h3>
-                                <span class="badge bg-secondary">2026</span>
-                            </div>
-                            <small class="text-muted">${data.recession.title}</small>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Large rate cut probability
-        if (data.large_rate_cut && data.large_rate_cut.probability !== null) {
-            const prob = (data.large_rate_cut.probability * 100).toFixed(0);
-            const probColor = prob > 50 ? 'text-success' : prob > 30 ? 'text-warning' : 'text-secondary';
-            html += `
-                <div class="col-md-6 mb-2">
-                    <div class="card h-100">
-                        <div class="card-body py-3">
-                            <h6 class="text-muted mb-1">LARGE FED CUT (>25bp)</h6>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h3 class="mb-0 ${probColor}">${prob}%</h3>
-                                <span class="badge bg-info">2026</span>
-                            </div>
-                            <small class="text-muted">${data.large_rate_cut.title}</small>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // If we have data, show it; otherwise show message
-        if (html) {
-            container.innerHTML = html;
-        } else {
-            container.innerHTML = `<div class="col text-center text-muted">No prediction market data available</div>`;
-        }
-
-    } catch (error) {
-        console.error('Error loading prediction markets:', error);
-        document.getElementById('prediction-markets-container').innerHTML =
-            `<div class="col text-center text-muted">Error loading prediction markets</div>`;
-    }
-}
-
-// Load AI-generated daily summary (Hero Briefing - US-1.1.1)
+{# ════════════════════════════════════════════════════════════════
+   AI Briefing loader (same AJAX pattern as before)
+   ════════════════════════════════════════════════════════════════ #}
 async function loadAISummary() {
     const loadingEl = document.getElementById('briefing-loading');
     const contentEl = document.getElementById('briefing-content');
     const errorEl = document.getElementById('briefing-error');
     const narrativeEl = document.getElementById('briefing-narrative');
-    const keyPointsEl = document.getElementById('briefing-key-points');
-    const keyPointsList = document.getElementById('key-points-list');
     const timestampEl = document.getElementById('briefing-timestamp');
     const dateEl = document.getElementById('briefing-date');
     const errorMsgEl = document.getElementById('briefing-error-message');
 
     try {
-        // Show loading state
         loadingEl.style.display = 'block';
         contentEl.style.display = 'none';
         errorEl.style.display = 'none';
@@ -2109,7 +598,6 @@ async function loadAISummary() {
         const data = await response.json();
 
         if (data.error) {
-            // Show error state
             loadingEl.style.display = 'none';
             errorEl.style.display = 'block';
             errorMsgEl.textContent = data.error || 'Market briefing is being generated. Check back shortly.';
@@ -2117,66 +605,34 @@ async function loadAISummary() {
         }
 
         if (data.summary) {
-            // Format the narrative with proper paragraphs
             const paragraphs = data.summary.split('\n\n').filter(p => p.trim());
-            narrativeEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
+            narrativeEl.innerHTML = paragraphs.map(p => '<p>' + p + '</p>').join('');
 
-            // Handle key_points if available (structured format)
-            if (data.key_points && Array.isArray(data.key_points) && data.key_points.length > 0) {
-                keyPointsList.innerHTML = data.key_points
-                    .map(point => `<li>${point}</li>`)
-                    .join('');
-                keyPointsEl.style.display = 'block';
-            } else {
-                keyPointsEl.style.display = 'none';
-            }
-
-            // Format and display timestamp
             if (data.generated_at) {
                 const genDate = new Date(data.generated_at);
                 const now = new Date();
                 const hoursDiff = (now - genDate) / (1000 * 60 * 60);
+                const timeStr = genDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
 
-                // Format time
-                const timeStr = genDate.toLocaleTimeString('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    timeZoneName: 'short'
-                });
-
-                // Check if briefing is outdated (older than 24 hours)
                 if (hoursDiff > 24) {
-                    timestampEl.innerHTML = `<span class="briefing-outdated-warning"><i class="bi bi-exclamation-triangle me-1"></i>Briefing may be outdated</span> · Generated: ${timeStr}`;
+                    timestampEl.innerHTML = '<span class="briefing-outdated-warning"><i class="bi bi-exclamation-triangle me-1"></i>Briefing may be outdated</span> · Generated: ' + timeStr;
                 } else {
-                    timestampEl.textContent = `Generated: ${timeStr}`;
+                    timestampEl.textContent = 'Generated: ' + timeStr;
                 }
 
-                // Set the date badge
-                const dateStr = genDate.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                });
+                const dateStr = genDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 dateEl.textContent = dateStr;
             } else {
-                // Set current date if no timestamp
                 const today = new Date();
-                const dateStr = today.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-                dateEl.textContent = dateStr;
+                dateEl.textContent = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 timestampEl.textContent = 'Generated: --';
             }
 
-            // Show content, hide loading
             loadingEl.style.display = 'none';
             contentEl.style.display = 'block';
         } else {
             throw new Error('No summary data received');
         }
-
     } catch (error) {
         console.error('Error loading AI summary:', error);
         loadingEl.style.display = 'none';
@@ -2185,415 +641,141 @@ async function loadAISummary() {
     }
 }
 
-// ========================================
-// What's Moving Today Functions (US-1.1.3)
-// ========================================
+{# ════════════════════════════════════════════════════════════════
+   Dashboard data — stripped to only load movers for the footer
+   ════════════════════════════════════════════════════════════════ #}
+async function loadDashboard() {
+    try {
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
 
-// Render top movers section with new card design
-function renderTopMovers(movers) {
-    const container = document.getElementById('top-movers-row');
-
-    if (!movers || movers.length === 0) {
-        container.innerHTML = '<p class="text-muted text-center w-100 py-4">Market movements loading...</p>';
-        return;
+        if (data.top_movers && data.top_movers.length > 0) {
+            renderMoversStrip(data.top_movers);
+        }
+    } catch (error) {
+        console.error('Error loading dashboard:', error);
     }
+}
 
-    // Sort by absolute z-score and take top 5
+function renderMoversStrip(movers) {
+    const container = document.getElementById('movers-strip-items');
+    if (!container) return;
+
     const topMovers = movers
         .sort((a, b) => Math.abs(b.z_score) - Math.abs(a.z_score))
-        .slice(0, 5);
+        .slice(0, 8);
 
-    container.innerHTML = topMovers.map((mover, index) => {
-        const rank = index + 1;
+    container.innerHTML = topMovers.map(mover => {
         const isPositive = mover.change_5d >= 0;
-        const changeClass = isPositive ? 'positive' : 'negative';
-        const directionIcon = isPositive ? '▲' : '▼';
+        const changeClass = isPositive ? 'movers-strip__change--positive' : 'movers-strip__change--negative';
+        const sign = isPositive ? '+' : '';
+        const changeDisplay = mover.unit === 'bp'
+            ? sign + Math.abs(mover.change_5d) + 'bp'
+            : sign + mover.change_5d.toFixed(1) + '%';
 
-        // Determine severity badge based on absolute z-score
-        const absZ = Math.abs(mover.z_score);
-        let badgeClass, badgeText;
-        if (absZ > 2.5) {
-            badgeClass = 'bg-danger';
-            badgeText = 'EXTREME';
-        } else if (absZ > 2.0) {
-            badgeClass = 'bg-warning text-dark';
-            badgeText = 'UNUSUAL';
-        } else if (absZ > 1.5) {
-            badgeClass = 'badge-elevated';
-            badgeText = 'ELEVATED';
-        } else if (absZ > 1.0) {
-            badgeClass = 'bg-primary';
-            badgeText = 'NOTABLE';
-        } else {
-            badgeClass = 'bg-secondary';
-            badgeText = 'NORMAL';
-        }
-
-        // Add extreme class for pulse animation
-        const extremeClass = absZ > 2.5 ? 'extreme' : '';
-
-        // Format the current value
-        const formattedValue = formatMoverValue(mover.current_value, mover.unit, mover.metric);
-
-        // Format the change value
-        let changeDisplay;
-        if (mover.unit === 'bp') {
-            changeDisplay = `${Math.abs(mover.change_5d)}bp`;
-        } else {
-            changeDisplay = `${Math.abs(mover.change_5d).toFixed(1)}%`;
-        }
-
-        // Get category color for optional indicator
-        const categoryClass = getCategoryClass(mover.category);
-
-        // Convert z-score to user-friendly rarity description
-        let rarityText;
-        if (absZ > 2.5) {
-            rarityText = 'Top 1% move';
-        } else if (absZ > 2.0) {
-            rarityText = 'Top 2% move';
-        } else if (absZ > 1.5) {
-            rarityText = 'Top 7% move';
-        } else if (absZ > 1.0) {
-            rarityText = 'Top 16% move';
-        } else {
-            rarityText = 'Normal range';
-        }
-
-        return `
-            <div class="col-12 col-sm-6 col-md-4 col-lg">
-                <div class="mover-card h-100 ${extremeClass} ${categoryClass}" onclick="navigateToMetric('${mover.metric}')">
-                    <div class="mover-rank">#${rank}</div>
-                    <div class="mover-name" title="${mover.name}">${mover.name}</div>
-                    <div class="mover-value">${formattedValue}</div>
-                    <div class="mover-change ${changeClass}">
-                        ${directionIcon} ${changeDisplay}
-                    </div>
-                    <div class="mover-zscore">${rarityText}</div>
-                    <span class="mover-badge badge ${badgeClass}">${badgeText}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
+        return '<a href="/explorer?metric=' + mover.metric + '" class="movers-strip__item">' +
+            '<span class="movers-strip__ticker">' + mover.name + '</span>' +
+            '<span class="movers-strip__change ' + changeClass + '">' + changeDisplay + '</span>' +
+            '</a>';
+    }).join('<span class="movers-strip__dot" aria-hidden="true">·</span>');
 }
 
-// Format value based on metric type
-function formatMoverValue(value, unit, metricId) {
-    if (value === null || value === undefined) return '--';
+{# ════════════════════════════════════════════════════════════════
+   Dimension card expand/collapse (US-323.1)
+   ════════════════════════════════════════════════════════════════ #}
+(function() {
+    'use strict';
 
-    if (unit === 'bp') {
-        return `${Math.round(value)}bp`;
-    }
+    var isMobile = window.matchMedia('(max-width: 767px)');
 
-    // Format based on metric type
-    if (metricId && (metricId.includes('gold') || metricId.includes('silver') ||
-        metricId.includes('spy') || metricId.includes('btc') || metricId.includes('bitcoin') ||
-        metricId.includes('eth') || metricId.includes('tlt'))) {
-        return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-    }
+    function initDimensionCards() {
+        var cards = document.querySelectorAll('.dimension-card');
 
-    if (metricId && (metricId.includes('yield') || metricId.includes('rate'))) {
-        return `${value.toFixed(2)}%`;
-    }
+        cards.forEach(function(card) {
+            var toggleBtn = card.querySelector('.dimension-card__header');
+            var expandPanel = card.querySelector('.dimension-card__expand');
+            var collapseBtn = card.querySelector('.dimension-card__collapse');
 
-    if (metricId && (metricId.includes('ratio') || metricId.includes('dominance'))) {
-        return value.toFixed(2);
-    }
+            if (!toggleBtn || !expandPanel) return;
 
-    // Default formatting
-    if (Math.abs(value) >= 1000) {
-        return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-    } else if (Math.abs(value) >= 100) {
-        return value.toFixed(1);
-    } else {
-        return value.toFixed(2);
-    }
-}
+            function expand() {
+                // On mobile, collapse all others first
+                if (isMobile.matches) {
+                    cards.forEach(function(otherCard) {
+                        if (otherCard !== card) {
+                            collapseCard(otherCard);
+                        }
+                    });
+                }
+                toggleBtn.setAttribute('aria-expanded', 'true');
+                expandPanel.removeAttribute('hidden');
+                expandPanel.style.maxHeight = expandPanel.scrollHeight + 'px';
+                card.classList.add('dimension-card--expanded');
+            }
 
-// Get category class for accent styling
-function getCategoryClass(category) {
-    if (!category) return '';
-    const categoryMap = {
-        'credit': 'mover-category-credit',
-        'equities': 'mover-category-equities',
-        'rates': 'mover-category-rates',
-        'havens': 'mover-category-havens',
-        'safe-havens': 'mover-category-havens',
-        'crypto': 'mover-category-crypto',
-        'dollar': 'mover-category-dollar',
-        'currency': 'mover-category-dollar'
-    };
-    return categoryMap[category.toLowerCase()] || '';
-}
+            function collapse() {
+                collapseCard(card);
+            }
 
-// Navigate to metric detail page
-function navigateToMetric(metricId) {
-    window.location.href = `/explorer?metric=${metricId}`;
-}
+            toggleBtn.addEventListener('click', function() {
+                var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+                if (isExpanded) {
+                    collapse();
+                } else {
+                    expand();
+                }
+            });
 
-// Top Movers Chart
-let moversChart = null;
-let topMoversData = []; // Store top mover metric IDs
-let moversTimeSeriesCache = null; // Cache full time series data
-let currentMoversTimeframe = 90; // Default to 3 months
-let moversChartInitialized = false; // Only load chart data once
-
-// Colors for the movers chart lines
-const moversColors = [
-    'rgb(255, 99, 132)',   // Red
-    'rgb(54, 162, 235)',   // Blue
-    'rgb(255, 206, 86)',   // Yellow
-    'rgb(75, 192, 192)',   // Teal
-    'rgb(153, 102, 255)'   // Purple
-];
-
-// Load top movers chart data
-async function loadMoversChart(topMovers) {
-    if (!topMovers || topMovers.length === 0) return;
-
-    // Only load chart data once (don't reload on refresh)
-    if (moversChartInitialized) return;
-    moversChartInitialized = true;
-
-    // Store movers data
-    topMoversData = topMovers;
-
-    // Build legend
-    const legendHtml = topMovers.map((mover, idx) => {
-        const color = moversColors[idx];
-        return `<span style="color: ${color}; margin-right: 15px;"><strong>●</strong> ${mover.name}</span>`;
-    }).join('');
-    document.getElementById('movers-chart-legend').innerHTML = legendHtml;
-
-    // Fetch time series data for each metric
-    try {
-        const metricIds = topMovers.map(m => m.metric);
-        const dataPromises = metricIds.map(metric =>
-            fetch(`/api/metrics/${metric}`).then(r => r.json())
-        );
-
-        const dataArray = await Promise.all(dataPromises);
-        moversTimeSeriesCache = dataArray.map((data, idx) => ({
-            metric: metricIds[idx],
-            name: topMovers[idx].name,
-            dates: data.dates,
-            values: data.values
-        }));
-
-        // Render chart with current timeframe
-        renderMoversChart(currentMoversTimeframe);
-
-    } catch (error) {
-        console.error('Error loading movers chart data:', error);
-    }
-}
-
-// Render the movers chart with specified timeframe
-function renderMoversChart(days) {
-    if (!moversTimeSeriesCache || moversTimeSeriesCache.length === 0) return;
-
-    // Filter data by timeframe
-    const now = new Date();
-    const useAllData = days === 'all' || isNaN(days);
-    const cutoffDate = useAllData ? new Date(0) : new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-
-    // Collect all dates (union) and build date maps for each metric
-    const allDates = new Set();
-
-    const filteredData = moversTimeSeriesCache.map(metric => {
-        // Create date-value map
-        const dateMap = new Map();
-        metric.dates.forEach((date, idx) => {
-            const d = new Date(date);
-            if (d >= cutoffDate) {
-                dateMap.set(date, metric.values[idx]);
-                allDates.add(date);
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', collapse);
             }
         });
-
-        return {
-            ...metric,
-            dateMap
-        };
-    });
-
-    // Convert to sorted array (using union of all dates)
-    const sortedDates = Array.from(allDates).sort();
-
-    if (sortedDates.length === 0) {
-        console.warn('No dates found for movers chart');
-        return;
     }
 
-    // Normalize each metric to 0-100 scale (min-max normalization)
-    // This handles negative values correctly and shows relative trends
-    const datasets = filteredData.map((metric, idx) => {
-        // Get values aligned to common dates
-        const alignedValues = sortedDates.map(date => metric.dateMap.get(date));
-
-        // Get valid values for min/max calculation
-        const validValues = alignedValues.filter(v => v !== null && v !== undefined && !isNaN(v));
-        if (validValues.length === 0) return null;
-
-        const minVal = Math.min(...validValues);
-        const maxVal = Math.max(...validValues);
-        const range = maxVal - minVal;
-
-        // Normalize to 0-100 scale (or flat line at 50 if no variation)
-        const normalizedValues = alignedValues.map(v => {
-            if (v === null || v === undefined || isNaN(v)) return null;
-            if (range === 0) return 50; // No variation
-            return ((v - minVal) / range) * 100;
-        });
-
-        return {
-            label: metric.name,
-            data: normalizedValues,
-            borderColor: moversColors[idx],
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            tension: 0.1,
-            fill: false,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            spanGaps: true,  // Connect lines across null/missing values
-            // Store original values for tooltip
-            originalValues: alignedValues
-        };
-    }).filter(d => d !== null);
-
-    // Get recession annotations
-    const startDate = sortedDates[0];
-    const endDate = sortedDates[sortedDates.length - 1];
-    const recessionAnnotations = getRecessionAnnotations(startDate, endDate);
-
-    // Destroy existing chart
-    if (moversChart) {
-        moversChart.destroy();
+    function collapseCard(card) {
+        var toggleBtn = card.querySelector('.dimension-card__header');
+        var expandPanel = card.querySelector('.dimension-card__expand');
+        if (!toggleBtn || !expandPanel) return;
+        toggleBtn.setAttribute('aria-expanded', 'false');
+        expandPanel.style.maxHeight = '0';
+        setTimeout(function() {
+            expandPanel.setAttribute('hidden', '');
+            expandPanel.style.maxHeight = '';
+        }, 300);
+        card.classList.remove('dimension-card--expanded');
     }
 
-    // Create the chart
-    const ctx = document.getElementById('movers-chart').getContext('2d');
-    moversChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: sortedDates,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            },
-            plugins: {
-                legend: {
-                    display: false // We have custom legend above
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            // Show the original (actual) value
-                            const originalVal = context.dataset.originalValues?.[context.dataIndex];
-                            if (originalVal === null || originalVal === undefined) return '';
-                            // Format based on magnitude
-                            const formatted = Math.abs(originalVal) >= 100
-                                ? originalVal.toFixed(0)
-                                : originalVal.toFixed(2);
-                            return `${context.dataset.label}: ${formatted}`;
-                        }
-                    }
-                },
-                annotation: {
-                    annotations: recessionAnnotations
-                }
-            },
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: useAllData ? 'year' : days <= 30 ? 'day' : days <= 180 ? 'week' : days <= 1825 ? 'month' : 'year',
-                        displayFormats: {
-                            day: 'MMM d',
-                            week: 'MMM d',
-                            month: 'MMM yyyy',
-                            year: 'yyyy'
-                        }
-                    },
-                    grid: {
-                        display: false
-                    }
-                },
-                y: {
-                    title: {
-                        display: false // Hide y-axis title since scale is normalized
-                    },
-                    ticks: {
-                        display: false // Hide tick values since they're just 0-100
-                    },
-                    grid: {
-                        color: 'rgba(128, 128, 128, 0.1)'
-                    }
-                }
-            }
-        }
-    });
-}
+    document.addEventListener('DOMContentLoaded', initDimensionCards);
+}());
 
-// Set up timeframe selector event handlers
-document.querySelectorAll('#movers-timeframe-selector button').forEach(button => {
-    button.addEventListener('click', function() {
-        // Update active button
-        document.querySelectorAll('#movers-timeframe-selector button').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        this.classList.add('active');
-
-        // Get timeframe and render chart
-        const timeframe = this.getAttribute('data-timeframe');
-        currentMoversTimeframe = timeframe === 'all' ? 'all' : parseInt(timeframe);
-        renderMoversChart(currentMoversTimeframe);
-    });
-});
-
-// Initialize on page load
+{# ════════════════════════════════════════════════════════════════
+   Initialize on page load
+   ════════════════════════════════════════════════════════════════ #}
 document.addEventListener('DOMContentLoaded', function() {
-    loadDashboard();
-    loadPredictionMarkets();
     loadAISummary();
-    loadMarketSynthesis();
+    loadDashboard();
 
     // Refresh every 60 seconds
     setInterval(loadDashboard, 60000);
-    // Refresh prediction markets every 15 minutes (they update less frequently)
-    setInterval(loadPredictionMarkets, 900000);
-    // Refresh AI summary every 5 minutes (in case it was regenerated)
+    // Refresh AI summary every 5 minutes
     setInterval(loadAISummary, 300000);
-    // Refresh market synthesis every 5 minutes (in case it was regenerated)
-    setInterval(loadMarketSynthesis, 300000);
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script>
 /* Section Quick-Nav — US-171.1 (desktop strip) + US-171.2 (mobile FAB + sheet)
    Shared scroll, active-section tracking, and mobile bottom-sheet logic. */
 (function () {
     'use strict';
 
-    /* ------------------------------------------------------------------ */
-    /* Shared: size measurement                                             */
-    /* ------------------------------------------------------------------ */
-    const navbarEl = document.querySelector('.navbar');
-    const STRIP_HEIGHT = 48; // desktop strip height (px)
+    var navbarEl = document.querySelector('.navbar');
+    var STRIP_HEIGHT = 48;
 
     function measureNavbarHeight() {
         return navbarEl ? Math.round(navbarEl.getBoundingClientRect().height) : 64;
     }
-    let navbarHeight = measureNavbarHeight();
-    /* Desktop: offset = navbar + strip. Mobile: offset = navbar only (strip is hidden). */
-    let desktopScrollOffset = navbarHeight + STRIP_HEIGHT;
-    let mobileScrollOffset  = navbarHeight;
+    var navbarHeight = measureNavbarHeight();
+    var desktopScrollOffset = navbarHeight + STRIP_HEIGHT;
+    var mobileScrollOffset  = navbarHeight;
 
     function syncSizes() {
         navbarHeight        = measureNavbarHeight();
@@ -2604,69 +786,53 @@ document.addEventListener('DOMContentLoaded', function() {
     syncSizes();
     window.addEventListener('resize', syncSizes);
 
-    /* ------------------------------------------------------------------ */
-    /* Shared: helpers                                                      */
-    /* ------------------------------------------------------------------ */
     function prefersReducedMotion() {
         return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
     function scrollToSection(selector, isMobile) {
-        const target = document.querySelector(selector);
+        var target = document.querySelector(selector);
         if (!target) return;
-        const offset = isMobile ? mobileScrollOffset : desktopScrollOffset;
-        const top = target.getBoundingClientRect().top + window.scrollY - offset;
+        var offset = isMobile ? mobileScrollOffset : desktopScrollOffset;
+        var top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top: top, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Shared: active-section state — updates desktop pills + mobile items  */
-    /* ------------------------------------------------------------------ */
-    const pills      = document.querySelectorAll('.section-quick-nav__pill');
-    const sheetItems = document.querySelectorAll('.section-quick-nav-sheet__item');
+    var pills      = document.querySelectorAll('.section-quick-nav__pill');
+    var sheetItems = document.querySelectorAll('.section-quick-nav-sheet__item');
 
     function setActiveSection(targetSelector) {
-        /* Desktop pills */
         pills.forEach(function (pill) {
-            const active = pill.dataset.target === targetSelector;
+            var active = pill.dataset.target === targetSelector;
             pill.classList.toggle('is-active', active);
             pill.setAttribute('aria-current', active ? 'true' : 'false');
         });
-        /* Mobile sheet items */
         sheetItems.forEach(function (item) {
             item.classList.toggle('is-active', item.dataset.target === targetSelector);
         });
     }
 
-    /* ------------------------------------------------------------------ */
-    /* Desktop strip (US-171.1)                                             */
-    /* ------------------------------------------------------------------ */
-    let isProgrammaticScroll = false;
-    let programmaticScrollTimer = null;
+    var isProgrammaticScroll = false;
+    var programmaticScrollTimer = null;
 
     pills.forEach(function (pill) {
         pill.addEventListener('click', function () {
-            const target = pill.dataset.target;
+            var target = pill.dataset.target;
             setActiveSection(target);
             isProgrammaticScroll = true;
             clearTimeout(programmaticScrollTimer);
             scrollToSection(target, false);
-            programmaticScrollTimer = setTimeout(function () {
-                isProgrammaticScroll = false;
-            }, 800);
+            programmaticScrollTimer = setTimeout(function () { isProgrammaticScroll = false; }, 800);
         });
     });
 
-    /* ------------------------------------------------------------------ */
-    /* Mobile FAB + bottom sheet (US-171.2)                                 */
-    /* ------------------------------------------------------------------ */
-    const fab      = document.getElementById('section-nav-fab');
-    const backdrop = document.getElementById('section-nav-backdrop');
-    const sheet    = document.getElementById('section-quick-nav-sheet');
-    const closeBtn = document.getElementById('section-nav-sheet-close');
+    /* Mobile FAB + bottom sheet */
+    var fab      = document.getElementById('section-nav-fab');
+    var backdrop = document.getElementById('section-nav-backdrop');
+    var sheet    = document.getElementById('section-quick-nav-sheet');
+    var closeBtn = document.getElementById('section-nav-sheet-close');
 
     if (fab && sheet && backdrop && closeBtn) {
-        /* Collect all focusable elements inside the sheet (close button + items) */
         function getFocusable() {
             return Array.prototype.slice.call(
                 sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
@@ -2678,16 +844,10 @@ document.addEventListener('DOMContentLoaded', function() {
             sheet.classList.add('is-open');
             fab.setAttribute('aria-expanded', 'true');
             document.body.style.overflow = 'hidden';
-            /* Move focus to first sheet item (or close button as fallback) */
-            var focusable = getFocusable();
-            /* First item after close button; fall back to close button */
             var firstItem = sheet.querySelector('.section-quick-nav-sheet__item');
             (firstItem || closeBtn).focus();
-            /* Scroll active item into view within the sheet list */
             var activeItem = sheet.querySelector('.section-quick-nav-sheet__item.is-active');
-            if (activeItem) {
-                activeItem.scrollIntoView({ block: 'nearest' });
-            }
+            if (activeItem) activeItem.scrollIntoView({ block: 'nearest' });
         }
 
         function closeSheet() {
@@ -2702,27 +862,19 @@ document.addEventListener('DOMContentLoaded', function() {
         closeBtn.addEventListener('click', closeSheet);
         backdrop.addEventListener('click', closeSheet);
 
-        /* Section item click: close sheet then scroll */
         sheetItems.forEach(function (item) {
             item.addEventListener('click', function () {
                 var target = item.dataset.target;
                 setActiveSection(target);
                 closeSheet();
-                /* Small delay lets scroll-lock lift before scrolling */
-                setTimeout(function () {
-                    scrollToSection(target, true);
-                }, 16);
+                setTimeout(function () { scrollToSection(target, true); }, 16);
             });
         });
 
-        /* Escape key closes the sheet */
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && sheet.classList.contains('is-open')) {
-                closeSheet();
-            }
+            if (e.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet();
         });
 
-        /* Focus trap — Tab / Shift+Tab cycles within the sheet while open */
         sheet.addEventListener('keydown', function (e) {
             if (e.key !== 'Tab') return;
             var focusable = getFocusable();
@@ -2730,72 +882,38 @@ document.addEventListener('DOMContentLoaded', function() {
             var first = focusable[0];
             var last  = focusable[focusable.length - 1];
             if (e.shiftKey) {
-                if (document.activeElement === first) {
-                    e.preventDefault();
-                    last.focus();
-                }
+                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
             } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first.focus();
-                }
+                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
             }
         });
     }
 
-    /* ------------------------------------------------------------------ */
-    /* IntersectionObserver — active section tracking (shared)              */
-    /* ------------------------------------------------------------------ */
+    /* IntersectionObserver for active section tracking */
     if ('IntersectionObserver' in window) {
-        var sectionIds = [
-            '#macro-regime-section',
-            '#recession-panel-section',
-            '#regime-implications',
-            '#sector-tone-section',
-            '#market-conditions',
-            '#briefing-section',
-            '#movers-section',
-            '#signals-section',
-            '#prediction-section'
-        ];
-
-        var sections = sectionIds
-            .map(function (id) { return document.querySelector(id); })
-            .filter(Boolean);
-
+        var sectionIds = ['#briefing-section', '#conditions-section', '#implications-section', '#movers-strip'];
+        var sections = sectionIds.map(function (id) { return document.querySelector(id); }).filter(Boolean);
         var intersecting = new Set();
 
         var observer = new IntersectionObserver(function (entries) {
             entries.forEach(function (entry) {
-                if (entry.isIntersecting) {
-                    intersecting.add(entry.target);
-                } else {
-                    intersecting.delete(entry.target);
-                }
+                if (entry.isIntersecting) intersecting.add(entry.target);
+                else intersecting.delete(entry.target);
             });
-
-            if (isProgrammaticScroll) return;
-            if (intersecting.size === 0) return;
+            if (isProgrammaticScroll || intersecting.size === 0) return;
 
             var topmost = null;
             intersecting.forEach(function (section) {
-                if (!topmost || section.offsetTop < topmost.offsetTop) {
-                    topmost = section;
-                }
+                if (!topmost || section.offsetTop < topmost.offsetTop) topmost = section;
             });
-
-            if (topmost) {
-                setActiveSection('#' + topmost.id);
-            }
+            if (topmost) setActiveSection('#' + topmost.id);
         }, {
-            /* rootMargin accounts for navbar + strip (desktop) — conservative enough for mobile too */
             rootMargin: '-' + desktopScrollOffset + 'px 0px -70% 0px',
             threshold: 0
         });
 
         sections.forEach(function (section) { observer.observe(section); });
     }
-    /* Fallback: if IntersectionObserver not supported, navigation still works as scroll links */
 }());
 </script>
 {% endblock %}

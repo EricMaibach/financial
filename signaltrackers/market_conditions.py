@@ -1533,30 +1533,56 @@ def update_market_conditions_cache() -> Optional[dict]:
     logger.info('Computing market conditions for cache update...')
 
     try:
-        result = compute_market_conditions()
-        if result is None:
+        # Compute individual dimensions for detailed cache data (US-323.1)
+        liquidity = compute_liquidity()
+        quadrant_result = compute_quadrant()
+        risk = compute_risk()
+        policy = compute_policy()
+
+        if liquidity is None or quadrant_result is None:
             logger.warning('Market conditions computation returned None; skipping cache update')
             return None
 
+        risk_state = risk.state if risk else 'Normal'
+        policy_stance = policy.stance if policy else 'Neutral'
+        policy_direction = policy.direction if policy else 'Paused'
+
+        expectations = _build_asset_expectations(
+            quadrant_result.quadrant, liquidity.state, risk_state
+        )
+
+        from datetime import date as _date
+        as_of = str(_date.today())
+
         cache_data = {
-            'quadrant': result.quadrant,
+            'quadrant': quadrant_result.quadrant,
             'dimensions': {
                 'liquidity': {
-                    'state': result.liquidity_state,
+                    'state': liquidity.state,
+                    'score': round(liquidity.score, 4) if liquidity.score is not None else None,
                 },
                 'quadrant': {
-                    'state': result.quadrant,
+                    'state': quadrant_result.quadrant,
+                    'growth_composite': round(quadrant_result.growth_composite, 4),
+                    'inflation_composite': round(quadrant_result.inflation_composite, 4),
                 },
                 'risk': {
-                    'state': result.risk_state,
+                    'state': risk_state,
+                    'score': risk.score if risk else None,
+                    'vix_level': round(risk.vix_level, 2) if risk and risk.vix_level else None,
+                    'vix_ratio': round(risk.vix_ratio, 4) if risk and risk.vix_ratio else None,
+                    'stock_bond_corr': round(risk.stock_bond_corr, 4) if risk and risk.stock_bond_corr else None,
                 },
                 'policy': {
-                    'stance': result.policy_stance,
-                    'direction': result.policy_direction,
+                    'stance': policy_stance,
+                    'direction': policy_direction,
+                    'taylor_gap': round(policy.taylor_gap, 4) if policy else None,
+                    'actual_rate': round(policy.actual_rate, 4) if policy else None,
+                    'taylor_prescribed': round(policy.taylor_prescribed, 4) if policy else None,
                 },
             },
-            'asset_expectations': result.asset_expectations,
-            'as_of': result.as_of,
+            'asset_expectations': expectations,
+            'as_of': as_of,
             'updated_at': datetime.now(timezone.utc).isoformat(),
         }
 
@@ -1565,7 +1591,7 @@ def update_market_conditions_cache() -> Optional[dict]:
             json.dump(cache_data, f, indent=2)
 
         logger.info('Market conditions cache updated: quadrant=%s',
-                     result.quadrant)
+                     quadrant_result.quadrant)
 
         # Append to daily history (separate from snapshot cache)
         _append_conditions_history(cache_data)
@@ -1632,7 +1658,7 @@ def _append_conditions_history(cache_data: dict) -> None:
     history[as_of] = {
         'quadrant': cache_data['quadrant'],
         'dimensions': cache_data['dimensions'],
-        'asset_expectations': cache_data['asset_expectations'],
+        'asset_expectations': cache_data.get('asset_expectations', []),
     }
     _save_conditions_history(history)
     logger.info('Market conditions history updated for %s (%d total entries)',

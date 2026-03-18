@@ -1,0 +1,756 @@
+/* ═══════════════════════════════════════════════════════════════
+   conditions-summary.css — US-323.1 Homepage Conditions Redesign
+   §0 AI Briefing, §1 Market Conditions, §2 Implications, Footer
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Design Tokens ─────────────────────────────────────────── */
+:root {
+    /* Quadrant colors */
+    --quadrant-goldilocks: #0D9488;
+    --quadrant-reflation: #1E40AF;
+    --quadrant-deflation: #CA8A04;
+    --quadrant-stagflation: #DC2626;
+
+    /* Quadrant backgrounds (15% opacity) */
+    --quadrant-goldilocks-bg: #CCFBF1;
+    --quadrant-reflation-bg: #DBEAFE;
+    --quadrant-deflation-bg: #FEF3C7;
+    --quadrant-stagflation-bg: #FEE2E2;
+
+    /* Dimension spectrum endpoints */
+    --liquidity-favorable: #2563EB;
+    --liquidity-unfavorable: #D97706;
+    --risk-favorable: #3B82F6;
+    --risk-unfavorable: #DC2626;
+    --policy-favorable: #16A34A;
+    --policy-unfavorable: #D97706;
+
+    /* Implication signals */
+    --signal-supportive: #16A34A;
+    --signal-neutral: #64748B;
+    --signal-headwind: #D97706;
+    --signal-strong-headwind: #DC2626;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   §0: AI BRIEFING
+   ═══════════════════════════════════════════════════════════════ */
+
+.conditions-briefing__date {
+    font-size: 0.875rem;
+    color: #697386;
+    margin-left: auto;
+}
+
+.conditions-briefing__card {
+    background: #fff;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 1.25rem;
+    max-width: 65ch;
+}
+
+.conditions-briefing__narrative p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #334155;
+    margin-bottom: 0.75rem;
+}
+.conditions-briefing__narrative p:last-child {
+    margin-bottom: 0;
+}
+
+.conditions-briefing__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+    .conditions-briefing__card {
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   §1: MARKET CONDITIONS — Quadrant Hero Card
+   ═══════════════════════════════════════════════════════════════ */
+
+.quadrant-hero {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border-top: 4px solid var(--quadrant-goldilocks);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+.quadrant-hero--goldilocks { border-top-color: var(--quadrant-goldilocks); }
+.quadrant-hero--reflation  { border-top-color: var(--quadrant-reflation); }
+.quadrant-hero--stagflation { border-top-color: var(--quadrant-stagflation); }
+.quadrant-hero--deflation  { border-top-color: var(--quadrant-deflation); }
+
+.quadrant-hero__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.quadrant-hero__name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1A202C;
+    letter-spacing: 0.025em;
+}
+
+.quadrant-hero__dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.quadrant-dot--goldilocks  { background: var(--quadrant-goldilocks); }
+.quadrant-dot--reflation   { background: var(--quadrant-reflation); }
+.quadrant-dot--stagflation { background: var(--quadrant-stagflation); }
+.quadrant-dot--deflation   { background: var(--quadrant-deflation); }
+
+.quadrant-hero__desc {
+    font-size: 1rem;
+    color: #475569;
+    margin: 0.25rem 0 0.75rem;
+    line-height: 1.5;
+}
+
+.quadrant-hero__signals {
+    font-size: 0.875rem;
+    color: #475569;
+}
+.quadrant-hero__signal-row {
+    margin-bottom: 0.25rem;
+}
+.quadrant-hero__signal-label {
+    font-weight: 600;
+    color: #334155;
+}
+
+/* Quadrant 2×2 Visualization */
+.quadrant-hero__viz {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.quadrant-viz {
+    width: 100%;
+    height: auto;
+}
+
+.quadrant-region {
+    opacity: 0.12;
+    transition: opacity 0.3s;
+}
+.quadrant-region--active {
+    opacity: 0.25;
+}
+.quadrant-region--goldilocks  { fill: var(--quadrant-goldilocks); }
+.quadrant-region--reflation   { fill: var(--quadrant-reflation); }
+.quadrant-region--stagflation { fill: var(--quadrant-stagflation); }
+.quadrant-region--deflation   { fill: var(--quadrant-deflation); }
+
+.quadrant-axis {
+    stroke: #CBD5E1;
+    stroke-width: 1;
+}
+
+.quadrant-label {
+    font-size: 10px;
+    fill: #94A3B8;
+    text-anchor: middle;
+}
+.quadrant-label--right { text-anchor: end; }
+.quadrant-label--left  { text-anchor: start; }
+
+.quadrant-name-label {
+    font-size: 11px;
+    fill: #94A3B8;
+    text-anchor: middle;
+    font-weight: 500;
+}
+
+.quadrant-trail-line {
+    stroke: #94A3B8;
+    stroke-width: 1.5;
+    stroke-dasharray: 4 2;
+}
+
+.quadrant-trail-dot {
+    fill: #94A3B8;
+}
+
+.quadrant-current-dot {
+    stroke: #fff;
+    stroke-width: 2;
+}
+.quadrant-current-dot.quadrant-dot--goldilocks  { fill: var(--quadrant-goldilocks); }
+.quadrant-current-dot.quadrant-dot--reflation   { fill: var(--quadrant-reflation); }
+.quadrant-current-dot.quadrant-dot--stagflation { fill: var(--quadrant-stagflation); }
+.quadrant-current-dot.quadrant-dot--deflation   { fill: var(--quadrant-deflation); }
+
+/* Desktop: 2-column hero layout */
+@media (min-width: 1024px) {
+    .quadrant-hero {
+        padding: 1.5rem;
+    }
+    .quadrant-hero__content {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .quadrant-hero__text {
+        flex: 1;
+    }
+    .quadrant-hero__viz {
+        width: 350px;
+        flex-shrink: 0;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   §1: Dimension Card Grid
+   ═══════════════════════════════════════════════════════════════ */
+
+.dimension-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+    .dimension-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+}
+
+/* Individual dimension card */
+.dimension-card {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    min-height: 80px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.dimension-card:hover {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.dimension-card__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.75rem;
+    width: 100%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+    min-height: 80px;
+}
+
+@media (min-width: 1024px) {
+    .dimension-card__header {
+        padding: 1rem;
+    }
+}
+
+.dimension-card__title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dimension-card__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.dimension-card__state {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.dimension-card__arrow {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.dimension-card__arrow--up   { color: #16A34A; }
+.dimension-card__arrow--down { color: #DC2626; }
+.dimension-card__arrow--flat { color: #64748B; }
+
+.dimension-card__chevron {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.75rem;
+    color: #94A3B8;
+    font-size: 0.75rem;
+    transition: transform 0.3s ease-out;
+}
+
+.dimension-card--expanded .dimension-card__chevron {
+    transform: rotate(180deg);
+}
+
+/* Crypto card specific */
+.dimension-card__summary--crypto {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.dimension-card__crypto-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+.dimension-card__crypto-label--positive {
+    color: var(--quadrant-goldilocks);
+    background: #CCFBF1;
+}
+.dimension-card__crypto-label--negative {
+    color: #DC2626;
+    background: #FEE2E2;
+}
+.dimension-card__crypto-label--neutral {
+    color: #64748B;
+    background: #F1F5F9;
+}
+
+/* ── Expand Panel ────────────────────────────────────────────── */
+
+.dimension-card__expand {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding: 0 0.75rem;
+}
+
+.dimension-card__expand[hidden] {
+    display: block; /* Override hidden so max-height transition works */
+    max-height: 0;
+    visibility: hidden;
+}
+
+.dimension-card--expanded .dimension-card__expand {
+    visibility: visible;
+    padding-bottom: 0.75rem;
+}
+
+@media (min-width: 1024px) {
+    .dimension-card__expand {
+        padding: 0 1rem;
+    }
+    .dimension-card--expanded .dimension-card__expand {
+        padding-bottom: 1rem;
+    }
+}
+
+.dimension-card__divider {
+    border: none;
+    border-top: 1px solid #E2E8F0;
+    margin: 0 0 0.75rem;
+}
+
+/* Metric rows */
+.dimension-card__metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.dimension-metric-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    min-height: 44px;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+a.dimension-metric-row:hover {
+    background: #F8FAFC;
+    text-decoration: none;
+    color: inherit;
+}
+.dimension-metric-row__label {
+    font-size: 0.8125rem;
+    color: #64748B;
+    flex: 1;
+}
+.dimension-metric-row__value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1E293B;
+    font-family: var(--font-mono, monospace);
+}
+.dimension-metric-row__arrow {
+    font-size: 0.75rem;
+    color: #94A3B8;
+}
+
+/* Sparkline (Liquidity expanded card) */
+.dimension-card__sparkline {
+    margin: 0.75rem 0;
+}
+.dimension-card__sparkline-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748B;
+    margin-bottom: 0.375rem;
+}
+.dimension-card__sparkline-svg {
+    display: block;
+    width: 100%;
+    height: 32px;
+}
+
+/* Interpretive text */
+.dimension-card__interp {
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    color: #475569;
+    margin: 0.75rem 0;
+}
+
+.dimension-card__caveat {
+    font-size: 0.75rem;
+    color: #94A3B8;
+    margin: 0 0 0.5rem;
+    font-style: italic;
+}
+
+.dimension-card__links {
+    font-size: 0.8125rem;
+    color: #64748B;
+    margin-top: 0.5rem;
+}
+.dimension-card__links a {
+    color: var(--quadrant-goldilocks);
+    text-decoration: none;
+    font-weight: 500;
+}
+.dimension-card__links a:hover {
+    text-decoration: underline;
+}
+
+.dimension-card__collapse {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding: 0.5rem;
+    border: none;
+    background: transparent;
+    color: #94A3B8;
+    cursor: pointer;
+    min-height: 44px;
+    align-items: center;
+}
+
+/* Crypto explainer block */
+.dimension-card__explainer {
+    margin-bottom: 0.75rem;
+}
+.dimension-card__explainer-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748B;
+    margin-bottom: 0.375rem;
+}
+.dimension-card__explainer p {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #475569;
+    margin: 0;
+}
+
+/* ── Spectrum Bar (shared by Liquidity, Risk, Policy) ──────── */
+
+.spectrum-bar {
+    width: 100%;
+}
+
+.spectrum-bar__track {
+    height: 8px;
+    border-radius: 4px;
+    background: #E2E8F0;
+    position: relative;
+    overflow: visible;
+}
+
+.spectrum-bar--liquidity .spectrum-bar__track {
+    background: linear-gradient(to right, var(--liquidity-favorable), var(--liquidity-unfavorable));
+    opacity: 0.3;
+}
+.spectrum-bar--risk .spectrum-bar__track {
+    background: linear-gradient(to right, var(--risk-favorable), var(--risk-unfavorable));
+    opacity: 0.3;
+}
+.spectrum-bar--policy .spectrum-bar__track {
+    background: linear-gradient(to right, var(--policy-favorable), var(--policy-unfavorable));
+    opacity: 0.3;
+}
+
+.spectrum-bar__marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #1E293B;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* ── Risk Score Segmented Bar ──────────────────────────────── */
+
+.risk-score-bar {
+    margin: 0.75rem 0;
+}
+
+.risk-score-bar__label {
+    font-size: 0.75rem;
+    color: #64748B;
+    margin-bottom: 0.375rem;
+}
+
+.risk-score-bar__segments {
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 28px;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.risk-score-bar__segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94A3B8;
+    background: #F1F5F9;
+    border-right: 1px solid #E2E8F0;
+    font-weight: 500;
+}
+.risk-score-bar__segment:last-child { border-right: none; }
+
+.risk-score-bar__segment--active {
+    font-weight: 700;
+}
+.risk-score-bar__segment--calm.risk-score-bar__segment--active {
+    background: #DBEAFE;
+    color: var(--risk-favorable);
+}
+.risk-score-bar__segment--normal.risk-score-bar__segment--active {
+    background: #F0FDF4;
+    color: #16A34A;
+}
+.risk-score-bar__segment--elevated.risk-score-bar__segment--active {
+    background: #FEF3C7;
+    color: #D97706;
+}
+.risk-score-bar__segment--stressed.risk-score-bar__segment--active {
+    background: #FEE2E2;
+    color: var(--risk-unfavorable);
+}
+
+/* ── Policy Stance Segmented Bar ───────────────────────────── */
+
+.policy-stance-bar {
+    margin: 0.75rem 0;
+}
+
+.policy-stance-bar__segments {
+    display: flex;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 28px;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.policy-stance-bar__segment {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94A3B8;
+    background: #F1F5F9;
+    border-right: 1px solid #E2E8F0;
+    font-weight: 500;
+}
+.policy-stance-bar__segment:last-child { border-right: none; }
+
+.policy-stance-bar__segment--active {
+    font-weight: 700;
+}
+.policy-stance-bar__segment--accommodative.policy-stance-bar__segment--active {
+    background: #F0FDF4;
+    color: var(--policy-favorable);
+}
+.policy-stance-bar__segment--neutral.policy-stance-bar__segment--active {
+    background: #F1F5F9;
+    color: #475569;
+}
+.policy-stance-bar__segment--restrictive.policy-stance-bar__segment--active {
+    background: #FEF3C7;
+    color: var(--policy-unfavorable);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   §2: IMPLICATIONS — placeholder
+   ═══════════════════════════════════════════════════════════════ */
+
+.implications-placeholder {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: #94A3B8;
+    background: #F8FAFC;
+    border-radius: 8px;
+    border: 1px dashed #E2E8F0;
+}
+.implications-placeholder i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+.implications-placeholder p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONDITIONS UNAVAILABLE fallback
+   ═══════════════════════════════════════════════════════════════ */
+
+.conditions-unavailable {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94A3B8;
+    background: #F8FAFC;
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+}
+.conditions-unavailable i {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+.conditions-unavailable p {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER: TODAY'S MOVERS strip
+   ═══════════════════════════════════════════════════════════════ */
+
+.movers-strip {
+    background: #F8FAFC;
+    border-top: 1px solid #E2E8F0;
+    padding: 1rem 0;
+    margin-top: 1rem;
+}
+
+.movers-strip__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.movers-strip__title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748B;
+}
+
+.movers-strip__see-all {
+    font-size: 0.8125rem;
+    color: var(--quadrant-goldilocks);
+    text-decoration: none;
+    font-weight: 500;
+}
+.movers-strip__see-all:hover {
+    text-decoration: underline;
+}
+
+.movers-strip__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.movers-strip__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.25rem 0;
+    min-height: 44px;
+}
+.movers-strip__item:hover {
+    text-decoration: none;
+}
+
+.movers-strip__ticker {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.movers-strip__change {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.movers-strip__change--positive {
+    color: #16A34A;
+}
+.movers-strip__change--negative {
+    color: #DC2626;
+}
+
+.movers-strip__dot {
+    color: #CBD5E1;
+    font-size: 1rem;
+}
+
+@media (min-width: 1024px) {
+    .movers-strip__items {
+        flex-wrap: nowrap;
+    }
+}

@@ -82,13 +82,13 @@ The AI briefing moves to the top of the page. It is the daily draw — the reaso
 
 ### Desktop (1280px)
 
-Same content, constrained to ~65ch max-width for comfortable reading. Centered within the container.
+Same content, full-width card matching the container (same width as other homepage sections). No max-width constraint on the card or text — the briefing is only 2-3 paragraphs, so line length is not a readability concern at dashboard widths.
 
 ### Design Details
 
 - **Section header:** "DAILY BRIEFING" with date right-aligned. Same `section-header` pattern as existing sections. Icon: `bi-newspaper` (or existing AI sparkle icon from Feature 9.3).
 - **Body:** 2-3 paragraphs, `text-base` (16px), `neutral-700`, `line-height: 1.6`
-- **Container:** White card with subtle border (`neutral-200`), padding `space-5`
+- **Container:** White card with subtle border (`neutral-200`), padding `space-5`, **full-width** (no max-width constraint)
 - **AI provenance:** Small "AI-generated" badge below the briefing text, same pattern as current briefing section
 - **No progressive disclosure needed** — the briefing is short enough to display in full
 - **Section ID:** `briefing-section`
@@ -216,7 +216,7 @@ The largest element in §1. Contains:
 | Stagflation | Growth slowing, inflation rising — toughest environment for portfolios |
 | Deflation Risk | Growth slowing, inflation falling — flight to safety territory |
 
-**Desktop layout:** 2-column card — left column has text (name, description, favored/watch), right column has quadrant visualization. Approximately 50/50 split.
+**Desktop layout:** 2-column card — left column has text (name, description, favored/watch), right column has quadrant visualization. Approximately 40/60 split (text/viz) so the quadrant visualization is the hero element. Text column vertically centers against the visualization. Card is full container width.
 
 **Mobile layout:** Single column — text on top, quadrant visualization below, favored/watch at bottom.
 
@@ -252,17 +252,17 @@ Four cards in a 2×2 grid (mobile) or 4-across row (desktop):
 | Risk | `#3B82F6` (blue-500) Calm | `#DC2626` (red-600) Stressed |
 | Policy | `#16A34A` (green-600) Easing | `#D97706` (amber-600) Tightening |
 
-**Crypto card** (different from the three spectrum-bar cards):
+**Crypto card** (uses Liquidity spectrum bar for visual consistency):
 - ✦ sparkle icon + "CRYPTO" label
-- "Liquidity is expanding ↑" (or contracting ↓, neutral)
-- "Favorable" / "Neutral" / "Unfavorable" label
-- No spectrum bar — instead, a simple state label colored by the Liquidity dimension colors
+- Liquidity spectrum bar (same component as the Liquidity card, labeled "Liquidity" within the card)
+- Below the bar: "Favorable" / "Neutral" / "Unfavorable" label + direction arrow
+- This ensures all four cards have a spectrum bar at the top, maintaining visual rhythm across the grid
 
 **Card styling (all four):**
 - White background, `border-radius: 8px`, 1px border `neutral-200`
 - Padding: `space-3` mobile, `space-4` desktop
 - Min-height: 80px collapsed
-- Chevron (⌄) bottom-right indicates expandability
+- Chevron (⌄) bottom-center indicates expandability
 - Chevron rotates 180° when expanded
 
 **Grid layout:**
@@ -466,8 +466,8 @@ Each card expands in place when the chevron is tapped. The expansion pushes cont
 
 ### Expand Behavior
 
-- **Mobile:** Expanding one card pushes everything below it down. Only one card expanded at a time (expanding a second collapses the first) to prevent excessive scroll length.
-- **Desktop:** Expanding one card pushes §2 down. Multiple cards can be expanded simultaneously on desktop (screen real estate allows it).
+- **Mobile:** Only one card expanded at a time (expanding a second collapses the first) to prevent excessive scroll length.
+- **Desktop:** Tapping any card's chevron expands **all four cards simultaneously**. This avoids the visual problem of one expanded card making sibling cards in the same grid row stretch with empty space. A second tap collapses all four.
 - **Animation:** `max-height` transition, 300ms ease-out. Content fades in with 150ms delay.
 - **ARIA:** `aria-expanded` on toggle, `aria-controls` pointing to expand panel, `role="region"` on expand content.
 
