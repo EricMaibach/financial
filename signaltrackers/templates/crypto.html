@@ -243,9 +243,10 @@
         </div>
     </header>
 
-    <!-- Compact Regime Strip -->
+    <!-- Conditions Strip (Liquidity-leads variant for Crypto) -->
     {% set page_category = 'Crypto' %}
-    {% include '_regime_strip.html' %}
+    {% set conditions_strip_liquidity_leads = true %}
+    {% include '_conditions_strip.html' %}
 
     <!-- Content Grid: Stacked on mobile, side-by-side on tablet+ -->
     <div class="content-grid">

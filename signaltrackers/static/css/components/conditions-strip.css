@@ -1,0 +1,173 @@
+/* Conditions Strip — Market Conditions bar (US-322.1)
+   Replaces regime-strip styles from regime-card.css */
+
+/* === Design tokens === */
+:root {
+    --quadrant-goldilocks: #0D9488;
+    --quadrant-reflation: #1E40AF;
+    --quadrant-deflation: #CA8A04;
+    --quadrant-stagflation: #DC2626;
+    --liq-expanding: #2563EB;
+    --liq-neutral: #64748B;
+    --liq-contracting: #D97706;
+    --conditions-unavailable: #6B7280;
+}
+
+/* === Strip container === */
+.conditions-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #F8F9FA;
+    border-bottom: 1px solid #DEE2E6;
+    padding: 10px 16px;
+    flex-wrap: nowrap;
+}
+
+/* === Headline (dot + name) === */
+.conditions-strip__headline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.conditions-strip__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.conditions-strip__name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+/* === Quadrant color variants === */
+.conditions-strip--goldilocks .conditions-strip__dot { background: var(--quadrant-goldilocks); }
+.conditions-strip--goldilocks .conditions-strip__name { color: var(--quadrant-goldilocks); }
+
+.conditions-strip--reflation .conditions-strip__dot { background: var(--quadrant-reflation); }
+.conditions-strip--reflation .conditions-strip__name { color: var(--quadrant-reflation); }
+
+.conditions-strip--deflation-risk .conditions-strip__dot { background: var(--quadrant-deflation); }
+.conditions-strip--deflation-risk .conditions-strip__name { color: var(--quadrant-deflation); }
+
+.conditions-strip--stagflation .conditions-strip__dot { background: var(--quadrant-stagflation); }
+.conditions-strip--stagflation .conditions-strip__name { color: var(--quadrant-stagflation); }
+
+/* === Liquidity color variants (crypto page) === */
+.conditions-strip--liq-expanding .conditions-strip__dot { background: var(--liq-expanding); }
+.conditions-strip--liq-expanding .conditions-strip__name { color: var(--liq-expanding); }
+
+.conditions-strip--liq-neutral .conditions-strip__dot { background: var(--liq-neutral); }
+.conditions-strip--liq-neutral .conditions-strip__name { color: var(--liq-neutral); }
+
+.conditions-strip--liq-contracting .conditions-strip__dot { background: var(--liq-contracting); }
+.conditions-strip--liq-contracting .conditions-strip__name { color: var(--liq-contracting); }
+
+/* === Unavailable fallback === */
+.conditions-strip--unavailable .conditions-strip__dot { background: var(--conditions-unavailable); }
+.conditions-strip--unavailable .conditions-strip__name { color: var(--conditions-unavailable); }
+
+/* === Desktop: inline dimensions === */
+.conditions-strip__dimensions {
+    display: none;
+    align-items: center;
+    gap: 12px;
+}
+
+.conditions-strip__dim {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #4B5563;
+    white-space: nowrap;
+}
+
+.conditions-strip__separator {
+    width: 1px;
+    height: 16px;
+    background: #CBD5E1;
+    flex-shrink: 0;
+}
+
+/* === Mobile: toggle + expand === */
+.conditions-strip__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    color: #6B7280;
+}
+
+.conditions-strip__chevron {
+    font-size: 0.875rem;
+    transition: transform 0.2s ease;
+}
+
+.conditions-strip__toggle[aria-expanded="true"] .conditions-strip__chevron {
+    transform: rotate(180deg);
+}
+
+.conditions-strip__expand {
+    display: none;
+    width: 100%;
+    padding: 4px 0 4px 14px;
+}
+
+.conditions-strip__expand[hidden] {
+    display: none !important;
+}
+
+.conditions-strip__expand:not([hidden]) {
+    display: block;
+}
+
+.conditions-strip__expand-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.875rem;
+}
+
+.conditions-strip__expand-label {
+    color: #6B7280;
+    font-weight: 500;
+}
+
+.conditions-strip__expand-value {
+    color: #1F2937;
+    font-weight: 500;
+}
+
+/* === Mobile: wrap for expand panel === */
+@media (max-width: 767.98px) {
+    .conditions-strip {
+        flex-wrap: wrap;
+    }
+}
+
+/* === Desktop (768px+): show dimensions, hide toggle === */
+@media (min-width: 768px) {
+    .conditions-strip__dimensions {
+        display: flex;
+    }
+
+    .conditions-strip__toggle {
+        display: none;
+    }
+
+    .conditions-strip__expand {
+        display: none !important;
+    }
+}
