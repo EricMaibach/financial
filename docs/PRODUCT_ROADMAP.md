@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-17 (PM run: #294 Calculation Engine complete; Phase 10 in progress)
+**Last updated:** 2026-03-17 (Phase 11 in progress — 5 features, 7 stories, design specs complete)
 
 ---
 
@@ -215,23 +215,21 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 11: Market Conditions UI & Migration — NEXT
+## Phase 11: Market Conditions UI & Migration — IN PROGRESS
 
 **Milestone goal:** Ship the market conditions framework to users. Redesign the homepage around the conditions engine, migrate all category pages, enhance AI briefings, and deprecate the old regime system.
 
-**Prerequisite:** Phase 10 backtest validation passes the hard gate.
-
-**Designer involvement required.** The [MARKET-CONDITIONS-FRAMEWORK.md](MARKET-CONDITIONS-FRAMEWORK.md) contains wireframes and design vision (Sections 7-9) as a starting point. Designer creates formal design specs for all UI features before implementation begins.
+**Design specs complete.** Formal specs in `docs/specs/feature-11.1-*`, `feature-11.2-*`, `feature-11.3-*`. All stories written from Designer specs.
 
 ### Phase 11 Features
 
-| Feature | Title | Priority | Design Spec? | Scope |
-|---------|-------|----------|-------------|-------|
-| #322 | Conditions Strip Component | P1 | `needs-design-spec` | Reusable strip on every page — quadrant headline, Liquidity leads on Crypto |
-| #323 | Homepage Conditions Redesign | P1 | `needs-design-spec` | AI briefing at top, quadrant headline, dimension cards, progressive disclosure, portfolio implications |
-| #324 | Category Page Conditions Migration | P2 | `needs-design-spec` | Quadrant × liquidity context sentences + signal annotations for all 6 category pages |
-| #325 | AI Conditions Integration (Briefing + Chatbot) | P1 | No (backend-only) | Four-dimension context dict, rule-based fallback, chatbot context |
-| #326 | Old Regime System Deprecation | P2 | No (backend-only) | Remove all old code, caches, CSS, templates. **Required, not optional.** |
+| Feature | Title | Priority | Scope |
+|---------|-------|----------|-------|
+| #322 | Conditions Strip Component | P1 | Reusable strip on every page — quadrant headline, Liquidity leads on Crypto |
+| #323 | Homepage Conditions Redesign | P1 | 3 sections + footer: §0 AI briefing, §1 quadrant hero + 2×2 expand-in-place grid, §2 portfolio implications, movers footer |
+| #324 | Category Page Conditions Migration | P2 | 7 pages (incl Property) — quadrant × liquidity context + relocated sections (Recession→Credit, Sector Tone→Equities, Trade Pulse→Equities) |
+| #325 | AI Conditions Integration (Briefing + Chatbot) | P1 | Four-dimension context dict + 90d conditions history + 14d briefing history, rule-based fallback, chatbot context |
+| #326 | Old Regime System Deprecation | P2 | Remove all old code, caches, CSS, templates. **Required, not optional.** |
 
 **Dependency order:** #322 (strip) unblocks #323 (homepage) and #324 (category pages). #325 (AI) is independent. #326 (deprecation) runs last after everything else is migrated.
 
