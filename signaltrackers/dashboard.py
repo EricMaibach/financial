@@ -1950,10 +1950,11 @@ def index():
             sorted_dates = sorted(history.keys(), reverse=True)
             for dt_str in sorted_dates[:6]:
                 entry = history[dt_str]
+                # Prefer top-level scores (bug #337), fall back to nested
                 dims = entry.get('dimensions', {})
                 quad_dims = dims.get('quadrant', {})
-                gc = quad_dims.get('growth_composite')
-                ic = quad_dims.get('inflation_composite')
+                gc = entry.get('growth_score') or quad_dims.get('growth_composite')
+                ic = entry.get('inflation_score') or quad_dims.get('inflation_composite')
                 if gc is not None and ic is not None:
                     trajectory.append({
                         'date': dt_str,

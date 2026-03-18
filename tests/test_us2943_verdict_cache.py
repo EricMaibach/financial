@@ -406,11 +406,12 @@ class TestComputeMarketConditions:
 class TestCacheIO:
     """Test cache write and read."""
 
+    @patch('market_conditions._backfill_history_if_needed')
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_cache_write_and_read(self, mock_liq, mock_quad, mock_risk, mock_pol):
+    def test_cache_write_and_read(self, mock_liq, mock_quad, mock_risk, mock_pol, _mock_backfill):
         mock_liq.return_value = _mock_liquidity('Expanding')
         mock_quad.return_value = _mock_quadrant('Goldilocks')
         mock_risk.return_value = _mock_risk('Calm')
@@ -433,7 +434,7 @@ class TestCacheIO:
                 assert 'asset_expectations' in cache_data
                 assert 'updated_at' in cache_data
 
-                # Read back
+                # Read back from history (bug #337: consolidated)
                 loaded = get_market_conditions()
                 assert loaded is not None
                 assert loaded['quadrant'] == 'Goldilocks'
@@ -442,11 +443,12 @@ class TestCacheIO:
                 if os.path.exists(p):
                     os.unlink(p)
 
+    @patch('market_conditions._backfill_history_if_needed')
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_cache_structure(self, mock_liq, mock_quad, mock_risk, mock_pol):
+    def test_cache_structure(self, mock_liq, mock_quad, mock_risk, mock_pol, _mock_backfill):
         mock_liq.return_value = _mock_liquidity('Neutral')
         mock_quad.return_value = _mock_quadrant('Reflation')
         mock_risk.return_value = _mock_risk('Elevated')
@@ -500,7 +502,8 @@ class TestCacheIO:
             assert result is None
 
     def test_get_cache_returns_none_when_missing(self):
-        with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', '/nonexistent/path.json'):
+        with patch('market_conditions.MARKET_CONDITIONS_CACHE_FILE', '/nonexistent/path.json'), \
+             patch('market_conditions.MARKET_CONDITIONS_HISTORY_FILE', '/nonexistent/hist.json'):
             assert get_market_conditions() is None
 
 
@@ -795,8 +798,12 @@ class TestConditionsHistory:
                 # verdict should NOT be in history
                 assert 'verdict' not in entry
                 assert 'verdict_score' not in entry
-                # updated_at should NOT be in history (ephemeral)
-                assert 'updated_at' not in entry
+                # updated_at IS stored (bug #337 — needed for staleness)
+                assert 'updated_at' in entry
+                # growth_score and inflation_score at top level (bug #337)
+                assert 'growth_score' in entry
+                assert 'inflation_score' in entry
+                assert 'raw_quadrant' in entry
         finally:
             os.unlink(tmp)
 
@@ -811,11 +818,12 @@ class TestConditionsHistory:
         finally:
             os.unlink(tmp)
 
+    @patch('market_conditions._backfill_history_if_needed')
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_cache_update_appends_history(self, mock_liq, mock_quad, mock_risk, mock_pol):
+    def test_cache_update_appends_history(self, mock_liq, mock_quad, mock_risk, mock_pol, _mock_backfill):
         """update_market_conditions_cache() should also append to history."""
         mock_liq.return_value = _mock_liquidity('Expanding')
         mock_quad.return_value = _mock_quadrant('Goldilocks')
@@ -841,11 +849,12 @@ class TestConditionsHistory:
                 if os.path.exists(p):
                     os.unlink(p)
 
+    @patch('market_conditions._backfill_history_if_needed')
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
     @patch('market_conditions.compute_quadrant')
     @patch('market_conditions.compute_liquidity')
-    def test_cache_update_preserves_existing_history(self, mock_liq, mock_quad, mock_risk, mock_pol):
+    def test_cache_update_preserves_existing_history(self, mock_liq, mock_quad, mock_risk, mock_pol, _mock_backfill):
         """History from previous days should not be overwritten."""
         mock_liq.return_value = _mock_liquidity('Expanding')
         mock_quad.return_value = _mock_quadrant('Goldilocks')
