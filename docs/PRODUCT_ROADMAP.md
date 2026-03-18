@@ -25,7 +25,7 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 
 ## Active Phase
 **Phase:** Phase 11 — Market Conditions UI & Migration
-**State:** PLANNED (features not yet created — Designer specs needed first)
+**State:** BUILDING
 
 ---
 
@@ -223,16 +223,17 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 **Designer involvement required.** The [MARKET-CONDITIONS-FRAMEWORK.md](MARKET-CONDITIONS-FRAMEWORK.md) contains wireframes and design vision (Sections 7-9) as a starting point. Designer creates formal design specs for all UI features before implementation begins.
 
-### Anticipated Scope
+### Phase 11 Features
 
-- **Homepage redesign** — AI briefing to top, quadrant as headline with three supporting dimension cards, dimension detail sections with progressive disclosure, portfolio implications matrix
-- **Conditions strip** — Replace regime strip on every page with quadrant headline + supporting dimensions (Liquidity leads on Crypto page)
-- **Category page migration** — Quadrant × liquidity context sentences and signal annotations for all 6 category pages
-- **AI briefing enhancement** — Quadrant-led conditions context, rule-based fallback narrative
-- **Old system deprecation** — **Required, not optional.** Remove `regime_detection.py`, `regime_config.py`, `regime_implications_config.py`, old cache files, regime-specific CSS/templates, and all dead code paths. Phase 11 does not ship with two parallel systems.
-- **AI integration (briefing + chatbot)** — Update daily briefing prompts and chatbot context to use new conditions engine data. Both surfaces must reason about all four dimensions, not just the old regime label.
+| Feature | Title | Priority | Design Spec? | Scope |
+|---------|-------|----------|-------------|-------|
+| #322 | Conditions Strip Component | P1 | `needs-design-spec` | Reusable strip on every page — quadrant headline, Liquidity leads on Crypto |
+| #323 | Homepage Conditions Redesign | P1 | `needs-design-spec` | AI briefing at top, quadrant headline, dimension cards, progressive disclosure, portfolio implications |
+| #324 | Category Page Conditions Migration | P2 | `needs-design-spec` | Quadrant × liquidity context sentences + signal annotations for all 6 category pages |
+| #325 | AI Conditions Integration (Briefing + Chatbot) | P1 | No (backend-only) | Four-dimension context dict, rule-based fallback, chatbot context |
+| #326 | Old Regime System Deprecation | P2 | No (backend-only) | Remove all old code, caches, CSS, templates. **Required, not optional.** |
 
-*Feature breakdown deferred until Phase 10 validates the model and Designer creates UI specs.*
+**Dependency order:** #322 (strip) unblocks #323 (homepage) and #324 (category pages). #325 (AI) is independent. #326 (deprecation) runs last after everything else is migrated.
 
 ---
 
