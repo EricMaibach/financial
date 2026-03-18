@@ -1953,8 +1953,10 @@ def index():
                 # Prefer top-level scores (bug #337), fall back to nested
                 dims = entry.get('dimensions', {})
                 quad_dims = dims.get('quadrant', {})
-                gc = entry.get('growth_score') or quad_dims.get('growth_composite')
-                ic = entry.get('inflation_score') or quad_dims.get('inflation_composite')
+                gs = entry.get('growth_score')
+                gc = gs if gs is not None else quad_dims.get('growth_composite')
+                ics = entry.get('inflation_score')
+                ic = ics if ics is not None else quad_dims.get('inflation_composite')
                 if gc is not None and ic is not None:
                     trajectory.append({
                         'date': dt_str,

@@ -1552,7 +1552,13 @@ def update_market_conditions_cache() -> Optional[dict]:
         )
 
         from datetime import date as _date
-        as_of = str(_date.today())
+        import calendar
+        today = _date.today()
+        # Key by month-end date so daily updates overwrite within the same
+        # month, matching the backfill cadence (QA issue #1 on bug #337).
+        month_end = _date(today.year, today.month,
+                          calendar.monthrange(today.year, today.month)[1])
+        as_of = str(month_end)
 
         cache_data = {
             'quadrant': quadrant_result.quadrant,
@@ -1662,10 +1668,10 @@ def _save_conditions_history(history: dict) -> None:
 
 
 def _append_conditions_history(cache_data: dict) -> None:
-    """Append a daily snapshot to the conditions history file.
+    """Append a snapshot to the conditions history file.
 
-    Keyed by the as_of date. Overwrites same-day entries (idempotent).
-    No pruning — all history retained indefinitely.
+    Keyed by the as_of date (month-end). Daily runs within the same month
+    overwrite the same entry (idempotent). No pruning — all history retained.
     """
     as_of = cache_data.get('as_of')
     if not as_of:
