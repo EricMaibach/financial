@@ -24,8 +24,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 10 — Market Conditions Engine
-**State:** BUILDING
+**Phase:** Phase 11 — Market Conditions UI & Migration
+**State:** PLANNED (features not yet created — Designer specs needed first)
 
 ---
 
@@ -182,7 +182,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 10: Market Conditions Engine — IN PROGRESS
+## Phase 10: Market Conditions Engine ✅ COMPLETE
 
 **Milestone goal:** Replace the k-means regime classifier (52.3/100 backtest score) with a multi-dimensional market conditions engine. Backend-only — no UI changes. Old regime system continues running in parallel.
 
@@ -196,9 +196,9 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 |---------|-------|----------|-------|
 | #293 | Market Conditions Data Pipeline | P1 | Complete ✅ — all ~18 new FRED series collecting |
 | #294 | Market Conditions Calculation Engine | P1 | Complete ✅ — four dimension engines in `market_conditions.py` |
-| #295 | Market Conditions Backtest Validation | P1 | First run complete — multi-asset accuracy 63.9% (up from 54.6%), but composite 31.9 failed due to verdict scoring. Findings documented. |
-| #314 | Backtest Scoring Refinement | P1 | Remove verdict, score against quadrant with real returns + magnitude ordering. Re-run backtest. **Hard gate.** |
-| #296 | Surface New FRED Series in Explorer Page | P2 | Add all ~18 new FRED series to Explorer page, organized by conditions dimension |
+| #295 | Market Conditions Backtest Validation | P1 | Complete ✅ — multi-asset accuracy 63.9%, quadrant ordering validated |
+| #314 | Backtest Scoring Refinement | P1 | Complete ✅ — verdict removed, quadrant-led with real returns + magnitude ordering |
+| #296 | Surface New FRED Series in Explorer Page | P2 | Complete ✅ — all new series in Explorer by dimension |
 
 ### Hard Gate
 
@@ -215,7 +215,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 11: Market Conditions UI & Migration — PLANNED
+## Phase 11: Market Conditions UI & Migration — NEXT
 
 **Milestone goal:** Ship the market conditions framework to users. Redesign the homepage around the conditions engine, migrate all category pages, enhance AI briefings, and deprecate the old regime system.
 
