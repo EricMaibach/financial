@@ -1055,7 +1055,7 @@ def generate_crypto_summary(crypto_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous crypto summaries for context
-        recent_summaries = get_recent_crypto_summaries(days=3)
+        recent_summaries = get_recent_crypto_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS CRYPTO SUMMARIES (for continuity - don't repeat these):\n"
@@ -1275,7 +1275,7 @@ def generate_equity_summary(equity_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous equity summaries for context
-        recent_summaries = get_recent_equity_summaries(days=3)
+        recent_summaries = get_recent_equity_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS EQUITY SUMMARIES (for continuity - don't repeat these):\n"
@@ -1496,7 +1496,7 @@ def generate_rates_summary(rates_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous rates summaries for context
-        recent_summaries = get_recent_rates_summaries(days=3)
+        recent_summaries = get_recent_rates_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS RATES SUMMARIES (for continuity - don't repeat these):\n"
@@ -1717,7 +1717,7 @@ def generate_dollar_summary(dollar_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous dollar summaries for context
-        recent_summaries = get_recent_dollar_summaries(days=3)
+        recent_summaries = get_recent_dollar_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS DOLLAR SUMMARIES (for continuity - don't repeat these):\n"
@@ -1930,7 +1930,7 @@ def generate_credit_summary(credit_data_summary):
         eastern = pytz.timezone('US/Eastern')
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
-        recent_summaries = get_recent_credit_summaries(days=3)
+        recent_summaries = get_recent_credit_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS CREDIT SUMMARIES (for continuity - don't repeat these):\n"
@@ -1946,12 +1946,12 @@ def generate_credit_summary(credit_data_summary):
 
         system_prompt = """You are a credit market analyst providing daily briefings for the Credit Markets page of a financial dashboard. Your audience understands markets and wants actionable insight on corporate credit conditions, spread dynamics, and what credit is signaling about the economy.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, macro regime, default risk, and cross-asset implications.
+Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, market conditions, default risk, and cross-asset implications.
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
 - First paragraph: The credit story TODAY - where HY and IG spreads are, whether they're tight/normal/wide versus history (percentile), and what the trend has been. Include specific spread levels in basis points.
-- Second paragraph: The macro interpretation - what current spread levels imply about default risk, the economic cycle, and risk appetite. Connect to the macro regime (bull/bear/recession watch) and explain whether credit conditions are confirming or diverging from equity market signals.
+- Second paragraph: The macro interpretation - what current spread levels imply about default risk, the economic cycle, and risk appetite. Connect to the current market conditions quadrant and explain whether credit conditions are confirming or diverging from equity market signals.
 - Third paragraph: What to watch - key spread thresholds that would change the outlook, CCC vs HY dynamics (distress concentration), and the main risk scenarios (spread widening triggers, liquidity conditions). End with specific actionable guidance.
 - Reference specific numbers (spread levels in bps, percentile rankings) meaningfully
 - Highlight any EXTREME readings (>95th or <5th percentile) with historical context

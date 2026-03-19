@@ -142,6 +142,65 @@ class TestExpandedBriefingHistory(unittest.TestCase):
         self.assertIn('earlier predictions', self.src)
 
 
+class TestMarketSpecificBriefingHistory(unittest.TestCase):
+    """All 5 market-specific briefings must use 14-day history."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = read_source('ai_summary.py')
+
+    def test_crypto_summary_uses_14_day_history(self):
+        idx = self.src.find('def generate_crypto_summary')
+        block = self.src[idx:idx + 3000]
+        self.assertIn('get_recent_crypto_summaries(days=14)', block)
+
+    def test_equity_summary_uses_14_day_history(self):
+        idx = self.src.find('def generate_equity_summary')
+        block = self.src[idx:idx + 3000]
+        self.assertIn('get_recent_equity_summaries(days=14)', block)
+
+    def test_rates_summary_uses_14_day_history(self):
+        idx = self.src.find('def generate_rates_summary')
+        block = self.src[idx:idx + 3000]
+        self.assertIn('get_recent_rates_summaries(days=14)', block)
+
+    def test_dollar_summary_uses_14_day_history(self):
+        idx = self.src.find('def generate_dollar_summary')
+        block = self.src[idx:idx + 3000]
+        self.assertIn('get_recent_dollar_summaries(days=14)', block)
+
+    def test_credit_summary_uses_14_day_history(self):
+        idx = self.src.find('def generate_credit_summary')
+        block = self.src[idx:idx + 3000]
+        self.assertIn('get_recent_credit_summaries(days=14)', block)
+
+
+class TestOldRegimeRemovedFromPrompts(unittest.TestCase):
+    """Old MACRO REGIME sections must be removed from AI prompt builders."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dashboard_src = read_source('dashboard.py')
+        cls.ai_src = read_source('ai_summary.py')
+
+    def test_no_macro_regime_heading_in_dashboard_prompts(self):
+        """'## MACRO REGIME' heading must not appear in prompt builders."""
+        self.assertNotIn('"## MACRO REGIME"', self.dashboard_src)
+        self.assertNotIn("'## MACRO REGIME'", self.dashboard_src)
+
+    def test_no_old_regime_labels_in_credit_prompt(self):
+        """Credit prompt must not reference bull/bear/recession watch labels."""
+        idx = self.ai_src.find('def generate_credit_summary')
+        block = self.ai_src[idx:idx + 5000]
+        self.assertNotIn('bull/bear/recession watch', block.lower())
+
+    def test_credit_prompt_uses_conditions_quadrant(self):
+        """Credit prompt should reference conditions quadrant, not old regime."""
+        idx = self.ai_src.find('def generate_credit_summary')
+        block = self.ai_src[idx:idx + 5000]
+        self.assertIn('conditions quadrant', block)
+
+
 class TestMaxTokensIncreased(unittest.TestCase):
     """max_tokens should be increased for 3-paragraph output."""
 

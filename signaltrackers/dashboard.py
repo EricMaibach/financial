@@ -4582,24 +4582,8 @@ def generate_market_summary():
         except Exception:
             pass  # Skip prediction markets if unavailable
 
-        # Macro Regime State
-        try:
-            regime = get_macro_regime()
-            if regime and regime.get('state') and regime.get('state') != 'Unknown':
-                summary_parts.append("## MACRO REGIME")
-                conf_str = f" at {regime['confidence']} confidence" if regime.get('confidence') else ""
-                summary_parts.append(f"Current regime: {regime['state']}{conf_str}")
-                implications = REGIME_IMPLICATIONS.get(regime['state'], {})
-                if implications:
-                    asset_signals = ", ".join(
-                        f"{ac['display_name']}: {ac['signal']}"
-                        for ac in implications.get('asset_classes', [])
-                    )
-                    if asset_signals:
-                        summary_parts.append(f"Regime implications: {asset_signals}")
-                summary_parts.append("")
-        except Exception:
-            pass  # Skip if regime data unavailable
+        # Note: Macro regime section removed per US-325.1 — conditions context
+        # (quadrant, liquidity, risk, policy) is now provided via the main briefing prompt
 
         # Recession Probability Models
         try:
@@ -5398,16 +5382,8 @@ def generate_credit_market_summary():
         summary_parts.append("  CONTEXT: Tight credit + rising equities = risk-on; Credit widening ahead of equity decline = early warning signal")
         summary_parts.append("")
 
-        # Macro Regime Context
-        try:
-            regime = get_macro_regime()
-            if regime and regime.get('state') and regime.get('state') != 'Unknown':
-                summary_parts.append("## MACRO REGIME CONTEXT")
-                summary_parts.append(f"Current regime: {regime['state']} (confidence: {regime.get('confidence', 'N/A')})")
-                summary_parts.append("  (Use regime context to interpret whether current spread levels are unusual for this cycle phase)")
-                summary_parts.append("")
-        except Exception:
-            pass
+        # Note: Macro regime section removed per US-325.1 — conditions context
+        # (quadrant, liquidity, risk, policy) is now provided via the credit briefing prompt
 
         # Interpretation Framework
         summary_parts.append("## CREDIT SPREAD INTERPRETATION FRAMEWORK")
