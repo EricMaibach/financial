@@ -544,7 +544,7 @@
 {% endif %}
 
 {# ════════════════════════════════════════════════════════════════════════
-   §2: WHAT THIS MEANS FOR YOUR PORTFOLIO — placeholder for US-323.2
+   §2: WHAT THIS MEANS FOR YOUR PORTFOLIO (US-323.2)
    ════════════════════════════════════════════════════════════════════════ #}
 <section id="implications-section" class="conditions-implications mb-4" aria-label="Portfolio Implications">
     <div class="section-header mb-3">
@@ -552,10 +552,72 @@
             <i class="bi bi-briefcase me-2"></i>WHAT THIS MEANS FOR YOUR PORTFOLIO
         </h3>
     </div>
-    {% if conditions %}
-    <div class="implications-placeholder">
-        <i class="bi bi-info-circle" aria-hidden="true"></i>
-        <p>Portfolio implications matrix — coming soon.</p>
+    {% if implications %}
+    {# ── Mobile table (3-column: Asset | Conditions Say | Why) ── #}
+    <div class="implications-table implications-table--mobile">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Asset</th>
+                    <th scope="col">Conditions Say</th>
+                    <th scope="col">Why</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in implications %}
+                <tr>
+                    <th scope="row"><a href="{{ row.link }}">{{ row.label }}</a></th>
+                    <td>
+                        <span class="implications-signal implications-signal--{{ row.overall }}">
+                            {% if row.overall == 'strong_support' %}✓✓{% elif row.overall == 'support' %}✓{% elif row.overall == 'neutral' %}─{% elif row.overall == 'headwind' %}✗{% elif row.overall == 'strong_headwind' %}✗✗{% endif %}
+                            <span class="implications-signal__text">
+                                {% if row.overall == 'strong_support' %}Favorable{% elif row.overall == 'support' %}Supportive{% elif row.overall == 'neutral' %}Neutral{% elif row.overall == 'headwind' %}Headwind{% elif row.overall == 'strong_headwind' %}Headwind{% endif %}
+                            </span>
+                        </span>
+                    </td>
+                    <td class="implications-why">{{ row.why }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── Desktop table (6-column: Asset | Overall | Quad | Liq | Risk | Policy) ── #}
+    <div class="implications-table implications-table--desktop">
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Asset</th>
+                    <th scope="col">Overall</th>
+                    <th scope="col">Quad</th>
+                    <th scope="col">Liq</th>
+                    <th scope="col">Risk</th>
+                    <th scope="col">Policy</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in implications %}
+                <tr>
+                    <th scope="row"><a href="{{ row.link }}">{{ row.label }}</a></th>
+                    {% for dim in [row.overall, row.quad, row.liq, row.risk, row.policy] %}
+                    <td>
+                        <span class="implications-signal implications-signal--{{ dim }}">
+                            {% if dim == 'strong_support' %}✓✓{% elif dim == 'support' %}✓{% elif dim == 'neutral' %}─{% elif dim == 'headwind' %}✗{% elif dim == 'strong_headwind' %}✗✗{% endif %}
+                        </span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if implications_context %}
+    <p class="implications-context">{{ implications_context }}</p>
+    {% endif %}
+
+    <div class="implications-explore">
+        Explore: <a href="/equity">Equities</a> · <a href="/credit">Credit</a> · <a href="/rates">Rates</a> · <a href="/crypto">Crypto</a>
     </div>
     {% endif %}
 </section>

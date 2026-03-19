@@ -101,12 +101,12 @@ class TestAssetExpectations:
         assert by_asset['sp500']['direction'] == 'negative'
         assert by_asset['sp500']['conviction'] == 'override'
 
-    def test_all_quadrants_return_four_assets(self):
+    def test_all_quadrants_return_six_assets(self):
         for quad in _QUADRANT_EXPECTATIONS:
             exps = _build_asset_expectations(quad, 'Neutral', 'Normal')
-            assert len(exps) == 4
+            assert len(exps) == 6
             assets = {e['asset'] for e in exps}
-            assert assets == {'sp500', 'treasuries', 'gold', 'bitcoin'}
+            assert assets == {'sp500', 'treasuries', 'gold', 'credit', 'commodities', 'bitcoin'}
 
     def test_liquidity_magnitude_mapping(self):
         """Each liquidity state produces a different magnitude."""
@@ -360,9 +360,9 @@ class TestComputeMarketConditions:
 
         result = compute_market_conditions()
         assert result is not None
-        assert len(result.asset_expectations) == 4
+        assert len(result.asset_expectations) == 6
         assets = {e['asset'] for e in result.asset_expectations}
-        assert assets == {'sp500', 'treasuries', 'gold', 'bitcoin'}
+        assert assets == {'sp500', 'treasuries', 'gold', 'credit', 'commodities', 'bitcoin'}
 
     @patch('market_conditions.compute_policy')
     @patch('market_conditions.compute_risk')
@@ -488,7 +488,7 @@ class TestCacheIO:
                 assert dims['policy']['direction'] == 'Paused'
 
                 # Verify asset expectations
-                assert len(cache_data['asset_expectations']) == 4
+                assert len(cache_data['asset_expectations']) == 6
         finally:
             for p in (tmp_path, tmp_history):
                 if os.path.exists(p):
