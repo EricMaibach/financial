@@ -1353,7 +1353,7 @@ function initSectorToneToggle() {
         toggle.addEventListener('click', function() {
             var expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
-            content.style.display = expanded ? 'none' : 'block';
+            content.classList.toggle('sector-tone-content--expanded', !expanded);
             var text = document.getElementById('sector-tone-toggle-text');
             if (text) text.textContent = expanded ? 'Show Sectors' : 'Hide Sectors';
         });
@@ -1367,7 +1367,7 @@ function initTradePulseToggle() {
         toggle.addEventListener('click', function() {
             var expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
-            content.style.display = expanded ? 'none' : 'block';
+            content.classList.toggle('trade-pulse-content--expanded', !expanded);
             var text = document.getElementById('trade-pulse-toggle-text');
             if (text) text.textContent = expanded ? 'View Trade Data' : 'Hide Trade Data';
         });

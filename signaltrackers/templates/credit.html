@@ -1136,7 +1136,7 @@ function initRecessionPanel() {
         toggle.addEventListener('click', function() {
             var expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
-            content.style.display = expanded ? 'none' : 'block';
+            content.classList.toggle('recession-panel__content--expanded', !expanded);
         });
     }
     // "Why three models?" toggle
