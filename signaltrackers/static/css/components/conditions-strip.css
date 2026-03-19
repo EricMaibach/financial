@@ -157,6 +157,20 @@
     }
 }
 
+/* === Category context sentence (US-324.1) === */
+.conditions-strip__context {
+    background: #F8F9FA;
+    padding: 8px 16px 10px;
+}
+
+.conditions-strip__context-text {
+    margin: 0;
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #495057;
+    line-height: 1.5;
+}
+
 /* === Desktop (768px+): show dimensions, hide toggle === */
 @media (min-width: 768px) {
     .conditions-strip__dimensions {

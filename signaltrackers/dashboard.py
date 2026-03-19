@@ -54,6 +54,12 @@ from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
 from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
+from conditions_config import (
+    CATEGORY_CONDITIONS_CONTEXT,
+    SIGNAL_CONDITIONS_ANNOTATIONS,
+    get_category_conditions_context,
+    get_simplified_liquidity,
+)
 from property_interpretation_config import get_property_interpretation
 from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history, build_implications_matrix
 from regime_config import (
@@ -228,6 +234,8 @@ def inject_macro_regime():
         'macro_regime': regime,
         'category_regime_context': CATEGORY_REGIME_CONTEXT,
         'signal_regime_annotations': SIGNAL_REGIME_ANNOTATIONS,
+        'signal_conditions_annotations': SIGNAL_CONDITIONS_ANNOTATIONS,
+        'category_conditions_context': CATEGORY_CONDITIONS_CONTEXT,
         'sector_tone_bridge': sector_tone_bridge,
         'whats_moving_context': whats_moving_context,
     }
@@ -2054,8 +2062,9 @@ def index():
 
 @app.route('/equity')
 def equity():
-    """Equity markets page."""
-    return render_template('equity.html')
+    """Equity markets page (US-324.1: includes relocated sector tone + trade pulse)."""
+    ctx = _get_trade_balance_context()
+    return render_template('equity.html', **ctx)
 
 
 @app.route('/safe-havens')
