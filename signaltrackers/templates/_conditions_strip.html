@@ -104,6 +104,24 @@
     </div>
 </div>
 
+{# Category context sentence (US-324.1) — shown when page_category is set #}
+{% if page_category is defined and page_category and category_conditions_context is defined %}
+{% set _liq_simple_map = {
+    'Strongly Expanding': 'Expanding',
+    'Expanding': 'Expanding',
+    'Neutral': 'Neutral',
+    'Contracting': 'Contracting',
+    'Strongly Contracting': 'Contracting'
+} %}
+{% set _liq_simple = _liq_simple_map.get(_liquidity, 'Neutral') %}
+{% set _ctx_sentence = category_conditions_context.get(page_category, {}).get((_quadrant, _liq_simple), '') %}
+{% if _ctx_sentence %}
+<div class="conditions-strip__context" role="note" aria-label="Conditions context for {{ page_category }}">
+    <p class="conditions-strip__context-text">{{ _ctx_sentence }}</p>
+</div>
+{% endif %}
+{% endif %}
+
 <script>
 (function() {
     var toggle = document.querySelector('.conditions-strip__toggle');

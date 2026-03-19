@@ -228,7 +228,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation %}
+{% from '_macros.html' import regime_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -303,6 +303,213 @@
             </div>
         </aside>
     </div>
+
+    <!-- Sector Management Tone Panel (relocated from homepage, US-324.1) -->
+    {% if sector_management_tone %}
+    <section aria-label="Sector Management Tone" id="sector-tone-section" class="mb-4" style="padding: 0 var(--space-4); max-width: var(--container-xl); margin: 0 auto;">
+        <div class="sector-tone-panel">
+
+            <div class="section-header mb-2 sector-tone-header-row">
+                <h3 class="section-title">
+                    <i class="bi bi-building me-2"></i>Sector Management Tone
+                </h3>
+                <span class="sector-tone-header-right">Updated quarterly · {{ sector_management_tone.quarter }} {{ sector_management_tone.year }}</span>
+                <button class="btn ai-section-btn" data-section-id="sector-tone-section" aria-label="Ask AI about Sector Management Tone"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+            </div>
+
+            {% if sector_management_tone.data_available %}
+            <button class="sector-tone-toggle"
+                    id="sector-tone-toggle"
+                    aria-expanded="false"
+                    aria-controls="sector-tone-content">
+                <span class="sector-tone-toggle-line" aria-hidden="true"></span>
+                <span class="sector-tone-toggle-label">
+                    <i class="bi bi-chevron-down sector-tone-chevron" aria-hidden="true"></i>
+                    <span id="sector-tone-toggle-text">Show Sectors</span>
+                </span>
+                <span class="sector-tone-toggle-line" aria-hidden="true"></span>
+            </button>
+
+            <div id="sector-tone-content" class="sector-tone-content">
+                <div class="sector-card-grid">
+                    {% for sector in sector_management_tone.sectors %}
+                    {% set _tone = sector.current_tone %}
+                    {% set _trend_len = sector.trend | length %}
+                    {% set _placeholder_count = [4 - _trend_len, 0] | max %}
+                    {% set _tone_labels = [] %}
+                    {% for _ in range(_placeholder_count) %}{% if _tone_labels.append('\u2014') %}{% endif %}{% endfor %}
+                    {% for t in sector.trend %}{% if _tone_labels.append(t.tone | title) %}{% endif %}{% endfor %}
+                    <div class="sector-card sector-card--{{ _tone }}">
+                        <div class="sector-card__tone-row">
+                            {% if _tone == 'positive' %}
+                            <i class="bi bi-arrow-up-short sector-card__tone-icon sector-card__tone-icon--positive" aria-hidden="true"></i>
+                            <span class="sector-card__tone-label sector-card__tone-label--positive">Positive</span>
+                            {% elif _tone == 'negative' %}
+                            <i class="bi bi-arrow-down-short sector-card__tone-icon sector-card__tone-icon--negative" aria-hidden="true"></i>
+                            <span class="sector-card__tone-label sector-card__tone-label--negative">Negative</span>
+                            {% else %}
+                            <i class="bi bi-dash sector-card__tone-icon sector-card__tone-icon--neutral" aria-hidden="true"></i>
+                            <span class="sector-card__tone-label sector-card__tone-label--neutral">Neutral</span>
+                            {% endif %}
+                        </div>
+                        <div class="sector-card__name">{{ sector.short_name }}</div>
+                        <div class="sector-card__sparkline"
+                             aria-label="Trend over last 4 quarters: {{ _tone_labels | join(', ') }}">
+                            {% for _ in range(_placeholder_count) %}
+                            <span class="sector-sparkline-dot sector-sparkline-dot--placeholder"
+                                  aria-hidden="true"
+                                  title="Data not available"></span>
+                            {% endfor %}
+                            {% for t in sector.trend %}
+                            <span class="sector-sparkline-dot sector-sparkline-dot--{{ t.tone }}"
+                                  aria-hidden="true"
+                                  title="{{ t.quarter }} {{ t.year }}: {{ t.tone | title }}"></span>
+                            {% endfor %}
+                        </div>
+                        <div class="sector-card__quarter">{{ sector_management_tone.quarter }} {{ sector_management_tone.year }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="sector-tone-footer">
+                    <i class="bi bi-info-circle" aria-hidden="true"></i>
+                    Aggregate management tone from {{ sector_management_tone.quarter }} {{ sector_management_tone.year }} earnings calls (S&amp;P 500 companies, SEC EDGAR 8-K filings, FinBERT). Sector aggregates only &mdash; not individual stock analysis.
+                </div>
+            </div>
+
+            {% else %}
+            <div class="sector-tone-empty">
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
+                Sector tone data will be available when {{ sector_management_tone.quarter }} {{ sector_management_tone.year }} earnings season completes. (Typically 6&ndash;8 weeks after quarter end)
+            </div>
+            {% endif %}
+
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Global Trade Pulse Panel (relocated from homepage, US-324.1) -->
+    {% if trade_balance_value is not none %}
+    <section id="trade-pulse-section"
+             class="mb-4"
+             style="padding: 0 var(--space-4); max-width: var(--container-xl); margin: 0 auto;"
+             aria-label="Global Trade Pulse">
+
+        <div class="section-header mb-2">
+            <h3 class="section-title"><i class="bi bi-globe2 me-2"></i>Global Trade Pulse</h3>
+            <span class="section-header__subtitle" style="font-size:0.875rem;color:#697386;">US Goods Trade Balance (FRED BOPGSTB)</span>
+            <button class="btn ai-section-btn" data-section-id="trade-pulse-section" aria-label="Ask AI about Global Trade Pulse"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+        </div>
+
+        <button class="trade-pulse-toggle"
+                id="trade-pulse-toggle"
+                aria-expanded="false"
+                aria-controls="trade-pulse-content">
+            <span class="trade-pulse-toggle-line" aria-hidden="true"></span>
+            <span class="trade-pulse-toggle-label">
+                <i class="bi bi-chevron-down trade-pulse-chevron" aria-hidden="true"></i>
+                <span id="trade-pulse-toggle-text">View Trade Data</span>
+            </span>
+            <span class="trade-pulse-toggle-line" aria-hidden="true"></span>
+        </button>
+
+        <div id="trade-pulse-content" class="trade-pulse-content">
+            <div class="trade-pulse-grid">
+                <div>
+                    <div class="trade-pulse-current-value"
+                         style="font-size:1.5rem;font-family:var(--font-mono,monospace);color:#1A202C;line-height:1.2;">
+                        {% if trade_balance_value < 0 %}
+                            &minus;${{ "%.1f"|format(trade_balance_value|abs) }}b
+                        {% else %}
+                            +${{ "%.1f"|format(trade_balance_value) }}b
+                        {% endif %}
+                    </div>
+                    <div style="font-size:0.875rem;color:#697386;margin-top:3px;">
+                        {{ trade_balance_period }}
+                    </div>
+
+                    {% if trade_yoy_change is not none %}
+                    <div style="margin-top:8px;display:flex;align-items:center;gap:4px;min-height:44px;">
+                        {% if trade_yoy_direction == 'up' %}
+                            <i class="bi bi-arrow-up" style="color:#16A34A;" aria-hidden="true"></i>
+                            <span style="font-size:0.875rem;color:#16A34A;">+${{ "%.1f"|format(trade_yoy_change|abs) }}b</span>
+                        {% else %}
+                            <i class="bi bi-arrow-down" style="color:#DC2626;" aria-hidden="true"></i>
+                            <span style="font-size:0.875rem;color:#DC2626;">&minus;${{ "%.1f"|format(trade_yoy_change|abs) }}b</span>
+                        {% endif %}
+                        {% if trade_balance_period %}
+                        {% set _period_parts = trade_balance_period.split(' ') %}
+                        <span style="font-size:0.875rem;color:#697386;">vs. {{ _period_parts[0] }} {{ _period_parts[1]|int - 1 }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if trade_percentile is not none %}
+                <div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                        <span style="font-size:0.875rem;color:#697386;">Percentile</span>
+                        <span style="font-size:0.875rem;font-weight:600;color:#2D3748;">{{ trade_percentile|round|int }}th pct.</span>
+                    </div>
+
+                    {% set _pct = trade_percentile|round|int %}
+                    {% if _pct <= 25 %}
+                        {% set _pct_color = '#DC2626' %}
+                    {% elif _pct <= 40 %}
+                        {% set _pct_color = '#CA8A04' %}
+                    {% elif _pct <= 60 %}
+                        {% set _pct_color = '#9AA5B1' %}
+                    {% elif _pct <= 75 %}
+                        {% set _pct_color = '#0284C7' %}
+                    {% else %}
+                        {% set _pct_color = '#16A34A' %}
+                    {% endif %}
+
+                    <div class="trade-pulse-pct-bar-track"
+                         role="progressbar"
+                         aria-valuenow="{{ _pct }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-label="Trade balance at {{ _pct }}th percentile of 10-year range">
+                        <div class="trade-pulse-pct-bar-fill"
+                             style="width:{{ _pct }}%;background:{{ _pct_color }};"></div>
+                    </div>
+
+                    <div style="font-size:0.75rem;color:#697386;margin-top:4px;">
+                        {% if _pct < 50 %}
+                            Weaker than {{ 100 - _pct }}% of months (10-year range)
+                        {% else %}
+                            Stronger than {{ _pct }}% of months (10-year range)
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if trade_interpretation_body %}
+            <div style="margin-top:16px;">
+                <div style="border-left:4px solid #0D9488;background:#FAFBFC;border-radius:0 6px 6px 0;padding:1rem 1.5rem;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                        <i class="bi bi-lightbulb-fill" style="color:#0D9488;font-size:0.875rem;" aria-hidden="true"></i>
+                        <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#697386;">
+                            {{ trade_interpretation_label }}
+                        </span>
+                    </div>
+                    <p style="margin:0;font-size:0.875rem;line-height:1.65;color:#2D3748;">
+                        {{ trade_interpretation_body }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if trade_last_updated %}
+            <div style="margin-top:12px;font-size:0.75rem;color:#9AA5B1;">
+                Last Updated: {{ trade_last_updated }} (FRED BOPGSTB)
+            </div>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
 
     <!-- Collapsible Section: AI Equity Briefing -->
     <div class="collapsible-section" data-collapsed="true" data-section-id="ai-briefing">
@@ -1139,11 +1346,41 @@ function initTimeRangeControls() {
 }
 
 // Initialize on page load
+function initSectorToneToggle() {
+    var toggle = document.getElementById('sector-tone-toggle');
+    var content = document.getElementById('sector-tone-content');
+    if (toggle && content) {
+        toggle.addEventListener('click', function() {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            content.style.display = expanded ? 'none' : 'block';
+            var text = document.getElementById('sector-tone-toggle-text');
+            if (text) text.textContent = expanded ? 'Show Sectors' : 'Hide Sectors';
+        });
+    }
+}
+
+function initTradePulseToggle() {
+    var toggle = document.getElementById('trade-pulse-toggle');
+    var content = document.getElementById('trade-pulse-content');
+    if (toggle && content) {
+        toggle.addEventListener('click', function() {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            content.style.display = expanded ? 'none' : 'block';
+            var text = document.getElementById('trade-pulse-toggle-text');
+            if (text) text.textContent = expanded ? 'View Trade Data' : 'Hide Trade Data';
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     loadEquitySummary();
     loadEquityData();
     initCollapsibleSections();
     initTimeRangeControls();
+    initSectorToneToggle();
+    initTradePulseToggle();
 });
 </script>
 {% endblock %}

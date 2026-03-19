@@ -1,11 +1,27 @@
 {% macro regime_annotation(signal_key) %}
-{% if macro_regime and signal_regime_annotations %}
+{% if market_conditions and signal_conditions_annotations %}
+{% set _quadrant = market_conditions.dimensions.quadrant.state if market_conditions.dimensions and market_conditions.dimensions.quadrant else '' %}
+{% set _text = signal_conditions_annotations.get(signal_key, {}).get(_quadrant, '') %}
+{% if _text %}
+<div class="regime-annotation{% if market_conditions.dimensions and market_conditions.dimensions.quadrant %} conditions-quadrant--{{ _quadrant | lower | replace(' ', '-') }}{% endif %}">
+    <button class="regime-annotation__toggle" aria-expanded="false" type="button">
+        <i class="bi bi-info-circle regime-annotation__icon" aria-hidden="true"></i>
+        <span class="regime-annotation__label">Conditions Context</span>
+        <svg class="regime-annotation__chevron" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+    </button>
+    <p class="regime-annotation__text">{{ _text }}</p>
+</div>
+{% endif %}
+{% elif macro_regime and signal_regime_annotations %}
+{# Fallback to old regime annotations when conditions unavailable #}
 {% set _text = signal_regime_annotations.get(signal_key, {}).get(macro_regime.state, '') %}
 {% if _text %}
 <div class="regime-annotation {{ macro_regime.css_class }}">
     <button class="regime-annotation__toggle" aria-expanded="false" type="button">
         <i class="bi bi-info-circle regime-annotation__icon" aria-hidden="true"></i>
-        <span class="regime-annotation__label">Regime Context</span>
+        <span class="regime-annotation__label">Conditions Context</span>
         <svg class="regime-annotation__chevron" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
         </svg>

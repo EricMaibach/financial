@@ -268,7 +268,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation %}
+{% from '_macros.html' import regime_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -399,6 +399,184 @@
             </p>
         </div>
     </div>
+    {% endif %}
+
+    <!-- Recession Probability Panel (relocated from homepage, US-324.1) -->
+    {% if recession_probability %}
+    <section aria-label="Recession Probability" id="recession-panel-section" class="mb-4" style="padding: 0 var(--space-4); max-width: var(--container-xl); margin: 0 auto;">
+        <div class="recession-panel">
+
+            <div class="section-header mb-2">
+                <h3 class="section-title">
+                    <i class="bi bi-bar-chart-steps me-2"></i>Recession Probability
+                </h3>
+                <button class="btn ai-section-btn" data-section-id="recession-panel-section" aria-label="Ask AI about Recession Probability"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+            </div>
+
+            <button class="recession-panel__toggle"
+                    id="recession-panel-toggle"
+                    aria-expanded="false"
+                    aria-controls="recession-panel-content">
+                <span class="recession-panel__summary">{{ recession_probability.mobile_summary }}</span>
+                <i class="bi bi-chevron-down recession-panel__chevron" aria-hidden="true"></i>
+            </button>
+
+            <div class="recession-panel__content" id="recession-panel-content">
+
+                <div class="recession-model-rows">
+                    {% if recession_probability.ny_fed is defined %}
+                    <div class="recession-model-row">
+                        <div class="recession-model-name">NY FED 12-MONTH LEADING</div>
+                        <div class="recession-model-row-body">
+                            <span class="recession-model-desc">Prospective Risk (12-mo ahead)</span>
+                            <span class="recession-model-value recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed | round(1) }}%</span>
+                            <span class="recession-model-risk-label recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed_risk }}</span>
+                        </div>
+                        {% if recession_probability.ny_fed_lower is defined %}
+                        <div class="recession-model-range">Range: {{ recession_probability.ny_fed_lower | round(1) }}%–{{ recession_probability.ny_fed_upper | round(1) }}%</div>
+                        {% endif %}
+                        {% if recession_probability.ny_fed_date %}
+                        <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
+                        {% endif %}
+                    </div>
+                    <hr class="regime-divider">
+                    {% endif %}
+
+                    {% if recession_probability.chauvet_piger is defined %}
+                    <div class="recession-model-row">
+                        <div class="recession-model-name">CHAUVET-PIGER COINCIDENT</div>
+                        <div class="recession-model-row-body">
+                            <span class="recession-model-desc">Current Activity (real-time)</span>
+                            <span class="recession-model-value recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger | round(1) }}%</span>
+                            <span class="recession-model-risk-label recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger_risk }}</span>
+                        </div>
+                        {% if recession_probability.chauvet_piger_date %}
+                        <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
+                        {% endif %}
+                    </div>
+                    <hr class="regime-divider">
+                    {% endif %}
+
+                    {% if recession_probability.richmond_sos is defined %}
+                    <div class="recession-model-row">
+                        <div class="recession-model-name">RICHMOND FED SOS INDICATOR</div>
+                        <div class="recession-model-row-body">
+                            <span class="recession-model-desc">Weekly Labor Signal</span>
+                            <span class="recession-model-value recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos | round(1) }}%</span>
+                            <span class="recession-model-risk-label recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos_risk }}</span>
+                        </div>
+                        {% if recession_probability.richmond_sos_date %}
+                        <div class="recession-model-date">{{ recession_probability.richmond_sos_date }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="recession-card-grid">
+                    {% if recession_probability.ny_fed is defined %}
+                    {%- set _ny_clamped = [recession_probability.ny_fed, 50.0] | min -%}
+                    {%- set _ny_bar = (_ny_clamped / 50.0 * 100) | round | int -%}
+                    {%- if recession_probability.ny_fed_lower is defined -%}
+                    {%- set _ny_lo = ([recession_probability.ny_fed_lower, 50.0] | min / 50.0 * 100) | round | int -%}
+                    {%- set _ny_hi = ([recession_probability.ny_fed_upper, 50.0] | min / 50.0 * 100) | round | int -%}
+                    {%- set _ny_band_w = _ny_hi - _ny_lo -%}
+                    {%- endif -%}
+                    <div class="recession-card">
+                        <div class="recession-model-name">NY FED 12-MONTH</div>
+                        <div class="recession-model-desc">Prospective Risk (12-mo ahead)</div>
+                        <div class="recession-model-value recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed | round(1) }}%</div>
+                        <div class="recession-model-risk-label recession-model-value--{{ recession_probability.ny_fed_css }}">{{ recession_probability.ny_fed_risk }}</div>
+                        <div class="recession-bar-track" aria-hidden="true">
+                            {% if recession_probability.ny_fed_lower is defined %}
+                            <div class="recession-bar-fill recession-bar-fill--band"
+                                 style="left: {{ _ny_lo }}%; width: {{ _ny_band_w }}%;"></div>
+                            {% endif %}
+                            <div class="recession-bar-marker" style="left: calc({{ _ny_bar }}% - 5px);"></div>
+                        </div>
+                        {% if recession_probability.ny_fed_lower is defined %}
+                        <div class="recession-model-range">Range: {{ recession_probability.ny_fed_lower | round(1) }}%–{{ recession_probability.ny_fed_upper | round(1) }}%</div>
+                        {% endif %}
+                        {% if recession_probability.ny_fed_date %}
+                        <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if recession_probability.chauvet_piger is defined %}
+                    {%- set _cp_clamped = [recession_probability.chauvet_piger, 50.0] | min -%}
+                    {%- set _cp_bar = (_cp_clamped / 50.0 * 100) | round | int -%}
+                    <div class="recession-card">
+                        <div class="recession-model-name">CHAUVET-PIGER</div>
+                        <div class="recession-model-desc">Current Activity (real-time)</div>
+                        <div class="recession-model-value recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger | round(1) }}%</div>
+                        <div class="recession-model-risk-label recession-model-value--{{ recession_probability.chauvet_piger_css }}">{{ recession_probability.chauvet_piger_risk }}</div>
+                        <div class="recession-bar-track" aria-hidden="true">
+                            <div class="recession-bar-fill"
+                                 style="left: 0; width: {{ _cp_bar }}%;"></div>
+                            <div class="recession-bar-marker" style="left: calc({{ _cp_bar }}% - 5px);"></div>
+                        </div>
+                        {% if recession_probability.chauvet_piger_date %}
+                        <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if recession_probability.richmond_sos is defined %}
+                    {%- set _sos_clamped = [recession_probability.richmond_sos, 50.0] | min -%}
+                    {%- set _sos_bar = (_sos_clamped / 50.0 * 100) | round | int -%}
+                    <div class="recession-card">
+                        <div class="recession-model-name">RICHMOND FED SOS</div>
+                        <div class="recession-model-desc">Weekly Labor Signal</div>
+                        <div class="recession-model-value recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos | round(1) }}%</div>
+                        <div class="recession-model-risk-label recession-model-value--{{ recession_probability.richmond_sos_css }}">{{ recession_probability.richmond_sos_risk }}</div>
+                        <div class="recession-bar-track" aria-hidden="true">
+                            <div class="recession-bar-fill"
+                                 style="left: 0; width: {{ _sos_bar }}%;"></div>
+                            <div class="recession-bar-marker" style="left: calc({{ _sos_bar }}% - 5px);"></div>
+                        </div>
+                        {% if recession_probability.richmond_sos_date %}
+                        <div class="recession-model-date">{{ recession_probability.richmond_sos_date }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <hr class="regime-divider">
+                <div class="recession-footer{% if recession_probability.divergence_pp >= 15 %} recession-footer--diverging{% endif %}">
+                    {{ recession_probability.interpretation }}
+                </div>
+                <div class="recession-source">
+                    Data: FRED API · Richmond Fed · Updated {{ recession_probability.updated }}
+                </div>
+
+                <button class="recession-why-toggle"
+                        id="recession-why-toggle"
+                        aria-expanded="false"
+                        aria-controls="recession-why-content">
+                    <span class="recession-why-toggle-line" aria-hidden="true"></span>
+                    <span class="recession-why-toggle-label">
+                        <i class="bi bi-chevron-down recession-why-chevron" aria-hidden="true"></i>
+                        Why three models?
+                    </span>
+                    <span class="recession-why-toggle-line" aria-hidden="true"></span>
+                </button>
+                <div id="recession-why-content" class="recession-why-content" hidden>
+                  <div class="bg-light border-start border-2 border-secondary rounded-2 p-3 mt-2">
+                    <p class="text-xs text-uppercase fw-semibold text-secondary mb-1">
+                      <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Why three models?
+                    </p>
+                    <p class="small text-muted mb-0">
+                      Single indicators fail in practice. The yield curve inverted in 2022 and held through
+                      2024 — a textbook recession signal — while the expansion continued. Three
+                      methodologically distinct models are more reliable than any one, and when they diverge,
+                      the disagreement is itself the signal.
+                    </p>
+                  </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
     {% endif %}
 
     <!-- Collapsible Section: AI Credit Analysis -->
@@ -950,11 +1128,39 @@ async function loadCreditSummary() {
     }
 }
 
+function initRecessionPanel() {
+    // Mobile toggle for recession panel
+    var toggle = document.getElementById('recession-panel-toggle');
+    var content = document.getElementById('recession-panel-content');
+    if (toggle && content) {
+        toggle.addEventListener('click', function() {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            content.style.display = expanded ? 'none' : 'block';
+        });
+    }
+    // "Why three models?" toggle
+    var whyToggle = document.getElementById('recession-why-toggle');
+    var whyContent = document.getElementById('recession-why-content');
+    if (whyToggle && whyContent) {
+        whyToggle.addEventListener('click', function() {
+            var expanded = whyToggle.getAttribute('aria-expanded') === 'true';
+            whyToggle.setAttribute('aria-expanded', String(!expanded));
+            if (expanded) {
+                whyContent.setAttribute('hidden', '');
+            } else {
+                whyContent.removeAttribute('hidden');
+            }
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadCreditData();
     loadCreditSummary();
     initCollapsibleSections();
     initTimeRangeControls();
+    initRecessionPanel();
 });
 </script>
 {% endblock %}
