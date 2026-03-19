@@ -249,6 +249,25 @@ font-feature-settings: 'tnum';   /* Tabular numbers */
 - Full scale
 - Optimize line length (max 80 characters for readability)
 
+### Icon Sizing
+
+Icons follow body text sizing when inline, and scale up for standalone or interactive use.
+
+| Context | Size | Token | Example |
+|---------|------|-------|---------|
+| Inline with body text | 16px | `var(--text-base)` | Signal icons in data tables (`✓`, `✗`, `─`), annotation icons |
+| Inline with small text | 14px | `var(--text-sm)` | Badge icons, label-adjacent icons |
+| Section header icons | 20px | `var(--text-xl)` | `bi-*` icons in section headers |
+| Standalone interactive | 24px | `1.5rem` | Navigation icons, action buttons |
+| Hero / decorative | 48–64px | `var(--text-5xl)` / `4rem` | AI sparkle mark, large data display icons |
+
+**Rules:**
+- Inline icons match the `font-size` of their surrounding text — never larger
+- Bootstrap Icons (`bi-*`): set `font-size` on the element; they scale with the font
+- Unicode signal characters (`✓✓`, `✗`, `─`): inherit parent `font-size` by default — no override needed when inline
+- All decorative icons: `aria-hidden="true"`
+- All interactive icons: minimum 44px touch target (the icon itself can be smaller; the tappable area must not be)
+
 ---
 
 ## Spacing System
