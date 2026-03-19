@@ -249,6 +249,20 @@
   .sector-tone-panel {
     padding: 24px;
   }
+
+  /* Typography scaling for tablet+ */
+  .sector-tone-header-right {
+    font-size: 0.8125rem;
+  }
+  .sector-tone-regime-link {
+    font-size: 0.8125rem;
+  }
+  .sector-card__quarter {
+    font-size: 0.8125rem;
+  }
+  .sector-tone-footer {
+    font-size: 0.8125rem;
+  }
 }
 
 /* ============================================================
@@ -259,5 +273,22 @@
   .sector-card-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
+  }
+
+  /* Typography scaling for desktop */
+  .sector-tone-header-right {
+    font-size: 0.875rem;
+  }
+  .sector-tone-regime-link {
+    font-size: 0.875rem;
+  }
+  .sector-card__tone-label {
+    font-size: 1rem;
+  }
+  .sector-card__quarter {
+    font-size: 0.875rem;
+  }
+  .sector-tone-footer {
+    font-size: 0.875rem;
   }
 }

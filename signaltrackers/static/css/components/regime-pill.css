@@ -8,7 +8,7 @@
   display: inline-block;
   padding: 2px 8px;
   border-radius: 10px;
-  font-size: 12px;        /* --text-xs */
+  font-size: 0.75rem;     /* --text-xs (12px) */
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -21,6 +21,13 @@
 .regime-pill--neutral    { background-color: #1E40AF; color: #fff; }  /* --regime-neutral-border */
 .regime-pill--bear       { background-color: #CA8A04; color: #fff; }  /* --regime-bear-border */
 .regime-pill--recession  { background-color: #DC2626; color: #fff; }  /* --regime-recession-border */
+
+/* Tablet+: scale pill typography */
+@media (min-width: 768px) {
+  .regime-pill {
+    font-size: 0.8125rem;  /* 13px */
+  }
+}
 
 /* Navbar placement variant — gap from brand/tagline */
 .navbar-regime-pill {

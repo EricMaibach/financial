@@ -315,4 +315,36 @@
   .regime-implications-panel {
     padding: 24px;
   }
+
+  /* Typography scaling for tablet+ */
+  .implication-card-label {
+    font-size: 0.8125rem;
+  }
+  .implication-sectors {
+    font-size: 0.8125rem;
+  }
+  .regime-implications-footer {
+    font-size: 0.8125rem;
+  }
+}
+
+/* ============================================================
+   Desktop overrides (1024px+)
+   ============================================================ */
+@media (min-width: 1024px) {
+  .implication-card-label {
+    font-size: 0.875rem;
+  }
+  .implication-annotation {
+    font-size: 1rem;
+  }
+  .implication-sectors {
+    font-size: 0.875rem;
+  }
+  .regime-switcher-label {
+    font-size: 0.8125rem;
+  }
+  .regime-implications-footer {
+    font-size: 0.875rem;
+  }
 }

@@ -200,6 +200,71 @@
 .quadrant-current-dot.quadrant-dot--stagflation { fill: var(--quadrant-stagflation); }
 .quadrant-current-dot.quadrant-dot--deflation   { fill: var(--quadrant-deflation); }
 
+/* Tablet: typography scaling */
+@media (min-width: 768px) {
+    .quadrant-hero__name {
+        font-size: 1.5rem;
+    }
+    .quadrant-hero__signals {
+        font-size: 1rem;
+    }
+    .quadrant-label {
+        font-size: 11px;
+    }
+    .quadrant-name-label {
+        font-size: 12px;
+    }
+    .dimension-card__title {
+        font-size: 0.75rem;
+    }
+    .dimension-card__state {
+        font-size: 0.875rem;
+    }
+    .dimension-metric-row__label,
+    .dimension-metric-row__value {
+        font-size: 0.875rem;
+    }
+    .dimension-card__interp {
+        font-size: 0.875rem;
+    }
+    .dimension-card__links {
+        font-size: 0.875rem;
+    }
+    .dimension-card__sparkline-label,
+    .dimension-card__explainer-title {
+        font-size: 0.75rem;
+    }
+    .risk-score-bar__label {
+        font-size: 0.8125rem;
+    }
+    .risk-score-bar__segments,
+    .policy-stance-bar__segments {
+        font-size: 0.75rem;
+    }
+    .implications-table thead th {
+        font-size: 0.75rem;
+    }
+    .implications-table tbody th {
+        font-size: 0.875rem;
+    }
+    .implications-table tbody td {
+        font-size: 0.875rem;
+    }
+    .implications-signal__text {
+        font-size: 0.8125rem;
+    }
+    .implications-why {
+        font-size: 0.8125rem;
+    }
+    .movers-strip__title {
+        font-size: 0.8125rem;
+    }
+    .movers-strip__ticker,
+    .movers-strip__change {
+        font-size: 1rem;
+    }
+}
+
 /* Desktop: 2-column hero layout */
 @media (min-width: 1024px) {
     .quadrant-hero {
@@ -215,6 +280,69 @@
     .quadrant-hero__viz {
         width: 350px;
         flex-shrink: 0;
+    }
+    .quadrant-hero__name {
+        font-size: 1.75rem;
+    }
+    .quadrant-label {
+        font-size: 12px;
+    }
+    .quadrant-name-label {
+        font-size: 13px;
+    }
+    .dimension-card__title {
+        font-size: 0.875rem;
+    }
+    .dimension-card__state {
+        font-size: 1rem;
+    }
+    .dimension-metric-row__label,
+    .dimension-metric-row__value {
+        font-size: 1rem;
+    }
+    .dimension-card__interp {
+        font-size: 1rem;
+    }
+    .dimension-card__links {
+        font-size: 1rem;
+    }
+    .dimension-card__sparkline-label,
+    .dimension-card__explainer-title {
+        font-size: 0.875rem;
+    }
+    .risk-score-bar__label {
+        font-size: 0.875rem;
+    }
+    .risk-score-bar__segments,
+    .policy-stance-bar__segments {
+        font-size: 0.8125rem;
+    }
+    .implications-table thead th {
+        font-size: 0.875rem;
+    }
+    .implications-table tbody th {
+        font-size: 1rem;
+    }
+    .implications-table tbody td {
+        font-size: 1rem;
+    }
+    .implications-signal__text {
+        font-size: 0.875rem;
+    }
+    .implications-why {
+        font-size: 0.875rem;
+    }
+    .implications-context {
+        font-size: 1rem;
+    }
+    .implications-explore {
+        font-size: 1rem;
+    }
+    .movers-strip__title {
+        font-size: 0.875rem;
+    }
+    .movers-strip__see-all {
+        font-size: 1rem;
     }
 }
 
