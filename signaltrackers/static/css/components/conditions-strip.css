@@ -185,3 +185,16 @@
         display: none !important;
     }
 }
+
+/* === Desktop (1024px+): scale typography === */
+@media (min-width: 1024px) {
+    .conditions-strip__name {
+        font-size: 1rem;
+    }
+    .conditions-strip__dim {
+        font-size: 1rem;
+    }
+    .conditions-strip__context-text {
+        font-size: 1rem;
+    }
+}
