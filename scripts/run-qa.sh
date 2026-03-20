@@ -1,5 +1,5 @@
 #!/bin/bash
-# QA Agent — runs every 10 minutes
+# QA Agent — runs every 5 minutes
 # Start this from within the financial-qa directory
 
 # Pre-flight check: returns 0 if Claude should run, 1 if there's nothing to do.
@@ -24,8 +24,8 @@ while true; do
 
   if qa_has_work; then
     claude --dangerously-skip-permissions -p "/work-qa"
-    echo "=== QA done. Next run in 10 minutes ==="
+    echo "=== QA done. Next run in 5 minutes ==="
   fi
 
-  sleep 600
+  sleep 300
 done
