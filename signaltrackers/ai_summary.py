@@ -34,10 +34,13 @@ from web_search import (
 )
 
 try:
-    from regime_detection import get_macro_regime
+    from market_conditions import get_market_conditions, get_conditions_history
 except ImportError:
-    def get_macro_regime():
+    def get_market_conditions():
         return None
+
+    def get_conditions_history():
+        return {}
 
 # =============================================================================
 # AI Provider Configuration
@@ -105,6 +108,28 @@ DATA_DIR = Path("data")
 SUMMARIES_FILE = DATA_DIR / "ai_summaries.json"
 
 
+def _dump_prompt_to_file(log_prefix, provider, system_prompt, user_prompt, max_tokens):
+    """DEBUG: Save the full prompt sent to the AI to a text file for review."""
+    dump_dir = Path("data/prompt_dumps")
+    dump_dir.mkdir(parents=True, exist_ok=True)
+    # Build a filename from the log_prefix, e.g. "[Crypto Summary]" -> "crypto_summary"
+    tag = log_prefix.strip("[] ").lower().replace(" ", "_")
+    filename = dump_dir / f"{tag}.txt"
+    with open(filename, "w") as f:
+        f.write(f"=== PROMPT DUMP: {log_prefix} ===\n")
+        f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+        f.write(f"Provider: {provider}\n")
+        f.write(f"Max tokens: {max_tokens}\n")
+        f.write(f"\n{'='*60}\n")
+        f.write(f"SYSTEM PROMPT\n{'='*60}\n")
+        f.write(system_prompt)
+        f.write(f"\n\n{'='*60}\n")
+        f.write(f"USER PROMPT\n{'='*60}\n")
+        f.write(user_prompt)
+        f.write("\n")
+    print(f"{log_prefix} Prompt dumped to {filename}")
+
+
 def call_ai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_prefix="[AI]", provider=None):
     """
     Make an AI API call with web search tool support.
@@ -126,6 +151,9 @@ def call_ai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_p
         provider = get_ai_provider()
 
     print(f"{log_prefix} Using provider: {provider}")
+
+    # DEBUG: dump full prompt to file for review
+    _dump_prompt_to_file(log_prefix, provider, system_prompt, user_prompt, max_tokens)
 
     if provider == 'anthropic':
         return _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix)
@@ -520,6 +548,222 @@ def fetch_news_for_summary():
     return "\n".join(news_parts) if news_parts else None
 
 
+# =============================================================================
+# Market Conditions Context for AI Briefing (US-325.1)
+# =============================================================================
+
+def _build_conditions_context(conditions):
+    """Build a structured conditions context string for the AI prompt.
+
+    Args:
+        conditions: dict from get_market_conditions() with quadrant, dimensions, etc.
+
+    Returns:
+        Formatted string describing current market conditions across all 4 dimensions.
+    """
+    if not conditions:
+        return ""
+
+    dims = conditions.get('dimensions', {})
+    quadrant = conditions.get('quadrant', 'Unknown')
+
+    quad_dims = dims.get('quadrant', {})
+    liq = dims.get('liquidity', {})
+    risk = dims.get('risk', {})
+    policy = dims.get('policy', {})
+
+    parts = ["## CURRENT MARKET CONDITIONS"]
+    parts.append(f"Quadrant: {quadrant}")
+
+    # Growth/inflation composites if available
+    growth = quad_dims.get('growth_composite')
+    inflation = quad_dims.get('inflation_composite')
+    if growth is not None and inflation is not None:
+        parts.append(f"  Growth composite: {growth:+.2f}, Inflation composite: {inflation:+.2f}")
+
+    # Liquidity
+    liq_state = liq.get('state', 'Unknown')
+    liq_score = liq.get('score')
+    liq_line = f"Liquidity: {liq_state}"
+    if liq_score is not None:
+        liq_line += f" (score: {liq_score:.2f})"
+    parts.append(liq_line)
+
+    # Risk
+    risk_state = risk.get('state', 'Unknown')
+    risk_score = risk.get('score')
+    risk_line = f"Risk: {risk_state}"
+    if risk_score is not None:
+        risk_line += f" (score: {risk_score:.1f})"
+    vix = risk.get('vix_level')
+    if vix is not None:
+        risk_line += f", VIX: {vix:.1f}"
+    parts.append(risk_line)
+
+    # Policy
+    stance = policy.get('stance', 'Unknown')
+    direction = policy.get('direction', 'Unknown')
+    policy_line = f"Policy: {stance}, direction {direction}"
+    taylor_gap = policy.get('taylor_gap')
+    if taylor_gap is not None:
+        policy_line += f" (Taylor gap: {taylor_gap:+.2f})"
+    parts.append(policy_line)
+
+    # Asset expectations
+    expectations = conditions.get('asset_expectations', [])
+    if expectations:
+        parts.append("\nAsset expectations:")
+        for exp in expectations:
+            parts.append(f"  {exp['asset']}: {exp['direction']} ({exp['magnitude']})")
+
+    return "\n".join(parts)
+
+
+def _build_conditions_history_context(history, days=90):
+    """Build a conditions history summary for the AI prompt.
+
+    Args:
+        history: dict mapping ISO date strings to condition snapshots.
+        days: Number of days of history to include.
+
+    Returns:
+        Formatted string summarizing conditions trends over the period.
+    """
+    if not history:
+        return ""
+
+    eastern = pytz.timezone('US/Eastern')
+    cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
+
+    # Filter and sort chronologically
+    recent = {d: v for d, v in history.items() if d >= cutoff}
+    if not recent:
+        return ""
+
+    sorted_dates = sorted(recent.keys())
+
+    parts = [f"\n## CONDITIONS HISTORY ({len(sorted_dates)} snapshots, last {days} days)"]
+
+    # Show each snapshot compactly
+    for date in sorted_dates:
+        entry = recent[date]
+        quadrant = entry.get('quadrant', '?')
+        dims = entry.get('dimensions', {})
+        liq_state = dims.get('liquidity', {}).get('state', '?')
+        liq_score = dims.get('liquidity', {}).get('score')
+        risk_state = dims.get('risk', {}).get('state', '?')
+        policy_stance = dims.get('policy', {}).get('stance', '?')
+        policy_dir = dims.get('policy', {}).get('direction', '?')
+
+        # Include growth/inflation scores if available (per PM note on #333)
+        growth = entry.get('growth_score') or dims.get('quadrant', {}).get('growth_composite')
+        inflation = entry.get('inflation_score') or dims.get('quadrant', {}).get('inflation_composite')
+
+        score_str = ""
+        if growth is not None and inflation is not None:
+            score_str = f" [growth={growth:+.2f}, inflation={inflation:+.2f}]"
+
+        liq_str = liq_state
+        if liq_score is not None:
+            liq_str = f"{liq_state}({liq_score:.2f})"
+
+        parts.append(
+            f"  {date}: {quadrant}{score_str} | Liq: {liq_str} | Risk: {risk_state} | Policy: {policy_stance}/{policy_dir}"
+        )
+
+    # Compute summary statistics for the AI
+    quadrants = [recent[d].get('quadrant') for d in sorted_dates if recent[d].get('quadrant')]
+    if quadrants:
+        current = quadrants[-1]
+        # Count consecutive days in current quadrant from the end
+        streak = 0
+        for q in reversed(quadrants):
+            if q == current:
+                streak += 1
+            else:
+                break
+        if streak > 1:
+            parts.append(f"\nCurrent quadrant streak: {current} for {streak} consecutive snapshots")
+
+        # Note any transitions
+        transitions = []
+        for i in range(1, len(quadrants)):
+            if quadrants[i] != quadrants[i - 1]:
+                transitions.append(f"{sorted_dates[i]}: {quadrants[i-1]} → {quadrants[i]}")
+        if transitions:
+            parts.append("Transitions: " + "; ".join(transitions))
+
+    return "\n".join(parts)
+
+
+def _generate_fallback_briefing(conditions):
+    """Generate a rule-based briefing when AI is unavailable.
+
+    Args:
+        conditions: dict from get_market_conditions().
+
+    Returns:
+        String with a coherent briefing built from dimension states.
+    """
+    if not conditions:
+        return "Market conditions data is currently unavailable. Check back later for the daily briefing."
+
+    quadrant = conditions.get('quadrant', 'Unknown')
+    dims = conditions.get('dimensions', {})
+    liq = dims.get('liquidity', {})
+    risk = dims.get('risk', {})
+    policy = dims.get('policy', {})
+
+    liq_state = liq.get('state', 'Unknown')
+    risk_state = risk.get('state', 'Normal')
+    policy_stance = policy.get('stance', 'Neutral')
+    policy_dir = policy.get('direction', 'Paused')
+
+    # Quadrant descriptions
+    quadrant_desc = {
+        'Goldilocks': "Growth is accelerating while inflation is cooling — the most favorable macro environment for risk assets.",
+        'Reflation': "Both growth and inflation are accelerating — good for equities and commodities, but bonds face headwinds from rising rate expectations.",
+        'Stagflation': "Growth is decelerating while inflation remains sticky — the most challenging environment for portfolios, historically favoring gold and real assets.",
+        'Deflation Risk': "Growth is decelerating alongside falling inflation — bonds benefit from flight to safety, while equities face earnings headwinds.",
+    }
+
+    # Liquidity context
+    liq_desc = {
+        'Expanding': "Expanding liquidity provides a tailwind for risk assets.",
+        'Strongly Expanding': "Strongly expanding liquidity is a powerful tailwind for risk assets, particularly crypto and equities.",
+        'Neutral': "Liquidity conditions are neutral, providing neither tailwind nor headwind.",
+        'Contracting': "Contracting liquidity creates headwinds across asset classes.",
+        'Strongly Contracting': "Strongly contracting liquidity is a significant headwind — historically associated with drawdowns.",
+    }
+
+    # Risk context
+    risk_desc = {
+        'Calm': "Risk appetite is healthy with low volatility.",
+        'Normal': "Volatility is within normal ranges.",
+        'Elevated': "Elevated volatility signals caution — markets are pricing in uncertainty.",
+        'Stressed': "Risk markets are under stress — defensive positioning is warranted.",
+    }
+
+    # Policy context
+    policy_desc = {
+        ('Accommodative', 'Easing'): "The Fed is actively easing — a tailwind for both stocks and bonds.",
+        ('Accommodative', 'Paused'): "Monetary policy is accommodative and on hold — supportive of asset prices.",
+        ('Accommodative', 'Tightening'): "Policy is transitioning from accommodative — watch for the shift in market leadership.",
+        ('Neutral', 'Easing'): "The Fed is moving toward easier policy — a developing tailwind for markets.",
+        ('Neutral', 'Paused'): "Monetary policy is neutral and stable — markets driven by fundamentals rather than policy.",
+        ('Neutral', 'Tightening'): "The Fed is tightening from a neutral stance — headwinds building for rate-sensitive sectors.",
+        ('Restrictive', 'Easing'): "Policy is restrictive but easing — the most important macro development to watch.",
+        ('Restrictive', 'Paused'): "Policy remains restrictive — higher-for-longer weighs on duration and leveraged assets.",
+        ('Restrictive', 'Tightening'): "Aggressive tightening continues — historically a precursor to significant market stress.",
+    }
+
+    p1 = quadrant_desc.get(quadrant, f"The current macro quadrant is {quadrant}.")
+    p2 = liq_desc.get(liq_state, "") + " " + risk_desc.get(risk_state, "")
+    p3 = policy_desc.get((policy_stance, policy_dir), f"Monetary policy stance is {policy_stance} with a {policy_dir.lower()} direction.")
+
+    return f"The macro environment is currently in {quadrant}. {p1}\n\n{p2.strip()}\n\n{p3}"
+
+
 def generate_daily_summary(market_data_summary, top_movers):
     """
     Generate the daily AI summary.
@@ -533,21 +777,28 @@ def generate_daily_summary(market_data_summary, top_movers):
     """
     client, error = get_ai_client()
     if client is None:
+        # AI unavailable — generate rule-based fallback (US-325.1)
+        print("[AI Summary] AI client unavailable, generating rule-based fallback briefing")
+        conditions = get_market_conditions()
+        fallback = _generate_fallback_briefing(conditions)
+        eastern = pytz.timezone('US/Eastern')
+        today = datetime.now(eastern).strftime('%Y-%m-%d')
+        save_summary(date_str=today, summary_text=fallback, web_search_used=False, news_context=None)
         return {
-            'success': False,
-            'summary': None,
-            'error': error
+            'success': True,
+            'summary': fallback,
+            'error': None
         }
 
     try:
         eastern = pytz.timezone('US/Eastern')
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
-        # Get previous summaries for context
-        recent_summaries = get_recent_summaries(days=3)
+        # Get previous summaries for context (14 days for foresight callbacks)
+        recent_summaries = get_recent_summaries(days=14)
         previous_context = ""
         if recent_summaries:
-            previous_context = "\n\n## YOUR PREVIOUS SUMMARIES (for continuity - don't repeat these points):\n"
+            previous_context = "\n\n## YOUR PREVIOUS BRIEFINGS (14 days — reference your earlier predictions when relevant, but don't repeat themes):\n"
             for s in recent_summaries:
                 if s["date"] != today:  # Don't include today if regenerating
                     previous_context += f"\n### {s['date']}:\n{s['summary']}\n"
@@ -593,7 +844,15 @@ def generate_daily_summary(market_data_summary, top_movers):
                 direction = "up" if m['change_5d'] > 0 else "down"
                 movers_text += f"- {m['name']}: {m['change_5d']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
 
-        # The system prompt - this is the key to getting great summaries
+        # Build market conditions context (US-325.1)
+        conditions = get_market_conditions()
+        conditions_context = _build_conditions_context(conditions)
+
+        # Build 90-day conditions history context
+        history = get_conditions_history()
+        conditions_history = _build_conditions_history_context(history, days=90)
+
+        # The system prompt - quadrant-led three-paragraph narrative (US-325.1)
         system_prompt = """You are a brilliant, trusted financial commentator - think of yourself as the host of the most valuable daily financial briefing that exists. Your audience is individual investors who are smart but busy. They could only pick ONE source of financial insight each day, and they've chosen you because:
 
 1. You don't just report numbers - you CONNECT THE DOTS and tell the STORY of what's happening
@@ -605,35 +864,27 @@ def generate_daily_summary(market_data_summary, top_movers):
 Your style is conversational but substantive - like a really smart friend who happens to be a market expert. You're not stuffy or formal, but you're also not dumbed down.
 
 CRITICAL RULES:
-- Write EXACTLY 2 paragraphs (150-200 words total)
-- First paragraph: The most important story/theme TODAY - what's the narrative? What should people understand?
-- Second paragraph: The "so what" - implications, what to watch, connecting today to bigger trends
+- Write EXACTLY 3 paragraphs (200-250 words total)
+- First paragraph: WHAT'S HAPPENING — Open by naming the current macro quadrant and what it means. Describe today's conditions across the four dimensions (quadrant, liquidity, risk, policy). Ground the reader in where we are.
+- Second paragraph: WHAT'S CHANGING — Use the conditions history to identify trends, transitions, and boundary proximity. How long have we been here? Are we drifting toward a different quadrant? Reference your own earlier predictions when relevant ("I noted X last week, and today...").
+- Third paragraph: WHAT TO DO — Portfolio implications. Connect conditions to asset class expectations. What should investors watch? End forward-looking.
 - DO NOT just list data points or metrics - ANALYZE and INTERPRET
-- DO NOT repeat themes from your previous summaries - find fresh angles
+- DO NOT repeat themes from your previous briefings - find fresh angles
+- DO NOT reference old regime labels (Bull, Bear, Neutral, Recession Watch) — use only the four quadrants: Goldilocks, Reflation, Stagflation, Deflation Risk
 - If specific market briefings (crypto, equity, rates, dollar) are provided, SYNTHESIZE key insights from them into a cohesive narrative rather than summarizing each separately
 - If something is at an extreme percentile or historically unusual, HIGHLIGHT it with context
 - Reference specific numbers sparingly but meaningfully
 - If news events are driving markets, weave them into the narrative
-- End with something forward-looking or thought-provoking
 
 You have access to a web search tool if you need to look up additional context about specific events, companies, or breaking news mentioned in the data. Use it when helpful to provide better context.
 
 You're writing the one thing someone reads about markets today. Make it count."""
 
-        # Build regime prefix for Today's Briefing if macro regime is available
-        regime = get_macro_regime()
-        regime_state = regime['state'] if regime and regime.get('state') else None
-        if regime_state and regime_state.lower() != 'unknown':
-            regime_prefix_briefing = (
-                f"Open your briefing by naming the current macro regime ({regime_state}) "
-                "and in one sentence explaining what it means for investors today. "
-                "Then proceed with your standard briefing content. "
-            )
-        else:
-            regime_prefix_briefing = ""
+        # The user prompt with conditions context replacing old regime prefix
+        user_prompt = f"""Today is {today}. Generate today's market briefing.
 
-        # The user prompt with all the data
-        user_prompt = f"""{regime_prefix_briefing}Today is {today}. Generate today's market briefing.
+{conditions_context}
+{conditions_history}
 
 {market_data_summary}
 {movers_text}
@@ -641,22 +892,31 @@ You're writing the one thing someone reads about markets today. Make it count.""
 {specific_briefings_context}
 {previous_context}
 
-Remember: 2 paragraphs, tell the story, don't repeat previous themes, make it the most valuable 30 seconds of their day."""
+Remember: 3 paragraphs (what's happening, what's changing, what to do), tell the story, don't repeat previous themes, make it the most valuable 30 seconds of their day."""
 
         # Make the API call with web search tool support
         result = call_ai_with_tools(
             client=client,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            max_tokens=600,
+            max_tokens=800,
             log_prefix="[AI Summary]"
         )
 
         if not result['success']:
+            # Fall back to rule-based briefing when AI is unavailable
+            print("[AI Summary] AI call failed, generating rule-based fallback briefing")
+            fallback = _generate_fallback_briefing(conditions)
+            save_summary(
+                date_str=today,
+                summary_text=fallback,
+                web_search_used=False,
+                news_context=None
+            )
             return {
-                'success': False,
-                'summary': None,
-                'error': result['error']
+                'success': True,
+                'summary': fallback,
+                'error': None
             }
 
         summary = result['content']
@@ -820,7 +1080,7 @@ def generate_crypto_summary(crypto_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous crypto summaries for context
-        recent_summaries = get_recent_crypto_summaries(days=3)
+        recent_summaries = get_recent_crypto_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS CRYPTO SUMMARIES (for continuity - don't repeat these):\n"
@@ -1040,7 +1300,7 @@ def generate_equity_summary(equity_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous equity summaries for context
-        recent_summaries = get_recent_equity_summaries(days=3)
+        recent_summaries = get_recent_equity_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS EQUITY SUMMARIES (for continuity - don't repeat these):\n"
@@ -1261,7 +1521,7 @@ def generate_rates_summary(rates_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous rates summaries for context
-        recent_summaries = get_recent_rates_summaries(days=3)
+        recent_summaries = get_recent_rates_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS RATES SUMMARIES (for continuity - don't repeat these):\n"
@@ -1482,7 +1742,7 @@ def generate_dollar_summary(dollar_data_summary):
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
         # Get previous dollar summaries for context
-        recent_summaries = get_recent_dollar_summaries(days=3)
+        recent_summaries = get_recent_dollar_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS DOLLAR SUMMARIES (for continuity - don't repeat these):\n"
@@ -1695,7 +1955,7 @@ def generate_credit_summary(credit_data_summary):
         eastern = pytz.timezone('US/Eastern')
         today = datetime.now(eastern).strftime('%Y-%m-%d')
 
-        recent_summaries = get_recent_credit_summaries(days=3)
+        recent_summaries = get_recent_credit_summaries(days=14)
         previous_context = ""
         if recent_summaries:
             previous_context = "\n\n## YOUR PREVIOUS CREDIT SUMMARIES (for continuity - don't repeat these):\n"
@@ -1711,12 +1971,12 @@ def generate_credit_summary(credit_data_summary):
 
         system_prompt = """You are a credit market analyst providing daily briefings for the Credit Markets page of a financial dashboard. Your audience understands markets and wants actionable insight on corporate credit conditions, spread dynamics, and what credit is signaling about the economy.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, macro regime, default risk, and cross-asset implications.
+Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, market conditions, default risk, and cross-asset implications.
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
 - First paragraph: The credit story TODAY - where HY and IG spreads are, whether they're tight/normal/wide versus history (percentile), and what the trend has been. Include specific spread levels in basis points.
-- Second paragraph: The macro interpretation - what current spread levels imply about default risk, the economic cycle, and risk appetite. Connect to the macro regime (bull/bear/recession watch) and explain whether credit conditions are confirming or diverging from equity market signals.
+- Second paragraph: The macro interpretation - what current spread levels imply about default risk, the economic cycle, and risk appetite. Connect to the current market conditions quadrant and explain whether credit conditions are confirming or diverging from equity market signals.
 - Third paragraph: What to watch - key spread thresholds that would change the outlook, CCC vs HY dynamics (distress concentration), and the main risk scenarios (spread widening triggers, liquidity conditions). End with specific actionable guidance.
 - Reference specific numbers (spread levels in bps, percentile rankings) meaningfully
 - Highlight any EXTREME readings (>95th or <5th percentile) with historical context

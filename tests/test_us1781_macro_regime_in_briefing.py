@@ -62,9 +62,10 @@ class TestStaticEnrichmentBlocks(unittest.TestCase):
     def setUpClass(cls):
         cls.src = read_source('dashboard.py')
 
-    def test_macro_regime_section_heading(self):
-        self.assertIn('## MACRO REGIME', self.src,
-                      '## MACRO REGIME heading missing from generate_market_summary()')
+    def test_macro_regime_section_removed_from_prompt(self):
+        """US-325.1: Old MACRO REGIME heading must NOT appear in AI prompt builder."""
+        self.assertNotIn('## MACRO REGIME"', self.src,
+                         '## MACRO REGIME heading should be removed per US-325.1')
 
     def test_recession_section_heading(self):
         self.assertIn('## RECESSION PROBABILITY MODELS', self.src,
@@ -110,21 +111,19 @@ class TestStaticEnrichmentBlocks(unittest.TestCase):
         self.assertIn("richmond_sos_risk", self.src,
                       "richmond_sos_risk label not used in recession block")
 
-    def test_regime_exception_guard(self):
-        self.assertIn('pass  # Skip if regime data unavailable', self.src,
-                      'Exception guard missing for regime enrichment block')
+    def test_regime_section_replaced_with_conditions(self):
+        """US-325.1: Old regime block replaced with conditions context comment."""
+        self.assertIn('conditions context', self.src,
+                      'Conditions context reference missing after regime block removal')
 
     def test_recession_exception_guard(self):
         self.assertIn('pass  # Skip if recession data unavailable', self.src,
                       'Exception guard missing for recession enrichment block')
 
-    def test_regime_implications_get_used_safely(self):
-        self.assertIn("REGIME_IMPLICATIONS.get(regime", self.src,
-                      "REGIME_IMPLICATIONS must be accessed via .get() to avoid KeyError")
-
-    def test_regime_implications_label_in_output(self):
-        self.assertIn("Regime implications:", self.src,
-                      "'Regime implications:' string not found in generate_market_summary()")
+    def test_regime_implications_still_available_for_ui(self):
+        """REGIME_IMPLICATIONS import still present for UI regime strip (not AI prompts)."""
+        self.assertIn("REGIME_IMPLICATIONS", self.src,
+                      "REGIME_IMPLICATIONS import should remain for UI components")
 
     def test_model_parts_list_used(self):
         self.assertIn('model_parts', self.src,
@@ -138,17 +137,12 @@ class TestStaticOrdering(unittest.TestCase):
     def setUpClass(cls):
         cls.src = read_source('dashboard.py')
 
-    def test_macro_regime_after_prediction_markets(self):
+    def test_recession_after_prediction_markets(self):
+        """US-325.1: With MACRO REGIME removed, recession block follows prediction markets."""
         pred_pos = self.src.find('## PREDICTION MARKETS (Kalshi)')
-        regime_pos = self.src.find('## MACRO REGIME')
-        self.assertGreater(regime_pos, pred_pos,
-                           '## MACRO REGIME must appear after ## PREDICTION MARKETS in source')
-
-    def test_recession_after_regime(self):
-        regime_pos = self.src.find('## MACRO REGIME')
         recession_pos = self.src.find('## RECESSION PROBABILITY MODELS')
-        self.assertGreater(recession_pos, regime_pos,
-                           '## RECESSION PROBABILITY MODELS must appear after ## MACRO REGIME')
+        self.assertGreater(recession_pos, pred_pos,
+                           '## RECESSION PROBABILITY MODELS must appear after ## PREDICTION MARKETS')
 
     def test_enrichment_before_return_statement(self):
         """Both blocks must appear before the return of generate_market_summary."""
@@ -385,22 +379,14 @@ class TestSecurityConstraints(unittest.TestCase):
         cls.src = read_source('dashboard.py')
 
     def test_no_eval_on_cache_values(self):
-        macro_regime_block_start = self.src.find('# Macro Regime State')
+        """No eval() in recession probability enrichment block."""
         recession_block_start = self.src.find('# Recession Probability Models')
-        return_pos = self.src.find('return "\\n".join(summary_parts)', max(macro_regime_block_start, recession_block_start))
-        block = self.src[macro_regime_block_start:return_pos]
+        if recession_block_start == -1:
+            recession_block_start = self.src.find('## RECESSION PROBABILITY MODELS')
+        return_pos = self.src.find('return "\\n".join(summary_parts)', recession_block_start)
+        block = self.src[recession_block_start:return_pos]
         self.assertNotIn('eval(', block,
-                         'eval() found in regime/recession enrichment block')
-
-    def test_regime_state_used_only_as_dict_key(self):
-        """regime['state'] must not appear inside | safe Jinja2 filter (not in template context)."""
-        # dashboard.py doesn't render regime state with | safe in generate_market_summary
-        # (it's a text string builder, not a template renderer)
-        macro_block_start = self.src.find('# Macro Regime State')
-        return_pos = self.src.find("return \"\\n\".join(summary_parts)", macro_block_start)
-        block = self.src[macro_block_start:return_pos]
-        self.assertNotIn('| safe', block,
-                         "| safe filter found in regime enrichment block — state must not be rendered unsanitised")
+                         'eval() found in recession enrichment block')
 
 
 if __name__ == '__main__':
