@@ -47,7 +47,6 @@
     border: 1px solid #E2E8F0;
     border-radius: 8px;
     padding: 1.25rem;
-    max-width: 65ch;
 }
 
 .conditions-briefing__narrative p {
@@ -69,7 +68,6 @@
 
 @media (min-width: 1024px) {
     .conditions-briefing__card {
-        margin: 0 auto;
         padding: 1.5rem;
     }
 }
@@ -142,6 +140,13 @@
     width: 100%;
     max-width: 320px;
     margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+    .quadrant-hero__viz {
+        max-width: none;
+        margin: 0;
+    }
 }
 
 .quadrant-viz {
@@ -272,14 +277,16 @@
     }
     .quadrant-hero__content {
         flex-direction: row;
-        align-items: flex-start;
+        align-items: center;
     }
     .quadrant-hero__text {
-        flex: 1;
+        flex: 2;
+        min-width: 0;
     }
     .quadrant-hero__viz {
-        width: 350px;
-        flex-shrink: 0;
+        flex: 3;
+        min-width: 0;
+        max-width: none;
     }
     .quadrant-hero__name {
         font-size: 1.75rem;
@@ -428,14 +435,15 @@
 .dimension-card__chevron {
     position: absolute;
     bottom: 0.5rem;
-    right: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
     color: #94A3B8;
     font-size: 0.75rem;
     transition: transform 0.3s ease-out;
 }
 
 .dimension-card--expanded .dimension-card__chevron {
-    transform: rotate(180deg);
+    transform: translateX(-50%) rotate(180deg);
 }
 
 /* Crypto card specific */
@@ -622,6 +630,15 @@ a.dimension-metric-row:hover {
 
 .spectrum-bar {
     width: 100%;
+}
+
+.spectrum-bar__label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94A3B8;
+    margin-bottom: 0.25rem;
 }
 
 .spectrum-bar__track {
