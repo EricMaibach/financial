@@ -1,5 +1,5 @@
 #!/bin/bash
-# Engineer Agent — runs every 30 minutes, starts 10 minutes after QA
+# Engineer Agent — runs every 5 minutes, starts 5 minutes after launch
 # Start this from within the financial-engineer directory
 
 # Pre-flight check: returns 0 if Claude should run, 1 if there's nothing to do.
@@ -28,8 +28,8 @@ engineer_has_work() {
 }
 
 echo ""
-echo "=== Engineer Agent: waiting 10 minutes before first run ==="
-sleep 600
+echo "=== Engineer Agent: waiting 5 minutes before first run ==="
+sleep 300
 
 while true; do
   echo ""
@@ -37,8 +37,8 @@ while true; do
 
   if engineer_has_work; then
     claude --dangerously-skip-permissions -p "/work-engineer"
-    echo "=== Engineer done. Next run in 10 minutes ==="
+    echo "=== Engineer done. Next run in 5 minutes ==="
   fi
 
-  sleep 600
+  sleep 300
 done
