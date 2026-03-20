@@ -489,8 +489,8 @@ def _get_stored_news_context(topic: str | None = None) -> str | None:
     Read news context from the stored news pipeline data.
 
     If topic is None, returns the cross-market summary string (for daily briefing).
-    If topic is given (e.g. 'crypto'), returns formatted article snippets for that topic.
-    Returns None if no stored data is available or the topic has no matching articles.
+    If topic is given (e.g. 'crypto'), returns the pre-built AI topic summary.
+    Returns None if no stored data is available or the topic has no content.
     """
     try:
         from news_pipeline import get_stored_news
@@ -504,22 +504,15 @@ def _get_stored_news_context(topic: str | None = None) -> str | None:
     if topic is None:
         return stored.get('summary')
 
-    articles = [a for a in stored.get('articles', []) if a.get('topic') == topic]
-    if not articles:
-        return None
+    # Use pre-built AI topic summary if available
+    topic_summaries = stored.get('topic_summaries', {})
+    topic_summary = topic_summaries.get(topic)
+    if topic_summary:
+        topic_label = topic.replace('_', ' ').title()
+        return f"## Today's {topic_label} News\n{topic_summary}"
 
-    topic_label = topic.replace('_', ' ').title()
-    parts = [f"## Today's {topic_label} News"]
-    for art in articles[:8]:
-        headline = art.get('headline', '')
-        content = art.get('raw_content', '') or ''
-        snippet = content[:200] if content else ''
-        if snippet:
-            parts.append(f"- {headline}: {snippet}...")
-        else:
-            parts.append(f"- {headline}")
-
-    return '\n'.join(parts)
+    # No pre-built summary available for this topic
+    return None
 
 
 def fetch_news_for_summary():
