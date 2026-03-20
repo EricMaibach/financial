@@ -129,7 +129,74 @@ def _generate_cross_market_summary(articles: list[dict]) -> str | None:
         return _summarize_with_openai(system_prompt, user_prompt)
 
 
-def _summarize_with_openai(system_prompt: str, user_prompt: str) -> str | None:
+def _generate_topic_summary(topic: str, articles: list[dict]) -> str | None:
+    """
+    Generate a focused 1-2 paragraph AI summary for a single market topic.
+    Returns the summary string, or None on failure.
+    """
+    if not articles:
+        return None
+
+    digest_parts = []
+    for art in articles[:10]:
+        content_snippet = (art['raw_content'] or '')[:600]
+        digest_parts.append(
+            f"{art['headline']}\n"
+            f"Source: {art['source']}\n"
+            f"{content_snippet}"
+        )
+    digest = '\n\n---\n\n'.join(digest_parts)
+
+    topic_label = topic.replace('_', ' ').title()
+    system_prompt = (
+        f"You are a senior {topic_label.lower()} market analyst writing a brief news summary. "
+        f"Summarize today's {topic_label.lower()} news in 1-2 concise paragraphs of flowing prose. "
+        "Do NOT use bullet points, headers, or lists. Focus on the most significant developments, "
+        "key numbers, and market implications. Be direct and authoritative."
+    )
+    user_prompt = (
+        f"Today's date: {date.today().isoformat()}\n\n"
+        f"Here are today's {topic_label.lower()} articles:\n\n{digest}\n\n"
+        f"Write your {topic_label.lower()} news summary now."
+    )
+
+    provider = os.environ.get('AI_PROVIDER', 'openai').lower()
+    if provider == 'anthropic':
+        return _summarize_with_anthropic(system_prompt, user_prompt, max_tokens=500)
+    else:
+        return _summarize_with_openai(system_prompt, user_prompt, max_tokens=500)
+
+
+def _generate_all_topic_summaries(all_articles: list[dict]) -> dict[str, str]:
+    """
+    Generate per-topic AI summaries for market-specific briefings.
+    Returns a dict mapping topic name to summary string.
+    Topics with no articles are skipped.
+    """
+    # Group articles by topic (exclude 'macro' — it's only for cross-market)
+    topic_articles: dict[str, list[dict]] = {}
+    for art in all_articles:
+        topic = art.get('topic', '')
+        if topic and topic != 'macro':
+            topic_articles.setdefault(topic, []).append(art)
+
+    topic_summaries = {}
+    for topic, articles in topic_articles.items():
+        logger.info('[news_pipeline] Generating topic summary: %s (%d articles)', topic, len(articles))
+        try:
+            summary = _generate_topic_summary(topic, articles)
+            if summary:
+                topic_summaries[topic] = summary
+                logger.info('[news_pipeline] Topic summary for %s: %d chars', topic, len(summary))
+            else:
+                logger.warning('[news_pipeline] Topic summary for %s returned empty', topic)
+        except Exception as exc:
+            logger.warning('[news_pipeline] Topic summary for %s failed: %s', topic, exc)
+
+    return topic_summaries
+
+
+def _summarize_with_openai(system_prompt: str, user_prompt: str, max_tokens: int = 1200) -> str | None:
     try:
         from openai import OpenAI
         api_key = os.environ.get('OPENAI_API_KEY')
@@ -142,7 +209,7 @@ def _summarize_with_openai(system_prompt: str, user_prompt: str) -> str | None:
                 {'role': 'system', 'content': system_prompt},
                 {'role': 'user', 'content': user_prompt},
             ],
-            max_completion_tokens=1200,
+            max_completion_tokens=max_tokens,
             temperature=0.6,
         )
         content = resp.choices[0].message.content
@@ -152,7 +219,7 @@ def _summarize_with_openai(system_prompt: str, user_prompt: str) -> str | None:
         return None
 
 
-def _summarize_with_anthropic(system_prompt: str, user_prompt: str) -> str | None:
+def _summarize_with_anthropic(system_prompt: str, user_prompt: str, max_tokens: int = 1200) -> str | None:
     try:
         import anthropic as anthropic_lib
         api_key = os.environ.get('ANTHROPIC_API_KEY')
@@ -161,7 +228,7 @@ def _summarize_with_anthropic(system_prompt: str, user_prompt: str) -> str | Non
         client = anthropic_lib.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model='claude-opus-4-6',
-            max_tokens=1200,
+            max_tokens=max_tokens,
             system=system_prompt,
             messages=[{'role': 'user', 'content': user_prompt}],
         )
@@ -235,6 +302,11 @@ def run_news_pipeline() -> bool:
     else:
         logger.warning('[news_pipeline] Summary generation failed or returned empty')
 
+    # Generate per-topic AI summaries for market-specific briefings
+    logger.info('[news_pipeline] Generating per-topic summaries...')
+    topic_summaries = _generate_all_topic_summaries(all_articles) if all_articles else {}
+    logger.info('[news_pipeline] Generated %d topic summaries', len(topic_summaries))
+
     # Build record
     eastern = pytz.timezone('US/Eastern')
     record = {
@@ -242,6 +314,7 @@ def run_news_pipeline() -> bool:
         'fetched_at': datetime.now(eastern).isoformat(),
         'articles': all_articles,
         'summary': summary,
+        'topic_summaries': topic_summaries,
     }
 
     # Load, update, prune, save

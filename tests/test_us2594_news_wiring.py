@@ -225,11 +225,11 @@ class TestStoredNewsContextHelper:
             "Helper must return stored summary when topic is None"
         )
 
-    def test_helper_filters_by_topic(self):
-        """Helper filters articles by topic when topic is given."""
+    def test_helper_uses_topic_summaries(self):
+        """Helper uses pre-built topic summaries when topic is given."""
         helper_src = _get_function_source(AI_SUMMARY_SOURCE, '_get_stored_news_context')
-        assert "topic" in helper_src and "articles" in helper_src, (
-            "Helper must filter stored articles by topic"
+        assert "topic" in helper_src and "topic_summaries" in helper_src, (
+            "Helper must use pre-built topic_summaries for market-specific briefings"
         )
 
     def test_helper_returns_none_when_stored_is_none(self):
@@ -261,18 +261,15 @@ class TestStoredNewsContextHelper:
             assert result == 'Cross-market summary text here.'
 
     def test_helper_runtime_with_topic(self):
-        """Runtime: returns formatted articles for matching topic."""
+        """Runtime: returns pre-built AI topic summary for matching topic."""
         stored = {
             'date': date.today().isoformat(),
-            'articles': [
-                {'headline': 'BTC surges', 'url': 'https://crypto.example.com',
-                 'source': 'crypto.example.com', 'timestamp': 'ts', 'topic': 'crypto',
-                 'raw_content': 'Bitcoin hit a new high.'},
-                {'headline': 'Stocks fall', 'url': 'https://stocks.example.com',
-                 'source': 'stocks.example.com', 'timestamp': 'ts', 'topic': 'equity',
-                 'raw_content': 'Markets fell.'},
-            ],
+            'articles': [],
             'summary': 'Summary.',
+            'topic_summaries': {
+                'crypto': 'Bitcoin surged to new highs amid renewed institutional interest.',
+                'equity': 'Equity markets fell on rising rate concerns.',
+            },
         }
         with patch('news_pipeline.get_stored_news', return_value=stored):
             ai_mod = _load_ai_summary()
@@ -280,8 +277,8 @@ class TestStoredNewsContextHelper:
                 pytest.skip("Could not load ai_summary module in test env")
             result = ai_mod._get_stored_news_context(topic='crypto')
             assert result is not None
-            assert 'BTC surges' in result
-            assert 'Stocks fall' not in result  # equity article excluded
+            assert 'Bitcoin surged' in result
+            assert 'Equity markets' not in result  # equity summary excluded
 
     def test_helper_runtime_no_stored_data(self):
         """Runtime: returns None when get_stored_news() returns None."""
@@ -292,16 +289,15 @@ class TestStoredNewsContextHelper:
             result = ai_mod._get_stored_news_context()
             assert result is None
 
-    def test_helper_runtime_empty_topic_articles(self):
-        """Runtime: returns None for topic with no matching articles."""
+    def test_helper_runtime_empty_topic_summary(self):
+        """Runtime: returns None for topic with no pre-built summary."""
         stored = {
             'date': date.today().isoformat(),
-            'articles': [
-                {'headline': 'Equity news', 'url': 'https://eq.com',
-                 'source': 'eq.com', 'timestamp': 'ts', 'topic': 'equity',
-                 'raw_content': 'Content.'},
-            ],
+            'articles': [],
             'summary': 'Summary.',
+            'topic_summaries': {
+                'equity': 'Equity markets summary.',
+            },
         }
         with patch('news_pipeline.get_stored_news', return_value=stored):
             ai_mod = _load_ai_summary()
