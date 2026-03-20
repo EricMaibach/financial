@@ -28,7 +28,8 @@ from ai_summary import (
     generate_rates_summary, get_rates_summary_for_display,
     generate_dollar_summary, get_dollar_summary_for_display,
     generate_credit_summary, get_credit_summary_for_display,
-    get_ai_client, call_ai_with_tools
+    get_ai_client, call_ai_with_tools,
+    _build_conditions_context, _build_conditions_history_context
 )
 from metric_tools import (
     LIST_METRICS_FUNCTION,
@@ -3345,10 +3346,29 @@ def api_chatbot():
         f"\n\nThe full AI market briefing for today is:\n{briefing_text}"
         if briefing_text else ""
     )
+
+    # Build market conditions context (US-325.2)
+    conditions_context = ""
+    try:
+        conditions = get_market_conditions()
+        conditions_text = _build_conditions_context(conditions)
+        history = get_conditions_history()
+        history_text = _build_conditions_history_context(history, days=90)
+        if conditions_text or history_text:
+            conditions_context = "\n\n" + conditions_text
+            if history_text:
+                conditions_context += "\n" + history_text
+    except Exception as e:
+        app.logger.warning(f'Chatbot conditions context error: {e}')
+
     system_prompt = (
         "You are an AI assistant helping an individual investor understand macro financial markets. "
         "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
+        "The dashboard uses a four-quadrant conditions framework (Goldilocks, Reflation, Stagflation, Deflation Risk) "
+        "with four dimensions: quadrant (growth vs inflation), liquidity, risk, and policy. "
+        "Use this terminology — never refer to old regime labels like Bull, Bear, Neutral, or Recession Watch. "
         f"The user is currently viewing the dashboard page: {page}.{section_context}"
+        f"{conditions_context}"
         f"{briefing_context} "
         "Be helpful, accurate, and focused on the investor's understanding needs. "
         "Keep responses concise (2-4 paragraphs) unless more detail is clearly needed."
@@ -3503,13 +3523,13 @@ def _get_section_live_data(section_id: str) -> str:
 
         if section_id == 'trade-pulse-section':
             ctx = _get_trade_balance_context()
-            regime = get_macro_regime()
-            regime_state = regime['state'] if regime else 'Unknown'
+            cond = get_market_conditions()
+            quadrant = cond.get('quadrant', 'Unknown') if cond else 'Unknown'
             val = ctx.get('trade_balance_value')
             period = ctx.get('trade_balance_period', '')
             yoy = ctx.get('trade_balance_yoy_change')
             interp = ctx.get('trade_balance_interpretation', '')
-            parts = [f"Current macro regime: {regime_state}"]
+            parts = [f"Market conditions: {quadrant} quadrant"]
             if val is not None:
                 parts.append(f"Trade balance: ${val:.1f}B ({period})")
             if yoy is not None:
@@ -3553,9 +3573,9 @@ def _get_section_live_data(section_id: str) -> str:
                 stats = get_metric_stats(ig_df)
                 pct = round(stats.get('percentile', 50), 0) if stats else None
                 parts.append(f"IG spread: {ig_val:.0f}bps" + (f" ({pct:.0f}th percentile)" if pct is not None else ''))
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Credit market data: ' + '; '.join(parts) + '.') if parts else "Credit market data loading."
 
         if section_id == 'asset-equity':
@@ -3569,9 +3589,9 @@ def _get_section_live_data(section_id: str) -> str:
             if vix_df is not None and len(vix_df):
                 vix = vix_df.iloc[-1][vix_df.columns[1]]
                 parts.append(f"VIX: {vix:.1f}")
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Equity market data: ' + '; '.join(parts) + '.') if parts else "Equity market data loading."
 
         if section_id == 'asset-rates':
@@ -3584,9 +3604,9 @@ def _get_section_live_data(section_id: str) -> str:
             if fed_df is not None and len(fed_df):
                 ffr = fed_df.iloc[-1][fed_df.columns[1]]
                 parts.append(f"Fed funds rate: {ffr:.2f}%")
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Rates data: ' + '; '.join(parts) + '.') if parts else "Rates data loading."
 
         if section_id == 'asset-dollar':
@@ -3601,9 +3621,9 @@ def _get_section_live_data(section_id: str) -> str:
             if eurusd_df is not None and len(eurusd_df):
                 eurusd = eurusd_df.iloc[-1][eurusd_df.columns[1]]
                 parts.append(f"EUR/USD: {eurusd:.4f}")
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Dollar data: ' + '; '.join(parts) + '.') if parts else "Dollar data loading."
 
         if section_id == 'asset-crypto':
@@ -3616,9 +3636,9 @@ def _get_section_live_data(section_id: str) -> str:
                 chg_5d = ((btc / btc_df.iloc[-6][btc_df.columns[1]]) - 1) * 100
                 parts.append(f"Bitcoin: ${btc:,.0f} ({chg_5d:+.1f}% 5-day)")
                 parts.append(f"Off peak: {decline:.1f}% (peak: ${peak:,.0f})")
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Crypto data: ' + '; '.join(parts) + '.') if parts else "Crypto data loading."
 
         if section_id == 'asset-safe-havens':
@@ -3628,9 +3648,9 @@ def _get_section_live_data(section_id: str) -> str:
                 gold = gold_df.iloc[-1][gold_df.columns[1]] * 10
                 chg_5d = ((gold_df.iloc[-1][gold_df.columns[1]] / gold_df.iloc[-6][gold_df.columns[1]]) - 1) * 100
                 parts.append(f"Gold: ${gold:.0f}/oz ({chg_5d:+.1f}% 5-day)")
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Safe havens data: ' + '; '.join(parts) + '.') if parts else "Safe havens data loading."
 
         if section_id == 'asset-property':
@@ -3654,19 +3674,27 @@ def _get_section_live_data(section_id: str) -> str:
                 vacancy_df = vacancy_df.dropna(subset=['property_vacancy']).set_index('date').sort_index()
                 vac = float(vacancy_df['property_vacancy'].iloc[-1])
                 parts.append(f"Rental vacancy: {vac:.1f}%")
-            regime = get_macro_regime()
-            if regime:
-                parts.append(f"Macro regime: {regime['state']}")
+            cond = get_market_conditions()
+            if cond:
+                parts.append(f"Market conditions: {cond.get('quadrant', 'Unknown')} quadrant")
             return ('Property data: ' + '; '.join(parts) + '.') if parts else "Property data loading."
 
-        # Generic fallback for market-conditions, movers-section, signals-section
-        regime = get_macro_regime()
-        if regime:
-            return (
-                f"Current macro regime: {regime['state']} "
-                f"(confidence: {regime.get('confidence', 'unknown')}). "
-                f"{regime.get('summary', '')}"
-            )
+        if section_id == 'market-conditions':
+            conditions = get_market_conditions()
+            if conditions:
+                conditions_text = _build_conditions_context(conditions)
+                if conditions_text:
+                    return conditions_text
+            return "Market conditions data not yet available."
+
+        # Generic fallback for movers-section, signals-section
+        conditions = get_market_conditions()
+        if conditions:
+            quadrant = conditions.get('quadrant', 'Unknown')
+            dims = conditions.get('dimensions', {})
+            liq = dims.get('liquidity', {}).get('state', 'Unknown')
+            risk = dims.get('risk', {}).get('state', 'Unknown')
+            return f"Current market conditions: {quadrant} quadrant, liquidity {liq}, risk {risk}."
         return "Dashboard data loading."
 
     except Exception as e:
