@@ -3361,6 +3361,9 @@ def api_chatbot():
     except Exception as e:
         app.logger.warning(f'Chatbot conditions context error: {e}')
 
+    # Check tool availability
+    web_search_available = is_tavily_configured()
+
     system_prompt = (
         "You are an AI assistant helping an individual investor understand macro financial markets. "
         "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
@@ -3369,7 +3372,17 @@ def api_chatbot():
         "Use this terminology — never refer to old regime labels like Bull, Bear, Neutral, or Recession Watch. "
         f"The user is currently viewing the dashboard page: {page}.{section_context}"
         f"{conditions_context}"
-        f"{briefing_context} "
+        f"{briefing_context}\n\n"
+        "AVAILABLE TOOLS:\n"
+        "1. **list_available_metrics** - Discover all available market data series (credit spreads, equities, safe havens, etc.)\n"
+        "2. **get_metric_data** - Fetch detailed data for any metric (current value, percentile, historical stats, recent changes)\n"
+        + ("3. **search_web** - Search for current news, market commentary, or recent events\n" if web_search_available else "")
+        + "\n"
+        "HOW TO USE TOOLS EFFECTIVELY:\n"
+        "- When users ask about specific metrics, USE get_metric_data to fetch current data rather than guessing\n"
+        "- When users ask what data is available or about a metric you're unsure of, USE list_available_metrics first\n"
+        "- Only search the web for news/current events - use metric tools for market data\n"
+        "- ALWAYS use tools to get current data when answering about specific metrics — don't rely on stale information\n\n"
         "Be helpful, accurate, and focused on the investor's understanding needs. "
         "Keep responses concise (2-4 paragraphs) unless more detail is clearly needed."
     )
@@ -3379,6 +3392,9 @@ def api_chatbot():
         from pathlib import Path as _Path
         _dump_dir = _Path("data/prompt_dumps")
         _dump_dir.mkdir(parents=True, exist_ok=True)
+        _tool_names = ['list_available_metrics', 'get_metric_data']
+        if web_search_available:
+            _tool_names.append('search_web')
         with open(_dump_dir / "chatbot.txt", "w") as _f:
             _f.write(f"=== PROMPT DUMP: Chatbot ===\n")
             _f.write(f"Timestamp: {datetime.now().isoformat()}\n")
@@ -3386,9 +3402,19 @@ def api_chatbot():
             _f.write(f"Model: {model}\n")
             _f.write(f"Page: {page}\n")
             _f.write(f"Section: {section_name or 'None'}\n")
+            _f.write(f"Web search available: {web_search_available}\n")
+            _f.write(f"Tools: {', '.join(_tool_names)}\n")
             _f.write(f"\n{'='*60}\n")
             _f.write(f"SYSTEM PROMPT\n{'='*60}\n")
             _f.write(system_prompt)
+            _f.write(f"\n\n{'='*60}\n")
+            _f.write(f"TOOL DEFINITIONS\n{'='*60}\n")
+            _f.write(json.dumps(LIST_METRICS_FUNCTION, indent=2))
+            _f.write("\n\n")
+            _f.write(json.dumps(GET_METRIC_FUNCTION, indent=2))
+            if web_search_available:
+                _f.write("\n\n")
+                _f.write(json.dumps(SEARCH_FUNCTION_DEFINITION, indent=2))
             _f.write(f"\n\n{'='*60}\n")
             _f.write(f"CONVERSATION HISTORY ({len(conversation_history)} messages)\n{'='*60}\n")
             for msg in conversation_history:
@@ -3400,6 +3426,34 @@ def api_chatbot():
     except Exception:
         pass
 
+    # Build tool definitions based on provider
+    if provider == 'anthropic':
+        tools = [
+            {
+                "name": LIST_METRICS_FUNCTION["name"],
+                "description": LIST_METRICS_FUNCTION["description"],
+                "input_schema": LIST_METRICS_FUNCTION.get("parameters", {"type": "object", "properties": {}})
+            },
+            {
+                "name": GET_METRIC_FUNCTION["name"],
+                "description": GET_METRIC_FUNCTION["description"],
+                "input_schema": GET_METRIC_FUNCTION.get("parameters", {"type": "object", "properties": {}})
+            }
+        ]
+        if web_search_available:
+            tools.append({
+                "name": SEARCH_FUNCTION_DEFINITION["name"],
+                "description": SEARCH_FUNCTION_DEFINITION["description"],
+                "input_schema": SEARCH_FUNCTION_DEFINITION.get("parameters", {"type": "object", "properties": {}})
+            })
+    else:  # OpenAI
+        tools = [
+            {"type": "function", "function": LIST_METRICS_FUNCTION},
+            {"type": "function", "function": GET_METRIC_FUNCTION}
+        ]
+        if web_search_available:
+            tools.append({"type": "function", "function": SEARCH_FUNCTION_DEFINITION})
+
     try:
         if provider == 'anthropic':
             messages = []
@@ -3408,13 +3462,46 @@ def api_chatbot():
                 messages.append({'role': role, 'content': msg.get('content', '')})
             messages.append({'role': 'user', 'content': user_message})
 
-            response = client.messages.create(
-                model=model,
-                max_tokens=1024,
-                system=system_prompt,
-                messages=messages
-            )
-            ai_response = response.content[0].text
+            max_iterations = 5
+            iteration = 0
+            ai_response = None
+
+            while iteration < max_iterations:
+                iteration += 1
+                print(f"[CHATBOT-ANTHROPIC] Iteration {iteration}/{max_iterations}")
+
+                response = client.messages.create(
+                    model=model,
+                    max_tokens=1024,
+                    system=system_prompt,
+                    messages=messages,
+                    tools=tools
+                )
+
+                print(f"[CHATBOT-ANTHROPIC] stop_reason: {response.stop_reason}")
+
+                tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
+                text_blocks = [block for block in response.content if block.type == "text"]
+
+                if tool_use_blocks:
+                    print(f"[CHATBOT-ANTHROPIC] Tool uses: {[t.name for t in tool_use_blocks]}")
+                    messages.append({"role": "assistant", "content": response.content})
+
+                    tool_results = []
+                    for tool_use in tool_use_blocks:
+                        result = _execute_tool(tool_use.name, tool_use.input or {})
+                        print(f"[CHATBOT-ANTHROPIC] {tool_use.name} returned {len(result)} chars")
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_use.id,
+                            "content": result
+                        })
+
+                    messages.append({"role": "user", "content": tool_results})
+                else:
+                    if text_blocks:
+                        ai_response = "\n".join(block.text for block in text_blocks)
+                    break
 
         else:  # OpenAI (default)
             messages = [{'role': 'system', 'content': system_prompt}]
@@ -3423,12 +3510,50 @@ def api_chatbot():
                 messages.append({'role': role, 'content': msg.get('content', '')})
             messages.append({'role': 'user', 'content': user_message})
 
-            response = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                max_tokens=1024
-            )
-            ai_response = response.choices[0].message.content
+            max_iterations = 5
+            iteration = 0
+            ai_response = None
+
+            while iteration < max_iterations:
+                iteration += 1
+                print(f"[CHATBOT-OPENAI] Iteration {iteration}/{max_iterations}")
+
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    max_tokens=1024,
+                    tools=tools,
+                    tool_choice="auto"
+                )
+                response_message = response.choices[0].message
+
+                print(f"[CHATBOT-OPENAI] finish_reason: {response.choices[0].finish_reason}")
+
+                if response_message.tool_calls:
+                    print(f"[CHATBOT-OPENAI] Tool calls: {[tc.function.name for tc in response_message.tool_calls]}")
+                    messages.append(response_message)
+
+                    for tool_call in response_message.tool_calls:
+                        function_name = tool_call.function.name
+                        function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+
+                        result = _execute_tool(function_name, function_args)
+                        print(f"[CHATBOT-OPENAI] {function_name} returned {len(result)} chars")
+
+                        messages.append({
+                            "role": "tool",
+                            "tool_call_id": tool_call.id,
+                            "name": function_name,
+                            "content": result
+                        })
+                else:
+                    ai_response = response_message.content
+                    break
+
+        if not ai_response or not ai_response.strip():
+            ai_response = "I apologize, but I wasn't able to generate a response. Please try again."
+
+        ai_response = _filter_reasoning_artifacts(ai_response)
 
         return jsonify({
             'response': ai_response,

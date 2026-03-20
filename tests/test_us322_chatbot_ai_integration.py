@@ -19,11 +19,27 @@ def read_file(path):
         return f.read()
 
 
+def extract_function_body(source, func_name):
+    """Extract the full body of a top-level function from source code."""
+    start = source.find(f'def {func_name}')
+    if start < 0:
+        return ''
+    # Find the next top-level def or decorator at the same indent level
+    rest = source[start + 1:]
+    # Look for next unindented def or @app.route
+    for marker in ['\n@app.route', '\ndef ']:
+        idx = rest.find(marker)
+        if idx > 0:
+            return source[start:start + 1 + idx]
+    return source[start:]
+
+
 class TestChatbotAPIEndpoint(unittest.TestCase):
     """Verify the /api/chatbot backend endpoint exists in dashboard.py."""
 
     def setUp(self):
         self.dashboard = read_file(DASHBOARD_PATH)
+        self.chatbot_body = extract_function_body(self.dashboard, 'api_chatbot')
 
     def test_api_chatbot_route_defined(self):
         """POST /api/chatbot route must be defined."""
@@ -49,54 +65,37 @@ class TestChatbotAPIEndpoint(unittest.TestCase):
 
     def test_api_chatbot_handles_anthropic(self):
         """Chatbot endpoint must handle Anthropic provider."""
-        idx = self.dashboard.find('def api_chatbot')
-        self.assertGreater(idx, 0)
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn("provider == 'anthropic'", func_body)
-        self.assertIn('client.messages.create', func_body)
+        self.assertIn("provider == 'anthropic'", self.chatbot_body)
+        self.assertIn('client.messages.create', self.chatbot_body)
 
     def test_api_chatbot_handles_openai(self):
         """Chatbot endpoint must handle OpenAI provider."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn('client.chat.completions.create', func_body)
+        self.assertIn('client.chat.completions.create', self.chatbot_body)
 
     def test_api_chatbot_returns_response_key(self):
         """Chatbot response JSON must include 'response' key."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn("'response': ai_response", func_body)
+        self.assertIn("'response': ai_response", self.chatbot_body)
 
     def test_api_chatbot_returns_503_on_ai_error(self):
         """Chatbot endpoint must return 503 when AI call fails."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn('503', func_body)
+        self.assertIn('503', self.chatbot_body)
 
     def test_api_chatbot_returns_400_on_auth_error(self):
         """Chatbot endpoint must return 400 when user has no API key configured."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn('AIServiceError', func_body)
-        self.assertIn('400', func_body)
+        self.assertIn('AIServiceError', self.chatbot_body)
+        self.assertIn('400', self.chatbot_body)
 
     def test_api_chatbot_accepts_conversation_history(self):
         """Chatbot endpoint must accept and use conversation_history from request."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn("conversation_history = data.get('conversation'", func_body)
+        self.assertIn("conversation_history = data.get('conversation'", self.chatbot_body)
 
     def test_api_chatbot_accepts_page_context(self):
         """Chatbot endpoint must accept page context for context-aware responses."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn("context.get('page'", func_body)
+        self.assertIn("context.get('page'", self.chatbot_body)
 
     def test_api_chatbot_has_system_prompt(self):
         """Chatbot endpoint must define a system prompt."""
-        idx = self.dashboard.find('def api_chatbot')
-        func_body = self.dashboard[idx:idx + 4000]
-        self.assertIn('system_prompt', func_body)
+        self.assertIn('system_prompt', self.chatbot_body)
 
 
 class TestChatbotJSMessageInteraction(unittest.TestCase):
