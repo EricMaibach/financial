@@ -3374,6 +3374,32 @@ def api_chatbot():
         "Keep responses concise (2-4 paragraphs) unless more detail is clearly needed."
     )
 
+    # DEBUG: dump chatbot prompt to file for review
+    try:
+        from pathlib import Path as _Path
+        _dump_dir = _Path("data/prompt_dumps")
+        _dump_dir.mkdir(parents=True, exist_ok=True)
+        with open(_dump_dir / "chatbot.txt", "w") as _f:
+            _f.write(f"=== PROMPT DUMP: Chatbot ===\n")
+            _f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+            _f.write(f"Provider: {provider}\n")
+            _f.write(f"Model: {model}\n")
+            _f.write(f"Page: {page}\n")
+            _f.write(f"Section: {section_name or 'None'}\n")
+            _f.write(f"\n{'='*60}\n")
+            _f.write(f"SYSTEM PROMPT\n{'='*60}\n")
+            _f.write(system_prompt)
+            _f.write(f"\n\n{'='*60}\n")
+            _f.write(f"CONVERSATION HISTORY ({len(conversation_history)} messages)\n{'='*60}\n")
+            for msg in conversation_history:
+                _f.write(f"\n[{msg.get('role', '?').upper()}]\n{msg.get('content', '')}\n")
+            _f.write(f"\n{'='*60}\n")
+            _f.write(f"USER MESSAGE\n{'='*60}\n")
+            _f.write(user_message)
+            _f.write("\n")
+    except Exception:
+        pass
+
     try:
         if provider == 'anthropic':
             messages = []
@@ -3747,6 +3773,27 @@ def api_chatbot_section_opening():
         "means for investors in plain language. Reference the specific data values above. "
         "Close with a brief invitation for the user to ask follow-up questions."
     )
+
+    # DEBUG: dump section-opening prompt to file for review
+    try:
+        from pathlib import Path as _Path
+        _dump_dir = _Path("data/prompt_dumps")
+        _dump_dir.mkdir(parents=True, exist_ok=True)
+        with open(_dump_dir / f"section_opening_{section_id}.txt", "w") as _f:
+            _f.write(f"=== PROMPT DUMP: Section Opening ({section_name}) ===\n")
+            _f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+            _f.write(f"Provider: {provider}\n")
+            _f.write(f"Model: {model}\n")
+            _f.write(f"Section ID: {section_id}\n")
+            _f.write(f"\n{'='*60}\n")
+            _f.write(f"SYSTEM PROMPT\n{'='*60}\n")
+            _f.write(system_prompt)
+            _f.write(f"\n\n{'='*60}\n")
+            _f.write(f"USER MESSAGE\n{'='*60}\n")
+            _f.write(user_message)
+            _f.write("\n")
+    except Exception:
+        pass
 
     try:
         if provider == 'anthropic':
@@ -5489,6 +5536,42 @@ YOUR ROLE:
 - Be conversational and educational
 
 IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools to get current data. Don't rely on potentially stale information."""
+
+        # DEBUG: dump chat prompt to file for review
+        try:
+            from pathlib import Path as _Path
+            _dump_dir = _Path("data/prompt_dumps")
+            _dump_dir.mkdir(parents=True, exist_ok=True)
+            _tool_names = ['list_available_metrics', 'get_metric_data']
+            if web_search_available:
+                _tool_names.append('search_web')
+            with open(_dump_dir / "chat.txt", "w") as _f:
+                _f.write(f"=== PROMPT DUMP: Chat (/api/chat) ===\n")
+                _f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+                _f.write(f"Provider: {provider}\n")
+                _f.write(f"Web search available: {web_search_available}\n")
+                _f.write(f"Tools: {', '.join(_tool_names)}\n")
+                _f.write(f"\n{'='*60}\n")
+                _f.write(f"SYSTEM PROMPT\n{'='*60}\n")
+                _f.write(system_message)
+                _f.write(f"\n\n{'='*60}\n")
+                _f.write(f"TOOL DEFINITIONS\n{'='*60}\n")
+                _f.write(json.dumps(LIST_METRICS_FUNCTION, indent=2))
+                _f.write("\n\n")
+                _f.write(json.dumps(GET_METRIC_FUNCTION, indent=2))
+                if web_search_available:
+                    _f.write("\n\n")
+                    _f.write(json.dumps(SEARCH_FUNCTION_DEFINITION, indent=2))
+                _f.write(f"\n\n{'='*60}\n")
+                _f.write(f"CONVERSATION HISTORY ({len(conversation_history)} messages)\n{'='*60}\n")
+                for msg in conversation_history:
+                    _f.write(f"\n[{msg.get('role', '?').upper()}]\n{msg.get('content', '')}\n")
+                _f.write(f"\n{'='*60}\n")
+                _f.write(f"USER MESSAGE\n{'='*60}\n")
+                _f.write(user_message)
+                _f.write("\n")
+        except Exception:
+            pass
 
         # Route to appropriate provider handler
         if provider == 'anthropic':
