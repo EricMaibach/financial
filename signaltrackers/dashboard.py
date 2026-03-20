@@ -4587,6 +4587,19 @@ def get_metric_stats(df):
     }
 
 
+def get_last_updated_date(df):
+    """Get the most recent date from a DataFrame's date column as a string.
+
+    Returns 'YYYY-MM-DD' or None if unavailable.
+    """
+    if df is None or 'date' not in df.columns or df.empty:
+        return None
+    last_date = df['date'].dropna().max()
+    if pd.isna(last_date):
+        return None
+    return pd.Timestamp(last_date).strftime('%Y-%m-%d')
+
+
 def generate_market_summary():
     """Generate a comprehensive market data summary for AI context."""
     try:
@@ -4629,6 +4642,44 @@ def generate_market_summary():
         consumer_confidence_df = load_csv_data('consumer_confidence.csv')
         m2_df = load_csv_data('m2_money_supply.csv')
         cpi_df = load_csv_data('cpi.csv')
+
+        # Macro/Liquidity (new)
+        fed_balance_df = load_csv_data('fed_balance_sheet.csv')
+        nfci_df = load_csv_data('nfci.csv')
+        reverse_repo_df = load_csv_data('reverse_repo.csv')
+        fed_funds_df = load_csv_data('fed_funds_rate.csv')
+        tga_df = load_csv_data('treasury_general_account.csv')
+
+        # Rates (new)
+        treasury_10y_df = load_csv_data('treasury_10y.csv')
+        breakeven_df = load_csv_data('breakeven_inflation_10y.csv')
+        real_yield_df = load_csv_data('real_yield_10y.csv')
+
+        # Equities (new)
+        nasdaq_df = load_csv_data('nasdaq_price.csv')
+        small_cap_df = load_csv_data('small_cap_price.csv')
+        iwm_spy_df = load_csv_data('iwm_spy_ratio.csv')
+
+        # Currency (new)
+        dxy_df = load_csv_data('dollar_index_price.csv')
+
+        # Commodities (new)
+        oil_df = load_csv_data('oil_price.csv')
+        commodities_df = load_csv_data('commodities_price.csv')
+
+        # Crypto/Sentiment (new)
+        fear_greed_df = load_csv_data('fear_greed_index.csv')
+        ethereum_df = load_csv_data('ethereum_price.csv')
+
+        # Monthly economic (new)
+        unemployment_df = load_csv_data('unemployment_rate.csv')
+        core_pce_df = load_csv_data('core_pce_price_index.csv')
+        industrial_prod_df = load_csv_data('industrial_production.csv')
+        building_permits_df = load_csv_data('building_permits.csv')
+        trade_balance_df = load_csv_data('trade_balance.csv')
+
+        # Quarterly economic (new)
+        natural_unemployment_df = load_csv_data('natural_unemployment_rate.csv')
 
         # Helper for YoY change (for monthly data)
         def get_yoy(df):
@@ -4675,6 +4726,14 @@ def generate_market_summary():
                 summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
                 pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
                 summary_parts.append(f"  52w range: ${stats['low_52w']:,.0f}–${stats['high_52w']:,.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
+        if ethereum_df is not None:
+            stats = get_metric_stats(ethereum_df)
+            if stats:
+                summary_parts.append(f"Ethereum: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if fear_greed_df is not None:
+            stats = get_metric_stats(fear_greed_df)
+            if stats:
+                summary_parts.append(f"Crypto Fear & Greed: {stats['current']:.0f}/100 ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']:+.0f} pts | 5d: {stats['change_5d']:+.0f} pts")
         summary_parts.append("")
 
         # Equity Markets (daily data)
@@ -4685,6 +4744,14 @@ def generate_market_summary():
                 summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
                 pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
                 summary_parts.append(f"  52w range: ${stats['low_52w']:.0f}–${stats['high_52w']:.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
+        if nasdaq_df is not None:
+            stats = get_metric_stats(nasdaq_df)
+            if stats:
+                summary_parts.append(f"Nasdaq 100: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if small_cap_df is not None:
+            stats = get_metric_stats(small_cap_df)
+            if stats:
+                summary_parts.append(f"Russell 2000 (Small Caps): ${stats['current']:,.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if vix_df is not None:
             stats = get_metric_stats(vix_df)
             if stats:
@@ -4709,6 +4776,10 @@ def generate_market_summary():
             stats = get_metric_stats(breadth_df)
             if stats:
                 summary_parts.append(f"Market Breadth (SPY/RSP): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if iwm_spy_df is not None:
+            stats = get_metric_stats(iwm_spy_df)
+            if stats:
+                summary_parts.append(f"Small Cap/Large Cap (IWM/SPY): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
         # Yen Carry Trade (daily data)
@@ -4740,6 +4811,68 @@ def generate_market_summary():
         summary_parts.append("  (Negative = inverted yield curve, historically precedes recessions by 12-18 months)")
         summary_parts.append("")
 
+        # Rates & Inflation (daily data)
+        summary_parts.append("## RATES & INFLATION")
+        if treasury_10y_df is not None:
+            stats = get_metric_stats(treasury_10y_df)
+            if stats:
+                summary_parts.append(f"10Y Treasury: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 5d: {stats['change_5d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+        if breakeven_df is not None:
+            stats = get_metric_stats(breakeven_df)
+            if stats:
+                summary_parts.append(f"10Y Breakeven Inflation: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 5d: {stats['change_5d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+        if real_yield_df is not None:
+            stats = get_metric_stats(real_yield_df)
+            if stats:
+                summary_parts.append(f"10Y Real Yield (TIPS): {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 5d: {stats['change_5d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+        if fed_funds_df is not None:
+            stats = get_metric_stats(fed_funds_df)
+            if stats:
+                summary_parts.append(f"Fed Funds Rate: {stats['current']:.2f}%")
+        summary_parts.append("")
+
+        # Macro Liquidity
+        summary_parts.append("## MACRO LIQUIDITY")
+        if fed_balance_df is not None:
+            stats = get_metric_stats(fed_balance_df)
+            if stats:
+                trend = "EXPANDING" if stats['change_30d'] > 0 else "SHRINKING"
+                summary_parts.append(f"Fed Balance Sheet: ${stats['current']/1000:.2f}T [{trend}] | 5d: {stats['pct_change_5d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if reverse_repo_df is not None:
+            stats = get_metric_stats(reverse_repo_df)
+            if stats:
+                summary_parts.append(f"Reverse Repo (RRP): ${stats['current']:.0f}B ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if tga_df is not None:
+            stats = get_metric_stats(tga_df)
+            if stats:
+                summary_parts.append(f"Treasury General Account: ${stats['current']:.0f}B ({stats['percentile']:.1f}th %ile) | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if nfci_df is not None:
+            stats = get_metric_stats(nfci_df)
+            if stats:
+                condition = "TIGHT" if stats['current'] > 0 else "Loose"
+                summary_parts.append(f"NFCI (Financial Conditions): {stats['current']:.2f} [{condition}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.2f} | 30d: {stats['change_30d']:+.2f}")
+        summary_parts.append("")
+
+        # Currency (daily data)
+        summary_parts.append("## CURRENCY")
+        if dxy_df is not None:
+            stats = get_metric_stats(dxy_df)
+            if stats:
+                summary_parts.append(f"Dollar Index (DXY): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 5d: {stats['pct_change_5d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        summary_parts.append("")
+
+        # Commodities (daily data)
+        summary_parts.append("## COMMODITIES")
+        if oil_df is not None:
+            stats = get_metric_stats(oil_df)
+            if stats:
+                summary_parts.append(f"Oil (USO): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if commodities_df is not None:
+            stats = get_metric_stats(commodities_df)
+            if stats:
+                summary_parts.append(f"Broad Commodities (DJP): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        summary_parts.append("")
+
         # Labor Market (weekly data — no 1d change)
         summary_parts.append("## LABOR MARKET (Weekly Data)")
         if initial_claims_df is not None:
@@ -4755,24 +4888,69 @@ def generate_market_summary():
         summary_parts.append("")
 
         # Economic Indicators
-        summary_parts.append("## ECONOMIC INDICATORS (Monthly Data)")
+        summary_parts.append("## ECONOMIC INDICATORS (Monthly Data — last-updated dates shown)")
         if consumer_confidence_df is not None:
             stats = get_metric_stats(consumer_confidence_df)
+            updated = get_last_updated_date(consumer_confidence_df)
             if stats:
-                summary_parts.append(f"Consumer Confidence (UMich): {stats['current']:.1f} ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"Consumer Confidence (UMich): {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
                 summary_parts.append("  (<70 = recession territory, >100 = strong optimism)")
         if m2_df is not None:
             stats = get_metric_stats(m2_df)
             yoy = get_yoy(m2_df)
+            updated = get_last_updated_date(m2_df)
             if stats:
-                summary_parts.append(f"M2 Money Supply: ${stats['current']/1000:.2f} trillion | YoY: {yoy:+.1f}%")
+                summary_parts.append(f"M2 Money Supply: ${stats['current']/1000:.2f} trillion | YoY: {yoy:+.1f}% | Last updated: {updated}")
                 summary_parts.append("  (Negative YoY = highly unusual, deflationary)")
         if cpi_df is not None:
             stats = get_metric_stats(cpi_df)
             yoy = get_yoy(cpi_df)
+            updated = get_last_updated_date(cpi_df)
             if stats:
-                summary_parts.append(f"CPI Index: {stats['current']:.1f} | YoY Inflation: {yoy:+.1f}%")
+                summary_parts.append(f"CPI Index: {stats['current']:.1f} | YoY Inflation: {yoy:+.1f}% | Last updated: {updated}")
                 summary_parts.append("  (Fed target ~2%, >5% = high inflation)")
+        if unemployment_df is not None:
+            stats = get_metric_stats(unemployment_df)
+            updated = get_last_updated_date(unemployment_df)
+            if stats:
+                summary_parts.append(f"Unemployment Rate: {stats['current']:.1f}% ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+        if core_pce_df is not None:
+            stats = get_metric_stats(core_pce_df)
+            yoy = get_yoy(core_pce_df)
+            updated = get_last_updated_date(core_pce_df)
+            if stats:
+                yoy_str = f" | YoY: {yoy:+.1f}%" if yoy is not None else ""
+                summary_parts.append(f"Core PCE Price Index: {stats['current']:.2f}{yoy_str} | Last updated: {updated}")
+                summary_parts.append("  (Fed's preferred inflation gauge)")
+        if industrial_prod_df is not None:
+            stats = get_metric_stats(industrial_prod_df)
+            updated = get_last_updated_date(industrial_prod_df)
+            if stats:
+                summary_parts.append(f"Industrial Production: {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+        if building_permits_df is not None:
+            stats = get_metric_stats(building_permits_df)
+            updated = get_last_updated_date(building_permits_df)
+            if stats:
+                summary_parts.append(f"Building Permits: {stats['current']:.0f}k ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+        if trade_balance_df is not None:
+            stats = get_metric_stats(trade_balance_df)
+            updated = get_last_updated_date(trade_balance_df)
+            if stats:
+                summary_parts.append(f"Trade Balance: ${stats['current']:.1f}B ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+        summary_parts.append("")
+
+        # Quarterly Economic Data
+        summary_parts.append("## QUARTERLY ECONOMIC DATA")
+        if natural_unemployment_df is not None:
+            stats = get_metric_stats(natural_unemployment_df)
+            updated = get_last_updated_date(natural_unemployment_df)
+            if stats:
+                summary_parts.append(f"Natural Unemployment Rate (NAIRU): {stats['current']:.1f}% | Last updated: {updated}")
+                if unemployment_df is not None:
+                    u_stats = get_metric_stats(unemployment_df)
+                    if u_stats:
+                        gap = u_stats['current'] - stats['current']
+                        summary_parts.append(f"  Unemployment gap (actual - natural): {gap:+.1f}pp")
         summary_parts.append("")
 
         # Divergence Gap (Gold vs Credit)
@@ -4855,6 +5033,9 @@ def generate_crypto_market_summary():
         dxy_df = load_csv_data('dollar_index_price.csv')
         sp500_df = load_csv_data('sp500_price.csv')
         nasdaq_df = load_csv_data('nasdaq_price.csv')
+        gold_miners_df = load_csv_data('gold_miners_price.csv')
+        gdx_gld_ratio_df = load_csv_data('gdx_gld_ratio.csv')
+        gold_silver_ratio_df = load_csv_data('gold_silver_ratio.csv')
 
         # Bitcoin Section
         summary_parts.append("## BITCOIN")
@@ -4905,6 +5086,24 @@ def generate_crypto_market_summary():
                 summary_parts.append(f"BTC priced in gold: {stats['current']:.1f} oz ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  1-day: {stats['pct_change_1d']:+.1f}% | 5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
                 summary_parts.append("  (Rising = BTC outperforming gold, risk-on; Falling = gold outperforming, risk-off)")
+        summary_parts.append("")
+
+        # Gold Mining & Precious Metals
+        summary_parts.append("## PRECIOUS METALS CONTEXT")
+        if gold_miners_df is not None:
+            stats = get_metric_stats(gold_miners_df)
+            if stats:
+                summary_parts.append(f"Gold Miners (GDX): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if gdx_gld_ratio_df is not None:
+            stats = get_metric_stats(gdx_gld_ratio_df)
+            if stats:
+                summary_parts.append(f"GDX/GLD Ratio: {stats['current']:.3f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Miners outperforming gold = risk-on precious metals sentiment)")
+        if gold_silver_ratio_df is not None:
+            stats = get_metric_stats(gold_silver_ratio_df)
+            if stats:
+                summary_parts.append(f"Gold/Silver Ratio: {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Rising = risk-off; Falling = industrial demand/risk-on)")
         summary_parts.append("")
 
         # Liquidity Indicators
@@ -5005,6 +5204,7 @@ def generate_equity_market_summary():
         nasdaq_df = load_csv_data('nasdaq_price.csv')
         small_cap_df = load_csv_data('small_cap_price.csv')
         vix_df = load_csv_data('vix_price.csv')
+        vix_3m_df = load_csv_data('vix_3month.csv')
         breadth_df = load_csv_data('market_breadth_ratio.csv')
         smh_spy_df = load_csv_data('smh_spy_ratio.csv')
         growth_value_df = load_csv_data('growth_value_ratio.csv')
@@ -5012,6 +5212,10 @@ def generate_equity_market_summary():
         financials_df = load_csv_data('financials_sector_price.csv')
         energy_df = load_csv_data('energy_sector_price.csv')
         semi_df = load_csv_data('semiconductor_price.csv')
+        tech_df = load_csv_data('tech_sector_price.csv')
+        sp500_ew_df = load_csv_data('sp500_equal_weight_price.csv')
+        growth_df = load_csv_data('growth_price.csv')
+        value_df = load_csv_data('value_price.csv')
 
         # Core Indices Section
         summary_parts.append("## CORE INDICES")
@@ -5050,6 +5254,15 @@ def generate_equity_market_summary():
                 summary_parts.append(f"VIX: {stats['current']:.1f} [{level}] ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  1-day: {stats['pct_change_1d']:+.1f}% | 5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
                 summary_parts.append("  KEY LEVELS: <15 = complacent, 15-20 = normal, 20-30 = elevated, >30 = fear")
+        if vix_3m_df is not None:
+            stats = get_metric_stats(vix_3m_df)
+            if stats:
+                summary_parts.append(f"VIX 3-Month: {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+                if vix_df is not None:
+                    vix_stats = get_metric_stats(vix_df)
+                    if vix_stats:
+                        term_structure = "Contango (normal)" if stats['current'] > vix_stats['current'] else "Backwardation (elevated fear)"
+                        summary_parts.append(f"  VIX term structure: [{term_structure}]")
         summary_parts.append("")
 
         # Market Structure Section
@@ -5132,6 +5345,26 @@ def generate_equity_market_summary():
             stats = get_metric_stats(energy_df)
             if stats:
                 summary_parts.append(f"Energy (XLE): ${stats['current']:,.2f} | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if tech_df is not None:
+            stats = get_metric_stats(tech_df)
+            if stats:
+                summary_parts.append(f"Technology (XLK): ${stats['current']:,.2f} | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        summary_parts.append("")
+
+        # Style ETFs
+        summary_parts.append("## STYLE & BREADTH ETFs")
+        if sp500_ew_df is not None:
+            stats = get_metric_stats(sp500_ew_df)
+            if stats:
+                summary_parts.append(f"S&P 500 Equal Weight (RSP): ${stats['current']:,.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if growth_df is not None:
+            stats = get_metric_stats(growth_df)
+            if stats:
+                summary_parts.append(f"Growth (VUG): ${stats['current']:,.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
+        if value_df is not None:
+            stats = get_metric_stats(value_df)
+            if stats:
+                summary_parts.append(f"Value (VTV): ${stats['current']:,.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
         # Key Insights
@@ -5168,6 +5401,18 @@ def generate_rates_market_summary():
         fed_funds_df = load_csv_data('fed_funds_rate.csv')
         sp500_df = load_csv_data('sp500_price.csv')
         gold_df = load_csv_data('gold_price.csv')
+        germany_10y_df = load_csv_data('germany_10y_yield.csv')
+        us_germany_spread_df = load_csv_data('us_germany_10y_spread.csv')
+        us_japan_spread_df = load_csv_data('us_japan_10y_spread.csv')
+        boj_df = load_csv_data('boj_total_assets.csv')
+        ecb_df = load_csv_data('ecb_total_assets.csv')
+        breakeven_5y_df = load_csv_data('breakeven_inflation_5y.csv')
+        fed_funds_upper_df = load_csv_data('fed_funds_upper_target.csv')
+        real_yield_proxy_df = load_csv_data('real_yield_proxy.csv')
+        tips_df = load_csv_data('tips_inflation_price.csv')
+        treasury_20y_df = load_csv_data('treasury_20yr_price.csv')
+        treasury_710y_df = load_csv_data('treasury_7_10yr_price.csv')
+        treasury_short_df = load_csv_data('treasury_short_price.csv')
 
         # Treasury Yields Section
         summary_parts.append("## TREASURY YIELDS")
@@ -5245,6 +5490,19 @@ def generate_rates_market_summary():
                 summary_parts.append(f"10Y Breakeven Inflation: {stats['current']:.2f}% [{expectation}] ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  1-day: {stats['change_1d']*100:+.0f} bps | 5-day: {stats['change_5d']*100:+.0f} bps | 30-day: {stats['change_30d']*100:+.0f} bps")
                 summary_parts.append("  (Market's 10-year inflation forecast)")
+        if breakeven_5y_df is not None:
+            stats = get_metric_stats(breakeven_5y_df)
+            if stats:
+                summary_parts.append(f"5Y Breakeven Inflation: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Shorter-term inflation expectations)")
+        if real_yield_proxy_df is not None:
+            stats = get_metric_stats(real_yield_proxy_df)
+            if stats:
+                summary_parts.append(f"Real Yield Proxy (TIP ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if tips_df is not None:
+            stats = get_metric_stats(tips_df)
+            if stats:
+                summary_parts.append(f"TIPS ETF (STIP): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
 
         if cpi_df is not None:
             stats = get_metric_stats(cpi_df)
@@ -5263,6 +5521,27 @@ def generate_rates_market_summary():
                     if t10y_stats:
                         term_premium = t10y_stats['current'] - stats['current']
                         summary_parts.append(f"  Term Premium (10Y - Fed Funds): {term_premium:.2f}%")
+        if fed_funds_upper_df is not None:
+            stats = get_metric_stats(fed_funds_upper_df)
+            if stats:
+                summary_parts.append(f"Fed Funds Upper Target: {stats['current']:.2f}%")
+        summary_parts.append("")
+
+        # Treasury Bond ETFs (Duration Spectrum)
+        summary_parts.append("## TREASURY BOND ETFs")
+        if treasury_short_df is not None:
+            stats = get_metric_stats(treasury_short_df)
+            if stats:
+                summary_parts.append(f"Short-Term Treasury (SHV): ${stats['current']:.2f} | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if treasury_710y_df is not None:
+            stats = get_metric_stats(treasury_710y_df)
+            if stats:
+                summary_parts.append(f"7-10Y Treasury (IEF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if treasury_20y_df is not None:
+            stats = get_metric_stats(treasury_20y_df)
+            if stats:
+                summary_parts.append(f"20+ Year Treasury (TLT): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        summary_parts.append("  (Long-duration bonds most sensitive to rate changes)")
         summary_parts.append("")
 
         # Cross-Asset Context
@@ -5283,6 +5562,36 @@ def generate_rates_market_summary():
             if gold_stats and ry_stats:
                 summary_parts.append(f"Gold vs Real Yields: Gold {gold_stats['pct_change_30d']:+.1f}% (30d) | Real yield {ry_stats['change_30d']*100:+.0f} bps")
                 summary_parts.append("  (Gold typically inversely correlated with real yields)")
+        summary_parts.append("")
+
+        # Global Rates & Central Banks
+        summary_parts.append("## GLOBAL RATES & CENTRAL BANKS")
+        if germany_10y_df is not None:
+            stats = get_metric_stats(germany_10y_df)
+            if stats:
+                summary_parts.append(f"Germany 10Y Bund: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 5d: {stats['change_5d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+        if us_germany_spread_df is not None:
+            stats = get_metric_stats(us_germany_spread_df)
+            if stats:
+                summary_parts.append(f"US-Germany 10Y Spread: {stats['current']*100:.0f} bps ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Wider = USD yield advantage, supports dollar)")
+        if us_japan_spread_df is not None:
+            stats = get_metric_stats(us_japan_spread_df)
+            if stats:
+                summary_parts.append(f"US-Japan 10Y Spread: {stats['current']*100:.0f} bps ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Key carry trade driver)")
+        if boj_df is not None:
+            stats = get_metric_stats(boj_df)
+            updated = get_last_updated_date(boj_df)
+            if stats:
+                trend = "EXPANDING" if stats['change_30d'] > 0 else "SHRINKING"
+                summary_parts.append(f"BOJ Total Assets: {stats['current']/1e6:.1f}T yen [{trend}] | Last updated: {updated}")
+        if ecb_df is not None:
+            stats = get_metric_stats(ecb_df)
+            updated = get_last_updated_date(ecb_df)
+            if stats:
+                trend = "EXPANDING" if stats['change_30d'] > 0 else "SHRINKING"
+                summary_parts.append(f"ECB Total Assets: {stats['current']/1e6:.1f}T EUR [{trend}] | Last updated: {updated}")
         summary_parts.append("")
 
         # Credit Spreads Section
@@ -5371,6 +5680,11 @@ def generate_dollar_market_summary():
         sp500_df = load_csv_data('sp500_price.csv')
         bitcoin_df = load_csv_data('bitcoin_price.csv')
         vix_df = load_csv_data('vix_price.csv')
+        eurusd_df = load_csv_data('eurusd_price.csv')
+        fx_eur_usd_df = load_csv_data('fx_eur_usd.csv')
+        fx_jpy_usd_df = load_csv_data('fx_jpy_usd.csv')
+        boj_df = load_csv_data('boj_total_assets.csv')
+        ecb_df = load_csv_data('ecb_total_assets.csv')
 
         # Dollar Index Section
         summary_parts.append("## US DOLLAR INDEX (DXY)")
@@ -5411,6 +5725,39 @@ def generate_dollar_market_summary():
                 summary_parts.append(f"  52-week range: {stats['low_52w']:.2f} - {stats['high_52w']:.2f}")
                 summary_parts.append("  CONTEXT: Japan's ultra-low rates make JPY funding currency for global carry trades")
                 summary_parts.append("  KEY LEVELS: 150 (BOJ red line), 145 (intervention risk), 140 (support)")
+        summary_parts.append("")
+
+        # Major Currency Pairs
+        summary_parts.append("## MAJOR CURRENCY PAIRS")
+        if eurusd_df is not None:
+            stats = get_metric_stats(eurusd_df)
+            if stats:
+                summary_parts.append(f"EUR/USD (ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 5d: {stats['pct_change_5d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if fx_eur_usd_df is not None:
+            stats = get_metric_stats(fx_eur_usd_df)
+            if stats:
+                summary_parts.append(f"EUR/USD (spot): {stats['current']:.4f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if fx_jpy_usd_df is not None:
+            stats = get_metric_stats(fx_jpy_usd_df)
+            if stats:
+                summary_parts.append(f"JPY/USD (spot): {stats['current']:.4f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        summary_parts.append("")
+
+        # Central Bank Balance Sheets
+        summary_parts.append("## CENTRAL BANK BALANCE SHEETS")
+        if boj_df is not None:
+            stats = get_metric_stats(boj_df)
+            updated = get_last_updated_date(boj_df)
+            if stats:
+                trend = "EXPANDING" if stats['change_30d'] > 0 else "SHRINKING"
+                summary_parts.append(f"BOJ Total Assets: {stats['current']/1e6:.1f}T yen [{trend}] | 30d: {stats['pct_change_30d']:+.2f}% | Last updated: {updated}")
+        if ecb_df is not None:
+            stats = get_metric_stats(ecb_df)
+            updated = get_last_updated_date(ecb_df)
+            if stats:
+                trend = "EXPANDING" if stats['change_30d'] > 0 else "SHRINKING"
+                summary_parts.append(f"ECB Total Assets: {stats['current']/1e6:.1f}T EUR [{trend}] | 30d: {stats['pct_change_30d']:+.2f}% | Last updated: {updated}")
+        summary_parts.append("  CONTEXT: CB balance sheet divergence drives relative currency values")
         summary_parts.append("")
 
         # Dollar Smile Framework
@@ -5508,6 +5855,9 @@ def generate_credit_market_summary():
         vix_df = load_csv_data('vix_price.csv')
         treasury_10y_df = load_csv_data('treasury_10y.csv')
         sp500_df = load_csv_data('sp500_price.csv')
+        hyg_treasury_df = load_csv_data('hyg_treasury_spread.csv')
+        lqd_treasury_df = load_csv_data('lqd_treasury_spread.csv')
+        leveraged_loan_df = load_csv_data('leveraged_loan_price.csv')
 
         # HY OAS Section
         summary_parts.append("## HIGH YIELD SPREADS (OAS)")
@@ -5574,7 +5924,24 @@ def generate_credit_market_summary():
             stats = get_metric_stats(ig_price_df)
             if stats:
                 summary_parts.append(f"LQD (IG ETF): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 5d: {stats['pct_change_5d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
+        if leveraged_loan_df is not None:
+            stats = get_metric_stats(leveraged_loan_df)
+            if stats:
+                summary_parts.append(f"Leveraged Loans (BKLN): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.2f}% | 5d: {stats['pct_change_5d']:+.2f}% | 30d: {stats['pct_change_30d']:+.2f}%")
         summary_parts.append("  (Falling prices = spread widening and/or rising Treasury yields)")
+        summary_parts.append("")
+
+        # Treasury Spread Analysis
+        summary_parts.append("## CREDIT vs TREASURY SPREADS")
+        if hyg_treasury_df is not None:
+            stats = get_metric_stats(hyg_treasury_df)
+            if stats:
+                summary_parts.append(f"HYG-Treasury Spread: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']:+.3f} | 5d: {stats['change_5d']:+.3f} | 30d: {stats['change_30d']:+.3f}")
+        if lqd_treasury_df is not None:
+            stats = get_metric_stats(lqd_treasury_df)
+            if stats:
+                summary_parts.append(f"LQD-Treasury Spread: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']:+.3f} | 5d: {stats['change_5d']:+.3f} | 30d: {stats['change_30d']:+.3f}")
+        summary_parts.append("  (ETF-based spread proxies — widening = credit deterioration)")
         summary_parts.append("")
 
         # Cross-Asset Context
