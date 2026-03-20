@@ -962,10 +962,14 @@ def _percentile_label(pct):
     return 'near historical wides'
 
 
-def calculate_top_movers(num_movers=5):
+def calculate_top_movers(num_movers=5, period=5):
     """
-    Calculate top movers based on z-score of 5-day changes.
+    Calculate top movers based on z-score of N-day changes.
     Returns metrics with most unusual moves relative to their historical volatility.
+
+    Args:
+        num_movers: Number of top movers to return.
+        period: Change period in days (1 for daily, 5 for weekly).
     """
     import os
     import numpy as np
@@ -1068,23 +1072,23 @@ def calculate_top_movers(num_movers=5):
         col = df.columns[1]  # Data column
         multiplier = config.get('multiplier', 1)
 
-        # Calculate 5-day changes for z-score
+        # Calculate N-day changes for z-score
+        # Rolling window scales with period: 60 for 5d, 30 for 1d
+        rolling_window = max(30, period * 12)
+        min_rows = rolling_window + period + 5
+
         if config['display'] == 'pct':
-            # Percent change
-            df['change_5d'] = df[col].pct_change(5) * 100
+            df['change_nd'] = df[col].pct_change(period) * 100
         else:
-            # Absolute change (for spreads)
-            df['change_5d'] = (df[col] - df[col].shift(5)) * multiplier
+            df['change_nd'] = (df[col] - df[col].shift(period)) * multiplier
 
-        # Calculate z-score using rolling std of 5-day changes (60-day window)
-        df['rolling_std'] = df['change_5d'].rolling(60).std()
-        df['rolling_mean'] = df['change_5d'].rolling(60).mean()
+        df['rolling_std'] = df['change_nd'].rolling(rolling_window).std()
+        df['rolling_mean'] = df['change_nd'].rolling(rolling_window).mean()
 
-        # Get current values
-        if len(df) < 65:  # Not enough data for z-score
+        if len(df) < min_rows:
             continue
 
-        current_change = df['change_5d'].iloc[-1]
+        current_change = df['change_nd'].iloc[-1]
         rolling_std = df['rolling_std'].iloc[-1]
         rolling_mean = df['rolling_mean'].iloc[-1]
 
@@ -1099,16 +1103,19 @@ def calculate_top_movers(num_movers=5):
             continue
         current_value = float(raw_value) * multiplier
 
-        movers.append({
+        change_val = round(float(current_change), 2)
+        mover = {
             'metric': metric_name,
             'name': config['name'],
             'link': config['link'],
-            'change_5d': round(float(current_change), 2),
+            'change': change_val,
+            f'change_{period}d': change_val,
             'z_score': round(float(z_score), 2),
             'unit': config['unit'],
             'display_type': config['display'],
             'current_value': round(current_value, 2)
-        })
+        }
+        movers.append(mover)
 
     # Add calculated metrics (divergence gap, CCC/HY ratio)
     # Divergence Gap
@@ -1123,12 +1130,13 @@ def calculate_top_movers(num_movers=5):
         merged['gold_implied'] = ((merged['gold_price'] / 2000) ** 1.5) * 400
         merged['divergence_gap'] = merged['gold_implied'] - merged['hy_spread']
 
-        merged['change_5d'] = merged['divergence_gap'] - merged['divergence_gap'].shift(5)
-        merged['rolling_std'] = merged['change_5d'].rolling(60).std()
-        merged['rolling_mean'] = merged['change_5d'].rolling(60).mean()
+        rolling_window = max(30, period * 12)
+        merged['change_nd'] = merged['divergence_gap'] - merged['divergence_gap'].shift(period)
+        merged['rolling_std'] = merged['change_nd'].rolling(rolling_window).std()
+        merged['rolling_mean'] = merged['change_nd'].rolling(rolling_window).mean()
 
-        if len(merged) > 65:
-            current_change = merged['change_5d'].iloc[-1]
+        if len(merged) > rolling_window + period + 5:
+            current_change = merged['change_nd'].iloc[-1]
             rolling_std = merged['rolling_std'].iloc[-1]
             rolling_mean = merged['rolling_mean'].iloc[-1]
 
@@ -1136,11 +1144,13 @@ def calculate_top_movers(num_movers=5):
                 z_score = (current_change - rolling_mean) / rolling_std
                 current_divergence = merged['divergence_gap'].iloc[-1]
                 if not pd.isna(current_divergence):
+                    change_val = int(round(float(current_change), 0))
                     movers.append({
                         'metric': 'divergence_gap',
                         'name': 'Divergence Gap',
                         'link': '/explorer?metric=divergence_gap',
-                        'change_5d': int(round(float(current_change), 0)),
+                        'change': change_val,
+                        f'change_{period}d': change_val,
                         'z_score': round(float(z_score), 2),
                         'unit': 'bp',
                         'display_type': 'abs',
@@ -2990,8 +3000,9 @@ def run_data_collection():
         print("Generating AI daily summary...")
         try:
             market_summary = generate_market_summary()
-            top_movers = calculate_top_movers(5)
-            result = generate_daily_summary(market_summary, top_movers)
+            top_movers = calculate_top_movers(5, period=5)
+            top_movers_1d = calculate_top_movers(5, period=1)
+            result = generate_daily_summary(market_summary, top_movers, top_movers_1d)
             if result['success']:
                 print("AI summary generated successfully!")
             else:
@@ -3105,8 +3116,9 @@ def api_generate_summary():
     """Manually trigger AI summary generation."""
     try:
         market_summary = generate_market_summary()
-        top_movers = calculate_top_movers(5)
-        result = generate_daily_summary(market_summary, top_movers)
+        top_movers = calculate_top_movers(5, period=5)
+        top_movers_1d = calculate_top_movers(5, period=1)
+        result = generate_daily_summary(market_summary, top_movers, top_movers_1d)
 
         if result['success']:
             return jsonify({
@@ -4532,7 +4544,7 @@ def get_metric_stats(df):
     """Compute standard stats for a metric DataFrame.
 
     Returns a dict with: current, percentile, change_1d, change_5d, change_30d,
-    pct_change_5d, pct_change_30d, high_52w, low_52w, min, max.
+    pct_change_1d, pct_change_5d, pct_change_30d, high_52w, low_52w, min, max.
     Returns None if df is None or has fewer than 2 rows.
     """
     if df is None or len(df) < 2:
@@ -4545,6 +4557,10 @@ def get_metric_stats(df):
     change_1d = float(values.iloc[-1] - values.iloc[-2]) if len(values) >= 2 else 0.0
     change_5d = float(values.iloc[-1] - values.iloc[-6]) if len(values) >= 6 else 0.0
     change_30d = float(values.iloc[-1] - values.iloc[-31]) if len(values) >= 31 else 0.0
+    pct_change_1d = (
+        float((current / float(values.iloc[-2])) - 1) * 100
+        if len(values) >= 2 and float(values.iloc[-2]) != 0 else 0.0
+    )
     pct_change_5d = (
         float((current / float(values.iloc[-6])) - 1) * 100
         if len(values) >= 6 and float(values.iloc[-6]) != 0 else 0.0
@@ -4561,6 +4577,7 @@ def get_metric_stats(df):
         'change_1d': change_1d,
         'change_5d': change_5d,
         'change_30d': change_30d,
+        'pct_change_1d': pct_change_1d,
         'pct_change_5d': pct_change_5d,
         'pct_change_30d': pct_change_30d,
         'high_52w': high_52w,
@@ -4624,116 +4641,116 @@ def generate_market_summary():
             year_ago = float(values.iloc[-13])
             return ((current / year_ago) - 1) * 100 if year_ago != 0 else 0
 
-        # Credit Spreads Section
+        # Credit Spreads Section (daily data)
         summary_parts.append("## CREDIT SPREADS")
         if hy_spread_df is not None:
             stats = get_metric_stats(hy_spread_df)
             if stats:
-                summary_parts.append(f"High Yield (HY): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"High Yield (HY): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if ig_spread_df is not None:
             stats = get_metric_stats(ig_spread_df)
             if stats:
-                summary_parts.append(f"Investment Grade (IG): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Investment Grade (IG): {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if ccc_spread_df is not None:
             stats = get_metric_stats(ccc_spread_df)
             if stats:
-                summary_parts.append(f"CCC-rated: {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"CCC-rated: {stats['current']*100:.0f} bp ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
-        # Safe Havens Section
+        # Safe Havens Section (daily data)
         summary_parts.append("## SAFE HAVEN ASSETS")
         if gold_df is not None:
             stats = get_metric_stats(gold_df)
             if stats:
-                summary_parts.append(f"Gold (GLD×10): ${stats['current']*10:,.0f}/oz equiv ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Gold (GLD×10): ${stats['current']*10:,.0f}/oz equiv ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
                 pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
                 summary_parts.append(f"  52w range: ${stats['low_52w']*10:,.0f}–${stats['high_52w']*10:,.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
         if silver_df is not None:
             stats = get_metric_stats(silver_df)
             if stats:
-                summary_parts.append(f"Silver (SLV): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Silver (SLV): ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if bitcoin_df is not None:
             stats = get_metric_stats(bitcoin_df)
             if stats:
-                summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Bitcoin: ${stats['current']:,.0f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
                 pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
                 summary_parts.append(f"  52w range: ${stats['low_52w']:,.0f}–${stats['high_52w']:,.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
         summary_parts.append("")
 
-        # Equity Markets
+        # Equity Markets (daily data)
         summary_parts.append("## EQUITY MARKETS")
         if sp500_df is not None:
             stats = get_metric_stats(sp500_df)
             if stats:
-                summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"S&P 500: ${stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
                 pct_from_52h = (stats['current'] / stats['high_52w'] - 1) * 100 if stats['high_52w'] != 0 else 0
                 summary_parts.append(f"  52w range: ${stats['low_52w']:.0f}–${stats['high_52w']:.0f} (currently {pct_from_52h:+.1f}% from 52w high)")
         if vix_df is not None:
             stats = get_metric_stats(vix_df)
             if stats:
-                summary_parts.append(f"VIX (Fear Index): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"VIX (Fear Index): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
-        # Market Concentration
+        # Market Concentration (daily data)
         summary_parts.append("## MARKET CONCENTRATION (Higher = More AI/Tech Concentration)")
         if smh_spy_df is not None:
             stats = get_metric_stats(smh_spy_df)
             if stats:
-                summary_parts.append(f"Semiconductor/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Semiconductor/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if xlk_spy_df is not None:
             stats = get_metric_stats(xlk_spy_df)
             if stats:
-                summary_parts.append(f"Tech Sector/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Tech Sector/SPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if growth_value_df is not None:
             stats = get_metric_stats(growth_value_df)
             if stats:
-                summary_parts.append(f"Growth/Value: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Growth/Value: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         if breadth_df is not None:
             stats = get_metric_stats(breadth_df)
             if stats:
-                summary_parts.append(f"Market Breadth (SPY/RSP): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"Market Breadth (SPY/RSP): {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
         summary_parts.append("")
 
-        # Yen Carry Trade
+        # Yen Carry Trade (daily data)
         summary_parts.append("## YEN CARRY TRADE MONITOR")
         if usdjpy_df is not None:
             stats = get_metric_stats(usdjpy_df)
             if stats:
-                summary_parts.append(f"USD/JPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 30d: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append(f"USD/JPY: {stats['current']:.2f} ({stats['percentile']:.1f}th %ile) | 1d: {stats['pct_change_1d']:+.1f}% | 5d: {stats['pct_change_5d']:+.1f}% | 30d: {stats['pct_change_30d']:+.1f}%")
                 summary_parts.append("  (Lower = stronger yen = carry trade unwinding risk)")
         if japan_10y_df is not None:
             stats = get_metric_stats(japan_10y_df)
             if stats:
-                summary_parts.append(f"Japan 10Y Yield: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"Japan 10Y Yield: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']:+.3f}% | 5d: {stats['change_5d']:+.3f}% | 30d: {stats['change_30d']:+.3f}%")
                 summary_parts.append("  (Rising yields = BOJ tightening = carry trade at risk)")
         summary_parts.append("")
 
-        # Yield Curve (Recession Indicators)
+        # Yield Curve (Recession Indicators) (daily data)
         summary_parts.append("## YIELD CURVE (Recession Indicators)")
         if yield_curve_10y2y_df is not None:
             stats = get_metric_stats(yield_curve_10y2y_df)
             if stats:
                 status = "INVERTED" if stats['current'] < 0 else "Normal"
-                summary_parts.append(f"10Y-2Y Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.2f}%")
+                summary_parts.append(f"10Y-2Y Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']:+.2f}% | 5d: {stats['change_5d']:+.2f}% | 30d: {stats['change_30d']:+.2f}%")
         if yield_curve_10y3m_df is not None:
             stats = get_metric_stats(yield_curve_10y3m_df)
             if stats:
                 status = "INVERTED" if stats['current'] < 0 else "Normal"
-                summary_parts.append(f"10Y-3M Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.2f}%")
+                summary_parts.append(f"10Y-3M Spread: {stats['current']:.2f}% [{status}] ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']:+.2f}% | 5d: {stats['change_5d']:+.2f}% | 30d: {stats['change_30d']:+.2f}%")
         summary_parts.append("  (Negative = inverted yield curve, historically precedes recessions by 12-18 months)")
         summary_parts.append("")
 
-        # Labor Market
+        # Labor Market (weekly data — no 1d change)
         summary_parts.append("## LABOR MARKET (Weekly Data)")
         if initial_claims_df is not None:
             stats = get_metric_stats(initial_claims_df)
             if stats:
                 level = "Low" if stats['current'] < 250 else "Elevated" if stats['current'] > 300 else "Normal"
-                summary_parts.append(f"Initial Claims: {stats['current']:.0f}k [{level}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.0f}k")
+                summary_parts.append(f"Initial Claims: {stats['current']:.0f}k [{level}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.0f}k | 30d: {stats['change_30d']:+.0f}k")
         if continuing_claims_df is not None:
             stats = get_metric_stats(continuing_claims_df)
             if stats:
-                summary_parts.append(f"Continuing Claims: {stats['current']:.0f}k ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']:+.0f}k")
+                summary_parts.append(f"Continuing Claims: {stats['current']:.0f}k ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.0f}k | 30d: {stats['change_30d']:+.0f}k")
         summary_parts.append("  (Rising claims = labor market weakening; Initial >300k = warning, >400k = recession signal)")
         summary_parts.append("")
 
@@ -4764,7 +4781,7 @@ def generate_market_summary():
             if stats:
                 summary_parts.append("## DIVERGENCE GAP (Gold-Implied Spread minus Actual HY Spread)")
                 summary_parts.append(f"Current: {stats['current']:.0f} bp ({stats['percentile']:.1f}th percentile)")
-                summary_parts.append(f"5-Day Change: {stats['change_5d']:+.0f} bp | 30-Day Change: {stats['change_30d']:+.0f} bp")
+                summary_parts.append(f"1-Day Change: {stats['change_1d']:+.0f} bp | 5-Day Change: {stats['change_5d']:+.0f} bp | 30-Day Change: {stats['change_30d']:+.0f} bp")
                 summary_parts.append(f"Historical Range: {stats['min']:.0f} - {stats['max']:.0f} bp")
                 summary_parts.append("")
 

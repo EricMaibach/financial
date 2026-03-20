@@ -764,13 +764,14 @@ def _generate_fallback_briefing(conditions):
     return f"The macro environment is currently in {quadrant}. {p1}\n\n{p2.strip()}\n\n{p3}"
 
 
-def generate_daily_summary(market_data_summary, top_movers):
+def generate_daily_summary(market_data_summary, top_movers, top_movers_1d=None):
     """
     Generate the daily AI summary.
 
     Args:
         market_data_summary: String output from generate_market_summary()
-        top_movers: List of top movers from calculate_top_movers()
+        top_movers: List of top 5-day movers from calculate_top_movers(period=5)
+        top_movers_1d: List of top 1-day movers from calculate_top_movers(period=1)
 
     Returns:
         dict with 'success', 'summary', and 'error' keys
@@ -836,13 +837,18 @@ def generate_daily_summary(market_data_summary, top_movers):
         if briefings_found:
             specific_briefings_context = "\n\n## TODAY'S SPECIFIC MARKET BRIEFINGS (synthesize these into your narrative):\n" + "\n\n".join(briefings_found)
 
-        # Format top movers
+        # Format top movers — two sections: 1-day and 5-day (US-325.3)
         movers_text = ""
+        if top_movers_1d:
+            movers_text += "\n\n## TODAY'S BIGGEST MOVES (1-day, by z-score, most unusual):\n"
+            for m in top_movers_1d[:5]:
+                direction = "up" if m['change'] > 0 else "down"
+                movers_text += f"- {m['name']}: {m['change']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
         if top_movers:
-            movers_text = "\n\n## TODAY'S BIGGEST MOVES (by z-score, most unusual):\n"
+            movers_text += "\n\n## MOST UNUSUAL 5-DAY MOVES (by z-score):\n"
             for m in top_movers[:5]:
-                direction = "up" if m['change_5d'] > 0 else "down"
-                movers_text += f"- {m['name']}: {m['change_5d']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
+                direction = "up" if m['change'] > 0 else "down"
+                movers_text += f"- {m['name']}: {m['change']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
 
         # Build market conditions context (US-325.1)
         conditions = get_market_conditions()

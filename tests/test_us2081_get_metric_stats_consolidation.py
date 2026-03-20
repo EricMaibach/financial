@@ -152,10 +152,10 @@ class TestGetMetricStatsStructural(unittest.TestCase):
         self.assertIn("stats['low_52w']", body)
 
     def test_get_metric_stats_returns_all_fields(self):
-        """get_metric_stats must return a dict containing all 11 required field names."""
+        """get_metric_stats must return a dict containing all 12 required field names."""
         required = {
             'current', 'percentile', 'change_1d', 'change_5d', 'change_30d',
-            'pct_change_5d', 'pct_change_30d', 'high_52w', 'low_52w', 'min', 'max'
+            'pct_change_1d', 'pct_change_5d', 'pct_change_30d', 'high_52w', 'low_52w', 'min', 'max'
         }
         # Check by inspection of source
         for field in required:
@@ -190,7 +190,7 @@ class TestGetMetricStatsUnit(unittest.TestCase):
         self.assertIsNotNone(result)
         required = {
             'current', 'percentile', 'change_1d', 'change_5d', 'change_30d',
-            'pct_change_5d', 'pct_change_30d', 'high_52w', 'low_52w', 'min', 'max'
+            'pct_change_1d', 'pct_change_5d', 'pct_change_30d', 'high_52w', 'low_52w', 'min', 'max'
         }
         for field in required:
             self.assertIn(field, result, f"Field '{field}' missing from result")
