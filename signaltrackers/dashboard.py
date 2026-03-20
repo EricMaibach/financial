@@ -4649,6 +4649,7 @@ def generate_market_summary():
         reverse_repo_df = load_csv_data('reverse_repo.csv')
         fed_funds_df = load_csv_data('fed_funds_rate.csv')
         tga_df = load_csv_data('treasury_general_account.csv')
+        stl_stress_df = load_csv_data('stl_financial_stress.csv')
 
         # Rates (new)
         treasury_10y_df = load_csv_data('treasury_10y.csv')
@@ -4677,9 +4678,18 @@ def generate_market_summary():
         industrial_prod_df = load_csv_data('industrial_production.csv')
         building_permits_df = load_csv_data('building_permits.csv')
         trade_balance_df = load_csv_data('trade_balance.csv')
+        cli_df = load_csv_data('cli.csv')
+        property_cpi_rent_df = load_csv_data('property_cpi_rent.csv')
+        property_hpi_df = load_csv_data('property_hpi.csv')
+        property_vacancy_df = load_csv_data('property_vacancy.csv')
+        ism_manufacturing_df = load_csv_data('ism_manufacturing.csv')
+        pce_price_df = load_csv_data('pce_price_index.csv')
+        property_farmland_df = load_csv_data('property_farmland.csv')
 
         # Quarterly economic (new)
         natural_unemployment_df = load_csv_data('natural_unemployment_rate.csv')
+        real_gdp_df = load_csv_data('real_gdp.csv')
+        potential_gdp_df = load_csv_data('potential_gdp.csv')
 
         # Helper for YoY change (for monthly data)
         def get_yoy(df):
@@ -4851,6 +4861,11 @@ def generate_market_summary():
             if stats:
                 condition = "TIGHT" if stats['current'] > 0 else "Loose"
                 summary_parts.append(f"NFCI (Financial Conditions): {stats['current']:.2f} [{condition}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.2f} | 30d: {stats['change_30d']:+.2f}")
+        if stl_stress_df is not None:
+            stats = get_metric_stats(stl_stress_df)
+            if stats:
+                condition = "ELEVATED" if stats['current'] > 0 else "Below average"
+                summary_parts.append(f"St. Louis Financial Stress: {stats['current']:.2f} [{condition}] ({stats['percentile']:.1f}th %ile) | 5d: {stats['change_5d']:+.2f} | 30d: {stats['change_30d']:+.2f}")
         summary_parts.append("")
 
         # Currency (daily data)
@@ -4937,10 +4952,69 @@ def generate_market_summary():
             updated = get_last_updated_date(trade_balance_df)
             if stats:
                 summary_parts.append(f"Trade Balance: ${stats['current']:.1f}B ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+        if cli_df is not None:
+            stats = get_metric_stats(cli_df)
+            updated = get_last_updated_date(cli_df)
+            if stats:
+                summary_parts.append(f"Leading Economic Index (CLI): {stats['current']:.1f} ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+                summary_parts.append("  (Declining = economic slowdown ahead)")
+        if ism_manufacturing_df is not None:
+            stats = get_metric_stats(ism_manufacturing_df)
+            updated = get_last_updated_date(ism_manufacturing_df)
+            if stats:
+                condition = "Expanding" if stats['current'] > 50 else "Contracting"
+                summary_parts.append(f"ISM Manufacturing PMI: {stats['current']:.1f} [{condition}] ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+                summary_parts.append("  (>50 = expansion, <50 = contraction)")
+        if pce_price_df is not None:
+            stats = get_metric_stats(pce_price_df)
+            yoy = get_yoy(pce_price_df)
+            updated = get_last_updated_date(pce_price_df)
+            if stats:
+                yoy_str = f" | YoY: {yoy:+.1f}%" if yoy is not None else ""
+                summary_parts.append(f"PCE Price Index: {stats['current']:.2f}{yoy_str} | Last updated: {updated}")
+        if property_hpi_df is not None:
+            stats = get_metric_stats(property_hpi_df)
+            yoy = get_yoy(property_hpi_df)
+            updated = get_last_updated_date(property_hpi_df)
+            if stats:
+                yoy_str = f" | YoY: {yoy:+.1f}%" if yoy is not None else ""
+                summary_parts.append(f"Case-Shiller Home Price Index: {stats['current']:.1f}{yoy_str} | Last updated: {updated}")
+        if property_cpi_rent_df is not None:
+            stats = get_metric_stats(property_cpi_rent_df)
+            yoy = get_yoy(property_cpi_rent_df)
+            updated = get_last_updated_date(property_cpi_rent_df)
+            if stats:
+                yoy_str = f" | YoY: {yoy:+.1f}%" if yoy is not None else ""
+                summary_parts.append(f"CPI Rent of Primary Residence: {stats['current']:.1f}{yoy_str} | Last updated: {updated}")
+        if property_vacancy_df is not None:
+            stats = get_metric_stats(property_vacancy_df)
+            updated = get_last_updated_date(property_vacancy_df)
+            if stats:
+                summary_parts.append(f"Rental Vacancy Rate: {stats['current']:.1f}% ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
+        if property_farmland_df is not None:
+            stats = get_metric_stats(property_farmland_df)
+            updated = get_last_updated_date(property_farmland_df)
+            if stats:
+                summary_parts.append(f"USDA Farmland Value: ${stats['current']:,.0f}/acre ({stats['percentile']:.1f}th %ile) | Last updated: {updated}")
         summary_parts.append("")
 
         # Quarterly Economic Data
         summary_parts.append("## QUARTERLY ECONOMIC DATA")
+        if real_gdp_df is not None:
+            stats = get_metric_stats(real_gdp_df)
+            updated = get_last_updated_date(real_gdp_df)
+            if stats:
+                summary_parts.append(f"Real GDP: ${stats['current']:,.0f}B (chained 2017$) | Last updated: {updated}")
+                if potential_gdp_df is not None:
+                    pot_stats = get_metric_stats(potential_gdp_df)
+                    if pot_stats:
+                        output_gap = ((stats['current'] / pot_stats['current']) - 1) * 100
+                        summary_parts.append(f"  Output gap (actual vs potential): {output_gap:+.1f}%")
+        if potential_gdp_df is not None:
+            stats = get_metric_stats(potential_gdp_df)
+            updated = get_last_updated_date(potential_gdp_df)
+            if stats:
+                summary_parts.append(f"CBO Potential GDP: ${stats['current']:,.0f}B | Last updated: {updated}")
         if natural_unemployment_df is not None:
             stats = get_metric_stats(natural_unemployment_df)
             updated = get_last_updated_date(natural_unemployment_df)
@@ -5209,6 +5283,7 @@ def generate_equity_market_summary():
         smh_spy_df = load_csv_data('smh_spy_ratio.csv')
         growth_value_df = load_csv_data('growth_value_ratio.csv')
         iwm_spy_df = load_csv_data('iwm_spy_ratio.csv')
+        qqq_spy_df = load_csv_data('qqq_spy_ratio.csv')
         financials_df = load_csv_data('financials_sector_price.csv')
         energy_df = load_csv_data('energy_sector_price.csv')
         semi_df = load_csv_data('semiconductor_price.csv')
@@ -5296,6 +5371,19 @@ def generate_equity_market_summary():
                 summary_parts.append(f"Semiconductor/SPY Ratio: {stats['current']:.1f} [{level}] ({stats['percentile']:.1f}th %ile)")
                 summary_parts.append(f"  1-day: {stats['pct_change_1d']:+.1f}% | 5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
                 summary_parts.append("  (Proxy for AI/Mag 7 concentration)")
+
+        if qqq_spy_df is not None:
+            stats = get_metric_stats(qqq_spy_df)
+            if stats:
+                if stats['percentile'] > 80:
+                    level = "EXTREME tech tilt"
+                elif stats['percentile'] > 60:
+                    level = "Growth-heavy"
+                else:
+                    level = "Normal"
+                summary_parts.append(f"QQQ/SPY Ratio: {stats['current']:.1f} [{level}] ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append(f"  1-day: {stats['pct_change_1d']:+.1f}% | 5-day: {stats['pct_change_5d']:+.1f}% | 30-day: {stats['pct_change_30d']:+.1f}%")
+                summary_parts.append("  (Tech/growth vs broad market leadership)")
         summary_parts.append("")
 
         # Style Rotation Section
