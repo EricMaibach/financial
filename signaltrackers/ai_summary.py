@@ -439,17 +439,25 @@ def get_latest_summary():
     return None
 
 
-def get_recent_summaries(days=3):
-    """Get summaries from the last N days for context."""
-    data = load_summaries()
-    if not data["summaries"]:
+def _get_recent_summaries(data, days):
+    """Shared helper: get summaries from the last N calendar days.
+
+    Uses a date-cutoff approach (entries within the last N calendar days)
+    rather than a slice of the N most recent entries, ensuring consistent
+    behavior across all briefing types.
+    """
+    if not data.get("summaries"):
         return []
 
     eastern = pytz.timezone('US/Eastern')
     cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
     recent = [s for s in data["summaries"] if s["date"] >= cutoff]
-    # Sort by date ascending (oldest first) for chronological context
     return sorted(recent, key=lambda x: x["date"])
+
+
+def get_recent_summaries(days=3):
+    """Get summaries from the last N days for context."""
+    return _get_recent_summaries(load_summaries(), days)
 
 
 def save_summary(date_str, summary_text, web_search_used=False, news_context=None):
@@ -764,13 +772,14 @@ def _generate_fallback_briefing(conditions):
     return f"The macro environment is currently in {quadrant}. {p1}\n\n{p2.strip()}\n\n{p3}"
 
 
-def generate_daily_summary(market_data_summary, top_movers):
+def generate_daily_summary(market_data_summary, top_movers, top_movers_1d=None):
     """
     Generate the daily AI summary.
 
     Args:
         market_data_summary: String output from generate_market_summary()
-        top_movers: List of top movers from calculate_top_movers()
+        top_movers: List of top 5-day movers from calculate_top_movers(period=5)
+        top_movers_1d: List of top 1-day movers from calculate_top_movers(period=1)
 
     Returns:
         dict with 'success', 'summary', and 'error' keys
@@ -836,13 +845,18 @@ def generate_daily_summary(market_data_summary, top_movers):
         if briefings_found:
             specific_briefings_context = "\n\n## TODAY'S SPECIFIC MARKET BRIEFINGS (synthesize these into your narrative):\n" + "\n\n".join(briefings_found)
 
-        # Format top movers
+        # Format top movers — two sections: 1-day and 5-day (US-325.3)
         movers_text = ""
+        if top_movers_1d:
+            movers_text += "\n\n## TODAY'S BIGGEST MOVES (1-day, by z-score, most unusual):\n"
+            for m in top_movers_1d[:5]:
+                direction = "up" if m['change'] > 0 else "down"
+                movers_text += f"- {m['name']}: {m['change']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
         if top_movers:
-            movers_text = "\n\n## TODAY'S BIGGEST MOVES (by z-score, most unusual):\n"
+            movers_text += "\n\n## MOST UNUSUAL 5-DAY MOVES (by z-score):\n"
             for m in top_movers[:5]:
-                direction = "up" if m['change_5d'] > 0 else "down"
-                movers_text += f"- {m['name']}: {m['change_5d']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
+                direction = "up" if m['change'] > 0 else "down"
+                movers_text += f"- {m['name']}: {m['change']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
 
         # Build market conditions context (US-325.1)
         conditions = get_market_conditions()
@@ -997,14 +1011,7 @@ def get_latest_crypto_summary():
 
 def get_recent_crypto_summaries(days=3):
     """Get crypto summaries from the last N days for context."""
-    data = load_crypto_summaries()
-    if not data["summaries"]:
-        return []
-
-    eastern = pytz.timezone('US/Eastern')
-    cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
-    recent = [s for s in data["summaries"] if s["date"] >= cutoff]
-    return sorted(recent, key=lambda x: x["date"])
+    return _get_recent_summaries(load_crypto_summaries(), days)
 
 
 def save_crypto_summary(date_str, summary_text, web_search_used=False, news_context=None):
@@ -1217,14 +1224,7 @@ def get_latest_equity_summary():
 
 def get_recent_equity_summaries(days=3):
     """Get equity summaries from the last N days for context."""
-    data = load_equity_summaries()
-    if not data["summaries"]:
-        return []
-
-    eastern = pytz.timezone('US/Eastern')
-    cutoff = (datetime.now(eastern) - timedelta(days=days)).strftime('%Y-%m-%d')
-    recent = [s for s in data["summaries"] if s["date"] >= cutoff]
-    return sorted(recent, key=lambda x: x["date"])
+    return _get_recent_summaries(load_equity_summaries(), days)
 
 
 def save_equity_summary(date_str, summary_text, web_search_used=False, news_context=None):
@@ -1463,13 +1463,8 @@ def get_latest_rates_summary():
 
 
 def get_recent_rates_summaries(days=3):
-    """Get recent rates summaries for context."""
-    data = load_rates_summaries()
-    if not data["summaries"]:
-        return []
-
-    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
-    return sorted_summaries[:days]
+    """Get rates summaries from the last N days for context."""
+    return _get_recent_summaries(load_rates_summaries(), days)
 
 
 def fetch_rates_news():
@@ -1684,13 +1679,8 @@ def get_latest_dollar_summary():
 
 
 def get_recent_dollar_summaries(days=3):
-    """Get recent dollar summaries for context."""
-    data = load_dollar_summaries()
-    if not data["summaries"]:
-        return []
-
-    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
-    return sorted_summaries[:days]
+    """Get dollar summaries from the last N days for context."""
+    return _get_recent_summaries(load_dollar_summaries(), days)
 
 
 def fetch_dollar_news():
@@ -1901,12 +1891,8 @@ def get_latest_credit_summary():
 
 
 def get_recent_credit_summaries(days=3):
-    """Get recent credit summaries for context."""
-    data = load_credit_summaries()
-    if not data["summaries"]:
-        return []
-    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
-    return sorted_summaries[:days]
+    """Get credit summaries from the last N days for context."""
+    return _get_recent_summaries(load_credit_summaries(), days)
 
 
 def fetch_credit_news():
@@ -2114,13 +2100,8 @@ def get_latest_portfolio_summary():
 
 
 def get_recent_portfolio_summaries(days=3):
-    """Get recent portfolio summaries for context."""
-    data = load_portfolio_summaries()
-    if not data["summaries"]:
-        return []
-
-    sorted_summaries = sorted(data["summaries"], key=lambda x: x["date"], reverse=True)
-    return sorted_summaries[:days]
+    """Get portfolio summaries from the last N days for context."""
+    return _get_recent_summaries(load_portfolio_summaries(), days)
 
 
 # =============================================================================
