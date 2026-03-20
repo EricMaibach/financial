@@ -108,6 +108,28 @@ DATA_DIR = Path("data")
 SUMMARIES_FILE = DATA_DIR / "ai_summaries.json"
 
 
+def _dump_prompt_to_file(log_prefix, provider, system_prompt, user_prompt, max_tokens):
+    """DEBUG: Save the full prompt sent to the AI to a text file for review."""
+    dump_dir = Path("data/prompt_dumps")
+    dump_dir.mkdir(parents=True, exist_ok=True)
+    # Build a filename from the log_prefix, e.g. "[Crypto Summary]" -> "crypto_summary"
+    tag = log_prefix.strip("[] ").lower().replace(" ", "_")
+    filename = dump_dir / f"{tag}.txt"
+    with open(filename, "w") as f:
+        f.write(f"=== PROMPT DUMP: {log_prefix} ===\n")
+        f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+        f.write(f"Provider: {provider}\n")
+        f.write(f"Max tokens: {max_tokens}\n")
+        f.write(f"\n{'='*60}\n")
+        f.write(f"SYSTEM PROMPT\n{'='*60}\n")
+        f.write(system_prompt)
+        f.write(f"\n\n{'='*60}\n")
+        f.write(f"USER PROMPT\n{'='*60}\n")
+        f.write(user_prompt)
+        f.write("\n")
+    print(f"{log_prefix} Prompt dumped to {filename}")
+
+
 def call_ai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_prefix="[AI]", provider=None):
     """
     Make an AI API call with web search tool support.
@@ -129,6 +151,9 @@ def call_ai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_p
         provider = get_ai_provider()
 
     print(f"{log_prefix} Using provider: {provider}")
+
+    # DEBUG: dump full prompt to file for review
+    _dump_prompt_to_file(log_prefix, provider, system_prompt, user_prompt, max_tokens)
 
     if provider == 'anthropic':
         return _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix)
