@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-20 (Phase 11 in progress — Features #322, #324 complete. 3 features remaining. #349 closed (PR #360 merged), #339 ready-for-pr (PR #363 awaiting merge), #361 + #362 ready-for-implementation, #335 ready-for-implementation (last))
+**Last updated:** 2026-03-20 (Phase 11 in progress — Features #322, #324 complete. 3 features remaining. #339 needs-qa-testing (PR #363 closed, designer fixes applied), #364 bug needs-test-plan, #361 ready-for-implementation, #335 ready-for-implementation (last))
 
 ---
 
