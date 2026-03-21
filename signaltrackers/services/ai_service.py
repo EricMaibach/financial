@@ -23,7 +23,7 @@ class AIServiceError(Exception):
 # AI Provider constants
 OPENAI_MODEL = "gpt-5.2"
 ANTHROPIC_MODEL = "claude-opus-4-6"
-ANTHROPIC_CHATBOT_MODEL = "claude-sonnet-4-6-20250514"
+ANTHROPIC_CHATBOT_MODEL = "claude-sonnet-4-6"
 
 
 def get_user_ai_client() -> Tuple[Any, str]:

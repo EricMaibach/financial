@@ -3447,7 +3447,7 @@ def api_chatbot():
 
                 response = client.messages.create(
                     model=model,
-                    max_tokens=1024,
+                    max_tokens=4096,
                     system=system_prompt_blocks,
                     messages=messages,
                     tools=tools
@@ -3502,7 +3502,7 @@ def api_chatbot():
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    max_tokens=1024,
+                    max_tokens=4096,
                     tools=tools,
                     tool_choice="auto"
                 )
