@@ -225,7 +225,7 @@
             {# Quadrants: Goldilocks (top-left, G+/I-), Reflation (top-right, G+/I+), #}
             {#            Deflation Risk (bottom-left, G-/I-), Stagflation (bottom-right, G-/I+) #}
             <div class="quadrant-hero__viz">
-                <svg class="quadrant-viz" viewBox="0 0 340 275" role="img"
+                <svg class="quadrant-viz" viewBox="0 0 340 290" role="img"
                      aria-label="Quadrant visualization: currently in {{ quadrant_name }}{% if quadrant_trajectory %}, showing trajectory over {{ quadrant_trajectory | length }} data points{% endif %}">
                     <title>Growth vs Inflation Quadrant — {{ quadrant_name }}</title>
 
@@ -291,15 +291,15 @@
 
                     {# Y-axis — labels outside chart area (left margin) #}
                     <text x="12" y="125" class="quadrant-label quadrant-label--y" transform="rotate(-90, 12, 125)">Growth</text>
-                    {% for val in [-0.5, -0.25, 0, 0.25, 0.5] %}
+                    {% for val in [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75] %}
                     {% set ty = (125 - (val * 125)) | round | int %}
                     <line x1="37" y1="{{ ty }}" x2="40" y2="{{ ty }}" class="quadrant-tick" />
                     <text x="35" y="{{ ty + 3 }}" class="quadrant-tick-label quadrant-tick-label--y">{{ val }}</text>
                     {% endfor %}
 
                     {# X-axis — labels outside chart area (bottom margin) #}
-                    <text x="190" y="272" class="quadrant-label">Inflation</text>
-                    {% for val in [-0.5, -0.25, 0, 0.25, 0.5] %}
+                    <text x="190" y="284" class="quadrant-label">Inflation</text>
+                    {% for val in [-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75] %}
                     {% set tx = (190 + (val * 125)) | round | int %}
                     <line x1="{{ tx }}" y1="250" x2="{{ tx }}" y2="253" class="quadrant-tick" />
                     <text x="{{ tx }}" y="264" class="quadrant-tick-label">{{ val }}</text>
