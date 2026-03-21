@@ -3184,12 +3184,90 @@ def api_generate_credit_summary():
 # Chatbot API Endpoint (Feature 3.2, US-3.2.2)
 # ============================================================================
 
+
+def _build_chatbot_enrichment_context():
+    """Build enriched context for chatbot: market data, briefings, and news.
+
+    Returns a string with all available context, sectioned and labeled.
+    Gracefully degrades — missing data is simply omitted.
+    """
+    parts = []
+
+    # 1. Full market data summary (same data sent to daily briefing)
+    try:
+        market_summary = generate_market_summary()
+        if market_summary and market_summary != "Market data summary unavailable.":
+            parts.append(market_summary)
+    except Exception:
+        pass
+
+    # 2. Top movers (1-day and 5-day by z-score)
+    try:
+        top_movers_5d = calculate_top_movers(num_movers=5, period=5)
+        top_movers_1d = calculate_top_movers(num_movers=5, period=1)
+        if top_movers_1d:
+            movers_text = "## TODAY'S BIGGEST MOVES (1-day, by z-score)\n"
+            for m in top_movers_1d[:5]:
+                direction = "up" if m['change'] > 0 else "down"
+                movers_text += f"- {m['name']}: {m['change']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
+            parts.append(movers_text)
+        if top_movers_5d:
+            movers_text = "## MOST UNUSUAL 5-DAY MOVES (by z-score)\n"
+            for m in top_movers_5d[:5]:
+                direction = "up" if m['change'] > 0 else "down"
+                movers_text += f"- {m['name']}: {m['change']:+.1f}{m['unit']} ({direction}, z-score: {m['z_score']:.1f})\n"
+            parts.append(movers_text)
+    except Exception:
+        pass
+
+    # 3. Today's AI briefings
+    try:
+        from ai_summary import (
+            get_latest_summary, get_latest_crypto_summary,
+            get_latest_equity_summary, get_latest_rates_summary,
+            get_latest_dollar_summary, get_latest_credit_summary
+        )
+
+        briefings_parts = []
+
+        general = get_latest_summary()
+        if general and general.get('summary'):
+            briefings_parts.append(f"### General Daily Briefing ({general.get('date', 'unknown')}):\n{general['summary']}")
+
+        for name, getter in [
+            ('Crypto', get_latest_crypto_summary),
+            ('Equity', get_latest_equity_summary),
+            ('Rates', get_latest_rates_summary),
+            ('Dollar', get_latest_dollar_summary),
+            ('Credit', get_latest_credit_summary),
+        ]:
+            summary = getter()
+            if summary and summary.get('summary'):
+                briefings_parts.append(f"### {name} Briefing ({summary.get('date', 'unknown')}):\n{summary['summary']}")
+
+        if briefings_parts:
+            parts.append("## TODAY'S AI BRIEFINGS\n" + "\n\n".join(briefings_parts))
+    except Exception:
+        pass
+
+    # 4. Cross-market news summary
+    try:
+        from ai_summary import _get_stored_news_context
+        news = _get_stored_news_context()
+        if news:
+            parts.append(f"## TODAY'S CROSS-MARKET NEWS SUMMARY\n{news}")
+    except Exception:
+        pass
+
+    return "\n\n".join(parts) if parts else ""
+
+
 @app.route('/api/chatbot', methods=['POST'])
 @csrf.exempt  # API endpoint uses login_required for auth
 @login_required
 def api_chatbot():
     """Handle AI chatbot conversation requests using the user's API key."""
-    from services.ai_service import get_user_ai_client, get_user_ai_model, AIServiceError
+    from services.ai_service import get_user_ai_client, get_user_chatbot_model, AIServiceError
 
     data = request.get_json()
     if not data:
@@ -3204,23 +3282,27 @@ def api_chatbot():
     page = context.get('page', '/')
     section = context.get('section') or None
     section_name = context.get('section_name') or None
-    briefing_text = context.get('briefing_text') or None
 
     try:
         client, provider = get_user_ai_client()
     except AIServiceError as e:
         return jsonify({'error': str(e)}), 400
 
-    model = get_user_ai_model()
+    model = get_user_chatbot_model()
 
     section_context = (
         f" The user is focused on the '{section_name}' section of the dashboard."
         if section_name else ""
     )
-    briefing_context = (
-        f"\n\nThe full AI market briefing for today is:\n{briefing_text}"
-        if briefing_text else ""
-    )
+
+    # Build enriched market context (US-325.7)
+    enrichment_context = ""
+    try:
+        enrichment_context = _build_chatbot_enrichment_context()
+        if enrichment_context:
+            enrichment_context = "\n\n" + enrichment_context
+    except Exception as e:
+        app.logger.warning(f'Chatbot enrichment context error: {e}')
 
     # Build market conditions context (US-325.2)
     conditions_context = ""
@@ -3249,7 +3331,10 @@ def api_chatbot():
         "Use this terminology consistently. "
         f"The user is currently viewing the dashboard page: {page}.{section_context}"
         f"{conditions_context}"
-        f"{briefing_context}\n\n"
+        f"{enrichment_context}\n\n"
+        "You have full access to today's market data, AI briefings, and news above. "
+        "Use this context to answer questions directly — only use tools when you need the latest real-time value "
+        "or detailed time series for a specific metric.\n\n"
         "AVAILABLE TOOLS:\n"
         "1. **list_available_metrics** - Discover all available market data series (credit spreads, equities, safe havens, etc.)\n"
         "2. **get_metric_data** - Fetch detailed data for any metric (current value, percentile, historical stats, recent changes)\n"
@@ -3277,8 +3362,10 @@ def api_chatbot():
             _f.write(f"Timestamp: {datetime.now().isoformat()}\n")
             _f.write(f"Provider: {provider}\n")
             _f.write(f"Model: {model}\n")
+            _f.write(f"Prompt caching: {'enabled (Anthropic ephemeral)' if provider == 'anthropic' else 'automatic (OpenAI)'}\n")
             _f.write(f"Page: {page}\n")
             _f.write(f"Section: {section_name or 'None'}\n")
+            _f.write(f"Enrichment context: {'included' if enrichment_context else 'none'}\n")
             _f.write(f"Web search available: {web_search_available}\n")
             _f.write(f"Tools: {', '.join(_tool_names)}\n")
             _f.write(f"\n{'='*60}\n")
@@ -3333,6 +3420,17 @@ def api_chatbot():
 
     try:
         if provider == 'anthropic':
+            # Use structured system prompt with cache_control for prompt caching (US-325.7)
+            # The system prompt is cached across messages in the same conversation,
+            # reducing cost by ~90% on follow-up messages.
+            system_prompt_blocks = [
+                {
+                    "type": "text",
+                    "text": system_prompt,
+                    "cache_control": {"type": "ephemeral"}
+                }
+            ]
+
             messages = []
             for msg in conversation_history:
                 role = 'user' if msg.get('role') == 'user' else 'assistant'
@@ -3349,13 +3447,19 @@ def api_chatbot():
 
                 response = client.messages.create(
                     model=model,
-                    max_tokens=1024,
-                    system=system_prompt,
+                    max_tokens=4096,
+                    system=system_prompt_blocks,
                     messages=messages,
                     tools=tools
                 )
 
-                print(f"[CHATBOT-ANTHROPIC] stop_reason: {response.stop_reason}")
+                # Log cache usage for cost monitoring
+                usage = response.usage
+                cache_creation = getattr(usage, 'cache_creation_input_tokens', 0) or 0
+                cache_read = getattr(usage, 'cache_read_input_tokens', 0) or 0
+                print(f"[CHATBOT-ANTHROPIC] stop_reason: {response.stop_reason}, "
+                      f"input_tokens: {usage.input_tokens}, "
+                      f"cache_creation: {cache_creation}, cache_read: {cache_read}")
 
                 tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
                 text_blocks = [block for block in response.content if block.type == "text"]
@@ -3398,7 +3502,7 @@ def api_chatbot():
                 response = client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    max_tokens=1024,
+                    max_tokens=4096,
                     tools=tools,
                     tool_choice="auto"
                 )
