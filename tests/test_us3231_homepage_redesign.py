@@ -208,7 +208,7 @@ class TestConditionsSection(unittest.TestCase):
         history = _make_history(4)
         html = self._get_html(history=history)
         self.assertIn('quadrant-trail-dot', html)
-        self.assertIn('quadrant-trail-line', html)
+        self.assertIn('quadrant-trail-path', html)
 
     def test_favored_watch_strip(self):
         html = self._get_html()
