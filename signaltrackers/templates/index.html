@@ -220,62 +220,98 @@
             </div>
 
             {# Quadrant 2×2 Visualization #}
+            {# Scaling: 125px per 1.0 unit → ±1.0 fills the chart. Clamp at edges. #}
+            {# Axis convention: X = Inflation (negative left, positive right), Y = Growth (positive up) #}
+            {# Quadrants: Goldilocks (top-left, G+/I-), Reflation (top-right, G+/I+), #}
+            {#            Deflation Risk (bottom-left, G-/I-), Stagflation (bottom-right, G-/I+) #}
             <div class="quadrant-hero__viz">
                 <svg class="quadrant-viz" viewBox="0 0 300 250" role="img"
                      aria-label="Quadrant visualization: currently in {{ quadrant_name }}{% if quadrant_trajectory %}, showing trajectory over {{ quadrant_trajectory | length }} data points{% endif %}">
                     <title>Growth vs Inflation Quadrant — {{ quadrant_name }}</title>
 
                     {# Quadrant background regions #}
-                    <rect x="0" y="0" width="150" height="125" class="quadrant-region quadrant-region--reflation{% if _quad_key == 'reflation' %} quadrant-region--active{% endif %}" />
-                    <rect x="150" y="0" width="150" height="125" class="quadrant-region quadrant-region--goldilocks{% if _quad_key == 'goldilocks' %} quadrant-region--active{% endif %}" />
-                    <rect x="0" y="125" width="150" height="125" class="quadrant-region quadrant-region--stagflation{% if _quad_key == 'stagflation' %} quadrant-region--active{% endif %}" />
-                    <rect x="150" y="125" width="150" height="125" class="quadrant-region quadrant-region--deflation{% if _quad_key == 'deflation' %} quadrant-region--active{% endif %}" />
+                    <rect x="0" y="0" width="150" height="125" class="quadrant-region quadrant-region--goldilocks{% if _quad_key == 'goldilocks' %} quadrant-region--active{% endif %}" rx="4" />
+                    <rect x="150" y="0" width="150" height="125" class="quadrant-region quadrant-region--reflation{% if _quad_key == 'reflation' %} quadrant-region--active{% endif %}" rx="4" />
+                    <rect x="0" y="125" width="150" height="125" class="quadrant-region quadrant-region--deflation{% if _quad_key == 'deflation' %} quadrant-region--active{% endif %}" rx="4" />
+                    <rect x="150" y="125" width="150" height="125" class="quadrant-region quadrant-region--stagflation{% if _quad_key == 'stagflation' %} quadrant-region--active{% endif %}" rx="4" />
 
-                    {# Center crosshair #}
+                    {# Tick marks on axes #}
+                    {% for val in [-0.5, -0.25, 0.25, 0.5] %}
+                    {% set tx = (150 + val * 125) | round | int %}
+                    {% set ty = (125 - val * 125) | round | int %}
+                    <line x1="{{ tx }}" y1="122" x2="{{ tx }}" y2="128" class="quadrant-tick" />
+                    <text x="{{ tx }}" y="137" class="quadrant-tick-label">{{ val }}</text>
+                    <line x1="147" y1="{{ ty }}" x2="153" y2="{{ ty }}" class="quadrant-tick" />
+                    <text x="143" y="{{ ty + 3 }}" class="quadrant-tick-label quadrant-tick-label--y">{{ val }}</text>
+                    {% endfor %}
+
+                    {# Center crosshair — dashed, light #}
                     <line x1="150" y1="10" x2="150" y2="240" class="quadrant-axis" />
                     <line x1="10" y1="125" x2="290" y2="125" class="quadrant-axis" />
 
-                    {# Axis labels #}
-                    <text x="150" y="8" class="quadrant-label quadrant-label--top">Growth ↑</text>
-                    <text x="150" y="248" class="quadrant-label quadrant-label--bottom">Growth ↓</text>
-                    <text x="295" y="122" class="quadrant-label quadrant-label--right">Infl ↓</text>
-                    <text x="5" y="122" class="quadrant-label quadrant-label--left">Infl ↑</text>
+                    {# Axis labels — standard: "Growth" at top, "Inflation" at right #}
+                    <text x="150" y="8" class="quadrant-label quadrant-label--top">Growth</text>
+                    <text x="295" y="128" class="quadrant-label quadrant-label--right">Inflation</text>
 
-                    {# Quadrant name labels #}
-                    <text x="75" y="40" class="quadrant-name-label">Reflation</text>
-                    <text x="225" y="40" class="quadrant-name-label">Goldilocks</text>
-                    <text x="75" y="215" class="quadrant-name-label">Stagflation</text>
-                    <text x="225" y="215" class="quadrant-name-label">Deflation</text>
+                    {# Quadrant name labels — watermark style #}
+                    <text x="75" y="62" class="quadrant-name-label">Goldilocks</text>
+                    <text x="225" y="62" class="quadrant-name-label">Reflation</text>
+                    <text x="75" y="195" class="quadrant-name-label">Deflation</text>
+                    <text x="225" y="195" class="quadrant-name-label">Stagflation</text>
 
-                    {# Trajectory trail (oldest to newest, fading opacity) #}
+                    {# Trajectory trail (oldest to newest) — curved path + decreasing dots #}
                     {% if quadrant_trajectory and quadrant_trajectory | length > 1 %}
                     {% set trail = quadrant_trajectory | reverse | list %}
-                    {% for i in range(trail | length - 1) %}
-                    {% set p1 = trail[i] %}
-                    {% set p2 = trail[i + 1] %}
-                    {# Map composites to SVG coords: inflation inverted on X (falling = right), growth on Y (rising = up) #}
-                    {% set x1 = (150 + (p1.inflation * -60)) | round | int %}
-                    {% set y1 = (125 - (p1.growth * 60)) | round | int %}
-                    {% set x2 = (150 + (p2.inflation * -60)) | round | int %}
-                    {% set y2 = (125 - (p2.growth * 60)) | round | int %}
-                    <line x1="{{ [10, [290, x1] | min] | max }}" y1="{{ [10, [240, y1] | min] | max }}" x2="{{ [10, [290, x2] | min] | max }}" y2="{{ [10, [240, y2] | min] | max }}"
-                          class="quadrant-trail-line" style="opacity: {{ 0.3 + (0.5 * i / (trail | length - 1)) }}" />
-                    {% endfor %}
+                    {% set ns = namespace(path_d='') %}
                     {% for point in trail %}
-                    {% set px = (150 + (point.inflation * -60)) | round | int %}
-                    {% set py = (125 - (point.growth * 60)) | round | int %}
+                    {% set px = [10, [290, (150 + (point.inflation * 125)) | round | int] | min] | max %}
+                    {% set py = [10, [240, (125 - (point.growth * 125)) | round | int] | min] | max %}
+                    {% if loop.first %}
+                    {% set ns.path_d = 'M ' ~ px ~ ' ' ~ py %}
+                    {% elif loop.index == 2 %}
+                    {# First segment: quadratic curve using midpoint as control #}
+                    {% set prev = trail[0] %}
+                    {% set ppx = [10, [290, (150 + (prev.inflation * 125)) | round | int] | min] | max %}
+                    {% set ppy = [10, [240, (125 - (prev.growth * 125)) | round | int] | min] | max %}
+                    {% set mx = ((ppx + px) / 2) | round | int %}
+                    {% set my = ((ppy + py) / 2) | round | int %}
+                    {% set ns.path_d = ns.path_d ~ ' Q ' ~ ppx ~ ' ' ~ ppy ~ ' ' ~ mx ~ ' ' ~ my %}
+                    {% else %}
+                    {# Subsequent segments: smooth quadratic (T) for continuity #}
+                    {% set prev = trail[loop.index0 - 1] %}
+                    {% set ppx = [10, [290, (150 + (prev.inflation * 125)) | round | int] | min] | max %}
+                    {% set ppy = [10, [240, (125 - (prev.growth * 125)) | round | int] | min] | max %}
+                    {% set mx = ((ppx + px) / 2) | round | int %}
+                    {% set my = ((ppy + py) / 2) | round | int %}
+                    {% set ns.path_d = ns.path_d ~ ' T ' ~ mx ~ ' ' ~ my %}
+                    {% endif %}
+                    {% endfor %}
+                    {# Extend to final point #}
+                    {% set last = trail[-1] %}
+                    {% set lx = [10, [290, (150 + (last.inflation * 125)) | round | int] | min] | max %}
+                    {% set ly = [10, [240, (125 - (last.growth * 125)) | round | int] | min] | max %}
+                    {% set ns.path_d = ns.path_d ~ ' T ' ~ lx ~ ' ' ~ ly %}
+                    <path d="{{ ns.path_d }}" class="quadrant-trail-path" />
+                    {% for point in trail %}
+                    {% set px = [10, [290, (150 + (point.inflation * 125)) | round | int] | min] | max %}
+                    {% set py = [10, [240, (125 - (point.growth * 125)) | round | int] | min] | max %}
                     {% if not loop.last %}
-                    <circle cx="{{ [10, [290, px] | min] | max }}" cy="{{ [10, [240, py] | min] | max }}" r="4"
+                    {% set dot_r = 2.0 + (2.0 * loop.index0 / (trail | length - 1)) %}
+                    <circle cx="{{ px }}" cy="{{ py }}" r="{{ dot_r | round(1) }}"
                             class="quadrant-trail-dot" style="opacity: {{ 0.3 + (0.5 * loop.index0 / (trail | length - 1)) }}" />
                     {% endif %}
                     {% endfor %}
                     {% endif %}
 
-                    {# Current position dot #}
+                    {# Current position dot with pulse animation #}
                     {% if quad.get('growth_composite') is not none and quad.get('inflation_composite') is not none %}
-                    {% set cx = (150 + (quad.inflation_composite * -60)) | round | int %}
-                    {% set cy = (125 - (quad.growth_composite * 60)) | round | int %}
-                    <circle cx="{{ [10, [290, cx] | min] | max }}" cy="{{ [10, [240, cy] | min] | max }}" r="7"
+                    {% set cx = (150 + (quad.inflation_composite * 125)) | round | int %}
+                    {% set cy = (125 - (quad.growth_composite * 125)) | round | int %}
+                    {% set cx_clamped = [10, [290, cx] | min] | max %}
+                    {% set cy_clamped = [10, [240, cy] | min] | max %}
+                    <circle cx="{{ cx_clamped }}" cy="{{ cy_clamped }}" r="10"
+                            class="quadrant-pulse-ring quadrant-dot--{{ _quad_key }}" />
+                    <circle cx="{{ cx_clamped }}" cy="{{ cy_clamped }}" r="6"
                             class="quadrant-current-dot quadrant-dot--{{ _quad_key }}" />
                     {% endif %}
                 </svg>

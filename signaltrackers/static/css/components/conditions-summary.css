@@ -152,14 +152,16 @@
 .quadrant-viz {
     width: 100%;
     height: auto;
+    border-radius: var(--radius-lg, 12px);
+    overflow: hidden;
 }
 
 .quadrant-region {
-    opacity: 0.12;
+    opacity: 0.10;
     transition: opacity 0.3s;
 }
 .quadrant-region--active {
-    opacity: 0.25;
+    opacity: 0.22;
 }
 .quadrant-region--goldilocks  { fill: var(--quadrant-goldilocks); }
 .quadrant-region--reflation   { fill: var(--quadrant-reflation); }
@@ -167,33 +169,53 @@
 .quadrant-region--deflation   { fill: var(--quadrant-deflation); }
 
 .quadrant-axis {
-    stroke: #CBD5E1;
-    stroke-width: 1;
+    stroke: var(--neutral-200, #E2E8F0);
+    stroke-width: 0.75;
+    stroke-dasharray: 6 3;
+}
+
+.quadrant-tick {
+    stroke: var(--neutral-300, #CBD5E1);
+    stroke-width: 0.75;
+}
+
+.quadrant-tick-label {
+    font-size: 8px;
+    fill: var(--neutral-400, #94A3B8);
+    text-anchor: middle;
+}
+.quadrant-tick-label--y {
+    text-anchor: end;
 }
 
 .quadrant-label {
     font-size: 10px;
-    fill: #94A3B8;
+    fill: var(--neutral-400, #94A3B8);
     text-anchor: middle;
+    font-weight: 600;
+    letter-spacing: 0.03em;
 }
 .quadrant-label--right { text-anchor: end; }
-.quadrant-label--left  { text-anchor: start; }
 
 .quadrant-name-label {
     font-size: 11px;
-    fill: #94A3B8;
+    fill: var(--neutral-400, #94A3B8);
     text-anchor: middle;
-    font-weight: 500;
+    font-weight: 400;
+    opacity: 0.5;
 }
 
-.quadrant-trail-line {
-    stroke: #94A3B8;
+.quadrant-trail-path {
+    stroke: var(--neutral-400, #94A3B8);
     stroke-width: 1.5;
-    stroke-dasharray: 4 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.5;
 }
 
 .quadrant-trail-dot {
-    fill: #94A3B8;
+    fill: var(--neutral-400, #94A3B8);
 }
 
 .quadrant-current-dot {
@@ -204,6 +226,22 @@
 .quadrant-current-dot.quadrant-dot--reflation   { fill: var(--quadrant-reflation); }
 .quadrant-current-dot.quadrant-dot--stagflation { fill: var(--quadrant-stagflation); }
 .quadrant-current-dot.quadrant-dot--deflation   { fill: var(--quadrant-deflation); }
+
+.quadrant-pulse-ring {
+    fill: none;
+    stroke-width: 2;
+    opacity: 0;
+    animation: quadrant-pulse 2.5s ease-out infinite;
+}
+.quadrant-pulse-ring.quadrant-dot--goldilocks  { stroke: var(--quadrant-goldilocks); }
+.quadrant-pulse-ring.quadrant-dot--reflation   { stroke: var(--quadrant-reflation); }
+.quadrant-pulse-ring.quadrant-dot--stagflation { stroke: var(--quadrant-stagflation); }
+.quadrant-pulse-ring.quadrant-dot--deflation   { stroke: var(--quadrant-deflation); }
+
+@keyframes quadrant-pulse {
+    0%   { r: 6;  opacity: 0.6; }
+    100% { r: 18; opacity: 0; }
+}
 
 /* Tablet: typography scaling */
 @media (min-width: 768px) {
