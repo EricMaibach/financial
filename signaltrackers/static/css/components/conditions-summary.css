@@ -387,7 +387,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
-    padding: 0.75rem;
+    padding: 0.75rem 0.75rem 1.5rem;
     width: 100%;
     border: none;
     background: transparent;
@@ -399,7 +399,7 @@
 
 @media (min-width: 1024px) {
     .dimension-card__header {
-        padding: 1rem;
+        padding: 1rem 1rem 1.5rem;
     }
 }
 
@@ -436,6 +436,7 @@
     position: absolute;
     bottom: 0.5rem;
     left: 50%;
+    right: auto;
     transform: translateX(-50%);
     color: #94A3B8;
     font-size: 0.75rem;
@@ -446,32 +447,7 @@
     transform: translateX(-50%) rotate(180deg);
 }
 
-/* Crypto card specific */
-.dimension-card__summary--crypto {
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.dimension-card__crypto-label {
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    padding: 2px 6px;
-    border-radius: 3px;
-}
-.dimension-card__crypto-label--positive {
-    color: var(--quadrant-goldilocks);
-    background: #CCFBF1;
-}
-.dimension-card__crypto-label--negative {
-    color: #DC2626;
-    background: #FEE2E2;
-}
-.dimension-card__crypto-label--neutral {
-    color: #64748B;
-    background: #F1F5F9;
-}
+/* Crypto card — inherits standard .dimension-card__summary layout */
 
 /* ── Expand Panel ────────────────────────────────────────────── */
 
