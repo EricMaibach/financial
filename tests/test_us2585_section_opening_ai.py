@@ -197,9 +197,9 @@ def test_live_data_injected_into_system_prompt(dashboard_py):
 
 def test_live_data_includes_data_bearing_fields(dashboard_py):
     """Live data helper must include data-bearing fields for accessible sections."""
-    # Macro regime section should reference regime state
-    assert 'get_macro_regime()' in dashboard_py, \
-        "get_macro_regime() must be called for live data context"
+    # Market conditions section should reference conditions data
+    assert 'compute_market_conditions' in dashboard_py or 'market_conditions' in dashboard_py, \
+        "market conditions must be referenced for live data context"
     # Recession section
     assert 'get_recession_probability()' in dashboard_py, \
         "get_recession_probability() must be called for live data context"

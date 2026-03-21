@@ -1,10 +1,9 @@
 """
-Static verification tests for US-169.2: Credit Page — Regime-Conditioned Interpretation Block.
+Static verification tests for US-169.2: Credit Page — Interpretation Block.
 
 Tests verify:
 - credit_interpretation_config.py exists with CREDIT_INTERPRETATIONS dict
-- All 12 regime×bucket combinations are present
-- 3 fallback ('unknown') combinations are present
+- 3 spread bucket entries are present (tight, normal, wide)
 - get_credit_interpretation() returns (text, bucket) for all valid inputs
 - get_credit_interpretation() returns (None, None) when hy_percentile is None
 - Bucket thresholds: <=25 → tight, 25–75 → normal, >75 → wide
@@ -67,59 +66,18 @@ class TestCreditInterpretationsDict(unittest.TestCase):
         self.assertIsInstance(text, str)
         self.assertGreater(len(text), 20, f"Interpretation too short for key {key}")
 
-    # --- Bull regime ---
-    def test_bull_tight(self):
-        self._assert_key(("Bull", "tight"))
+    def test_tight(self):
+        self._assert_key("tight")
 
-    def test_bull_normal(self):
-        self._assert_key(("Bull", "normal"))
+    def test_normal(self):
+        self._assert_key("normal")
 
-    def test_bull_wide(self):
-        self._assert_key(("Bull", "wide"))
+    def test_wide(self):
+        self._assert_key("wide")
 
-    # --- Neutral regime ---
-    def test_neutral_tight(self):
-        self._assert_key(("Neutral", "tight"))
-
-    def test_neutral_normal(self):
-        self._assert_key(("Neutral", "normal"))
-
-    def test_neutral_wide(self):
-        self._assert_key(("Neutral", "wide"))
-
-    # --- Bear regime ---
-    def test_bear_tight(self):
-        self._assert_key(("Bear", "tight"))
-
-    def test_bear_normal(self):
-        self._assert_key(("Bear", "normal"))
-
-    def test_bear_wide(self):
-        self._assert_key(("Bear", "wide"))
-
-    # --- Recession Watch regime ---
-    def test_recession_watch_tight(self):
-        self._assert_key(("Recession Watch", "tight"))
-
-    def test_recession_watch_normal(self):
-        self._assert_key(("Recession Watch", "normal"))
-
-    def test_recession_watch_wide(self):
-        self._assert_key(("Recession Watch", "wide"))
-
-    # --- Fallback (unknown) ---
-    def test_unknown_tight(self):
-        self._assert_key(("unknown", "tight"))
-
-    def test_unknown_normal(self):
-        self._assert_key(("unknown", "normal"))
-
-    def test_unknown_wide(self):
-        self._assert_key(("unknown", "wide"))
-
-    def test_total_count_at_least_15(self):
-        self.assertGreaterEqual(len(self.interps), 15,
-                                "Expected at least 15 entries (12 regime + 3 fallback)")
+    def test_total_count_at_least_3(self):
+        self.assertGreaterEqual(len(self.interps), 3,
+                                "Expected at least 3 entries (tight, normal, wide)")
 
     def test_all_texts_are_strings(self):
         for key, text in self.interps.items():
@@ -140,75 +98,66 @@ class TestGetCreditInterpretation(unittest.TestCase):
         self.fn = get_credit_interpretation
 
     def test_returns_tuple(self):
-        result = self.fn("Bull", 50.0)
+        result = self.fn(None, 50.0)
         self.assertIsInstance(result, tuple)
         self.assertEqual(len(result), 2)
 
     def test_none_percentile_returns_none_none(self):
-        text, bucket = self.fn("Bull", None)
+        text, bucket = self.fn(None, None)
         self.assertIsNone(text)
         self.assertIsNone(bucket)
 
-    def test_none_regime_uses_unknown_fallback(self):
+    def test_none_regime_returns_text(self):
         text, bucket = self.fn(None, 50.0)
-        self.assertIsNotNone(text)
-        self.assertEqual(bucket, 'normal')
-
-    def test_unknown_regime_string_uses_fallback(self):
-        text, bucket = self.fn('Unknown', 50.0)
         self.assertIsNotNone(text)
         self.assertEqual(bucket, 'normal')
 
     # --- Bucket boundary tests ---
     def test_percentile_0_is_tight(self):
-        _, bucket = self.fn("Bull", 0.0)
+        _, bucket = self.fn(None, 0.0)
         self.assertEqual(bucket, 'tight')
 
     def test_percentile_25_is_tight(self):
-        _, bucket = self.fn("Bull", 25.0)
+        _, bucket = self.fn(None, 25.0)
         self.assertEqual(bucket, 'tight')
 
     def test_percentile_25_1_is_normal(self):
-        _, bucket = self.fn("Bull", 25.1)
+        _, bucket = self.fn(None, 25.1)
         self.assertEqual(bucket, 'normal')
 
     def test_percentile_50_is_normal(self):
-        _, bucket = self.fn("Bull", 50.0)
+        _, bucket = self.fn(None, 50.0)
         self.assertEqual(bucket, 'normal')
 
     def test_percentile_75_is_normal(self):
-        _, bucket = self.fn("Bull", 75.0)
+        _, bucket = self.fn(None, 75.0)
         self.assertEqual(bucket, 'normal')
 
     def test_percentile_75_1_is_wide(self):
-        _, bucket = self.fn("Bull", 75.1)
+        _, bucket = self.fn(None, 75.1)
         self.assertEqual(bucket, 'wide')
 
     def test_percentile_100_is_wide(self):
-        _, bucket = self.fn("Bull", 100.0)
+        _, bucket = self.fn(None, 100.0)
         self.assertEqual(bucket, 'wide')
 
-    # --- All 4 regimes return text ---
-    def test_bull_returns_text(self):
-        text, _ = self.fn("Bull", 50.0)
+    # --- Returns text for all buckets ---
+    def test_tight_returns_text(self):
+        text, _ = self.fn(None, 10.0)
         self.assertIsNotNone(text)
         self.assertIsInstance(text, str)
 
-    def test_neutral_returns_text(self):
-        text, _ = self.fn("Neutral", 50.0)
+    def test_normal_returns_text(self):
+        text, _ = self.fn(None, 50.0)
         self.assertIsNotNone(text)
 
-    def test_bear_returns_text(self):
-        text, _ = self.fn("Bear", 50.0)
-        self.assertIsNotNone(text)
-
-    def test_recession_watch_returns_text(self):
-        text, _ = self.fn("Recession Watch", 90.0)
+    def test_wide_returns_text(self):
+        text, _ = self.fn(None, 90.0)
         self.assertIsNotNone(text)
 
     # --- Text is meaningful length ---
     def test_interpretation_text_is_substantial(self):
-        text, _ = self.fn("Bull", 10.0)
+        text, _ = self.fn(None, 10.0)
         self.assertGreater(len(text), 50)
 
 
@@ -233,11 +182,8 @@ class TestDashboardCreditRoute(unittest.TestCase):
     def test_credit_interpretation_bucket_in_context(self):
         self.assertIn("'credit_interpretation_bucket'", self.src)
 
-    def test_credit_interpretation_regime_in_context(self):
-        self.assertIn("'credit_interpretation_regime'", self.src)
-
     def test_interpretation_block_has_try_except(self):
-        # Interpretation lookup must be guarded so a regime cache miss won't 500
+        # Interpretation lookup must be guarded so a cache miss won't 500
         # Look for the pattern: try block containing get_credit_interpretation
         interp_section = self.src[self.src.find('get_credit_interpretation('):]
         # There should be a try/except somewhere before the call
@@ -262,9 +208,6 @@ class TestCreditHtmlInterpretationBlock(unittest.TestCase):
 
     def test_interpretation_variable_rendered(self):
         self.assertIn('{{ credit_interpretation }}', self.html)
-
-    def test_regime_label_rendered(self):
-        self.assertIn('credit_interpretation_regime', self.html)
 
     def test_bucket_label_rendered(self):
         self.assertIn('credit_interpretation_bucket', self.html)

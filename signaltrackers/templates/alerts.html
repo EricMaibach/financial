@@ -26,7 +26,6 @@
             <label for="alert-type-filter" class="form-label">Filter by Type</label>
             <select class="form-select" id="alert-type-filter">
                 <option value="all">All Alerts</option>
-                <option value="regime_transition">Regime Transition</option>
                 <option value="extreme_percentile">Extreme Percentile</option>
                 <option value="multi_signal_convergence">Multi-Signal Convergence</option>
             </select>
@@ -84,9 +83,7 @@
                                     </span>
 
                                     <!-- Layer Label Badge -->
-                                    {% if alert.alert_type == 'regime_transition' %}
-                                    <span class="badge layer-badge layer-1 me-1">Regime Transition</span>
-                                    {% elif alert.alert_type == 'extreme_percentile' %}
+                                    {% if alert.alert_type == 'extreme_percentile' %}
                                     <span class="badge layer-badge layer-2 me-1">Extreme Percentile</span>
                                     {% elif alert.alert_type == 'multi_signal_convergence' %}
                                     <span class="badge layer-badge layer-3 me-1">Multi-Signal Convergence</span>

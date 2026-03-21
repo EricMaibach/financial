@@ -228,7 +228,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation with context %}
+{% from '_macros.html' import conditions_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -336,7 +336,7 @@
                         <span id="gold-change-5d">--</span>% (5d) | <span id="gold-change-30d">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="gold-status">Loading</div>
-                    {{ regime_annotation('gold') }}
+                    {{ conditions_annotation('gold') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Silver Price</div>
@@ -353,7 +353,7 @@
                         <span id="real-yield-change">--</span> bps (30d)
                     </div>
                     <div class="stat-item__secondary" id="real-yield-status">Loading</div>
-                    {{ regime_annotation('real_yield_10y') }}
+                    {{ conditions_annotation('real_yield_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Breakeven Inflation</div>
@@ -362,7 +362,7 @@
                         <span id="breakeven-change">--</span> bps (30d)
                     </div>
                     <div class="stat-item__secondary" id="breakeven-status">Loading</div>
-                    {{ regime_annotation('breakeven_inflation_10y') }}
+                    {{ conditions_annotation('breakeven_inflation_10y') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Dollar Index (DXY)</div>

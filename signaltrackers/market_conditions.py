@@ -10,8 +10,6 @@ Computes the four dimensions used by the Market Conditions Framework:
 The Quadrant is the headline classification — no blended verdict.
 Three supporting dimensions (Liquidity, Risk, Policy) provide context.
 
-Runs alongside the existing regime_detection.py system — no replacement yet.
-
 Reference: docs/MARKET-CONDITIONS-FRAMEWORK.md, Sections 3-5
 """
 
@@ -1698,7 +1696,7 @@ def update_market_conditions_cache() -> Optional[dict]:
     """
     Compute current market conditions and write to cache file.
 
-    Called by run_data_collection() alongside update_macro_regime().
+    Called by run_data_collection() during the daily refresh.
     Returns the cache dict, or None on failure.
     """
     logger.info('Computing market conditions for cache update...')

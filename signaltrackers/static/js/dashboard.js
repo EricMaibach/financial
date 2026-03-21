@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeBootstrap();
     setupAutoRefresh();
     updateLastUpdatedTime();
-    initRegimeAnnotations();
+    initConditionsAnnotations();
 });
 
 // Update last updated time
@@ -108,12 +108,12 @@ async function updateLastUpdatedTime() {
     }
 }
 
-// Initialize regime annotation toggles (US-4.1.3)
+// Initialize conditions annotation toggles (US-4.1.3)
 // Mobile: toggle expand/collapse. Tablet+: CSS keeps text always visible.
-function initRegimeAnnotations() {
-    document.querySelectorAll('.regime-annotation__toggle').forEach(btn => {
+function initConditionsAnnotations() {
+    document.querySelectorAll('.conditions-annotation__toggle').forEach(btn => {
         btn.addEventListener('click', () => {
-            const annotation = btn.closest('.regime-annotation');
+            const annotation = btn.closest('.conditions-annotation');
             if (!annotation) return;
             const expanded = btn.getAttribute('aria-expanded') === 'true';
             btn.setAttribute('aria-expanded', String(!expanded));

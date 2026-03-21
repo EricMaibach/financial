@@ -10,14 +10,8 @@
   padding: 20px;
   border: 1px solid #e5e7eb;   /* neutral-200 */
   border-left-width: 4px;
-  border-left-color: #d1d5db;  /* neutral-300 default (no regime) */
+  border-left-color: #d1d5db;  /* neutral-300 default */
 }
-
-/* Regime-aware left border color — matches Section 0 regime card */
-.recession-panel.regime-bull      { border-left-color: var(--regime-bull-border); }
-.recession-panel.regime-neutral   { border-left-color: var(--regime-neutral-border); }
-.recession-panel.regime-bear      { border-left-color: var(--regime-bear-border); }
-.recession-panel.regime-recession { border-left-color: var(--regime-recession-border); }
 
 /* --- Mobile Toggle Button (hidden on tablet+) --- */
 .recession-panel__toggle {
@@ -180,22 +174,9 @@
   border-radius: 4px;
 }
 
-/* NY Fed confidence band: regime border color at 30% opacity */
+/* NY Fed confidence band */
 .recession-bar-fill--band {
-  background: rgba(202, 138, 4, 0.30);  /* fallback: bear amber */
-}
-
-.recession-panel.regime-bull .recession-bar-fill--band {
-  background: color-mix(in srgb, var(--regime-bull-border) 30%, transparent);
-}
-.recession-panel.regime-neutral .recession-bar-fill--band {
-  background: color-mix(in srgb, var(--regime-neutral-border) 30%, transparent);
-}
-.recession-panel.regime-bear .recession-bar-fill--band {
-  background: color-mix(in srgb, var(--regime-bear-border) 30%, transparent);
-}
-.recession-panel.regime-recession .recession-bar-fill--band {
-  background: color-mix(in srgb, var(--regime-recession-border) 30%, transparent);
+  background: rgba(202, 138, 4, 0.30);  /* amber at 30% opacity */
 }
 
 /* Point estimate marker circle */
@@ -209,11 +190,6 @@
   border: 2px solid #ffffff;
   background: #6b7280;  /* neutral-500 default */
 }
-
-.recession-panel.regime-bull .recession-bar-marker     { background: var(--regime-bull-border); }
-.recession-panel.regime-neutral .recession-bar-marker  { background: var(--regime-neutral-border); }
-.recession-panel.regime-bear .recession-bar-marker     { background: var(--regime-bear-border); }
-.recession-panel.regime-recession .recession-bar-marker { background: var(--regime-recession-border); }
 
 /* --- Plain-Language Footer --- */
 .recession-footer {

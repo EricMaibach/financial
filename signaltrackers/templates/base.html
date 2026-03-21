@@ -11,12 +11,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/chatbot.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/navbar-bell.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-card.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/recession-panel.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-implications.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/sector-tone.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-pill.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components/regime-thread.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/narrative-bridge.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/section-quick-nav.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/components/trade-pulse.css') }}">
@@ -37,12 +33,6 @@
                 <span class="navbar-tagline d-none d-md-inline">
                     Comprehensive macro intelligence for individual investors
                 </span>
-                {% if macro_regime %}
-                <span class="navbar-regime-pill regime-pill regime-pill--{{ macro_regime.css_class | replace('regime-', '') }}"
-                      aria-label="Current macro regime: {{ macro_regime.state | title }}">
-                  {{ macro_regime.state | upper }}
-                </span>
-                {% endif %}
             </div>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
@@ -333,7 +323,6 @@
     <script src="{{ url_for('static', filename='js/components/ai-section-btn.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-briefing-toolbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-briefing-mobile.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/regime-implications.js') }}"></script>
 
     <!-- Refresh Data Handler -->
     <script>

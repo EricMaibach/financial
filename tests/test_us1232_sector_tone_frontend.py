@@ -88,8 +88,8 @@ class TestSectorToneCSSClasses(unittest.TestCase):
     def test_sector_tone_header_right_declared(self):
         self.assertIn('.sector-tone-header-right', self.css)
 
-    def test_sector_tone_regime_link_declared(self):
-        self.assertIn('.sector-tone-regime-link', self.css)
+    def test_sector_tone_toggle_declared_in_css(self):
+        self.assertIn('.sector-tone-toggle', self.css)
 
     def test_sector_tone_toggle_declared(self):
         self.assertIn('.sector-tone-toggle', self.css)
@@ -435,19 +435,10 @@ class TestSectorToneRegimeLink(unittest.TestCase):
         # US-183.1 Approach 1: old regime link is redundant after section reorder — must be absent
         self.assertNotIn('sector-tone-regime-link', self.html)
 
-    def test_bridge_sentence_present(self):
-        # Bridge sentence (narrative-bridge class) replaces the old regime link in §1.5
-        self.assertIn('narrative-bridge', self.html)
-
     def test_regime_link_text_removed(self):
         # Old 'Interpret alongside current macro regime' text removed as part of US-183.1
         self.assertNotIn('Interpret alongside current macro regime', self.html)
 
-    def test_bridge_sentence_guarded_by_macro_regime(self):
-        # Bridge sentence must only appear inside {% if macro_regime %} block
-        idx = self.html.find('narrative-bridge')
-        vicinity = self.html[max(0, idx - 300):idx]
-        self.assertIn('{% if macro_regime %}', vicinity)
 
 
 # ---------------------------------------------------------------------------
@@ -784,31 +775,15 @@ class TestSectorToneNoRegressions(unittest.TestCase):
     def setUp(self):
         self.html = get_index_html()
 
-    def test_section_0_macro_regime_still_present(self):
-        self.assertIn('id="macro-regime-section"', self.html)
-
     def test_section_05_recession_panel_still_present(self):
         self.assertIn('id="recession-panel-section"', self.html)
-
-    def test_section_075_regime_implications_still_present(self):
-        self.assertIn('id="regime-implications"', self.html)
 
     def test_section_1_market_conditions_still_present(self):
         self.assertIn('id="market-conditions"', self.html)
 
     def test_base_html_existing_css_links_intact(self):
         base = get_base_html()
-        self.assertIn('regime-implications.css', base)
         self.assertIn('recession-panel.css', base)
-        self.assertIn('regime-card.css', base)
-
-    def test_sector_tone_css_added_after_regime_implications(self):
-        # CSS links must be in order: regime-implications.css ... sector-tone.css
-        base = get_base_html()
-        idx_ri = base.find('regime-implications.css')
-        idx_st = base.find('sector-tone.css')
-        self.assertGreater(idx_st, idx_ri,
-                           "sector-tone.css must come after regime-implications.css in base.html")
 
 
 if __name__ == '__main__':

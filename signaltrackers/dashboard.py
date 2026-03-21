@@ -19,7 +19,6 @@ from openai import OpenAI
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import pytz
-from kalshi_data import fetch_all_prediction_markets
 from web_search import SEARCH_FUNCTION_DEFINITION, execute_search_function, is_tavily_configured
 from ai_summary import (
     generate_daily_summary, get_summary_for_display, get_latest_summary,
@@ -49,9 +48,7 @@ from config import get_config
 from extensions import init_extensions, db, limiter, csrf
 from models import User, UserSettings
 from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
-from regime_detection import get_macro_regime, update_macro_regime
 from recession_probability import get_recession_probability, update_recession_probability
-from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
 from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
 from credit_interpretation_config import get_credit_interpretation
 from trade_interpretation_config import get_trade_interpretation
@@ -63,30 +60,7 @@ from conditions_config import (
 )
 from property_interpretation_config import get_property_interpretation
 from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history, build_implications_matrix
-from regime_config import (
-    REGIME_METADATA,
-    SIGNAL_REGIME_ANNOTATIONS,
-    REGIME_CATEGORY_RELEVANCE,
-    CATEGORY_REGIME_CONTEXT,
-)
 
-# Display names and deep-link URLs for highlighted signals (US-4.1.2)
-_SIGNAL_DISPLAY = {
-    'high_yield_spread':       ('HY Spread',          '/explorer?metric=high_yield_spread'),
-    'investment_grade_spread': ('IG Spread',           '/explorer?metric=investment_grade_spread'),
-    'vix':                     ('VIX',                 '/explorer?metric=vix_price'),
-    'gold':                    ('Gold',                '/explorer?metric=gold_price'),
-    'sp500':                   ('S&P 500',             '/explorer?metric=sp500_price'),
-    'yield_curve_10y2y':       ('10Y-2Y Curve',        '/explorer?metric=yield_curve_10y2y'),
-    'initial_claims':          ('Initial Claims',      '/explorer?metric=initial_claims'),
-    'nfci':                    ('NFCI',                '/explorer?metric=nfci'),
-    'fed_funds_rate':          ('Fed Funds Rate',      '/explorer?metric=fed_funds_rate'),
-    'treasury_10y':            ('10Y Treasury',        '/explorer?metric=treasury_10y'),
-    'real_yield_10y':          ('Real Yield 10Y',      '/explorer?metric=real_yield_10y'),
-    'breakeven_inflation_10y': ('Breakeven 10Y',       '/explorer?metric=breakeven_inflation_10y'),
-    'dollar_index':            ('Dollar Index',        '/explorer?metric=dollar_index_price'),
-    'consumer_confidence':     ('Consumer Confidence', '/explorer?metric=consumer_confidence'),
-}
 
 app = Flask(__name__)
 
@@ -179,66 +153,11 @@ def inject_unread_alerts():
 
 
 @app.context_processor
-def inject_macro_regime():
-    """Inject enriched macro regime state into all templates (US-4.1.2)."""
-    try:
-        regime = get_macro_regime()
-        if regime:
-            state = regime['state']
-            meta = REGIME_METADATA[state]
-
-            # Format updated_at as "Feb 24, 2026"
-            from datetime import datetime as _dt
-            try:
-                dt = _dt.fromisoformat(regime['updated_at'])
-                regime['updated_display'] = dt.strftime('%b %-d, %Y')
-            except (ValueError, KeyError):
-                regime['updated_display'] = ''
-
-            # Enrich with static config data
-            regime['icon'] = meta['icon']
-            regime['css_class'] = meta['css_class']
-            regime['summary'] = meta['summary']
-            regime['category_relevance'] = REGIME_CATEGORY_RELEVANCE.get(state, [])
-
-            # Build highlighted signal list with name, annotation, link
-            signals = []
-            for sig_key in meta['highlighted_signals']:
-                annotation = SIGNAL_REGIME_ANNOTATIONS.get(sig_key, {}).get(state, '')
-                display_name, link = _SIGNAL_DISPLAY.get(
-                    sig_key,
-                    (sig_key.replace('_', ' ').title(), '/explorer?metric=' + sig_key),
-                )
-                signals.append({
-                    'key': sig_key,
-                    'name': display_name,
-                    'annotation': annotation,
-                    'link': link,
-                })
-            regime['highlighted_signals'] = signals
-    except Exception:
-        regime = None
-    # Static regime-conditioned copy dicts for homepage narrative bridges (US-183.1)
-    sector_tone_bridge = {
-        'bull': "sector momentum typically confirms the regime. See how this quarter's tone aligns:",
-        'neutral': "sector signals diverge — watch for emerging conviction in either direction:",
-        'bear': "defensive positioning and cash flow quality tend to hold up better. See how tone has shifted:",
-        'recession_watch': "significant sector deterioration is common. Earnings guidance and credit spreads deserve close attention:",
-    }
-    whats_moving_context = {
-        'bull': "In Bull regimes, momentum leaders often widen their lead. Watch for broad participation across sectors as a confirmation signal.",
-        'neutral': "In Neutral regimes, cross-sector dispersion creates selective opportunities. Focus on relative strength rather than broad market direction.",
-        'bear': "In Bear regimes, defensive rotation and breadth deterioration are key warning signals. Cash flow quality and dividend safety take precedence.",
-        'recession_watch': "In Recession Watch regimes, capital preservation matters most. Watch for credit spread widening and earnings guidance cuts as leading signals.",
-    }
+def inject_conditions_context():
+    """Inject conditions annotations and context into all templates."""
     return {
-        'macro_regime': regime,
-        'category_regime_context': CATEGORY_REGIME_CONTEXT,
-        'signal_regime_annotations': SIGNAL_REGIME_ANNOTATIONS,
         'signal_conditions_annotations': SIGNAL_CONDITIONS_ANNOTATIONS,
         'category_conditions_context': CATEGORY_CONDITIONS_CONTEXT,
-        'sector_tone_bridge': sector_tone_bridge,
-        'whats_moving_context': whats_moving_context,
     }
 
 
@@ -270,25 +189,6 @@ def inject_market_conditions():
         data = None
     return {'market_conditions': data}
 
-
-@app.context_processor
-def inject_regime_implications():
-    """Inject regime implications panel data into all templates (US-145.1)."""
-    try:
-        regime = get_macro_regime()
-        if not regime:
-            return {'regime_implications': None}
-        current_key = REGIME_STATE_TO_KEY.get(regime.get('state', ''))
-        if not current_key:
-            return {'regime_implications': None}
-        return {
-            'regime_implications': {
-                'current_regime': current_key,
-                'regimes': REGIME_IMPLICATIONS,
-            }
-        }
-    except Exception:
-        return {'regime_implications': None}
 
 
 @app.context_processor
@@ -1860,8 +1760,8 @@ def _get_trade_balance_context():
     """Build the template context dict for the Global Trade Pulse panel (US-206.1).
 
     Loads trade_balance.csv, computes current value, reading period, YoY change,
-    10-year rolling percentile, and trade condition, then looks up the regime-
-    conditioned interpretation copy.
+    10-year rolling percentile, and trade condition, then looks up the
+    interpretation copy.
 
     Returns a dict with all trade_* keys; values default to None on any error.
     """
@@ -1932,14 +1832,7 @@ def _get_trade_balance_context():
         else:
             condition = None
 
-        # Regime-conditioned interpretation
-        try:
-            regime = get_macro_regime()
-            regime_state = regime.get('state') if regime else None
-        except Exception:
-            regime_state = None
-
-        label, body = get_trade_interpretation(regime_state, condition, percentile)
+        label, body = get_trade_interpretation(None, condition, percentile)
         ctx['trade_interpretation_label'] = label
         ctx['trade_interpretation_body'] = body
 
@@ -2129,20 +2022,15 @@ def credit():
     except Exception:
         pass  # Graceful empty state — missing CSV returns None values
 
-    # Resolve regime-conditioned interpretation text (US-169.2)
     try:
-        regime = get_macro_regime()
-        regime_state = regime.get('state') if regime else None
         interpretation, spread_bucket = get_credit_interpretation(
-            regime_state, ctx['hy_percentile']
+            None, ctx['hy_percentile']
         )
         ctx['credit_interpretation'] = interpretation
         ctx['credit_interpretation_bucket'] = spread_bucket
-        ctx['credit_interpretation_regime'] = regime_state
     except Exception:
         ctx['credit_interpretation'] = None
         ctx['credit_interpretation_bucket'] = None
-        ctx['credit_interpretation_regime'] = None
 
     return render_template('credit.html', **ctx)
 
@@ -2198,10 +2086,8 @@ def property_macro():
         'farmland_cropland': None,
         'farmland_pasture': None,
         'farmland_yoy_pct': None,
-        # Regime interpretation
         'property_interpretation': None,
         'property_interpretation_bucket': None,
-        'property_interpretation_regime': None,
         # Dates
         'hpi_date': None,
         'rent_date': None,
@@ -2285,20 +2171,15 @@ def property_macro():
     except Exception:
         pass
 
-    # Regime-conditioned interpretation (US-255.1)
     try:
-        regime = get_macro_regime()
-        regime_state = regime.get('state') if regime else None
         interpretation, hpi_trend = get_property_interpretation(
-            regime_state, ctx['hpi_yoy_pct']
+            None, ctx['hpi_yoy_pct']
         )
         ctx['property_interpretation'] = interpretation
         ctx['property_interpretation_bucket'] = hpi_trend
-        ctx['property_interpretation_regime'] = regime_state
     except Exception:
         ctx['property_interpretation'] = None
         ctx['property_interpretation_bucket'] = None
-        ctx['property_interpretation_regime'] = None
 
     return render_template('property.html', **ctx)
 
@@ -2890,15 +2771,6 @@ def run_data_collection():
         if result2.returncode != 0:
             raise Exception(f"divergence_analysis.py failed: {result2.stderr}")
 
-        # Update macro regime and recession probability BEFORE generating briefings
-        # so briefings use same-day cache values (not yesterday's stale data)
-        reload_status['status'] = 'Updating macro regime state...'
-        print("Updating macro regime state...")
-        try:
-            update_macro_regime()
-        except Exception as regime_error:
-            print(f"Macro regime update error (non-fatal): {regime_error}")
-
         # Update recession probability panel data (US-146.1)
         reload_status['status'] = 'Updating recession probability data...'
         print("Updating recession probability data...")
@@ -3088,15 +2960,6 @@ def api_scheduler_status():
     return jsonify(status)
 
 
-@app.route('/api/prediction-markets')
-def api_prediction_markets():
-    """Get prediction market data from Kalshi."""
-    try:
-        data = fetch_all_prediction_markets()
-        return jsonify(data)
-    except Exception as e:
-        print(f"Error fetching prediction markets: {e}")
-        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/ai-summary')
@@ -3383,7 +3246,7 @@ def api_chatbot():
         "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
         "The dashboard uses a four-quadrant conditions framework (Goldilocks, Reflation, Stagflation, Deflation Risk) "
         "with four dimensions: quadrant (growth vs inflation), liquidity, risk, and policy. "
-        "Use this terminology — never refer to old regime labels like Bull, Bear, Neutral, or Recession Watch. "
+        "Use this terminology consistently. "
         f"The user is currently viewing the dashboard page: {page}.{section_context}"
         f"{conditions_context}"
         f"{briefing_context}\n\n"
@@ -3586,15 +3449,14 @@ def api_chatbot():
 # Allowed section IDs — validated as dict key only, never used as file path,
 # SQL parameter, or shell argument.
 _SECTION_OPENING_ALLOWED = {
-    'macro-regime-section', 'briefing-section', 'sector-tone-section',
+    'briefing-section', 'sector-tone-section',
     'market-conditions', 'movers-section', 'signals-section',
-    'recession-panel-section', 'trade-pulse-section', 'regime-implications',
+    'recession-panel-section', 'trade-pulse-section',
     'asset-credit', 'asset-equity', 'asset-rates', 'asset-dollar',
     'asset-crypto', 'asset-safe-havens', 'asset-property',
 }
 
 _SECTION_NAMES = {
-    'macro-regime-section': 'Macro Regime Score',
     'briefing-section': 'AI Market Briefing',
     'sector-tone-section': 'Sector Management Tone',
     'market-conditions': 'Market Conditions at a Glance',
@@ -3602,7 +3464,6 @@ _SECTION_NAMES = {
     'signals-section': 'Cross-Market Indicators',
     'recession-panel-section': 'Recession Probability',
     'trade-pulse-section': 'Global Trade Pulse',
-    'regime-implications': 'Regime Implications',
     'asset-credit': 'Credit Markets',
     'asset-equity': 'Equity Markets',
     'asset-rates': 'Rates & Fixed Income',
@@ -3620,21 +3481,6 @@ def _get_section_live_data(section_id: str) -> str:
     Returns a generic fallback string if data is unavailable.
     """
     try:
-        if section_id == 'macro-regime-section':
-            regime = get_macro_regime()
-            if regime:
-                confidence = regime.get('confidence') or 'unknown'
-                summary = regime.get('summary', '')
-                signals = regime.get('highlighted_signals', [])
-                signal_text = '; '.join(
-                    f"{s['name']}: {s['annotation']}" for s in signals
-                ) if signals else 'no highlighted signals'
-                return (
-                    f"Current macro regime: {regime['state']} (confidence: {confidence}). "
-                    f"Summary: {summary} Key signals: {signal_text}."
-                )
-            return "Macro regime data not yet available."
-
         if section_id == 'briefing-section':
             from ai_summary import get_summary_for_display
             briefing = get_summary_for_display()
@@ -3703,26 +3549,6 @@ def _get_section_live_data(section_id: str) -> str:
             if interp:
                 parts.append(f"Interpretation: {interp}")
             return '; '.join(parts) + '.'
-
-        if section_id == 'regime-implications':
-            regime = get_macro_regime()
-            if regime:
-                state = regime['state']
-                from regime_implications_config import REGIME_IMPLICATIONS, REGIME_STATE_TO_KEY
-                regime_key = REGIME_STATE_TO_KEY.get(state, state.lower())
-                impl_data = REGIME_IMPLICATIONS.get(regime_key)
-                if impl_data:
-                    asset_lines = []
-                    for ac in impl_data.get('asset_classes', []):
-                        name = ac.get('display_name', '')
-                        signal = ac.get('signal', '').replace('_', ' ')
-                        asset_lines.append(f"{name}: {signal}")
-                    return (
-                        f"Regime implications for {state} regime: "
-                        + '; '.join(asset_lines) + '.'
-                    )
-                return f"Current regime: {state}. Implications data loading."
-            return "Regime implications data not yet available."
 
         if section_id == 'asset-credit':
             hy_df = load_csv_data('high_yield_spread.csv')
@@ -4110,23 +3936,10 @@ def generate_market_conditions_synthesis():
         dashboard_data = get_dashboard_data()
         statuses = calculate_market_statuses(dashboard_data)
 
-        # Build regime prefix if macro regime is available
-        regime = get_macro_regime()
-        regime_state = regime['state'] if regime and regime.get('state') else None
-        if regime_state and regime_state.lower() != 'unknown':
-            regime_prefix_market = (
-                f"Begin your synthesis by explicitly naming the current macro regime ({regime_state}) "
-                "and in one sentence explaining whether current market conditions are consistent with "
-                "or diverging from what is historically typical for this regime. "
-                "Then proceed with your standard market conditions summary. "
-            )
-        else:
-            regime_prefix_market = ""
-
         # Build the AI prompt
         system_prompt = """You are a financial market analyst. Given market condition statuses, write a single sentence (max 150 characters) that synthesizes the overall market environment. Be concise, objective, and highlight the 2-3 most important conditions. Write only the synthesis sentence, nothing else."""
 
-        user_prompt = f"""{regime_prefix_market}Current Market Statuses:
+        user_prompt = f"""Current Market Statuses:
 - Credit: {statuses['credit']}
 - Equities: {statuses['equities']}
 - Rates: {statuses['rates']}
@@ -5042,22 +4855,6 @@ def generate_market_summary():
                 summary_parts.append(f"Historical Range: {stats['min']:.0f} - {stats['max']:.0f} bp")
                 summary_parts.append("")
 
-        # Prediction Markets
-        try:
-            prediction_data = fetch_all_prediction_markets()
-            summary_parts.append("## PREDICTION MARKETS (Kalshi)")
-            if prediction_data.get('recession') and prediction_data['recession'].get('probability'):
-                prob = prediction_data['recession']['probability'] * 100
-                summary_parts.append(f"Recession Probability (2026): {prob:.0f}%")
-            if prediction_data.get('large_rate_cut') and prediction_data['large_rate_cut'].get('probability'):
-                prob = prediction_data['large_rate_cut']['probability'] * 100
-                summary_parts.append(f"Large Fed Rate Cut (>25bp) Probability: {prob:.0f}%")
-            summary_parts.append("")
-        except Exception:
-            pass  # Skip prediction markets if unavailable
-
-        # Note: Macro regime section removed per US-325.1 — conditions context
-        # (quadrant, liquidity, risk, policy) is now provided via the main briefing prompt
 
         # Recession Probability Models
         try:
@@ -6054,8 +5851,6 @@ def generate_credit_market_summary():
         summary_parts.append("  CONTEXT: Tight credit + rising equities = risk-on; Credit widening ahead of equity decline = early warning signal")
         summary_parts.append("")
 
-        # Note: Macro regime section removed per US-325.1 — conditions context
-        # (quadrant, liquidity, risk, policy) is now provided via the credit briefing prompt
 
         # Interpretation Framework
         summary_parts.append("## CREDIT SPREAD INTERPRETATION FRAMEWORK")
@@ -6073,288 +5868,6 @@ def generate_credit_market_summary():
         print(f"Error generating credit market summary: {e}")
         return "Credit market data summary unavailable."
 
-
-@app.route('/api/chat', methods=['POST'])
-@csrf.exempt  # API endpoint uses login_required for auth
-@limiter.limit("10 per minute")
-@login_required
-def api_chat():
-    """Handle chat messages with user's API key, with web search capability.
-
-    Supports both OpenAI and Anthropic APIs with tool calling.
-    """
-    from services.ai_service import get_user_ai_client, AIServiceError, OPENAI_MODEL, ANTHROPIC_MODEL
-
-    try:
-        data = request.json
-        user_message = data.get('message', '')
-        conversation_history = data.get('history', [])  # Get conversation history
-
-        if not user_message:
-            return jsonify({'error': 'No message provided'}), 400
-
-        # Get user's AI client
-        try:
-            user_client, provider = get_user_ai_client()
-        except AIServiceError as e:
-            return jsonify({'error': str(e)}), 400
-
-        # Check if web search is available
-        web_search_available = is_tavily_configured()
-        print(f"[CHAT] Provider: {provider}, Web search available: {web_search_available}")
-
-        # Build system message - now tool-based, not data-dump
-        system_message = """You are a financial markets expert assistant with access to real-time market data through tools. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
-
-AVAILABLE TOOLS:
-1. **list_available_metrics** - Discover all available market data series (credit spreads, equities, safe havens, etc.)
-2. **get_metric_data** - Fetch detailed data for any metric (current value, percentile, historical stats, recent changes)
-3. **search_web** - Search for current news, market commentary, or recent events (if configured)
-
-HOW TO USE TOOLS EFFECTIVELY:
-- When users ask about specific metrics, USE get_metric_data to fetch current data rather than guessing
-- When users ask "what data do you have?" or ask about a metric you're unsure of, USE list_available_metrics first
-- Only search the web for news/current events - use metric tools for market data
-
-KEY CONTEXT:
-- This dashboard tracks a wide range of financial market data: credit spreads, equities, safe havens, yield curves, economic indicators, and more
-- The divergence_gap metric compares gold-implied spreads vs actual HY spreads - one of many useful cross-market comparisons
-- Use percentiles to contextualize whether current values are historically high/low
-- Yield curve metrics (10y2y, 10y3m) are important recession indicators
-- Credit spreads (HY, IG, CCC) reflect market stress levels
-- Historical recession data is available to correlate with other indicators
-
-YOUR ROLE:
-- Help users understand what the numbers mean and their implications
-- Fetch specific data when asked about metrics (don't make up numbers!)
-- Explain market dynamics, risks, and historical context
-- Be objective and data-driven
-- Don't give specific investment advice (no "you should buy/sell X")
-- Be conversational and educational
-
-IMPORTANT: When answering questions about specific metrics, ALWAYS use the tools to get current data. Don't rely on potentially stale information."""
-
-        # DEBUG: dump chat prompt to file for review
-        try:
-            from pathlib import Path as _Path
-            _dump_dir = _Path("data/prompt_dumps")
-            _dump_dir.mkdir(parents=True, exist_ok=True)
-            _tool_names = ['list_available_metrics', 'get_metric_data']
-            if web_search_available:
-                _tool_names.append('search_web')
-            with open(_dump_dir / "chat.txt", "w") as _f:
-                _f.write(f"=== PROMPT DUMP: Chat (/api/chat) ===\n")
-                _f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-                _f.write(f"Provider: {provider}\n")
-                _f.write(f"Web search available: {web_search_available}\n")
-                _f.write(f"Tools: {', '.join(_tool_names)}\n")
-                _f.write(f"\n{'='*60}\n")
-                _f.write(f"SYSTEM PROMPT\n{'='*60}\n")
-                _f.write(system_message)
-                _f.write(f"\n\n{'='*60}\n")
-                _f.write(f"TOOL DEFINITIONS\n{'='*60}\n")
-                _f.write(json.dumps(LIST_METRICS_FUNCTION, indent=2))
-                _f.write("\n\n")
-                _f.write(json.dumps(GET_METRIC_FUNCTION, indent=2))
-                if web_search_available:
-                    _f.write("\n\n")
-                    _f.write(json.dumps(SEARCH_FUNCTION_DEFINITION, indent=2))
-                _f.write(f"\n\n{'='*60}\n")
-                _f.write(f"CONVERSATION HISTORY ({len(conversation_history)} messages)\n{'='*60}\n")
-                for msg in conversation_history:
-                    _f.write(f"\n[{msg.get('role', '?').upper()}]\n{msg.get('content', '')}\n")
-                _f.write(f"\n{'='*60}\n")
-                _f.write(f"USER MESSAGE\n{'='*60}\n")
-                _f.write(user_message)
-                _f.write("\n")
-        except Exception:
-            pass
-
-        # Route to appropriate provider handler
-        if provider == 'anthropic':
-            ai_message = _chat_with_anthropic(
-                user_client, system_message, user_message,
-                conversation_history, web_search_available, ANTHROPIC_MODEL
-            )
-        else:
-            ai_message = _chat_with_openai(
-                user_client, system_message, user_message,
-                conversation_history, web_search_available, OPENAI_MODEL
-            )
-
-        return jsonify({
-            'message': ai_message,
-            'timestamp': datetime.now().isoformat(),
-            'web_search_enabled': web_search_available
-        })
-
-    except Exception as e:
-        print(f"Chat error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-
-def _chat_with_openai(client, system_message, user_message, conversation_history, web_search_available, model):
-    """Handle chat with OpenAI API."""
-    # Build messages array
-    messages = [{"role": "system", "content": system_message}]
-
-    # Add conversation history
-    for msg in conversation_history[:-1] if conversation_history else []:
-        if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
-            messages.append({"role": msg['role'], "content": msg['content']})
-
-    messages.append({"role": "user", "content": user_message})
-
-    # Build tools in OpenAI format
-    tools = [
-        {"type": "function", "function": LIST_METRICS_FUNCTION},
-        {"type": "function", "function": GET_METRIC_FUNCTION}
-    ]
-    if web_search_available:
-        tools.append({"type": "function", "function": SEARCH_FUNCTION_DEFINITION})
-
-    api_params = {
-        "model": model,
-        "messages": messages,
-        "temperature": 0.7,
-        "max_completion_tokens": 800,
-        "tools": tools,
-        "tool_choice": "auto"
-    }
-
-    print(f"[CHAT-OPENAI] Starting request, model: {model}")
-
-    max_iterations = 5
-    iteration = 0
-    ai_message = None
-
-    while iteration < max_iterations:
-        iteration += 1
-        print(f"[CHAT-OPENAI] Iteration {iteration}/{max_iterations}")
-
-        response = client.chat.completions.create(**api_params)
-        response_message = response.choices[0].message
-
-        print(f"[CHAT-OPENAI] finish_reason: {response.choices[0].finish_reason}")
-
-        if response_message.tool_calls:
-            print(f"[CHAT-OPENAI] Tool calls: {[tc.function.name for tc in response_message.tool_calls]}")
-            messages.append(response_message)
-
-            for tool_call in response_message.tool_calls:
-                function_name = tool_call.function.name
-                function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
-
-                result = _execute_tool(function_name, function_args)
-                print(f"[CHAT-OPENAI] {function_name} returned {len(result)} chars")
-
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "name": function_name,
-                    "content": result
-                })
-
-            api_params["messages"] = messages
-            api_params["max_completion_tokens"] = 1000
-        else:
-            ai_message = response_message.content
-            break
-
-    if not ai_message or not ai_message.strip():
-        ai_message = "I apologize, but I wasn't able to generate a response. Please try again."
-
-    return _filter_reasoning_artifacts(ai_message)
-
-
-def _chat_with_anthropic(client, system_message, user_message, conversation_history, web_search_available, model):
-    """Handle chat with Anthropic API."""
-    # Build messages array (Anthropic doesn't have system role in messages)
-    messages = []
-
-    # Add conversation history
-    for msg in conversation_history[:-1] if conversation_history else []:
-        if msg.get('role') in ['user', 'assistant'] and msg.get('content'):
-            messages.append({"role": msg['role'], "content": msg['content']})
-
-    messages.append({"role": "user", "content": user_message})
-
-    # Build tools in Anthropic format
-    tools = [
-        {
-            "name": LIST_METRICS_FUNCTION["name"],
-            "description": LIST_METRICS_FUNCTION["description"],
-            "input_schema": LIST_METRICS_FUNCTION.get("parameters", {"type": "object", "properties": {}})
-        },
-        {
-            "name": GET_METRIC_FUNCTION["name"],
-            "description": GET_METRIC_FUNCTION["description"],
-            "input_schema": GET_METRIC_FUNCTION.get("parameters", {"type": "object", "properties": {}})
-        }
-    ]
-    if web_search_available:
-        tools.append({
-            "name": SEARCH_FUNCTION_DEFINITION["name"],
-            "description": SEARCH_FUNCTION_DEFINITION["description"],
-            "input_schema": SEARCH_FUNCTION_DEFINITION.get("parameters", {"type": "object", "properties": {}})
-        })
-
-    print(f"[CHAT-ANTHROPIC] Starting request, model: {model}")
-
-    max_iterations = 5
-    iteration = 0
-    ai_message = None
-
-    while iteration < max_iterations:
-        iteration += 1
-        print(f"[CHAT-ANTHROPIC] Iteration {iteration}/{max_iterations}")
-
-        response = client.messages.create(
-            model=model,
-            max_tokens=1000,
-            system=system_message,
-            messages=messages,
-            tools=tools
-        )
-
-        print(f"[CHAT-ANTHROPIC] stop_reason: {response.stop_reason}")
-
-        # Check for tool use in response
-        tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
-        text_blocks = [block for block in response.content if block.type == "text"]
-
-        if tool_use_blocks:
-            print(f"[CHAT-ANTHROPIC] Tool uses: {[t.name for t in tool_use_blocks]}")
-
-            # Add assistant response to messages
-            messages.append({"role": "assistant", "content": response.content})
-
-            # Process each tool use and collect results
-            tool_results = []
-            for tool_use in tool_use_blocks:
-                result = _execute_tool(tool_use.name, tool_use.input or {})
-                print(f"[CHAT-ANTHROPIC] {tool_use.name} returned {len(result)} chars")
-
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": tool_use.id,
-                    "content": result
-                })
-
-            # Add tool results as user message
-            messages.append({"role": "user", "content": tool_results})
-        else:
-            # No more tool use - extract text response
-            if text_blocks:
-                ai_message = "\n".join(block.text for block in text_blocks)
-            break
-
-    if not ai_message or not ai_message.strip():
-        ai_message = "I apologize, but I wasn't able to generate a response. Please try again."
-
-    return _filter_reasoning_artifacts(ai_message)
 
 
 def _execute_tool(function_name, function_args):

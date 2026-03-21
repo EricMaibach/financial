@@ -34,53 +34,6 @@ def read_source(filename):
 # Static tests — source code structure
 # =============================================================================
 
-class TestStaticDashboardRegimePrefix(unittest.TestCase):
-    """generate_market_conditions_synthesis() must have regime prefix logic."""
-
-    @classmethod
-    def setUpClass(cls):
-        cls.src = read_source('dashboard.py')
-
-    def test_regime_prefix_market_variable_present(self):
-        self.assertIn('regime_prefix_market', self.src,
-                      'regime_prefix_market variable not found in dashboard.py')
-
-    def test_regime_prefix_market_injected_in_user_prompt(self):
-        # The user_prompt f-string must include the regime prefix variable
-        self.assertIn('{regime_prefix_market}', self.src,
-                      'regime_prefix_market not interpolated in user_prompt in dashboard.py')
-
-    def test_regime_prefix_market_names_regime(self):
-        self.assertIn('explicitly naming the current macro regime', self.src,
-                      'Expected regime-naming instruction not found in dashboard.py')
-
-    def test_regime_prefix_market_includes_consistent_or_diverging(self):
-        # Phrase may span two adjacent string literals; check for both words
-        self.assertIn('consistent with', self.src,
-                      '"consistent with" language not found in dashboard.py')
-        self.assertIn('diverging from', self.src,
-                      '"diverging from" language not found in dashboard.py')
-
-    def test_regime_prefix_market_includes_proceed_instruction(self):
-        self.assertIn('Then proceed with your standard market conditions summary', self.src,
-                      'Expected proceed instruction not found in dashboard.py')
-
-    def test_regime_prefix_market_fallback_empty_string(self):
-        # When regime is unavailable, prefix must be empty string (no crash)
-        self.assertIn('regime_prefix_market = ""', self.src,
-                      'Empty string fallback for regime_prefix_market not found in dashboard.py')
-
-    def test_regime_prefix_market_case_insensitive_guard(self):
-        # Must use .lower() != 'unknown' for case-insensitive guard
-        self.assertIn(".lower() != 'unknown'", self.src,
-                      'Case-insensitive unknown guard (.lower() != unknown) not found in dashboard.py')
-
-    def test_regime_state_interpolated_in_market_prefix(self):
-        # The f-string for regime_prefix_market must interpolate regime_state
-        self.assertIn('regime_state', self.src,
-                      'regime_state variable not found in dashboard.py')
-
-
 class TestStaticAiSummaryConditionsContext(unittest.TestCase):
     """generate_daily_summary() must use market conditions context (US-325.1)."""
 
@@ -251,51 +204,6 @@ class TestGenerateDailySummaryConditionsContext(unittest.TestCase):
         result, captured = self._call_with_mocked_conditions(self.MOCK_CONDITIONS)
         self.assertIn('Today is', captured['user_prompt'])
 
-
-# =============================================================================
-# Functional tests — generate_market_conditions_synthesis() prompt structure
-# via static source inspection of the exact user_prompt construction
-# =============================================================================
-
-class TestMarketConditionsSynthesisPromptStructure(unittest.TestCase):
-    """
-    Verify the user_prompt construction in generate_market_conditions_synthesis()
-    via source code analysis. Full functional mocking of dashboard.py requires
-    Flask app context; static inspection is sufficient for prompt structure.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        cls.src = read_source('dashboard.py')
-
-    def test_regime_prefix_built_before_user_prompt(self):
-        # regime_prefix_market must be assigned before user_prompt f-string
-        src = self.src
-        prefix_pos = src.find('regime_prefix_market =')
-        user_prompt_pos = src.find("user_prompt = f\"\"\"{regime_prefix_market}")
-        self.assertGreater(prefix_pos, 0, 'regime_prefix_market assignment not found')
-        self.assertGreater(user_prompt_pos, 0, 'user_prompt with regime_prefix_market not found')
-        self.assertLess(prefix_pos, user_prompt_pos,
-                        'regime_prefix_market must be assigned before user_prompt f-string')
-
-    def test_regime_state_sourced_from_get_macro_regime(self):
-        # regime_state must come from get_macro_regime() call
-        self.assertIn("regime = get_macro_regime()", self.src,
-                      'get_macro_regime() not called in generate_market_conditions_synthesis()')
-        self.assertIn("regime['state']", self.src,
-                      "regime['state'] access not found in dashboard.py")
-
-    def test_none_guard_present(self):
-        # Must check regime is not None before accessing state
-        self.assertIn('if regime and regime.get(', self.src,
-                      'None guard for regime not found in dashboard.py')
-
-    def test_regime_prefix_market_content_correct(self):
-        self.assertIn(
-            'Begin your synthesis by explicitly naming the current macro regime',
-            self.src,
-            'Expected §1 regime prefix instruction not found in dashboard.py'
-        )
 
 
 if __name__ == '__main__':

@@ -654,18 +654,11 @@ class TestDashboardIntegration(unittest.TestCase):
 
     def test_update_called_in_run_data_collection(self):
         # update_recession_probability() must be called inside run_data_collection
-        # Check it appears after the update_macro_regime call (order matters)
-        macro_pos = self.src.find('update_macro_regime()')
         recession_pos = self.src.find('update_recession_probability()')
-        self.assertGreater(macro_pos, 0, 'update_macro_regime() not found in dashboard.py')
         self.assertGreater(recession_pos, 0, 'update_recession_probability() not found in dashboard.py')
-        self.assertGreater(
-            recession_pos, macro_pos,
-            'update_recession_probability() must be called AFTER update_macro_regime()',
-        )
 
     def test_update_wrapped_in_try_except(self):
-        # The update call must be non-fatal (same pattern as update_macro_regime)
+        # The update call must be non-fatal
         # Check there's a try block close to the update call
         src_slice = self.src[max(0, self.src.find('update_recession_probability()') - 200):]
         self.assertIn('try:', src_slice[:400])

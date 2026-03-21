@@ -228,7 +228,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation with context %}
+{% from '_macros.html' import conditions_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -549,7 +549,7 @@
                         <span id="sp500-change-5d">--</span>% (5d) | <span id="sp500-change-30d">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="sp500-percentile">Loading</div>
-                    {{ regime_annotation('sp500') }}
+                    {{ conditions_annotation('sp500') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Nasdaq 100</div>
@@ -574,7 +574,7 @@
                         <span id="vix-change-5d">--</span>% (5d)
                     </div>
                     <div class="stat-item__secondary" id="vix-status">Loading</div>
-                    {{ regime_annotation('vix') }}
+                    {{ conditions_annotation('vix') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Market Breadth</div>

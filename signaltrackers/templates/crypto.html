@@ -228,7 +228,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation with context %}
+{% from '_macros.html' import conditions_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -356,7 +356,7 @@
                         <span id="fed-balance-change">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="fed-balance-status">Loading</div>
-                    {{ regime_annotation('fed_balance_sheet') }}
+                    {{ conditions_annotation('fed_balance_sheet') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">Reverse Repo (RRP)</div>
@@ -373,7 +373,7 @@
                         <span id="nfci-change">--</span> (30d)
                     </div>
                     <div class="stat-item__secondary" id="nfci-status">Loading</div>
-                    {{ regime_annotation('nfci') }}
+                    {{ conditions_annotation('nfci') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">M2 Money Supply</div>
@@ -381,7 +381,7 @@
                     <div class="stat-item__secondary">
                         <span id="m2-change">--</span>% YoY
                     </div>
-                    {{ regime_annotation('m2_money_supply') }}
+                    {{ conditions_annotation('m2_money_supply') }}
                 </div>
             </div>
         </div>

@@ -144,7 +144,7 @@ class TestNewsDashboardRoute:
                     for dep in ['flask_sqlalchemy', 'flask_login', 'flask_mail',
                                 'apscheduler', 'apscheduler.schedulers.background',
                                 'apscheduler.triggers.cron', 'market_signals',
-                                'regime_detection', 'regime_config', 'sector_tone_pipeline']:
+                                'sector_tone_pipeline']:
                         sys.modules.setdefault(dep, MagicMock())
                     spec.loader.exec_module(mod)
                     app = mod.app
@@ -185,7 +185,7 @@ class TestNewsDashboardRoute:
                     for dep in ['flask_sqlalchemy', 'flask_login', 'flask_mail',
                                 'apscheduler', 'apscheduler.schedulers.background',
                                 'apscheduler.triggers.cron', 'market_signals',
-                                'regime_detection', 'regime_config', 'sector_tone_pipeline']:
+                                'sector_tone_pipeline']:
                         sys.modules.setdefault(dep, MagicMock())
                     spec.loader.exec_module(mod)
                     app = mod.app
@@ -462,7 +462,7 @@ class TestStaleDetection:
                     for dep in ['flask_sqlalchemy', 'flask_login', 'flask_mail',
                                 'apscheduler', 'apscheduler.schedulers.background',
                                 'apscheduler.triggers.cron', 'market_signals',
-                                'regime_detection', 'regime_config', 'sector_tone_pipeline']:
+                                'sector_tone_pipeline']:
                         sys.modules.setdefault(dep, MagicMock())
                     spec.loader.exec_module(mod)
                     app = mod.app

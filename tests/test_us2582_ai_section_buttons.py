@@ -139,9 +139,7 @@ class TestBaseHtmlIncludes:
 # ---------------------------------------------------------------------------
 
 HOMEPAGE_SECTIONS = [
-    ('macro-regime-section', 'Macro Regime Score'),
     ('recession-panel-section', 'Recession Probability'),
-    ('regime-implications', 'Regime Implications'),
     ('sector-tone-section', 'Sector Management Tone'),
     ('market-conditions', 'Market Conditions at a Glance'),
     ('trade-pulse-section', 'Global Trade Pulse'),
@@ -262,7 +260,6 @@ class TestAISectionBtnCSS:
 class TestAISectionBtnJS:
     def test_all_section_ids_defined(self, ai_section_btn_js):
         expected_ids = [
-            'macro-regime-section',
             'briefing-section',
             'sector-tone-section',
             'market-conditions',
@@ -270,7 +267,6 @@ class TestAISectionBtnJS:
             'signals-section',
             'recession-panel-section',
             'trade-pulse-section',
-            'regime-implications',
             'asset-credit',
             'asset-equity',
             'asset-rates',

@@ -97,12 +97,6 @@ class TestChatbotSystemPrompt(unittest.TestCase):
         self.assertNotIn("'Neutral'", prompt_section)
         self.assertNotIn("'Recession Watch'", prompt_section)
 
-    def test_old_regime_terminology_forbidden(self):
-        """System prompt must instruct AI not to use old regime labels."""
-        self.assertIn('Bull', self.chatbot_fn)  # Referenced as forbidden terms
-        self.assertIn('Bear', self.chatbot_fn)
-        self.assertIn('never', self.chatbot_fn.lower())
-
     def test_error_handling_for_conditions(self):
         """Conditions context building must be wrapped in try/except."""
         # Find the conditions context section

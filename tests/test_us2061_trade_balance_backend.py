@@ -2,7 +2,7 @@
 Tests for US-206.1: Global Trade Pulse — Backend.
 
 Covers:
-- trade_interpretation_config.py: all 16 regime×condition entries + fallback
+- trade_interpretation_config.py: 4 condition entries
 - get_trade_interpretation(): correct label/body selection, fallback copy
 - Trade condition determination logic (via dashboard helpers)
 - YoY calculation
@@ -65,79 +65,21 @@ class TestTradeInterpretationsDict(unittest.TestCase):
         self.assertIn('body', entry)
         self.assertIsInstance(entry['label'], str)
         self.assertGreater(len(entry['label']), 5, f"Label too short for {key}")
-        # body may be None for unknown fallback entries
-        if entry['body'] is not None:
-            self.assertIsInstance(entry['body'], str)
-            self.assertGreater(len(entry['body']), 20, f"Body too short for {key}")
 
-    # Bull regime (4)
-    def test_bull_widening_deficit(self):
-        self._assert_key(("Bull", "widening_deficit"))
+    def test_widening_deficit(self):
+        self._assert_key("widening_deficit")
 
-    def test_bull_narrowing_deficit(self):
-        self._assert_key(("Bull", "narrowing_deficit"))
+    def test_narrowing_deficit(self):
+        self._assert_key("narrowing_deficit")
 
-    def test_bull_widening_surplus(self):
-        self._assert_key(("Bull", "widening_surplus"))
+    def test_widening_surplus(self):
+        self._assert_key("widening_surplus")
 
-    def test_bull_narrowing_surplus(self):
-        self._assert_key(("Bull", "narrowing_surplus"))
-
-    # Bear regime (4)
-    def test_bear_widening_deficit(self):
-        self._assert_key(("Bear", "widening_deficit"))
-
-    def test_bear_narrowing_deficit(self):
-        self._assert_key(("Bear", "narrowing_deficit"))
-
-    def test_bear_widening_surplus(self):
-        self._assert_key(("Bear", "widening_surplus"))
-
-    def test_bear_narrowing_surplus(self):
-        self._assert_key(("Bear", "narrowing_surplus"))
-
-    # Neutral regime (4)
-    def test_neutral_widening_deficit(self):
-        self._assert_key(("Neutral", "widening_deficit"))
-
-    def test_neutral_narrowing_deficit(self):
-        self._assert_key(("Neutral", "narrowing_deficit"))
-
-    def test_neutral_widening_surplus(self):
-        self._assert_key(("Neutral", "widening_surplus"))
-
-    def test_neutral_narrowing_surplus(self):
-        self._assert_key(("Neutral", "narrowing_surplus"))
-
-    # Recession Watch regime (4)
-    def test_recession_watch_widening_deficit(self):
-        self._assert_key(("Recession Watch", "widening_deficit"))
-
-    def test_recession_watch_narrowing_deficit(self):
-        self._assert_key(("Recession Watch", "narrowing_deficit"))
-
-    def test_recession_watch_widening_surplus(self):
-        self._assert_key(("Recession Watch", "widening_surplus"))
-
-    def test_recession_watch_narrowing_surplus(self):
-        self._assert_key(("Recession Watch", "narrowing_surplus"))
-
-    # Unknown fallback (4)
-    def test_unknown_widening_deficit_exists(self):
-        self.assertIn(("unknown", "widening_deficit"), self.interps)
-
-    def test_unknown_narrowing_deficit_exists(self):
-        self.assertIn(("unknown", "narrowing_deficit"), self.interps)
-
-    def test_unknown_widening_surplus_exists(self):
-        self.assertIn(("unknown", "widening_surplus"), self.interps)
-
-    def test_unknown_narrowing_surplus_exists(self):
-        self.assertIn(("unknown", "narrowing_surplus"), self.interps)
+    def test_narrowing_surplus(self):
+        self._assert_key("narrowing_surplus")
 
     def test_total_entry_count(self):
-        # 4 regimes × 4 conditions + 4 unknown fallbacks = 20
-        self.assertGreaterEqual(len(self.interps), 20)
+        self.assertGreaterEqual(len(self.interps), 4)
 
 
 class TestGetTradeInterpretation(unittest.TestCase):
@@ -146,61 +88,38 @@ class TestGetTradeInterpretation(unittest.TestCase):
         self.fn = get_trade_interpretation
 
     def test_returns_tuple(self):
-        result = self.fn("Bull", "widening_deficit")
+        result = self.fn(None, "widening_deficit", trade_percentile=50)
         self.assertIsInstance(result, tuple)
         self.assertEqual(len(result), 2)
 
-    def test_bull_widening_deficit_returns_label_and_body(self):
-        label, body = self.fn("Bull", "widening_deficit")
-        self.assertIsNotNone(label)
-        self.assertIsNotNone(body)
-        self.assertIn("EXPANSION", label)
-        self.assertIn("WIDENING DEFICIT", label)
-
-    def test_bear_narrowing_deficit_label_contains_contraction(self):
-        label, body = self.fn("Bear", "narrowing_deficit")
-        self.assertIsNotNone(label)
-        self.assertIn("CONTRACTION", label)
-
-    def test_neutral_narrowing_surplus_label_contains_stable(self):
-        label, body = self.fn("Neutral", "narrowing_surplus")
-        self.assertIsNotNone(label)
-        self.assertIn("STABLE", label)
-
-    def test_recession_watch_narrowing_surplus_label_contains_weakening(self):
-        label, body = self.fn("Recession Watch", "narrowing_surplus")
-        self.assertIsNotNone(label)
-        self.assertIn("WEAKENING", label)
-
-    def test_none_condition_returns_none_none(self):
-        label, body = self.fn("Bull", None)
-        self.assertIsNone(label)
-        self.assertIsNone(body)
-
-    def test_none_regime_uses_unknown_fallback(self):
+    def test_with_percentile_returns_label_and_body(self):
         label, body = self.fn(None, "widening_deficit", trade_percentile=33)
         self.assertIsNotNone(label)
         self.assertIsNotNone(body)
-        self.assertIn("33", body)  # percentile in fallback body
+        self.assertIn("33", body)
 
-    def test_unknown_regime_uses_fallback(self):
-        label, body = self.fn("Unknown", "narrowing_deficit", trade_percentile=50)
+    def test_none_condition_returns_none_none(self):
+        label, body = self.fn(None, None)
+        self.assertIsNone(label)
+        self.assertIsNone(body)
+
+    def test_none_regime_with_percentile_returns_body(self):
+        label, body = self.fn(None, "widening_deficit", trade_percentile=33)
         self.assertIsNotNone(label)
         self.assertIsNotNone(body)
-
-    def test_all_16_regime_condition_combos_return_non_none(self):
-        regimes = ["Bull", "Bear", "Neutral", "Recession Watch"]
-        conditions = ["widening_deficit", "narrowing_deficit", "widening_surplus", "narrowing_surplus"]
-        for regime in regimes:
-            for condition in conditions:
-                label, body = self.fn(regime, condition)
-                self.assertIsNotNone(label, f"label is None for ({regime}, {condition})")
-                self.assertIsNotNone(body, f"body is None for ({regime}, {condition})")
+        self.assertIn("33", body)
 
     def test_fallback_with_none_percentile_returns_none_body(self):
-        # unknown regime + None percentile → can't construct fallback body
+        # None percentile → can't construct fallback body
         label, body = self.fn(None, "widening_deficit", trade_percentile=None)
         self.assertIsNone(body)
+
+    def test_all_conditions_return_label(self):
+        conditions = ["widening_deficit", "narrowing_deficit", "widening_surplus", "narrowing_surplus"]
+        for condition in conditions:
+            label, body = self.fn(None, condition, trade_percentile=50)
+            self.assertIsNotNone(label, f"label is None for {condition}")
+            self.assertIsNotNone(body, f"body is None for {condition}")
 
 
 # ---------------------------------------------------------------------------

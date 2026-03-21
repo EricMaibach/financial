@@ -877,7 +877,7 @@ CRITICAL RULES:
 - Third paragraph: WHAT TO DO — Portfolio implications. Connect conditions to asset class expectations. What should investors watch? End forward-looking.
 - DO NOT just list data points or metrics - ANALYZE and INTERPRET
 - DO NOT repeat themes from your previous briefings - find fresh angles
-- DO NOT reference old regime labels (Bull, Bear, Neutral, Recession Watch) — use only the four quadrants: Goldilocks, Reflation, Stagflation, Deflation Risk
+- Use only the four quadrants: Goldilocks, Reflation, Stagflation, Deflation Risk
 - If specific market briefings (crypto, equity, rates, dollar) are provided, SYNTHESIZE key insights from them into a cohesive narrative rather than summarizing each separately
 - If something is at an extreme percentile or historically unusual, HIGHLIGHT it with context
 - Reference specific numbers sparingly but meaningfully
@@ -887,7 +887,7 @@ You have access to a web search tool if you need to look up additional context a
 
 You're writing the one thing someone reads about markets today. Make it count."""
 
-        # The user prompt with conditions context replacing old regime prefix
+        # The user prompt with conditions context
         user_prompt = f"""Today is {today}. Generate today's market briefing.
 
 {conditions_context}

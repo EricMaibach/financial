@@ -322,46 +322,6 @@ class ExtremePercentileDetector(AlertDetector):
         return None
 
 
-class RegimeTransitionLayer1Detector(AlertDetector):
-    """Layer 1 alert: fires when 2+ of 3 macro signals flip direction within 30 days."""
-
-    def __init__(self):
-        super().__init__(
-            alert_type='regime_transition',
-            title_template='Regime Transition Alert',
-            severity='warning',
-        )
-
-    def should_trigger(self, user, metrics):
-        prefs = user.alert_preferences
-        if not prefs or not prefs.alerts_enabled:
-            return None
-
-        if not getattr(prefs, 'layer_1_enabled', True):
-            return None
-
-        # Low-frequency event: suppress re-alerts within 7 days
-        if self.was_recently_triggered(user.id, hours=168):
-            return None
-
-        try:
-            from services.layer1_regime_transition import check_regime_transition
-            payload = check_regime_transition()
-        except Exception as e:
-            logger.error("Layer 1 regime transition check failed: %s", str(e), exc_info=True)
-            return None
-
-        if payload is None:
-            return None
-
-        return {
-            'title': f"Regime Transition: {', '.join(payload['signals_triggered'])}",
-            'message': payload['context_sentence'],
-            'metric_name': 'Regime Transition',
-            'metric_value': float(len(payload['signals_triggered'])),
-            'threshold_value': 2.0,
-        }
-
 
 class ExtremePercentileLayer2Detector(AlertDetector):
     """Layer 2 alert: fires when a tracked indicator crosses the 90th or 10th
@@ -451,7 +411,7 @@ class ConvergenceLayer3Detector(AlertDetector):
 
 WEEKLY_ALERT_LIMIT = 5
 # Layer alert types ordered by priority: highest conviction first (suppressed last)
-LAYER_ALERT_TYPES = ['multi_signal_convergence', 'extreme_percentile', 'regime_transition']
+LAYER_ALERT_TYPES = ['multi_signal_convergence', 'extreme_percentile']
 
 
 def _count_layer_alerts_this_week(user_id):
@@ -475,7 +435,7 @@ def check_all_alerts_for_user(user):
 
     Rate limiting: at most WEEKLY_ALERT_LIMIT layer alerts per 7-day window.
     When the budget is exhausted, lowest-priority alerts are suppressed first:
-    Layer 1 (Regime Transition) → Layer 2 (Extreme Percentile) → Layer 3 (Multi-Signal).
+    Layer 1 (Conditions Transition) → Layer 2 (Extreme Percentile) → Layer 3 (Multi-Signal).
 
     Args:
         user: User object
@@ -500,7 +460,6 @@ def check_all_alerts_for_user(user):
 
     # Active 3-layer detectors (lowest to highest conviction order for candidate collection)
     layer_detectors = [
-        RegimeTransitionLayer1Detector(),     # Layer 1 — lowest conviction
         ExtremePercentileLayer2Detector(),    # Layer 2 — medium conviction
         ConvergenceLayer3Detector(),          # Layer 3 — highest conviction
     ]
@@ -615,7 +574,6 @@ def run_alert_backtest(months=12):
     from datetime import date, timedelta as td
 
     try:
-        from services.layer1_regime_transition import check_regime_transition
         from services.layer2_extreme_percentile import check_extreme_percentile
         from services.layer3_convergence import check_convergence
     except ImportError as e:
@@ -631,13 +589,6 @@ def run_alert_backtest(months=12):
     while week_start < today:
         week_end = week_start + td(days=7)
         count = 0
-
-        # Layer 1: regime transition fires 0-1 per window
-        try:
-            if check_regime_transition() is not None:
-                count += 1
-        except Exception:
-            pass
 
         # Layer 2: can fire per-indicator; cap at 1 per window for backtest
         try:
