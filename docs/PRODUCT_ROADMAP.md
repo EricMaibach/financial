@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-20 (Phase 11 in progress — Features #322, #323, #324 complete. #339 ✅, #364 ✅ closed. Pipeline: #361 needs-qa-testing → #335 ready-for-implementation (last))
+**Last updated:** 2026-03-21 (Phase 11 in progress — Features #322, #323, #324, #325 complete. Pipeline: #335 ready-for-implementation (last story, #326))
 
 ---
 
@@ -228,7 +228,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | #322 | Conditions Strip Component | P1 | Complete ✅ — reusable strip on every page, quadrant headline, Liquidity leads on Crypto |
 | #323 | Homepage Conditions Redesign | P1 | Complete ✅ — §0 AI briefing, §1 quadrant hero + 2×2 expand-in-place grid, §2 portfolio implications, movers footer, wide-screen layout |
 | #324 | Category Page Conditions Migration | P2 | Complete ✅ — 7 pages migrated, quadrant × liquidity context, relocated sections (Recession→Credit, Sector Tone→Equities, Trade Pulse→Equities) |
-| #325 | AI Conditions Integration (Briefing + Chatbot) | P1 | Four-dimension context dict + 90d conditions history + 14d briefing history, rule-based fallback, chatbot context |
+| #325 | AI Conditions Integration (Briefing + Chatbot) | P1 | Complete ✅ — Four-dimension context dict + 90d conditions history + 14d briefing history, rule-based fallback, chatbot context |
 | #326 | Old Regime System Deprecation | P2 | Remove all old code, caches, CSS, templates. **Required, not optional.** |
 
 **Dependency order:** #322 (strip) unblocks #323 (homepage) and #324 (category pages). #325 (AI) is independent. #326 (deprecation) runs last after everything else is migrated.
