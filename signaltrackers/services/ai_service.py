@@ -23,6 +23,7 @@ class AIServiceError(Exception):
 # AI Provider constants
 OPENAI_MODEL = "gpt-5.2"
 ANTHROPIC_MODEL = "claude-opus-4-6"
+ANTHROPIC_CHATBOT_MODEL = "claude-sonnet-4-6-20250514"
 
 
 def get_user_ai_client() -> Tuple[Any, str]:
@@ -132,6 +133,26 @@ def get_user_ai_model() -> str:
     settings = current_user.settings
     if settings and settings.ai_provider == 'anthropic':
         return ANTHROPIC_MODEL
+
+    return OPENAI_MODEL
+
+
+def get_user_chatbot_model() -> str:
+    """
+    Get the chatbot-specific model for the user's configured provider.
+
+    Chatbot uses Sonnet 4.6 (Anthropic) for cost efficiency with large context,
+    while briefings use Opus 4.6 for maximum analytical depth.
+
+    Returns:
+        str: Model name (e.g., 'gpt-5.2' or 'claude-sonnet-4-6-20250514')
+    """
+    if not current_user.is_authenticated:
+        return OPENAI_MODEL
+
+    settings = current_user.settings
+    if settings and settings.ai_provider == 'anthropic':
+        return ANTHROPIC_CHATBOT_MODEL
 
     return OPENAI_MODEL
 

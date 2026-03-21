@@ -414,28 +414,25 @@ class TestBaseHTMLIncludes:
 
 class TestBackendBriefingContext:
 
-    def test_briefing_text_extracted_from_context(self, dashboard_py):
-        """dashboard.py extracts briefing_text from context."""
-        assert "briefing_text" in dashboard_py
-        assert "context.get('briefing_text')" in dashboard_py
+    def test_enrichment_context_built_server_side(self, dashboard_py):
+        """dashboard.py builds enrichment context server-side (US-325.7)."""
+        assert "_build_chatbot_enrichment_context" in dashboard_py
 
-    def test_briefing_text_injected_into_system_prompt(self, dashboard_py):
-        """dashboard.py injects briefing_text into system prompt when present."""
-        # The api_chatbot function should use briefing_text in the system prompt
-        assert 'briefing_context' in dashboard_py
+    def test_enrichment_context_injected_into_system_prompt(self, dashboard_py):
+        """dashboard.py injects enrichment_context into system prompt."""
+        assert 'enrichment_context' in dashboard_py
         assert 'system_prompt' in dashboard_py
-        # briefing_context should be referenced in the system_prompt construction
-        # Find system_prompt = ... and verify briefing_context is nearby
+        # enrichment_context should be defined before system_prompt
         system_prompt_idx = dashboard_py.find('system_prompt = (')
         assert system_prompt_idx != -1, 'system_prompt construction not found'
-        # briefing_context should be defined before system_prompt
-        briefing_ctx_idx = dashboard_py.find('briefing_context')
-        assert briefing_ctx_idx < system_prompt_idx, \
-            'briefing_context should be defined before system_prompt'
+        enrichment_idx = dashboard_py.find('enrichment_context')
+        assert enrichment_idx < system_prompt_idx, \
+            'enrichment_context should be defined before system_prompt'
 
-    def test_briefing_text_not_required(self, dashboard_py):
-        """dashboard.py handles missing briefing_text gracefully (not required)."""
-        # briefing_text should use .get() with a default
-        assert "context.get('briefing_text') or None" in dashboard_py or \
-               "context.get('briefing_text', None)" in dashboard_py or \
-               "context.get('briefing_text')" in dashboard_py
+    def test_enrichment_context_graceful_degradation(self, dashboard_py):
+        """dashboard.py handles enrichment context errors gracefully."""
+        # The enrichment context building is wrapped in try/except
+        chatbot_fn_start = dashboard_py.find('def api_chatbot()')
+        chatbot_fn = dashboard_py[chatbot_fn_start:chatbot_fn_start + 3000]
+        assert 'enrichment_context' in chatbot_fn
+        assert 'except' in chatbot_fn
