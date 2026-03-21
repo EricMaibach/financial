@@ -491,9 +491,14 @@
                     <svg width="14" height="14" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-right:4px;vertical-align:-1px"><path d="M8,1 L9.2,5.2 L13.5,6.5 L9.2,7.8 L8,12 L6.8,7.8 L2.5,6.5 L6.8,5.2 Z" fill="currentColor"/></svg>CRYPTO
                 </div>
                 <div class="dimension-card__summary dimension-card__summary--crypto">
-                    <span class="dimension-card__state">Liq: {{ _liq_state }}</span>
+                    <div class="spectrum-bar spectrum-bar--liquidity">
+                        <div class="spectrum-bar__label">Liquidity</div>
+                        <div class="spectrum-bar__track">
+                            <div class="spectrum-bar__marker" style="left: {{ _liq_pct }}%"></div>
+                        </div>
+                    </div>
+                    <span class="dimension-card__state">{{ _crypto_label }}</span>
                     <span class="dimension-card__arrow dimension-card__arrow--{{ 'up' if _crypto_direction == 'positive' else ('down' if _crypto_direction == 'negative' else 'flat') }}">{{ _crypto_arrow }}</span>
-                    <span class="dimension-card__crypto-label dimension-card__crypto-label--{{ _crypto_direction }}">{{ _crypto_label }}</span>
                 </div>
                 <i class="bi bi-chevron-down dimension-card__chevron" aria-hidden="true"></i>
             </button>
@@ -750,48 +755,14 @@ function renderMoversStrip(movers) {
 
     var isMobile = window.matchMedia('(max-width: 767px)');
 
-    function initDimensionCards() {
-        var cards = document.querySelectorAll('.dimension-card');
-
-        cards.forEach(function(card) {
-            var toggleBtn = card.querySelector('.dimension-card__header');
-            var expandPanel = card.querySelector('.dimension-card__expand');
-            var collapseBtn = card.querySelector('.dimension-card__collapse');
-
-            if (!toggleBtn || !expandPanel) return;
-
-            function expand() {
-                // On mobile, collapse all others first
-                if (isMobile.matches) {
-                    cards.forEach(function(otherCard) {
-                        if (otherCard !== card) {
-                            collapseCard(otherCard);
-                        }
-                    });
-                }
-                toggleBtn.setAttribute('aria-expanded', 'true');
-                expandPanel.removeAttribute('hidden');
-                expandPanel.style.maxHeight = expandPanel.scrollHeight + 'px';
-                card.classList.add('dimension-card--expanded');
-            }
-
-            function collapse() {
-                collapseCard(card);
-            }
-
-            toggleBtn.addEventListener('click', function() {
-                var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-                if (isExpanded) {
-                    collapse();
-                } else {
-                    expand();
-                }
-            });
-
-            if (collapseBtn) {
-                collapseBtn.addEventListener('click', collapse);
-            }
-        });
+    function expandCard(card) {
+        var toggleBtn = card.querySelector('.dimension-card__header');
+        var expandPanel = card.querySelector('.dimension-card__expand');
+        if (!toggleBtn || !expandPanel) return;
+        toggleBtn.setAttribute('aria-expanded', 'true');
+        expandPanel.removeAttribute('hidden');
+        expandPanel.style.maxHeight = expandPanel.scrollHeight + 'px';
+        card.classList.add('dimension-card--expanded');
     }
 
     function collapseCard(card) {
@@ -805,6 +776,50 @@ function renderMoversStrip(movers) {
             expandPanel.style.maxHeight = '';
         }, 300);
         card.classList.remove('dimension-card--expanded');
+    }
+
+    function initDimensionCards() {
+        var cards = document.querySelectorAll('.dimension-card');
+
+        cards.forEach(function(card) {
+            var toggleBtn = card.querySelector('.dimension-card__header');
+            var collapseBtn = card.querySelector('.dimension-card__collapse');
+
+            if (!toggleBtn) return;
+
+            toggleBtn.addEventListener('click', function() {
+                var isExpanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+
+                if (isMobile.matches) {
+                    // Mobile: accordion — one card at a time
+                    if (isExpanded) {
+                        collapseCard(card);
+                    } else {
+                        cards.forEach(function(otherCard) {
+                            if (otherCard !== card) collapseCard(otherCard);
+                        });
+                        expandCard(card);
+                    }
+                } else {
+                    // Desktop: expand/collapse all simultaneously
+                    if (isExpanded) {
+                        cards.forEach(collapseCard);
+                    } else {
+                        cards.forEach(expandCard);
+                    }
+                }
+            });
+
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', function() {
+                    if (isMobile.matches) {
+                        collapseCard(card);
+                    } else {
+                        cards.forEach(collapseCard);
+                    }
+                });
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', initDimensionCards);
