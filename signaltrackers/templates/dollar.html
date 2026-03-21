@@ -228,7 +228,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation with context %}
+{% from '_macros.html' import conditions_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -342,7 +342,7 @@
                         <span id="dxy-change-5d">--</span>% (5d) | <span id="dxy-change-30d">--</span>% (30d)
                     </div>
                     <div class="stat-item__secondary" id="dxy-status">Loading</div>
-                    {{ regime_annotation('dollar_index') }}
+                    {{ conditions_annotation('dollar_index') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">USD/JPY</div>

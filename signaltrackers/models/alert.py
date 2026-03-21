@@ -37,7 +37,7 @@ class AlertPreference(db.Model):
     extreme_percentile_enabled = db.Column(db.Boolean, default=True, nullable=False)
 
     # 3-layer smart alert toggles (US-237.3)
-    layer_1_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Regime Transition
+    layer_1_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Conditions Transition
     layer_2_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Extreme Percentile
     layer_3_enabled = db.Column(db.Boolean, default=True, nullable=False)  # Multi-Signal Convergence
 

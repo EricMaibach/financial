@@ -403,27 +403,6 @@ class TestBarTrackCSS(unittest.TestCase):
     def test_bar_fill_band_declared(self):
         self.assertIn('.recession-bar-fill--band', self.css)
 
-    def test_regime_aware_bar_marker_colors(self):
-        """Bar marker should use regime border colors for each regime state."""
-        self.assertIn('regime-bull .recession-bar-marker', self.css)
-        self.assertIn('regime-neutral .recession-bar-marker', self.css)
-        self.assertIn('regime-bear .recession-bar-marker', self.css)
-        self.assertIn('regime-recession .recession-bar-marker', self.css)
-
-    def test_regime_aware_band_fill_colors(self):
-        """Confidence band fill should use regime border color at opacity."""
-        self.assertIn('regime-bull .recession-bar-fill--band', self.css)
-        self.assertIn('regime-neutral .recession-bar-fill--band', self.css)
-        self.assertIn('regime-bear .recession-bar-fill--band', self.css)
-        self.assertIn('regime-recession .recession-bar-fill--band', self.css)
-
-
-class TestRegimeAwareBorderCSS(unittest.TestCase):
-    """Left border must use the current regime border color token."""
-
-    def setUp(self):
-        self.css = get_recession_panel_css()
-
     def test_panel_has_left_border(self):
         idx = self.css.find('.recession-panel {')
         self.assertGreater(idx, -1)
@@ -431,19 +410,6 @@ class TestRegimeAwareBorderCSS(unittest.TestCase):
         block_end = self.css.find('}', block_start)
         block = self.css[block_start:block_end]
         self.assertIn('border-left', block)
-
-    def test_regime_bull_left_border_uses_token(self):
-        self.assertIn('regime-bull', self.css)
-        self.assertIn('var(--regime-bull-border)', self.css)
-
-    def test_regime_neutral_left_border_uses_token(self):
-        self.assertIn('var(--regime-neutral-border)', self.css)
-
-    def test_regime_bear_left_border_uses_token(self):
-        self.assertIn('var(--regime-bear-border)', self.css)
-
-    def test_regime_recession_left_border_uses_token(self):
-        self.assertIn('var(--regime-recession-border)', self.css)
 
 
 # ---------------------------------------------------------------------------

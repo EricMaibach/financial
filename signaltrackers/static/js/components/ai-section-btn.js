@@ -10,13 +10,9 @@
 
 // Map section IDs to human-readable names and opening messages.
 const AI_SECTION_CONTEXTS = {
-    'macro-regime-section': {
-        name: 'Macro Regime Score',
-        opening: "You're looking at the **Macro Regime Score** — a composite signal that classifies the current market environment as Bull, Neutral, Bear, or Recession based on credit conditions, equity breadth, rate dynamics, and volatility. What would you like to explore about the current regime?",
-    },
     'briefing-section': {
         name: 'AI Market Briefing',
-        opening: "You're reading the **AI Market Briefing** — a daily narrative synthesis of macro conditions, key market moves, and regime implications generated from live economic data. What aspect of today's briefing would you like to dig into?",
+        opening: "You're reading the **AI Market Briefing** — a daily narrative synthesis of macro conditions, key market moves, and their implications generated from live economic data. What aspect of today's briefing would you like to dig into?",
     },
     'sector-tone-section': {
         name: 'Sector Management Tone',
@@ -40,11 +36,7 @@ const AI_SECTION_CONTEXTS = {
     },
     'trade-pulse-section': {
         name: 'Global Trade Pulse',
-        opening: "You're looking at the **Global Trade Pulse** — US goods trade balance data from FRED showing import/export trends and regime-contextualized trade interpretation. What would you like to know about the trade data?",
-    },
-    'regime-implications': {
-        name: 'Regime Implications',
-        opening: "You're looking at **Regime Implications** — a structured view of how the current macro regime historically affects different asset classes (equities, fixed income, credit, commodities, real assets, safe havens). What asset class or implication would you like to explore?",
+        opening: "You're looking at the **Global Trade Pulse** — US goods trade balance data from FRED showing import/export trends and conditions-contextualized trade interpretation. What would you like to know about the trade data?",
     },
     // Asset pages
     'asset-credit': {

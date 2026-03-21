@@ -26,25 +26,6 @@
   white-space: nowrap;
 }
 
-/* --- Regime Link (below header, above toggle on mobile) --- */
-.sector-tone-regime-link {
-  font-size: 0.75rem;   /* text-xs */
-  color: #6b7280;       /* neutral-500 */
-  font-style: italic;
-  margin: 4px 0 0;
-  line-height: 1.4;
-}
-
-.sector-tone-regime-link a {
-  color: #6b7280;       /* neutral-500 */
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.sector-tone-regime-link a:hover {
-  color: #374151;       /* neutral-700 */
-}
-
 /* --- Mobile Toggle Button (hidden on tablet+) --- */
 .sector-tone-toggle {
   display: flex;
@@ -254,9 +235,6 @@
   .sector-tone-header-right {
     font-size: 0.8125rem;
   }
-  .sector-tone-regime-link {
-    font-size: 0.8125rem;
-  }
   .sector-card__quarter {
     font-size: 0.8125rem;
   }
@@ -277,9 +255,6 @@
 
   /* Typography scaling for desktop */
   .sector-tone-header-right {
-    font-size: 0.875rem;
-  }
-  .sector-tone-regime-link {
     font-size: 0.875rem;
   }
   .sector-card__tone-label {

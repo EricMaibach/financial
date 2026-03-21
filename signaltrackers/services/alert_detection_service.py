@@ -435,7 +435,7 @@ def check_all_alerts_for_user(user):
 
     Rate limiting: at most WEEKLY_ALERT_LIMIT layer alerts per 7-day window.
     When the budget is exhausted, lowest-priority alerts are suppressed first:
-    Layer 1 (Regime Transition) → Layer 2 (Extreme Percentile) → Layer 3 (Multi-Signal).
+    Layer 1 (Conditions Transition) → Layer 2 (Extreme Percentile) → Layer 3 (Multi-Signal).
 
     Args:
         user: User object

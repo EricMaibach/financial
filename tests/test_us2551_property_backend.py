@@ -7,7 +7,7 @@ Acceptance criteria verified:
 - USDA NASS farmland fetch method exists and handles missing API key gracefully
 - Percentile calculations for HPI and CPI Rent
 - YoY change computed for HPI and CPI Rent; QoQ direction for vacancy rate
-- Interpretation config with >= 8 combinations
+- Interpretation config with 3 spread bucket entries
 - Flask route /property exists and returns 200
 - Template property.html exists and passes required context keys
 """
@@ -36,20 +36,14 @@ class TestPropertyInterpretationConfig:
         assert PROPERTY_INTERPRETATIONS is not None
         assert callable(get_property_interpretation)
 
-    def test_minimum_eight_combinations(self):
+    def test_minimum_three_entries(self):
         from property_interpretation_config import PROPERTY_INTERPRETATIONS
-        assert len(PROPERTY_INTERPRETATIONS) >= 8
+        assert len(PROPERTY_INTERPRETATIONS) >= 3
 
-    def test_all_four_regimes_present(self):
+    def test_all_trend_buckets_present(self):
         from property_interpretation_config import PROPERTY_INTERPRETATIONS
-        regimes = {k[0] for k in PROPERTY_INTERPRETATIONS.keys()}
-        for regime in ('Bull', 'Neutral', 'Bear', 'Recession Watch'):
-            assert regime in regimes, f"Missing regime: {regime}"
-
-    def test_unknown_fallback_present(self):
-        from property_interpretation_config import PROPERTY_INTERPRETATIONS
-        unknown_keys = [k for k in PROPERTY_INTERPRETATIONS.keys() if k[0] == 'unknown']
-        assert len(unknown_keys) >= 3
+        for bucket in ('appreciating', 'flat', 'depreciating'):
+            assert bucket in PROPERTY_INTERPRETATIONS, f"Missing bucket: {bucket}"
 
     def test_all_values_are_non_empty_strings(self):
         from property_interpretation_config import PROPERTY_INTERPRETATIONS
@@ -59,65 +53,51 @@ class TestPropertyInterpretationConfig:
 
     def test_get_interpretation_appreciating(self):
         from property_interpretation_config import get_property_interpretation
-        text, bucket = get_property_interpretation('Bull', 3.5)
+        text, bucket = get_property_interpretation(None, 3.5)
         assert text is not None
         assert bucket == 'appreciating'
 
     def test_get_interpretation_flat(self):
         from property_interpretation_config import get_property_interpretation
-        text, bucket = get_property_interpretation('Neutral', 0.5)
+        text, bucket = get_property_interpretation(None, 0.5)
         assert text is not None
         assert bucket == 'flat'
 
     def test_get_interpretation_depreciating(self):
         from property_interpretation_config import get_property_interpretation
-        text, bucket = get_property_interpretation('Bear', -3.0)
+        text, bucket = get_property_interpretation(None, -3.0)
         assert text is not None
         assert bucket == 'depreciating'
 
     def test_bucket_boundary_at_2pct(self):
         from property_interpretation_config import get_property_interpretation
-        _, bucket = get_property_interpretation('Bull', 2.0)
+        _, bucket = get_property_interpretation(None, 2.0)
         assert bucket == 'appreciating'
-        _, bucket = get_property_interpretation('Bull', 1.9)
+        _, bucket = get_property_interpretation(None, 1.9)
         assert bucket == 'flat'
-        _, bucket = get_property_interpretation('Bull', -2.0)
+        _, bucket = get_property_interpretation(None, -2.0)
         assert bucket == 'depreciating'
-        _, bucket = get_property_interpretation('Bull', -1.9)
+        _, bucket = get_property_interpretation(None, -1.9)
         assert bucket == 'flat'
 
     def test_none_hpi_returns_none_none(self):
         from property_interpretation_config import get_property_interpretation
-        text, bucket = get_property_interpretation('Bull', None)
+        text, bucket = get_property_interpretation(None, None)
         assert text is None
         assert bucket is None
 
-    def test_none_regime_uses_unknown_fallback(self):
+    def test_none_regime_returns_text(self):
         from property_interpretation_config import get_property_interpretation
         text, bucket = get_property_interpretation(None, 5.0)
         assert text is not None
         assert bucket == 'appreciating'
 
-    def test_unknown_regime_uses_unknown_fallback(self):
+    def test_all_hpi_buckets_resolvable(self):
         from property_interpretation_config import get_property_interpretation
-        text, bucket = get_property_interpretation('unknown', 1.0)
-        assert text is not None
-        assert bucket == 'flat'
-
-    def test_recession_watch_regime(self):
-        from property_interpretation_config import get_property_interpretation
-        text, bucket = get_property_interpretation('Recession Watch', -5.0)
-        assert text is not None
-        assert bucket == 'depreciating'
-
-    def test_all_regime_hpi_combos_resolvable(self):
-        from property_interpretation_config import get_property_interpretation
-        regimes = ['Bull', 'Neutral', 'Bear', 'Recession Watch']
         hpi_values = [5.0, 0.0, -5.0]  # appreciating, flat, depreciating
-        for regime in regimes:
-            for hpi in hpi_values:
-                text, bucket = get_property_interpretation(regime, hpi)
-                assert text is not None, f"Missing interpretation for ({regime}, hpi={hpi})"
+        for hpi in hpi_values:
+            text, bucket = get_property_interpretation(None, hpi)
+            assert text is not None, f"Missing interpretation for hpi={hpi}"
 
 
 # ─── market_signals.py — FRED property series ────────────────────────────────

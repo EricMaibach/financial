@@ -131,8 +131,8 @@ test.describe('US-324.1 Category Conditions Screenshots', () => {
     await sectionBtn.scrollIntoViewIfNeeded();
     await sectionBtn.click();
     await page.waitForTimeout(500);
-    // Now screenshot the first stat-item that has a regime-annotation
-    const statItem = page.locator('.stat-item:has(.regime-annotation)').first();
+    // Now screenshot the first stat-item that has a conditions-annotation
+    const statItem = page.locator('.stat-item:has(.conditions-annotation)').first();
     await statItem.scrollIntoViewIfNeeded();
     await statItem.screenshot({ path: `${DIR}/credit-desktop-1280-conditions-annotation.png` });
   });

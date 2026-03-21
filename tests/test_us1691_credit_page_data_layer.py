@@ -228,8 +228,8 @@ class TestCreditTemplateDataDriven(unittest.TestCase):
     def test_page_category_is_credit(self):
         self.assertIn("page_category = 'Credit'", self.html)
 
-    def test_regime_annotation_macro_used(self):
-        self.assertIn("regime_annotation", self.html)
+    def test_conditions_annotation_macro_used(self):
+        self.assertIn("conditions_annotation", self.html)
 
     def test_hy_percentile_jinja_var(self):
         self.assertIn("hy_percentile", self.html)

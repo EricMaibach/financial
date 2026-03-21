@@ -2,7 +2,7 @@
 Shared backtest utilities.
 
 Common data loading and computation functions used by backtesting modules.
-Extracted from the removed regime_backtest.py.
+Extracted from a removed backtesting module during the conditions engine migration.
 """
 
 from __future__ import annotations

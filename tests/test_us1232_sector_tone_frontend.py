@@ -88,8 +88,8 @@ class TestSectorToneCSSClasses(unittest.TestCase):
     def test_sector_tone_header_right_declared(self):
         self.assertIn('.sector-tone-header-right', self.css)
 
-    def test_sector_tone_regime_link_declared(self):
-        self.assertIn('.sector-tone-regime-link', self.css)
+    def test_sector_tone_toggle_declared_in_css(self):
+        self.assertIn('.sector-tone-toggle', self.css)
 
     def test_sector_tone_toggle_declared(self):
         self.assertIn('.sector-tone-toggle', self.css)

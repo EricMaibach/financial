@@ -268,7 +268,7 @@
 </style>
 {% endblock %}
 
-{% from '_macros.html' import regime_annotation with context %}
+{% from '_macros.html' import conditions_annotation with context %}
 {% block content %}
 <main class="content-page">
     <!-- Page Header -->
@@ -437,7 +437,7 @@
                         <div class="recession-model-date">{{ recession_probability.ny_fed_date }}</div>
                         {% endif %}
                     </div>
-                    <hr class="regime-divider">
+                    <hr class="section-divider">
                     {% endif %}
 
                     {% if recession_probability.chauvet_piger is defined %}
@@ -452,7 +452,7 @@
                         <div class="recession-model-date">{{ recession_probability.chauvet_piger_date }}</div>
                         {% endif %}
                     </div>
-                    <hr class="regime-divider">
+                    <hr class="section-divider">
                     {% endif %}
 
                     {% if recession_probability.richmond_sos is defined %}
@@ -539,7 +539,7 @@
                     {% endif %}
                 </div>
 
-                <hr class="regime-divider">
+                <hr class="section-divider">
                 <div class="recession-footer{% if recession_probability.divergence_pp >= 15 %} recession-footer--diverging{% endif %}">
                     {{ recession_probability.interpretation }}
                 </div>
@@ -614,7 +614,7 @@
                         {% if hy_current_bps is not none %}{{ hy_current_bps }} bp{% else %}--{% endif %}
                     </div>
                     <div class="stat-item__secondary" id="hy-spread-change">--</div>
-                    {{ regime_annotation('high_yield_spread') }}
+                    {{ conditions_annotation('high_yield_spread') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">IG OAS</div>
@@ -622,7 +622,7 @@
                         {% if ig_current_bps is not none %}{{ ig_current_bps }} bp{% else %}--{% endif %}
                     </div>
                     <div class="stat-item__secondary" id="ig-spread-change">--</div>
-                    {{ regime_annotation('investment_grade_spread') }}
+                    {{ conditions_annotation('investment_grade_spread') }}
                 </div>
                 <div class="stat-item">
                     <div class="stat-item__label">CCC Spread</div>
