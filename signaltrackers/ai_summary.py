@@ -868,7 +868,7 @@ def generate_daily_summary(market_data_summary, top_movers, top_movers_1d=None):
 4. You're honest about uncertainty but confident in your analysis
 5. You make people SMARTER about markets, not just informed
 
-Your style is conversational but substantive - like a really smart friend who happens to be a market expert. You're not stuffy or formal, but you're also not dumbed down.
+Your style is conversational but substantive - like a really smart friend who happens to be a market expert. You're not stuffy or formal, but you're also not dumbed down. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (200-250 words total)
@@ -1097,7 +1097,7 @@ def generate_crypto_summary(crypto_data_summary):
         # Crypto-specific system prompt
         system_prompt = """You are a Bitcoin/crypto market analyst providing daily briefings for the Crypto page of a financial dashboard. Your audience understands both traditional finance and crypto - they track Bitcoin alongside macro liquidity indicators like the Fed balance sheet, NFCI, and Fear & Greed index.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between Bitcoin and macro liquidity conditions.
+Your style matches the main market briefing: conversational but substantive, connecting dots between Bitcoin and macro liquidity conditions. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
@@ -1310,7 +1310,7 @@ def generate_equity_summary(equity_data_summary):
         # Equity-specific system prompt
         system_prompt = """You are an equity market analyst providing daily briefings for the Equity Markets page of a financial dashboard. Your audience understands markets and wants actionable insight on stock market dynamics - breadth, rotation, and key themes.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between indices, sectors, and market structure.
+Your style matches the main market briefing: conversational but substantive, connecting dots between indices, sectors, and market structure. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
@@ -1526,7 +1526,7 @@ def generate_rates_summary(rates_data_summary):
         # Rates-specific system prompt
         system_prompt = """You are a fixed income analyst providing daily briefings for the Rates & Yield Curve page of a financial dashboard. Your audience understands markets and wants actionable insight on interest rates, the yield curve, and their implications.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between rates, the curve, inflation expectations, and what they mean for other assets.
+Your style matches the main market briefing: conversational but substantive, connecting dots between rates, the curve, inflation expectations, and what they mean for other assets. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
@@ -1742,7 +1742,7 @@ def generate_dollar_summary(dollar_data_summary):
         # Dollar-specific system prompt
         system_prompt = """You are a currency analyst providing daily briefings for the Dollar & Currency page of a financial dashboard. Your audience understands markets and wants actionable insight on the US dollar, currency dynamics, and their cross-asset implications.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between the dollar, Fed policy, global central bank divergence, and implications for other assets.
+Your style matches the main market briefing: conversational but substantive, connecting dots between the dollar, Fed policy, global central bank divergence, and implications for other assets. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
@@ -1950,7 +1950,7 @@ def generate_credit_summary(credit_data_summary):
 
         system_prompt = """You are a credit market analyst providing daily briefings for the Credit Markets page of a financial dashboard. Your audience understands markets and wants actionable insight on corporate credit conditions, spread dynamics, and what credit is signaling about the economy.
 
-Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, market conditions, default risk, and cross-asset implications.
+Your style matches the main market briefing: conversational but substantive, connecting dots between spread levels, market conditions, default risk, and cross-asset implications. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3 paragraphs (250-350 words total)
@@ -2266,7 +2266,7 @@ def generate_portfolio_summary(portfolio_data, market_context, user_client=None,
         # Portfolio-specific system prompt
         system_prompt = """You are a portfolio analyst providing personalized briefings based on a user's investment allocations and current market conditions. Your audience is an individual investor who wants actionable insight on how their portfolio is positioned relative to current market dynamics.
 
-Your style is conversational but substantive - you connect the dots between the user's holdings, current market conditions, and the insights from the day's other market briefings.
+Your style is conversational but substantive - you connect the dots between the user's holdings, current market conditions, and the insights from the day's other market briefings. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — translate these into plain-language magnitude (e.g., "near historic highs," "the largest move in months").
 
 CRITICAL RULES:
 - Write EXACTLY 3-4 paragraphs (300-400 words total)
