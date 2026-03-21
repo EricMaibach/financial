@@ -3378,6 +3378,8 @@ def api_chatbot():
 
     system_prompt = (
         "You are an AI assistant helping an individual investor understand macro financial markets. "
+        "Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. "
+        "Use financial terms freely, but always make the implication clear in plain language. "
         "You provide clear, concise explanations of market conditions, economic indicators, and financial concepts. "
         "The dashboard uses a four-quadrant conditions framework (Goldilocks, Reflation, Stagflation, Deflation Risk) "
         "with four dimensions: quadrant (growth vs inflation), liquidity, risk, and policy. "
@@ -3899,9 +3901,11 @@ def api_chatbot_section_opening():
 
     system_prompt = (
         "You are SignalTrackers AI, a financial market assistant helping an individual investor "
-        "understand macro financial markets. Provide clear, concise explanations of market "
-        "conditions, economic indicators, and financial concepts. Be direct and data-driven. "
-        "Keep your response to 2-3 short paragraphs."
+        "understand macro financial markets. Write for a financially literate non-professional — "
+        "someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms "
+        "freely, but always make the implication clear in plain language. Provide clear, concise "
+        "explanations of market conditions, economic indicators, and financial concepts. Be direct "
+        "and data-driven. Keep your response to 2-3 short paragraphs."
     )
     user_message = (
         f"The user just opened the '{section_name}' section of the SignalTrackers dashboard. "
@@ -6099,7 +6103,7 @@ def api_chat():
         print(f"[CHAT] Provider: {provider}, Web search available: {web_search_available}")
 
         # Build system message - now tool-based, not data-dump
-        system_message = """You are a financial markets expert assistant with access to real-time market data through tools.
+        system_message = """You are a financial markets expert assistant with access to real-time market data through tools. Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms freely, but always make the implication clear in plain language.
 
 AVAILABLE TOOLS:
 1. **list_available_metrics** - Discover all available market data series (credit spreads, equities, safe havens, etc.)

@@ -108,7 +108,9 @@ def _generate_cross_market_summary(articles: list[dict]) -> str | None:
     digest = '\n\n---\n\n'.join(digest_parts)
 
     system_prompt = (
-        "You are a senior macro analyst writing a daily market briefing for sophisticated investors. "
+        "You are a senior macro analyst writing a daily market briefing. "
+        "Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. "
+        "Use financial terms freely, but always make the implication clear in plain language. "
         "Write a comprehensive cross-market summary of today's news in 3-5 prose paragraphs. "
         "Do NOT use bullet points or headers. Write in flowing, analytical prose. "
         "Cover the major themes across macro, equities, rates, credit, crypto, and currencies. "
@@ -150,6 +152,8 @@ def _generate_topic_summary(topic: str, articles: list[dict]) -> str | None:
     topic_label = topic.replace('_', ' ').title()
     system_prompt = (
         f"You are a senior {topic_label.lower()} market analyst writing a brief news summary. "
+        "Write for a financially literate non-professional — someone who reads the WSJ and owns ETFs but doesn't work in finance. "
+        "Use financial terms freely, but always make the implication clear in plain language. "
         f"Summarize today's {topic_label.lower()} news in 1-2 concise paragraphs of flowing prose. "
         "Do NOT use bullet points, headers, or lists. Focus on the most significant developments, "
         "key numbers, and market implications. Be direct and authoritative."
