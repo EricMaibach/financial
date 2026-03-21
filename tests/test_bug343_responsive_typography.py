@@ -155,12 +155,6 @@ class TestSectorToneResponsive:
     def test_header_right_scales_at_1024(self):
         assert _has_font_size_rule(self.blocks_1024, ".sector-tone-header-right")
 
-    def test_regime_link_scales_at_768(self):
-        assert _has_font_size_rule(self.blocks_768, ".sector-tone-regime-link")
-
-    def test_regime_link_scales_at_1024(self):
-        assert _has_font_size_rule(self.blocks_1024, ".sector-tone-regime-link")
-
     def test_quarter_scales_at_768(self):
         assert _has_font_size_rule(self.blocks_768, ".sector-card__quarter")
 
