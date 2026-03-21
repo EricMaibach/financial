@@ -47,6 +47,11 @@ class ChatbotWidget {
     }
 
     init() {
+        // Configure marked for markdown rendering in AI responses
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true, gfm: true, sanitize: false });
+        }
+
         // Core toggle events
         this.fab.addEventListener('click', () => this.expand());
         this.minimizeBtn.addEventListener('click', () => this.closeChatbot()); // × → closed (FAB only)
@@ -273,10 +278,13 @@ class ChatbotWidget {
         messageEl.className = `chatbot-message chatbot-message--${role}`;
 
         if (role === 'ai') {
+            const renderedText = (typeof marked !== 'undefined')
+                ? marked.parse(text)
+                : this.escapeHTML(text);
             messageEl.innerHTML = `
                 <span class="chatbot-message-icon" aria-hidden="true">🤖</span>
                 <span class="chatbot-message-label sr-only">AI said:</span>
-                <p class="chatbot-message-text">${this.escapeHTML(text)}</p>
+                <div class="chatbot-message-text">${renderedText}</div>
             `;
         } else {
             messageEl.innerHTML = `
@@ -302,8 +310,9 @@ class ChatbotWidget {
      * @param {string} markdownText - The opening message (may contain **bold**)
      */
     addSectionOpeningMessage(markdownText) {
-        // Simple **bold** → <strong> conversion for the opening message
-        const html = markdownText.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        const html = (typeof marked !== 'undefined')
+            ? marked.parse(markdownText)
+            : markdownText.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
         // Hide empty state
         const emptyState = this.messages.querySelector('.chatbot-empty-state');

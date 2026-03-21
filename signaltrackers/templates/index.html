@@ -698,8 +698,13 @@ async function loadAISummary() {
         }
 
         if (data.summary) {
-            const paragraphs = data.summary.split('\n\n').filter(p => p.trim());
-            narrativeEl.innerHTML = paragraphs.map(p => '<p>' + p + '</p>').join('');
+            if (typeof marked !== 'undefined') {
+                marked.setOptions({ breaks: true, gfm: true, sanitize: false });
+                narrativeEl.innerHTML = marked.parse(data.summary);
+            } else {
+                const paragraphs = data.summary.split('\n\n').filter(p => p.trim());
+                narrativeEl.innerHTML = paragraphs.map(p => '<p>' + p + '</p>').join('');
+            }
 
             if (data.generated_at) {
                 const genDate = new Date(data.generated_at);
