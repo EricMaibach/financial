@@ -180,7 +180,7 @@
 }
 
 .quadrant-tick-label {
-    font-size: 8px;
+    font-size: 10px;
     fill: var(--neutral-400, #94A3B8);
     text-anchor: middle;
 }
