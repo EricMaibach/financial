@@ -152,8 +152,6 @@
 .quadrant-viz {
     width: 100%;
     height: auto;
-    border-radius: var(--radius-lg, 12px);
-    overflow: hidden;
 }
 
 .quadrant-region {
@@ -195,7 +193,7 @@
     font-weight: 600;
     letter-spacing: 0.03em;
 }
-.quadrant-label--right { text-anchor: end; }
+.quadrant-label--y { text-anchor: middle; }
 
 .quadrant-name-label {
     font-size: 11px;
@@ -221,26 +219,16 @@
 .quadrant-current-dot {
     stroke: #fff;
     stroke-width: 2;
+    animation: quadrant-pulse 2.5s ease-in-out infinite;
 }
 .quadrant-current-dot.quadrant-dot--goldilocks  { fill: var(--quadrant-goldilocks); }
 .quadrant-current-dot.quadrant-dot--reflation   { fill: var(--quadrant-reflation); }
 .quadrant-current-dot.quadrant-dot--stagflation { fill: var(--quadrant-stagflation); }
 .quadrant-current-dot.quadrant-dot--deflation   { fill: var(--quadrant-deflation); }
 
-.quadrant-pulse-ring {
-    fill: none;
-    stroke-width: 2;
-    opacity: 0;
-    animation: quadrant-pulse 2.5s ease-out infinite;
-}
-.quadrant-pulse-ring.quadrant-dot--goldilocks  { stroke: var(--quadrant-goldilocks); }
-.quadrant-pulse-ring.quadrant-dot--reflation   { stroke: var(--quadrant-reflation); }
-.quadrant-pulse-ring.quadrant-dot--stagflation { stroke: var(--quadrant-stagflation); }
-.quadrant-pulse-ring.quadrant-dot--deflation   { stroke: var(--quadrant-deflation); }
-
 @keyframes quadrant-pulse {
-    0%   { r: 6;  opacity: 0.6; }
-    100% { r: 18; opacity: 0; }
+    0%, 100% { r: 5; opacity: 1; }
+    50%      { r: 7; opacity: 0.85; }
 }
 
 /* Tablet: typography scaling */
