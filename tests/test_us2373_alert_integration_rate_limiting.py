@@ -53,7 +53,6 @@ _ads_mod = _iutil.module_from_spec(_ads_spec)
 
 # Ensure service-level sub-imports are stubbed before exec
 sys.modules.setdefault("services", MagicMock())
-sys.modules.setdefault("services.layer1_regime_transition", MagicMock())
 sys.modules.setdefault("services.layer2_extreme_percentile", MagicMock())
 sys.modules.setdefault("services.layer3_convergence", MagicMock())
 
@@ -65,10 +64,9 @@ sys.modules["alert_detection_service"] = _ads_mod
 # import the real market_signals without getting this mock.
 if not _FLASK_STACK_AVAILABLE and _market_signals_was_absent:
     sys.modules.pop("market_signals", None)
-del _market_signals_was_absent
+    del _market_signals_was_absent
 
 # Expose symbols
-RegimeTransitionLayer1Detector = _ads_mod.RegimeTransitionLayer1Detector
 ExtremePercentileLayer2Detector = _ads_mod.ExtremePercentileLayer2Detector
 ConvergenceLayer3Detector = _ads_mod.ConvergenceLayer3Detector
 WEEKLY_ALERT_LIMIT = _ads_mod.WEEKLY_ALERT_LIMIT
@@ -126,16 +124,15 @@ class TestConstants:
     def test_weekly_limit_is_five(self):
         assert WEEKLY_ALERT_LIMIT == 5
 
-    def test_layer_alert_types_contains_all_three(self):
-        assert 'regime_transition' in LAYER_ALERT_TYPES
+    def test_layer_alert_types_contains_active_layers(self):
         assert 'extreme_percentile' in LAYER_ALERT_TYPES
         assert 'multi_signal_convergence' in LAYER_ALERT_TYPES
+        assert 'regime_transition' not in LAYER_ALERT_TYPES
 
     def test_priority_order_l3_first(self):
         """Layer 3 (highest conviction) must be first in LAYER_ALERT_TYPES."""
         assert LAYER_ALERT_TYPES[0] == 'multi_signal_convergence'
         assert LAYER_ALERT_TYPES[1] == 'extreme_percentile'
-        assert LAYER_ALERT_TYPES[2] == 'regime_transition'
 
 
 # ---------------------------------------------------------------------------
@@ -143,9 +140,6 @@ class TestConstants:
 # ---------------------------------------------------------------------------
 
 class TestAlertTypeNames:
-    def test_layer1_alert_type(self):
-        assert RegimeTransitionLayer1Detector().alert_type == 'regime_transition'
-
     def test_layer2_alert_type(self):
         assert ExtremePercentileLayer2Detector().alert_type == 'extreme_percentile'
 
@@ -173,13 +167,6 @@ class TestLayerToggleSuppression:
         user.alert_preferences = prefs
         return user
 
-    def test_layer1_disabled_returns_none(self):
-        prefs = self._make_prefs(layer_1_enabled=False)
-        user = self._make_user(prefs)
-        detector = RegimeTransitionLayer1Detector()
-        result = detector.should_trigger(user, {})
-        assert result is None
-
     def test_layer2_disabled_returns_none(self):
         prefs = self._make_prefs(layer_2_enabled=False)
         user = self._make_user(prefs)
@@ -198,7 +185,7 @@ class TestLayerToggleSuppression:
         prefs = self._make_prefs()
         prefs.alerts_enabled = False
         user = self._make_user(prefs)
-        result = RegimeTransitionLayer1Detector().should_trigger(user, {})
+        result = ExtremePercentileLayer2Detector().should_trigger(user, {})
         assert result is None
 
 
@@ -219,15 +206,6 @@ class TestWeeklyRateLimitUnit:
         user.id = 'test-user-id'
         user.alert_preferences = prefs
         return user
-
-    def _l1_alert_data(self):
-        return {
-            'title': 'Regime Transition: CLI',
-            'message': 'Context.',
-            'metric_name': 'Regime Transition',
-            'metric_value': 2.0,
-            'threshold_value': 2.0,
-        }
 
     def _l2_alert_data(self):
         return {
@@ -267,18 +245,14 @@ class TestWeeklyRateLimitUnit:
 
         with patch.object(_ads_mod, '_count_layer_alerts_this_week', return_value=4), \
              patch.object(_ads_mod, 'get_latest_metrics', return_value={'vix': {'value': 30}}), \
-             patch.object(RegimeTransitionLayer1Detector, 'was_recently_triggered', return_value=False), \
              patch.object(ExtremePercentileLayer2Detector, 'was_recently_triggered', return_value=False), \
              patch.object(ConvergenceLayer3Detector, 'was_recently_triggered', return_value=False), \
-             patch('services.layer1_regime_transition.check_regime_transition',
-                   return_value={'signals_triggered': ['CLI'], 'context_sentence': 'ctx'}), \
              patch('services.layer2_extreme_percentile.check_extreme_percentile',
                    return_value=[{'signals_triggered': ['VIX'], 'context_sentence': 'ctx', 'current_percentile': 95.0}]), \
              patch('services.layer3_convergence.check_convergence',
                    return_value={'signals_triggered': ['HY', 'VIX', 'NFCI'], 'context_sentence': 'ctx'}), \
              patch.object(ConvergenceLayer3Detector, 'create_alert', side_effect=mock_create), \
              patch.object(ExtremePercentileLayer2Detector, 'create_alert', side_effect=mock_create), \
-             patch.object(RegimeTransitionLayer1Detector, 'create_alert', side_effect=mock_create), \
              patch.object(_ads_mod.db.session, 'commit', return_value=None):
             count = check_all_alerts_for_user(user)
 
@@ -290,10 +264,8 @@ class TestWeeklyRateLimitUnit:
         user = self._make_user_with_prefs()
         with patch.object(_ads_mod, '_count_layer_alerts_this_week', return_value=0), \
              patch.object(_ads_mod, 'get_latest_metrics', return_value={}), \
-             patch.object(RegimeTransitionLayer1Detector, 'was_recently_triggered', return_value=False), \
              patch.object(ExtremePercentileLayer2Detector, 'was_recently_triggered', return_value=False), \
              patch.object(ConvergenceLayer3Detector, 'was_recently_triggered', return_value=False), \
-             patch('services.layer1_regime_transition.check_regime_transition', return_value=None), \
              patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
              patch('services.layer3_convergence.check_convergence', return_value=None):
             count = check_all_alerts_for_user(user)
@@ -305,28 +277,24 @@ class TestWeeklyRateLimitUnit:
             count = check_all_alerts_for_user(user)
         assert count == 0
 
-    def test_full_budget_three_candidates_creates_three(self):
-        """With budget=5 and 3 candidates, all 3 are created."""
+    def test_full_budget_two_candidates_creates_two(self):
+        """With budget=5 and 2 candidates, all 2 are created."""
         user = self._make_user_with_prefs()
 
         with patch.object(_ads_mod, '_count_layer_alerts_this_week', return_value=0), \
              patch.object(_ads_mod, 'get_latest_metrics', return_value={'vix': {'value': 30}}), \
-             patch.object(RegimeTransitionLayer1Detector, 'was_recently_triggered', return_value=False), \
              patch.object(ExtremePercentileLayer2Detector, 'was_recently_triggered', return_value=False), \
              patch.object(ConvergenceLayer3Detector, 'was_recently_triggered', return_value=False), \
-             patch('services.layer1_regime_transition.check_regime_transition',
-                   return_value={'signals_triggered': ['CLI'], 'context_sentence': 'ctx'}), \
              patch('services.layer2_extreme_percentile.check_extreme_percentile',
                    return_value=[{'signals_triggered': ['VIX'], 'context_sentence': 'ctx', 'current_percentile': 95.0}]), \
              patch('services.layer3_convergence.check_convergence',
                    return_value={'signals_triggered': ['HY', 'VIX', 'NFCI'], 'context_sentence': 'ctx'}), \
              patch.object(ConvergenceLayer3Detector, 'create_alert', return_value=MagicMock()), \
              patch.object(ExtremePercentileLayer2Detector, 'create_alert', return_value=MagicMock()), \
-             patch.object(RegimeTransitionLayer1Detector, 'create_alert', return_value=MagicMock()), \
              patch.object(_ads_mod.db.session, 'commit', return_value=None):
             count = check_all_alerts_for_user(user)
 
-        assert count == 3
+        assert count == 2
 
 
 # ---------------------------------------------------------------------------
@@ -335,8 +303,7 @@ class TestWeeklyRateLimitUnit:
 
 class TestRunAlertBacktest:
     def test_returns_expected_keys(self):
-        with patch('services.layer1_regime_transition.check_regime_transition', return_value=None), \
-             patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
+        with patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
              patch('services.layer3_convergence.check_convergence', return_value=None):
             result = run_alert_backtest(months=1)
 
@@ -344,8 +311,7 @@ class TestRunAlertBacktest:
         assert required_keys.issubset(result.keys())
 
     def test_passes_limit_true_when_no_signals(self):
-        with patch('services.layer1_regime_transition.check_regime_transition', return_value=None), \
-             patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
+        with patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
              patch('services.layer3_convergence.check_convergence', return_value=None):
             result = run_alert_backtest(months=1)
 
@@ -353,8 +319,7 @@ class TestRunAlertBacktest:
         assert result['max_weekly_count'] == 0
 
     def test_weekly_counts_length_matches_weeks_analysed(self):
-        with patch('services.layer1_regime_transition.check_regime_transition', return_value=None), \
-             patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
+        with patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=[]), \
              patch('services.layer3_convergence.check_convergence', return_value=None):
             result = run_alert_backtest(months=2)
 
@@ -362,17 +327,15 @@ class TestRunAlertBacktest:
         assert result['weeks_analysed'] > 0
 
     def test_all_signals_fires_max_limit(self):
-        """When all 3 layers fire, weekly count is capped at WEEKLY_ALERT_LIMIT."""
-        l1 = {'signals_triggered': ['CLI'], 'context_sentence': 'x'}
+        """When all 2 layers fire, weekly count is capped at WEEKLY_ALERT_LIMIT."""
         l2 = [{'signals_triggered': ['VIX'], 'context_sentence': 'x', 'current_percentile': 95.0}]
         l3 = {'signals_triggered': ['HY', 'VIX', 'NFCI'], 'context_sentence': 'x'}
 
-        with patch('services.layer1_regime_transition.check_regime_transition', return_value=l1), \
-             patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=l2), \
+        with patch('services.layer2_extreme_percentile.check_extreme_percentile', return_value=l2), \
              patch('services.layer3_convergence.check_convergence', return_value=l3):
             result = run_alert_backtest(months=1)
 
-        # 3 layers can fire at most → max 3, which is ≤5 → passes
+        # 2 layers can fire at most → max 2, which is ≤5 → passes
         assert result['passes_limit'] is True
         assert result['max_weekly_count'] <= WEEKLY_ALERT_LIMIT
 
@@ -384,9 +347,9 @@ class TestRunAlertBacktest:
 class TestAlertsTemplate:
     TEMPLATE = _REPO_ROOT / 'signaltrackers' / 'templates' / 'alerts.html'
 
-    def test_filter_has_regime_transition_option(self):
+    def test_filter_has_no_regime_transition_option(self):
         content = self.TEMPLATE.read_text()
-        assert 'value="regime_transition"' in content
+        assert 'value="regime_transition"' not in content
 
     def test_filter_has_extreme_percentile_option(self):
         content = self.TEMPLATE.read_text()
@@ -406,7 +369,6 @@ class TestAlertsTemplate:
 
     def test_layer_badge_classes_present(self):
         content = self.TEMPLATE.read_text()
-        assert '.layer-1' in content
         assert '.layer-2' in content
         assert '.layer-3' in content
 
@@ -414,9 +376,9 @@ class TestAlertsTemplate:
         content = self.TEMPLATE.read_text()
         assert 'context-sentence' in content
 
-    def test_regime_transition_badge_conditional(self):
+    def test_regime_transition_badge_removed(self):
         content = self.TEMPLATE.read_text()
-        assert "alert.alert_type == 'regime_transition'" in content
+        assert "alert.alert_type == 'regime_transition'" not in content
 
     def test_extreme_percentile_badge_conditional(self):
         content = self.TEMPLATE.read_text()
@@ -502,7 +464,7 @@ class TestWeeklyCountHelper:
             u = User.query.filter_by(email='us237@example.com').first()
 
             # 2 layer alerts in past 7 days
-            for atype in ['regime_transition', 'extreme_percentile']:
+            for atype in ['extreme_percentile', 'multi_signal_convergence']:
                 db.session.add(Alert(
                     user_id=u.id, alert_type=atype, title='Test', severity='warning',
                     triggered_at=datetime.utcnow() - timedelta(days=1),

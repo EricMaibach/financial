@@ -114,12 +114,6 @@ class TestTradePulseSectionStructure(unittest.TestCase):
     def test_section_aria_label(self):
         self.assertIn('aria-label="Global Trade Pulse"', self.html)
 
-    def test_section_uses_regime_thread_class(self):
-        # Section should pick up regime color automatically
-        idx = self.html.find('id="trade-pulse-section"')
-        section_tag = self.html[max(0, idx - 200):idx + 200]
-        self.assertIn('regime-thread', section_tag)
-
     def test_section_title_global_trade_pulse(self):
         self.assertIn('Global Trade Pulse', self.html)
 

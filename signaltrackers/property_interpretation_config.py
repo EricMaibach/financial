@@ -1,11 +1,11 @@
 """
 Property Macro Interpretation Configuration (US-255.1)
 
-Static interpretation texts for the property page's regime-conditioned
-interpretation block. Keyed by (regime_state, hpi_trend) tuples.
+Static interpretation texts for the property page interpretation block.
+Keyed by (regime_state, hpi_trend) tuples.
 
-Regime states match regime_detection.py output:
-  'Bull', 'Neutral', 'Bear', 'Recession Watch'
+Note: regime_state is always None now (old regime system removed).
+The 'unknown' fallback entries are used exclusively.
 
 HPI trend buckets (based on YoY % change in Case-Shiller HPI):
   'appreciating' — YoY HPI change >= +2%

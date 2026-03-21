@@ -1,11 +1,11 @@
 """
 Credit Spread Interpretation Configuration (US-169.2)
 
-Static interpretation texts for the credit page's regime-conditioned
-interpretation block. Keyed by (regime_state, spread_bucket) tuples.
+Static interpretation texts for the credit page interpretation block.
+Keyed by (regime_state, spread_bucket) tuples.
 
-Regime states match regime_detection.py output:
-  'Bull', 'Neutral', 'Bear', 'Recession Watch'
+Note: regime_state is always None now (old regime system removed).
+The 'unknown' fallback entries are used exclusively.
 
 Spread buckets:
   'tight'  — HY OAS at or below 25th percentile of 20-year history

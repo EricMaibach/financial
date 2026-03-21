@@ -192,10 +192,6 @@ METRIC_INFO = {
         'category': 'Fixed Income',
         'description': '10-Year Treasury nominal yield (DGS10) - benchmark risk-free rate, nominal = real yield + breakeven inflation'
     },
-    'macro_regime': {
-        'category': 'Macro',
-        'description': 'Current macro regime classification (Bull/Bear/Neutral/Recession Watch) with confidence score and asset class implications'
-    },
     'recession_probability': {
         'category': 'Macro',
         'description': 'Institutional recession probability models: NY Fed 12-month, Chauvet-Piger, and Richmond SOS'
@@ -246,7 +242,7 @@ def execute_list_metrics():
     metrics_by_category = {}
 
     # Metrics that are always available (cache-based or computed, not direct CSV-based)
-    cache_based_metrics = {'divergence_gap', 'macro_regime', 'recession_probability', 'treasury_2y_yield'}
+    cache_based_metrics = {'divergence_gap', 'recession_probability', 'treasury_2y_yield'}
 
     for metric_id, info in METRIC_INFO.items():
         if metric_id in available_files or metric_id in cache_based_metrics:
@@ -286,10 +282,6 @@ def execute_get_metric_data(metric_id, include_time_series=False):
     # Special handling for us_recessions (date range data, not time series)
     if metric_id == 'us_recessions':
         return _get_recession_data()
-
-    # Special handling for macro_regime (JSON cache, not CSV)
-    if metric_id == 'macro_regime':
-        return _get_macro_regime_data()
 
     # Special handling for recession_probability (JSON cache, not CSV)
     if metric_id == 'recession_probability':
@@ -482,37 +474,6 @@ def _get_recession_data():
     except Exception as e:
         return json.dumps({'error': f'Error loading recession data: {str(e)}'})
 
-
-def _get_macro_regime_data():
-    """Return current macro regime classification from cache."""
-    cache_path = DATA_DIR / 'macro_regime_cache.json'
-    if not cache_path.exists():
-        return json.dumps({'error': 'Macro regime cache unavailable — run data collection first'})
-
-    try:
-        data = json.loads(cache_path.read_text())
-        regime_state = data.get('state', 'Unknown')
-        confidence = data.get('confidence')
-        updated_at = data.get('updated_at')
-        trend = data.get('trend')
-
-        from signaltrackers.regime_implications_config import REGIME_IMPLICATIONS
-        implications = REGIME_IMPLICATIONS.get(regime_state, {})
-
-        result = {
-            'metric_id': 'macro_regime',
-            'friendly_name': 'Macro Regime',
-            'description': METRIC_INFO['macro_regime']['description'],
-            'category': METRIC_INFO['macro_regime']['category'],
-            'state': regime_state,
-            'confidence': confidence,
-            'trend': trend,
-            'updated_at': updated_at,
-            'implications': implications,
-        }
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return json.dumps({'error': f'Error reading macro regime cache: {str(e)}'})
 
 
 def _get_recession_probability_data():

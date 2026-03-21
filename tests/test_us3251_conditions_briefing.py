@@ -114,10 +114,6 @@ class TestOldRegimeRemoved(unittest.TestCase):
     def test_no_regime_state_variable(self):
         self.assertNotIn('regime_state', self.src)
 
-    def test_no_old_regime_labels_in_prompt(self):
-        # Check that the system prompt explicitly tells AI not to use old labels
-        self.assertIn('DO NOT reference old regime labels', self.src)
-
     def test_four_quadrants_listed(self):
         self.assertIn('Goldilocks, Reflation, Stagflation, Deflation Risk', self.src)
 

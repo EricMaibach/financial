@@ -1,8 +1,8 @@
 """Market Conditions configuration — quadrant × liquidity context sentences
 and signal annotations (US-324.1).
 
-Replaces the regime-specific CATEGORY_REGIME_CONTEXT and SIGNAL_REGIME_ANNOTATIONS
-from regime_config.py with richer quadrant × liquidity combinations.
+Provides CATEGORY_CONDITIONS_CONTEXT and SIGNAL_CONDITIONS_ANNOTATIONS
+with quadrant × liquidity context sentences.
 """
 
 # ---------------------------------------------------------------------------

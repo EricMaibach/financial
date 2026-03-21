@@ -233,9 +233,6 @@ class TestDashboardCreditRoute(unittest.TestCase):
     def test_credit_interpretation_bucket_in_context(self):
         self.assertIn("'credit_interpretation_bucket'", self.src)
 
-    def test_credit_interpretation_regime_in_context(self):
-        self.assertIn("'credit_interpretation_regime'", self.src)
-
     def test_interpretation_block_has_try_except(self):
         # Interpretation lookup must be guarded so a regime cache miss won't 500
         # Look for the pattern: try block containing get_credit_interpretation
@@ -262,9 +259,6 @@ class TestCreditHtmlInterpretationBlock(unittest.TestCase):
 
     def test_interpretation_variable_rendered(self):
         self.assertIn('{{ credit_interpretation }}', self.html)
-
-    def test_regime_label_rendered(self):
-        self.assertIn('credit_interpretation_regime', self.html)
 
     def test_bucket_label_rendered(self):
         self.assertIn('credit_interpretation_bucket', self.html)

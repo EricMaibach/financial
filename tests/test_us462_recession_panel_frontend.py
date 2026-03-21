@@ -459,13 +459,8 @@ class TestBaseHTMLCSSLink(unittest.TestCase):
     def test_recession_panel_css_linked(self):
         self.assertIn('recession-panel.css', self.html)
 
-    def test_recession_panel_css_linked_after_regime_card(self):
-        regime_pos = self.html.find('regime-card.css')
-        recession_pos = self.html.find('recession-panel.css')
-        self.assertGreater(regime_pos, -1, 'regime-card.css not found in base.html')
-        self.assertGreater(recession_pos, -1, 'recession-panel.css not found in base.html')
-        self.assertGreater(recession_pos, regime_pos,
-                           'recession-panel.css should appear after regime-card.css')
+    def test_recession_panel_css_linked(self):
+        self.assertIn('recession-panel.css', self.html)
 
 
 # ---------------------------------------------------------------------------
@@ -542,10 +537,6 @@ class TestConditionalRendering(unittest.TestCase):
     def test_endif_comment_present(self):
         self.assertIn('/recession_probability', self.html)
 
-    def test_regime_css_class_applied_conditionally(self):
-        # The recession-panel div should conditionally include macro_regime.css_class
-        # Look for the conditional in the div's class attribute
-        self.assertIn('macro_regime.css_class', self.html)
 
 
 class TestMobileModelRows(unittest.TestCase):
@@ -583,10 +574,6 @@ class TestMobileModelRows(unittest.TestCase):
 
     def test_ny_fed_confidence_range_shown(self):
         self.assertIn('recession-model-range', self.html)
-
-    def test_regime_divider_used_between_rows(self):
-        # regime-divider separates model rows
-        self.assertIn('class="regime-divider"', self.html)
 
     def test_model_date_class_present(self):
         self.assertIn('recession-model-date', self.html)
@@ -702,14 +689,6 @@ class TestFooterElements(unittest.TestCase):
     def test_source_credit_includes_updated_date(self):
         self.assertIn('recession_probability.updated', self.html)
 
-    def test_footer_separated_by_regime_divider(self):
-        # US-218.2: footer div has conditional modifier class; use partial class search
-        idx = self.html.find('"recession-footer')
-        self.assertGreater(idx, -1, '"recession-footer not found in template')
-        before_footer = self.html[:idx]
-        # A regime-divider should appear just before the footer
-        last_divider = before_footer.rfind('regime-divider')
-        self.assertGreater(last_divider, -1)
 
 
 class TestAccessibility(unittest.TestCase):
@@ -862,30 +841,6 @@ class TestJavaScriptToggle(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # Regression tests — Section 0 must still be intact
 # ---------------------------------------------------------------------------
-
-class TestSection0Regression(unittest.TestCase):
-    """Section 0 (Macro Regime Score Panel) must not be affected."""
-
-    def setUp(self):
-        self.html = get_index_html()
-
-    def test_section_0_id_present(self):
-        self.assertIn('id="macro-regime-section"', self.html)
-
-    def test_section_0_aria_label_present(self):
-        self.assertIn('aria-label="Macro Regime Score"', self.html)
-
-    def test_section_0_macro_regime_guard_present(self):
-        self.assertIn('{% if macro_regime %}', self.html)
-
-    def test_section_0_regime_card_present(self):
-        self.assertIn('class="regime-card', self.html)
-
-    def test_section_0_regime_state_name_present(self):
-        self.assertIn('regime-state-name', self.html)
-
-    def test_section_0_signal_chips_present(self):
-        self.assertIn('regime-signal-chips', self.html)
 
 
 class TestSection1Regression(unittest.TestCase):

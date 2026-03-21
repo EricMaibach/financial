@@ -30,7 +30,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from signaltrackers.backtesting.regime_backtest import (
+from signaltrackers.backtesting.backtest_utils import (
     load_csv,
     compute_forward_return,
     NEUTRAL_THRESHOLD,

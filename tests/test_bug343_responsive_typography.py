@@ -138,69 +138,6 @@ class TestConditionsStripResponsive:
         assert _parse_font_size_rem(self.css, ".conditions-strip__dim") == 0.875
 
 
-# ═══ regime-pill.css ══════════════════════════════════════════════
-
-class TestRegimePillResponsive:
-    """Verify responsive scaling in regime-pill.css."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.css = _read_css("regime-pill.css")
-        self.blocks_768 = _extract_media_blocks(self.css, 768)
-
-    def test_pill_uses_rem_not_px(self):
-        """Regime pill should use rem units, not fixed px."""
-        # Find the base .regime-pill font-size — should be rem, not px
-        m = re.search(r"\.regime-pill\s*\{[^}]*font-size\s*:\s*([\d.]+)(rem|px)", self.css, flags=re.DOTALL)
-        assert m is not None
-        assert m.group(2) == "rem", f"Expected rem units, got {m.group(2)}"
-
-    def test_pill_base_size_is_075rem(self):
-        assert _parse_font_size_rem(self.css, ".regime-pill") == 0.75
-
-    def test_pill_scales_at_768(self):
-        assert _has_font_size_rule(self.blocks_768, ".regime-pill")
-
-
-# ═══ regime-implications.css ══════════════════════════════════════
-
-class TestRegimeImplicationsResponsive:
-    """Verify responsive scaling in regime-implications.css."""
-
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.css = _read_css("regime-implications.css")
-        self.blocks_768 = _extract_media_blocks(self.css, 768)
-        self.blocks_1024 = _extract_media_blocks(self.css, 1024)
-
-    def test_card_label_scales_at_768(self):
-        assert _has_font_size_rule(self.blocks_768, ".implication-card-label")
-
-    def test_card_label_scales_at_1024(self):
-        assert _has_font_size_rule(self.blocks_1024, ".implication-card-label")
-
-    def test_sectors_scales_at_768(self):
-        assert _has_font_size_rule(self.blocks_768, ".implication-sectors")
-
-    def test_sectors_scales_at_1024(self):
-        assert _has_font_size_rule(self.blocks_1024, ".implication-sectors")
-
-    def test_footer_scales_at_768(self):
-        assert _has_font_size_rule(self.blocks_768, ".regime-implications-footer")
-
-    def test_footer_scales_at_1024(self):
-        assert _has_font_size_rule(self.blocks_1024, ".regime-implications-footer")
-
-    def test_annotation_scales_at_1024(self):
-        assert _has_font_size_rule(self.blocks_1024, ".implication-annotation")
-
-    def test_base_card_label_is_075rem(self):
-        assert _parse_font_size_rem(self.css, ".implication-card-label") == 0.75
-
-    def test_base_annotation_is_0875rem(self):
-        assert _parse_font_size_rem(self.css, ".implication-annotation") == 0.875
-
-
 # ═══ sector-tone.css ══════════════════════════════════════════════
 
 class TestSectorToneResponsive:
@@ -256,8 +193,6 @@ class TestMinimumFontSize:
         self.files = [
             "conditions-summary.css",
             "conditions-strip.css",
-            "regime-pill.css",
-            "regime-implications.css",
             "sector-tone.css",
         ]
 
@@ -304,14 +239,6 @@ class TestMobileBasePreserved:
     def test_conditions_strip_name_base(self):
         css = _read_css("conditions-strip.css")
         assert _parse_font_size_rem(css, ".conditions-strip__name") == 0.875
-
-    def test_regime_pill_base(self):
-        css = _read_css("regime-pill.css")
-        assert _parse_font_size_rem(css, ".regime-pill") == 0.75
-
-    def test_implication_card_label_base(self):
-        css = _read_css("regime-implications.css")
-        assert _parse_font_size_rem(css, ".implication-card-label") == 0.75
 
     def test_sector_tone_footer_base(self):
         css = _read_css("sector-tone.css")

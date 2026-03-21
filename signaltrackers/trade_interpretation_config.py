@@ -1,11 +1,11 @@
 """
 Trade Balance Interpretation Configuration (US-206.1)
 
-Regime-conditioned interpretation texts for the Global Trade Pulse homepage panel.
+Interpretation texts for the Global Trade Pulse homepage panel.
 Keyed by (regime_state, trade_condition) tuples.
 
-Regime states match regime_detection.py output:
-  'Bull', 'Neutral', 'Bear', 'Recession Watch'
+Note: regime_state is always None now (old regime system removed).
+The 'unknown' fallback entries are used exclusively.
 
 Trade conditions:
   'widening_deficit'   — current value negative, YoY change negative (deficit growing)

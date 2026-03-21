@@ -225,9 +225,6 @@ class TestCreditTemplateDataDriven(unittest.TestCase):
         # Chart border color must use the credit danger color
         self.assertIn("220,53,69", self.html)
 
-    def test_regime_strip_included(self):
-        self.assertIn("_regime_strip.html", self.html)
-
     def test_page_category_is_credit(self):
         self.assertIn("page_category = 'Credit'", self.html)
 

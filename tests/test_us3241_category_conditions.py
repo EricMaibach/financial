@@ -243,8 +243,7 @@ def _make_mock_sector_tone():
 @pytest.fixture
 def app():
     """Create Flask test app with mocked dependencies."""
-    with patch('dashboard.get_macro_regime', return_value=None), \
-         patch('dashboard.get_recession_probability', return_value=None), \
+    with patch('dashboard.get_recession_probability', return_value=None), \
          patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
          patch('dashboard.get_sector_management_tone', return_value=None):
         from dashboard import app as flask_app
@@ -379,8 +378,7 @@ class TestRecessionPanelOnCreditPage:
     """Test recession probability panel relocated to credit page."""
 
     def test_recession_panel_present_when_data_available(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
+        with patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app
@@ -392,8 +390,7 @@ class TestRecessionPanelOnCreditPage:
             assert 'Recession Probability' in html
 
     def test_recession_panel_shows_model_names(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
+        with patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app
@@ -406,8 +403,7 @@ class TestRecessionPanelOnCreditPage:
             assert 'RICHMOND FED SOS' in html
 
     def test_recession_panel_has_interpretation(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
+        with patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app
@@ -418,8 +414,7 @@ class TestRecessionPanelOnCreditPage:
             assert 'recession risk is low' in html
 
     def test_recession_panel_has_why_three_models(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
+        with patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app
@@ -436,8 +431,7 @@ class TestRecessionPanelOnCreditPage:
         assert 'recession-panel-section' not in html
 
     def test_recession_panel_ai_section_btn(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
+        with patch('dashboard.get_recession_probability', return_value=_make_mock_recession()), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app
@@ -452,8 +446,7 @@ class TestSectorToneOnEquityPage:
     """Test sector management tone panel relocated to equity page."""
 
     def test_sector_tone_present_when_data_available(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=_make_mock_sector_tone()), \
              patch('dashboard.load_csv_data', return_value=None):
@@ -466,8 +459,7 @@ class TestSectorToneOnEquityPage:
             assert 'Sector Management Tone' in html
 
     def test_sector_tone_shows_sectors(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=_make_mock_sector_tone()), \
              patch('dashboard.load_csv_data', return_value=None):
@@ -480,8 +472,7 @@ class TestSectorToneOnEquityPage:
             assert 'Energy' in html
 
     def test_sector_tone_toggle_button(self):
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=_make_mock_sector_tone()), \
              patch('dashboard.load_csv_data', return_value=None):
@@ -499,8 +490,7 @@ class TestSectorToneOnEquityPage:
             'quarter': 'Q1',
             'year': 2026,
         }
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=empty_tone), \
              patch('dashboard.load_csv_data', return_value=None):
@@ -523,8 +513,7 @@ class TestTradePulseOnEquityPage:
             'date': dates,
             'trade_balance': np.random.uniform(-80, -60, len(dates)),
         })
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None), \
              patch('dashboard.load_csv_data', return_value=df):
@@ -538,8 +527,7 @@ class TestTradePulseOnEquityPage:
 
     def test_trade_pulse_hidden_when_no_data(self):
         """Panel should not appear when no trade balance data."""
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=_make_mock_conditions()), \
              patch('dashboard.get_sector_management_tone', return_value=None), \
              patch('dashboard.load_csv_data', return_value=None):
@@ -610,8 +598,7 @@ class TestEdgeCases:
 
     def test_no_conditions_data_no_context_sentence(self):
         """When market_conditions is None, no context sentence should appear."""
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=None), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app
@@ -626,8 +613,7 @@ class TestEdgeCases:
         """Handle missing quadrant dimension gracefully."""
         conditions = _make_mock_conditions()
         conditions['dimensions']['quadrant'] = None
-        with patch('dashboard.get_macro_regime', return_value=None), \
-             patch('dashboard.get_recession_probability', return_value=None), \
+        with patch('dashboard.get_recession_probability', return_value=None), \
              patch('dashboard.get_market_conditions', return_value=conditions), \
              patch('dashboard.get_sector_management_tone', return_value=None):
             from dashboard import app as flask_app

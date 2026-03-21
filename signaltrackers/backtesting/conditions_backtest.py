@@ -31,8 +31,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-# Reuse data loading and forward-return functions from existing backtest
-from signaltrackers.backtesting.regime_backtest import (
+from signaltrackers.backtesting.backtest_utils import (
     SCORING_ASSETS,
     NEUTRAL_THRESHOLD,
     load_csv,
