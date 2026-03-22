@@ -236,14 +236,14 @@ def test_route_is_login_required(dashboard_py):
         "@login_required must decorate the section opening route"
 
 
-def test_route_handles_ai_service_error_returns_400(dashboard_py):
-    """AIServiceError must return HTTP 400 with error message."""
+def test_route_handles_unavailable_client_returns_503(dashboard_py):
+    """Missing system AI client must return HTTP 503."""
     route_area = dashboard_py[dashboard_py.find('api_chatbot_section_opening'):]
     route_area = route_area[:5000]
-    assert 'AIServiceError' in route_area, \
-        "Route must catch AIServiceError"
-    assert '400' in route_area, \
-        "AIServiceError must return HTTP 400"
+    assert 'client is None' in route_area, \
+        "Route must check for unavailable system AI client"
+    assert '503' in route_area, \
+        "Unavailable AI client must return HTTP 503"
 
 
 def test_route_handles_upstream_exception_returns_503(dashboard_py):
