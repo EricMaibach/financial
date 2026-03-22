@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-21 (Phase 11 in progress — Features #322, #323, #324, #325 complete. Pipeline: #335 ready-for-implementation (last story, #326))
+**Last updated:** 2026-03-22 (Phase 11 COMPLETE — all 5 features shipped, milestone closed, release created)
 
 ---
 
@@ -24,8 +24,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 11 — Market Conditions UI & Migration
-**State:** BUILDING
+**Phase:** Phase 12 — TBD (Council will define scope during IDEATING)
+**State:** IDEATING
 
 ---
 
@@ -215,7 +215,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
-## Phase 11: Market Conditions UI & Migration — IN PROGRESS
+## Phase 11: Market Conditions UI & Migration ✅ COMPLETE
 
 **Milestone goal:** Ship the market conditions framework to users. Redesign the homepage around the conditions engine, migrate all category pages, enhance AI briefings, and deprecate the old regime system.
 
@@ -229,7 +229,7 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 | #323 | Homepage Conditions Redesign | P1 | Complete ✅ — §0 AI briefing, §1 quadrant hero + 2×2 expand-in-place grid, §2 portfolio implications, movers footer, wide-screen layout |
 | #324 | Category Page Conditions Migration | P2 | Complete ✅ — 7 pages migrated, quadrant × liquidity context, relocated sections (Recession→Credit, Sector Tone→Equities, Trade Pulse→Equities) |
 | #325 | AI Conditions Integration (Briefing + Chatbot) | P1 | Complete ✅ — Four-dimension context dict + 90d conditions history + 14d briefing history, rule-based fallback, chatbot context |
-| #326 | Old Regime System Deprecation | P2 | Remove all old code, caches, CSS, templates. **Required, not optional.** |
+| #326 | Old Regime System Deprecation | P2 | Complete ✅ — All old regime code, caches, CSS, templates removed |
 
 **Dependency order:** #322 (strip) unblocks #323 (homepage) and #324 (category pages). #325 (AI) is independent. #326 (deprecation) runs last after everything else is migrated.
 
