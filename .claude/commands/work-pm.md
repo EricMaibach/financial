@@ -200,9 +200,10 @@ gh api -X PATCH repos/EricMaibach/financial/milestones/$MILESTONE_NUMBER -f stat
 
 b. Create a GitHub Release:
 ```bash
-# Tag format: phase-N-complete (e.g. phase-7-complete)
-gh release create "phase-7-complete" \
-  --title "Phase 7: Credit Intelligence & Completion" \
+# Tag format: vX.Y.0 where X.Y matches the phase number (e.g. v0.7.0 for Phase 7)
+# The semver tag is required for docker-publish.yml to generate correct image tags
+gh release create "v0.7.0" \
+  --title "v0.7.0 — Phase 7: Credit Intelligence & Completion" \
   --notes "Phase 7 complete. All user stories implemented and merged. Deployment triggered automatically."
 ```
 

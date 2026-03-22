@@ -96,7 +96,7 @@ fi
 - [x] Add COMPLETE detection:
   - When all sub-issues of all active features are closed, detect phase complete
   - Close the GitHub milestone
-  - Create a GitHub Release tagged `phase-N-complete`
+  - Create a GitHub Release tagged `v0.N.0` (semver required for Docker publish)
   - Flip `**State:**` to `IDEATING` in `PRODUCT_ROADMAP.md`, commit, push
   - Comment on closed milestone: "Phase complete. GitHub Release created. Deployment triggered."
 
@@ -112,7 +112,7 @@ fi
   - Pushes `ghcr.io/ericmaibach/financial:latest` to GHCR using built-in `GITHUB_TOKEN`
   - Watchtower (running in Portainer) polls GHCR and auto-pulls the new image
 
-When `/work-pm` creates a GitHub Release via `gh release create "phase-N-complete" ...`, this workflow fires automatically. No webhook, no additional secrets, no further configuration required.
+When `/work-pm` creates a GitHub Release via `gh release create "v0.N.0" ...`, this workflow fires automatically. No webhook, no additional secrets, no further configuration required.
 
 ---
 

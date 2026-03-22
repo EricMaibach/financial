@@ -458,7 +458,7 @@ claude --dangerously-skip-permissions -p "/work-ceo"
 Triggered automatically when `/work-pm` creates a GitHub Release at phase completion:
 
 ```
-gh release create "phase-N-complete" → docker-publish.yml builds + pushes ghcr.io/ericmaibach/financial:latest → Watchtower auto-pulls
+gh release create "v0.N.0" → docker-publish.yml builds + pushes ghcr.io/ericmaibach/financial:latest → Watchtower auto-pulls
 ```
 
 No manual steps needed. See `docs/COUNCIL-WORKFLOW.md` for full design, state machine, and implementation details.
