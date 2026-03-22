@@ -55,11 +55,13 @@ All of that is Phase 13, informed by the usage data we collect in Phase 12.
 
 ### 3. Per-Session Rate Limiting (Anonymous)
 
-**What:** Each anonymous user gets a daily AI budget tracked by session cookie.
+**What:** Each anonymous user gets a lifetime AI budget tracked by session cookie. Once used, AI is done — sign up to continue.
 
 **Limits (starting values, configurable):**
-- Chatbot messages: ~5 per day
-- Portfolio AI analyses: ~2 per day
+- Chatbot messages: ~5 total (lifetime per session)
+- Portfolio AI analyses: ~2 total (lifetime per session)
+
+**Why lifetime, not daily:** A daily reset lets someone use free AI indefinitely without signing up. Lifetime turns anonymous AI into a trial experience — a taste of the product, not an ongoing free tier. The free tier is the dashboard without AI. AI is the premium hook.
 
 **Behavior when limit hit:** AI routes return a structured response (not an error) that the frontend handles as a redirect to the signup page. See item 5.
 
@@ -164,8 +166,8 @@ All rate limits should be configurable without code changes — either via envir
 
 | Limit | Starting Value | Configurable Via |
 |-------|---------------|-----------------|
-| Anonymous chatbot/day | 5 | App config |
-| Anonymous portfolio AI/day | 2 | App config |
+| Anonymous chatbot (lifetime per session) | 5 | App config |
+| Anonymous portfolio AI (lifetime per session) | 2 | App config |
 | Global anonymous calls/day | 100 | App config / env var |
 | Registered chatbot/day | 25 | App config |
 | Registered portfolio AI/day | 5 | App config |
