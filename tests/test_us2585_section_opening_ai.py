@@ -12,13 +12,13 @@ Verifies per the QA test plan:
 - Backend: live data injected into system prompt (variable reference, not literal)
 - Backend: system prompt instructs holistic explanation + follow-up invitation
 - Backend: route returns JSON with 'response' key
-- Backend: route is @login_required
+- Backend: route has no @login_required (AI features always available)
 - Backend: graceful AIServiceError → 400
 - Backend: graceful upstream AI exception → 503
 - Edge: unknown section_id handled gracefully (returns 400)
 - Security: section_id used only as dict key lookup, not in paths/SQL/shell
 - Security: section_id length/character validation (or rejection of bad values)
-- Security: @login_required enforced
+- Security: AI features publicly accessible (no @login_required)
 """
 
 import os
@@ -225,15 +225,14 @@ def test_route_returns_response_key(dashboard_py):
         "Route must return JSON with 'response' key"
 
 
-def test_route_is_login_required(dashboard_py):
-    """Section opening route must be @login_required."""
-    # Find the route definition and verify @login_required precedes it
+def test_route_no_login_required(dashboard_py):
+    """Section opening route must not have @login_required (AI features always available)."""
     route_idx = dashboard_py.find('/api/chatbot/section-opening')
     assert route_idx != -1
-    # Look at 200 chars before route for @login_required
+    # Look at 200 chars before route — should NOT have login_required
     context_before = dashboard_py[max(0, route_idx - 200):route_idx + 100]
-    assert 'login_required' in context_before, \
-        "@login_required must decorate the section opening route"
+    assert 'login_required' not in context_before, \
+        "@login_required must not decorate the section opening route"
 
 
 def test_route_handles_unavailable_client_returns_503(dashboard_py):

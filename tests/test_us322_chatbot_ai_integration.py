@@ -45,16 +45,15 @@ class TestChatbotAPIEndpoint(unittest.TestCase):
         """POST /api/chatbot route must be defined."""
         self.assertIn("@app.route('/api/chatbot', methods=['POST'])", self.dashboard)
 
-    def test_api_chatbot_uses_login_required(self):
-        """Chatbot endpoint must require authentication."""
-        # Find the block around the /api/chatbot route
+    def test_api_chatbot_no_login_required(self):
+        """Chatbot endpoint must not require authentication (AI features always available)."""
         idx = self.dashboard.find("@app.route('/api/chatbot', methods=['POST'])")
         self.assertGreater(idx, 0)
         nearby = self.dashboard[idx:idx + 200]
-        self.assertIn('@login_required', nearby)
+        self.assertNotIn('@login_required', nearby)
 
     def test_api_chatbot_is_csrf_exempt(self):
-        """Chatbot API endpoint must be CSRF exempt (uses login_required for auth)."""
+        """Chatbot API endpoint must be CSRF exempt."""
         idx = self.dashboard.find("@app.route('/api/chatbot', methods=['POST'])")
         nearby = self.dashboard[idx:idx + 200]
         self.assertIn('@csrf.exempt', nearby)

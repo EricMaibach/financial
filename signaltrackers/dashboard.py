@@ -3221,8 +3221,7 @@ def _build_chatbot_enrichment_context():
 
 
 @app.route('/api/chatbot', methods=['POST'])
-@csrf.exempt  # API endpoint uses login_required for auth
-@login_required
+@csrf.exempt
 def api_chatbot():
     """Handle AI chatbot conversation requests using the system API key."""
     from services.ai_service import get_system_ai_client, get_system_chatbot_model
@@ -3757,7 +3756,6 @@ def _get_section_live_data(section_id: str) -> str:
 
 @app.route('/api/chatbot/section-opening', methods=['POST'])
 @csrf.exempt
-@login_required
 def api_chatbot_section_opening():
     """Generate an AI-powered opening message for a section AI button click.
 
