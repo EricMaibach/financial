@@ -2242,49 +2242,7 @@ def portfolio():
 @login_required
 def settings():
     """User settings page."""
-    from services.ai_service import check_user_ai_configured
-    return render_template('settings.html', check_user_ai_configured=check_user_ai_configured)
-
-
-@app.route('/settings/api-keys', methods=['POST'])
-@login_required
-def settings_update_api_keys():
-    """Update user's AI API keys."""
-    ai_provider = request.form.get('ai_provider', 'openai')
-    openai_key = request.form.get('openai_key', '').strip()
-    anthropic_key = request.form.get('anthropic_key', '').strip()
-
-    # Validate provider
-    if ai_provider not in ['openai', 'anthropic']:
-        ai_provider = 'openai'
-
-    # Get or create user settings
-    settings = current_user.settings
-    if not settings:
-        settings = UserSettings(user=current_user)
-        db.session.add(settings)
-
-    # Update provider
-    settings.ai_provider = ai_provider
-
-    # Update keys only if provided (don't clear existing keys if empty)
-    if openai_key:
-        try:
-            settings.set_openai_key(openai_key)
-        except Exception as e:
-            flash(f'Error saving OpenAI key: {e}', 'danger')
-            return redirect(url_for('settings'))
-
-    if anthropic_key:
-        try:
-            settings.set_anthropic_key(anthropic_key)
-        except Exception as e:
-            flash(f'Error saving Anthropic key: {e}', 'danger')
-            return redirect(url_for('settings'))
-
-    db.session.commit()
-    flash('Settings saved successfully!', 'success')
-    return redirect(url_for('settings'))
+    return render_template('settings.html')
 
 
 @app.route('/alerts/history')
@@ -3263,11 +3221,10 @@ def _build_chatbot_enrichment_context():
 
 
 @app.route('/api/chatbot', methods=['POST'])
-@csrf.exempt  # API endpoint uses login_required for auth
-@login_required
+@csrf.exempt
 def api_chatbot():
-    """Handle AI chatbot conversation requests using the user's API key."""
-    from services.ai_service import get_user_ai_client, get_user_chatbot_model, AIServiceError
+    """Handle AI chatbot conversation requests using the system API key."""
+    from services.ai_service import get_system_ai_client, get_system_chatbot_model
 
     data = request.get_json()
     if not data:
@@ -3283,12 +3240,12 @@ def api_chatbot():
     section = context.get('section') or None
     section_name = context.get('section_name') or None
 
-    try:
-        client, provider = get_user_ai_client()
-    except AIServiceError as e:
-        return jsonify({'error': str(e)}), 400
+    client, provider = get_system_ai_client()
+    if client is None:
+        app.logger.error(f'System AI client unavailable: {provider}')
+        return jsonify({'error': 'AI service unavailable'}), 503
 
-    model = get_user_chatbot_model()
+    model = get_system_chatbot_model()
 
     section_context = (
         f" The user is focused on the '{section_name}' section of the dashboard."
@@ -3799,14 +3756,13 @@ def _get_section_live_data(section_id: str) -> str:
 
 @app.route('/api/chatbot/section-opening', methods=['POST'])
 @csrf.exempt
-@login_required
 def api_chatbot_section_opening():
     """Generate an AI-powered opening message for a section AI button click.
 
     US-258.5: Replaces static hardcoded opening text with a real AI-generated
     response that includes live section data.
     """
-    from services.ai_service import get_user_ai_client, get_user_ai_model, AIServiceError
+    from services.ai_service import get_system_ai_client, get_system_ai_model
 
     data = request.get_json()
     if not data:
@@ -3821,12 +3777,12 @@ def api_chatbot_section_opening():
 
     section_name = _SECTION_NAMES[section_id]
 
-    try:
-        client, provider = get_user_ai_client()
-    except AIServiceError as e:
-        return jsonify({'error': str(e)}), 400
+    client, provider = get_system_ai_client()
+    if client is None:
+        app.logger.error(f'System AI client unavailable: {provider}')
+        return jsonify({'error': 'AI service unavailable'}), 503
 
-    model = get_user_ai_model()
+    model = get_system_ai_model()
     live_data = _get_section_live_data(section_id)
 
     system_prompt = (
@@ -4295,18 +4251,8 @@ def api_portfolio_summary():
 def api_generate_portfolio_summary():
     """Manually trigger portfolio AI summary generation for current user."""
     from ai_summary import generate_portfolio_summary
-    from services.ai_service import get_user_ai_client, AIServiceError
 
     try:
-        # Get user's AI client for this request
-        try:
-            user_client, provider = get_user_ai_client()
-        except AIServiceError as e:
-            return jsonify({
-                'status': 'error',
-                'error': str(e)
-            }), 400
-
         # Get current user's portfolio data for AI
         portfolio_data = db_get_portfolio_summary_for_ai(current_user.id)
 
@@ -4325,11 +4271,10 @@ def api_generate_portfolio_summary():
         # Generate market summary for context
         market_summary = generate_portfolio_market_context()
 
-        # Generate AI summary using user's API key and save to user's account
+        # Generate AI summary using system API key and save to user's account
         result = generate_portfolio_summary(
             portfolio_data,
             market_summary,
-            user_client=user_client,
             user_id=current_user.id
         )
 

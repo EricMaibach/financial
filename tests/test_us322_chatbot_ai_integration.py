@@ -45,23 +45,22 @@ class TestChatbotAPIEndpoint(unittest.TestCase):
         """POST /api/chatbot route must be defined."""
         self.assertIn("@app.route('/api/chatbot', methods=['POST'])", self.dashboard)
 
-    def test_api_chatbot_uses_login_required(self):
-        """Chatbot endpoint must require authentication."""
-        # Find the block around the /api/chatbot route
+    def test_api_chatbot_no_login_required(self):
+        """Chatbot endpoint must not require authentication (AI features always available)."""
         idx = self.dashboard.find("@app.route('/api/chatbot', methods=['POST'])")
         self.assertGreater(idx, 0)
         nearby = self.dashboard[idx:idx + 200]
-        self.assertIn('@login_required', nearby)
+        self.assertNotIn('@login_required', nearby)
 
     def test_api_chatbot_is_csrf_exempt(self):
-        """Chatbot API endpoint must be CSRF exempt (uses login_required for auth)."""
+        """Chatbot API endpoint must be CSRF exempt."""
         idx = self.dashboard.find("@app.route('/api/chatbot', methods=['POST'])")
         nearby = self.dashboard[idx:idx + 200]
         self.assertIn('@csrf.exempt', nearby)
 
-    def test_api_chatbot_uses_user_ai_client(self):
-        """Chatbot endpoint must use get_user_ai_client() (user pays for chatbot)."""
-        self.assertIn('get_user_ai_client()', self.dashboard)
+    def test_api_chatbot_uses_system_ai_client(self):
+        """Chatbot endpoint must use get_system_ai_client() (system key for all AI)."""
+        self.assertIn('get_system_ai_client()', self.dashboard)
 
     def test_api_chatbot_handles_anthropic(self):
         """Chatbot endpoint must handle Anthropic provider."""
@@ -80,10 +79,9 @@ class TestChatbotAPIEndpoint(unittest.TestCase):
         """Chatbot endpoint must return 503 when AI call fails."""
         self.assertIn('503', self.chatbot_body)
 
-    def test_api_chatbot_returns_400_on_auth_error(self):
-        """Chatbot endpoint must return 400 when user has no API key configured."""
-        self.assertIn('AIServiceError', self.chatbot_body)
-        self.assertIn('400', self.chatbot_body)
+    def test_api_chatbot_returns_503_when_system_client_unavailable(self):
+        """Chatbot endpoint must return 503 when system AI client is unavailable."""
+        self.assertIn('503', self.chatbot_body)
 
     def test_api_chatbot_accepts_conversation_history(self):
         """Chatbot endpoint must accept and use conversation_history from request."""
