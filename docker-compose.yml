@@ -27,7 +27,6 @@ services:
     environment:
       # Application Security (Required for Multi-User Mode)
       - SECRET_KEY=${SECRET_KEY:-dev-key-change-in-production}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
 
       # AI Provider: 'openai' or 'anthropic' (for scheduled briefings)
       - AI_PROVIDER=${AI_PROVIDER:-anthropic}

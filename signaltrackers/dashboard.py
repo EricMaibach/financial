@@ -46,7 +46,7 @@ from portfolio import (
 )
 from config import get_config
 from extensions import init_extensions, db, limiter, csrf
-from models import User, UserSettings
+from models import User
 from scheduler import init_scheduler as init_apscheduler, shutdown_scheduler
 from recession_probability import get_recession_probability, update_recession_probability
 from sector_tone_pipeline import get_sector_management_tone, update_sector_management_tone
@@ -1725,15 +1725,11 @@ def register():
         user = User(username=username, email=email)
         user.set_password(password)
 
-        # Create default settings
-        settings = UserSettings(user=user, ai_provider='openai')
-
         # Create default alert preferences
         from models.alert import AlertPreference
         alert_prefs = AlertPreference(user=user)
 
         db.session.add(user)
-        db.session.add(settings)
         db.session.add(alert_prefs)
         db.session.commit()
 

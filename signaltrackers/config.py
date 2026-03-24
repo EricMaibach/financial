@@ -28,9 +28,6 @@ class Config:
     SYSTEM_ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY')
     ANTHROPIC_EFFORT = os.environ.get('ANTHROPIC_EFFORT', 'medium').lower()
 
-    # Encryption key for user API keys
-    ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
-
     # Session
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
     SESSION_COOKIE_HTTPONLY = True

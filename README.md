@@ -123,7 +123,6 @@ Edit your `.env` file with the following:
 
 #### Required (for multi-user mode)
 - `SECRET_KEY` - Flask session secret (generate with `python -c "import secrets; print(secrets.token_hex(32))"`)
-- `ENCRYPTION_KEY` - API key encryption (generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`)
 
 #### Optional (but recommended)
 - `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` - For AI briefings and chat

@@ -28,13 +28,6 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
     # Relationships
-    settings = db.relationship(
-        'UserSettings',
-        backref='user',
-        uselist=False,
-        lazy=True,
-        cascade='all, delete-orphan'
-    )
     portfolio_allocations = db.relationship(
         'PortfolioAllocation',
         backref='user',
