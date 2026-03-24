@@ -1,5 +1,5 @@
 #!/bin/bash
-# Designer Agent — runs every 10 minutes, starts 20 minutes after QA
+# Designer Agent — runs immediately on startup, then every 5 minutes
 # Start this from within the financial-designer directory
 
 # Pre-flight check: returns 0 if Claude should run, 1 if there's nothing to do.
@@ -18,18 +18,14 @@ designer_has_work() {
   return 1
 }
 
-echo ""
-echo "=== Designer Agent: waiting 20 minutes before first run ==="
-sleep 1200
-
 while true; do
   echo ""
   echo "=== Designer Agent: $(date) ==="
 
   if designer_has_work; then
     claude --dangerously-skip-permissions -p "/work-designer"
-    echo "=== Designer done. Next run in 10 minutes ==="
+    echo "=== Designer done. Next run in 5 minutes ==="
   fi
 
-  sleep 600
+  sleep 300
 done
