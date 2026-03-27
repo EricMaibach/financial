@@ -8,5 +8,6 @@ from models.user import User
 from models.portfolio import PortfolioAllocation
 from models.portfolio_summary import PortfolioSummary
 from models.alert import AlertPreference, Alert
+from models.ai_usage import AIUsageRecord
 
-__all__ = ['User', 'PortfolioAllocation', 'PortfolioSummary', 'AlertPreference', 'Alert']
+__all__ = ['User', 'PortfolioAllocation', 'PortfolioSummary', 'AlertPreference', 'Alert', 'AIUsageRecord']
