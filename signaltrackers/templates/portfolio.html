@@ -902,7 +902,9 @@ async function refreshPortfolioSummary() {
 
         const data = await response.json();
 
-        if (data.error) {
+        if (response.status === 429) {
+            contentDiv.innerHTML = `<p class="text-warning"><i class="bi bi-exclamation-triangle"></i> ${data.message || 'Rate limit reached. Please try again later.'}</p>`;
+        } else if (data.error) {
             contentDiv.innerHTML = `<p class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.error}</p>`;
         } else {
             // Reload the summary to get proper formatting
