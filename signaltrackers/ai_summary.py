@@ -163,6 +163,8 @@ def call_ai_with_tools(client, system_prompt, user_prompt, max_tokens=600, log_p
 
 def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix):
     """OpenAI-specific implementation of AI call with tools."""
+    from services.usage_metering import extract_usage_openai, accumulate_usage
+
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
@@ -186,6 +188,7 @@ def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_
     # economic data, Fed policy, sector developments, geopolitical events)
     max_iterations = 6
     iteration = 0
+    total_usage = {}
 
     while iteration < max_iterations:
         iteration += 1
@@ -203,6 +206,7 @@ def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_
             api_params["tool_choice"] = tool_choice
 
         response = client.chat.completions.create(**api_params)
+        total_usage = accumulate_usage(total_usage, extract_usage_openai(response))
         response_message = response.choices[0].message
 
         print(f"{log_prefix} Response finish_reason: {response.choices[0].finish_reason}")
@@ -245,13 +249,17 @@ def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_
             return {
                 'success': False,
                 'content': None,
-                'error': 'API returned empty response'
+                'error': 'API returned empty response',
+                'usage': total_usage,
+                'model': OPENAI_MODEL,
             }
 
         return {
             'success': True,
             'content': content.strip(),
-            'error': None
+            'error': None,
+            'usage': total_usage,
+            'model': OPENAI_MODEL,
         }
 
     # Exceeded max iterations
@@ -259,12 +267,16 @@ def _call_openai_with_tools(client, system_prompt, user_prompt, max_tokens, log_
     return {
         'success': False,
         'content': None,
-        'error': 'Exceeded maximum tool call iterations'
+        'error': 'Exceeded maximum tool call iterations',
+        'usage': total_usage,
+        'model': OPENAI_MODEL,
     }
 
 
 def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, log_prefix):
     """Anthropic-specific implementation of AI call with tools."""
+    from services.usage_metering import extract_usage_anthropic, accumulate_usage
+
     messages = [
         {"role": "user", "content": user_prompt}
     ]
@@ -299,6 +311,7 @@ def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, l
     # economic data, Fed policy, sector developments, geopolitical events)
     max_iterations = 6
     iteration = 0
+    total_usage = {}
 
     while iteration < max_iterations:
         iteration += 1
@@ -327,6 +340,7 @@ def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, l
             api_params["max_tokens"] = max_tokens
             response = client.messages.create(**api_params)
 
+        total_usage = accumulate_usage(total_usage, extract_usage_anthropic(response))
         print(f"{log_prefix} Response stop_reason: {response.stop_reason}")
 
         # Check for tool use
@@ -384,13 +398,17 @@ def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, l
             return {
                 'success': False,
                 'content': None,
-                'error': 'API returned empty response'
+                'error': 'API returned empty response',
+                'usage': total_usage,
+                'model': ANTHROPIC_MODEL,
             }
 
         return {
             'success': True,
             'content': content.strip(),
-            'error': None
+            'error': None,
+            'usage': total_usage,
+            'model': ANTHROPIC_MODEL,
         }
 
     # Exceeded max iterations
@@ -398,7 +416,9 @@ def _call_anthropic_with_tools(client, system_prompt, user_prompt, max_tokens, l
     return {
         'success': False,
         'content': None,
-        'error': 'Exceeded maximum tool call iterations'
+        'error': 'Exceeded maximum tool call iterations',
+        'usage': total_usage,
+        'model': ANTHROPIC_MODEL,
     }
 
 
@@ -2302,7 +2322,9 @@ Remember: Analyze their allocation against current market conditions, be specifi
             return {
                 'success': False,
                 'summary': None,
-                'error': result['error']
+                'error': result['error'],
+                'usage': result.get('usage', {}),
+                'model': result.get('model'),
             }
 
         summary = result['content']
@@ -2329,7 +2351,9 @@ Remember: Analyze their allocation against current market conditions, be specifi
         return {
             'success': True,
             'summary': summary,
-            'error': None
+            'error': None,
+            'usage': result.get('usage', {}),
+            'model': result.get('model'),
         }
 
     except Exception as e:
