@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-22 (Phase 11 COMPLETE — all 5 features shipped, milestone closed, release created)
+**Last updated:** 2026-03-27 (Feature #378 closed, #379 stories created)
 
 ---
 
