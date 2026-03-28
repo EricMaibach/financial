@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-27 (Feature #379 complete, stories created for #380 and #382)
+**Last updated:** 2026-03-28 (Pipeline progress: #401 ready-for-pr, #402/#403/#404 ready-for-implementation)
 
 ---
 
