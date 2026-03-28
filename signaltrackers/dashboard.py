@@ -3371,6 +3371,10 @@ def api_chatbot():
         if web_search_available:
             tools.append({"type": "function", "function": SEARCH_FUNCTION_DEFINITION})
 
+    # Usage metering: accumulate tokens across agentic loop iterations
+    from services.usage_metering import extract_usage, accumulate_usage, record_usage
+    total_usage = {}
+
     try:
         if provider == 'anthropic':
             # Use structured system prompt with cache_control for prompt caching (US-325.7)
@@ -3413,6 +3417,8 @@ def api_chatbot():
                 print(f"[CHATBOT-ANTHROPIC] stop_reason: {response.stop_reason}, "
                       f"input_tokens: {usage.input_tokens}, "
                       f"cache_creation: {cache_creation}, cache_read: {cache_read}")
+
+                total_usage = accumulate_usage(total_usage, extract_usage(response, 'anthropic'))
 
                 tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
                 text_blocks = [block for block in response.content if block.type == "text"]
@@ -3459,6 +3465,7 @@ def api_chatbot():
                     tools=tools,
                     tool_choice="auto"
                 )
+                total_usage = accumulate_usage(total_usage, extract_usage(response, 'openai'))
                 response_message = response.choices[0].message
 
                 print(f"[CHATBOT-OPENAI] finish_reason: {response.choices[0].finish_reason}")
@@ -3488,6 +3495,21 @@ def api_chatbot():
             ai_response = "I apologize, but I wasn't able to generate a response. Please try again."
 
         ai_response = _filter_reasoning_artifacts(ai_response)
+
+        # Record usage metering for authenticated users (US-12.2.2)
+        try:
+            if current_user.is_authenticated:
+                # Detect sentence drill-in vs regular chatbot
+                is_drill_in = bool(context.get('briefing_text'))
+                interaction_type = 'sentence_drill_in' if is_drill_in else 'chatbot'
+                record_usage(
+                    user_id=current_user.id,
+                    interaction_type=interaction_type,
+                    model_name=model,
+                    **total_usage,
+                )
+        except Exception:
+            app.logger.exception('Chatbot metering error (non-fatal)')
 
         return jsonify({
             'response': ai_response,
@@ -3838,6 +3860,20 @@ def api_chatbot_section_opening():
                 max_tokens=512
             )
             ai_response = response.choices[0].message.content
+
+        # Record usage metering for authenticated users (US-12.2.2)
+        try:
+            if current_user.is_authenticated:
+                from services.usage_metering import extract_usage, record_usage
+                usage_data = extract_usage(response, provider)
+                record_usage(
+                    user_id=current_user.id,
+                    interaction_type='section_ai',
+                    model_name=model,
+                    **usage_data,
+                )
+        except Exception:
+            app.logger.exception('Section opening metering error (non-fatal)')
 
         return jsonify({
             'response': ai_response,
@@ -4273,6 +4309,21 @@ def api_generate_portfolio_summary():
             market_summary,
             user_id=current_user.id
         )
+
+        # Record usage metering (US-12.2.2) — always authenticated via @login_required
+        try:
+            usage_data = result.get('usage', {})
+            model_used = result.get('model')
+            if model_used:
+                from services.usage_metering import record_usage
+                record_usage(
+                    user_id=current_user.id,
+                    interaction_type='portfolio_analysis',
+                    model_name=model_used,
+                    **usage_data,
+                )
+        except Exception:
+            app.logger.exception('Portfolio summary metering error (non-fatal)')
 
         if result['success']:
             return jsonify({
