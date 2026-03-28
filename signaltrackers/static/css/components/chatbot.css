@@ -254,7 +254,7 @@
 
 .chatbot-message--rate-limit {
     background-color: #FEF3C7; /* warning-100 */
-    color: #92400E; /* warning-800 */
+    color: var(--warning-700, #A16207); /* design system warning text */
 }
 
 .chatbot-signup-cta {
