@@ -44,6 +44,10 @@ class Config:
     # Global daily anonymous AI cap (total across all sessions, resets midnight UTC)
     ANON_GLOBAL_DAILY_LIMIT = int(os.environ.get('ANON_GLOBAL_DAILY_LIMIT', 100))
 
+    # Registered user daily AI limits (per user, resets midnight UTC)
+    REGISTERED_DAILY_LIMIT_CHATBOT = int(os.environ.get('REGISTERED_DAILY_LIMIT_CHATBOT', 25))
+    REGISTERED_DAILY_LIMIT_ANALYSIS = int(os.environ.get('REGISTERED_DAILY_LIMIT_ANALYSIS', 5))
+
     # Optional services
     FRED_API_KEY = os.environ.get('FRED_API_KEY')
     TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
