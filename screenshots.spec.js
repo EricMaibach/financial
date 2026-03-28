@@ -11,7 +11,8 @@ const pages = [
   '/equities',
   '/rates',
   '/portfolio',
-  '/explorer'
+  '/explorer',
+  '/register'
 ];
 
 test.describe('Screenshot Generation', () => {
