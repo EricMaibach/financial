@@ -4289,49 +4289,70 @@ def api_portfolio_summary():
 
 @app.route('/api/portfolio/summary/generate', methods=['POST'])
 @csrf.exempt
-@login_required
+@anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_portfolio_summary():
-    """Manually trigger portfolio AI summary generation for current user."""
+    """Trigger portfolio AI summary generation.
+
+    Authenticated users get analysis of their saved portfolio.
+    Anonymous users get a general portfolio guidance response.
+    """
     from ai_summary import generate_portfolio_summary
 
     try:
-        # Get current user's portfolio data for AI
-        portfolio_data = db_get_portfolio_summary_for_ai(current_user.id)
+        is_authenticated = current_user.is_authenticated
+        user_id = current_user.id if is_authenticated else None
 
-        if 'error' in portfolio_data:
-            return jsonify({
-                'status': 'error',
-                'error': portfolio_data['error']
-            }), 500
+        if is_authenticated:
+            # Get current user's portfolio data for AI
+            portfolio_data = db_get_portfolio_summary_for_ai(user_id)
 
-        if not portfolio_data.get('holdings'):
+            if 'error' in portfolio_data:
+                return jsonify({
+                    'status': 'error',
+                    'error': portfolio_data['error']
+                }), 500
+
+            if not portfolio_data.get('holdings'):
+                return jsonify({
+                    'status': 'error',
+                    'error': 'No holdings in portfolio. Add some allocations first.'
+                }), 400
+        else:
+            # Anonymous user — no portfolio data available
             return jsonify({
-                'status': 'error',
-                'error': 'No holdings in portfolio. Add some allocations first.'
-            }), 400
+                'status': 'success',
+                'summary': (
+                    'Portfolio AI analysis requires a saved portfolio. '
+                    'Create a free account to add your holdings and get '
+                    'personalized AI analysis of how your portfolio aligns '
+                    'with current market conditions.'
+                ),
+                'anonymous': True
+            })
 
         # Generate market summary for context
         market_summary = generate_portfolio_market_context()
 
-        # Generate AI summary using system API key and save to user's account
+        # Generate AI summary using system API key
         result = generate_portfolio_summary(
             portfolio_data,
             market_summary,
-            user_id=current_user.id
+            user_id=user_id
         )
 
-        # Record usage metering (US-12.2.2) — always authenticated via @login_required
+        # Record usage metering for authenticated users (US-12.2.2)
         try:
-            usage_data = result.get('usage', {})
-            model_used = result.get('model')
-            if model_used:
-                from services.usage_metering import record_usage
-                record_usage(
-                    user_id=current_user.id,
-                    interaction_type='portfolio_analysis',
-                    model_name=model_used,
-                    **usage_data,
-                )
+            if is_authenticated:
+                usage_data = result.get('usage', {})
+                model_used = result.get('model')
+                if model_used:
+                    from services.usage_metering import record_usage
+                    record_usage(
+                        user_id=user_id,
+                        interaction_type='portfolio_analysis',
+                        model_name=model_used,
+                        **usage_data,
+                    )
         except Exception:
             app.logger.exception('Portfolio summary metering error (non-fatal)')
 
