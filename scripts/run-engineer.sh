@@ -27,10 +27,6 @@ engineer_has_work() {
   return 1
 }
 
-echo ""
-echo "=== Engineer Agent: waiting 5 minutes before first run ==="
-sleep 300
-
 while true; do
   echo ""
   echo "=== Engineer Agent: $(date) ==="
