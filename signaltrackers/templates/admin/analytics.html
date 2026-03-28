@@ -2,9 +2,250 @@
 
 {% block title %}Admin Analytics - SignalTrackers{% endblock %}
 
+{% block extra_css %}
+<style>
+    .analytics-card {
+        background: var(--bs-dark, #212529);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .analytics-card h5 {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .analytics-card .metric {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .analytics-card .metric-sub {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.5);
+    }
+    .cap-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.1);
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    .cap-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
+    .table-analytics {
+        --bs-table-bg: transparent;
+        --bs-table-color: rgba(255,255,255,0.85);
+        --bs-table-border-color: rgba(255,255,255,0.08);
+        font-size: 0.875rem;
+    }
+    .table-analytics th {
+        color: rgba(255,255,255,0.5);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: rgba(255,255,255,0.4);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2><i class="bi bi-bar-chart-line"></i> Admin Analytics</h2>
-    <p class="text-muted">Usage analytics dashboard — data views coming in US-12.6.2.</p>
+<div class="container mt-4 mb-5">
+    <h2 class="mb-1"><i class="bi bi-bar-chart-line"></i> Admin Analytics</h2>
+    <p class="text-muted mb-4">AI usage patterns, costs, and rate limit status</p>
+
+    {# ── Summary Cards ── #}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-6">
+            <div class="analytics-card">
+                <h5>Calls Today</h5>
+                <div class="metric">{{ today.total_calls }}</div>
+                <div class="metric-sub">registered users</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="analytics-card">
+                <h5>Tokens Today</h5>
+                <div class="metric">{{ "{:,}".format(today.input_tokens + today.output_tokens) }}</div>
+                <div class="metric-sub">{{ "{:,}".format(today.input_tokens) }} in / {{ "{:,}".format(today.output_tokens) }} out</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="analytics-card">
+                <h5>Est. Cost Today</h5>
+                <div class="metric">${{ "%.2f"|format(today.estimated_cost) }}</div>
+                <div class="metric-sub">all models combined</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="analytics-card">
+                <h5>Anon Cap Today</h5>
+                <div class="metric">{{ anon_cap.used }} / {{ anon_cap.limit }}</div>
+                {% set pct = (anon_cap.used / anon_cap.limit * 100) if anon_cap.limit > 0 else 0 %}
+                <div class="cap-bar">
+                    <div class="cap-bar-fill" style="width:{{ pct|round(1) }}%; background:{{ '#dc3545' if pct >= 90 else '#ffc107' if pct >= 70 else '#198754' }};"></div>
+                </div>
+                <div class="metric-sub">anonymous calls (in-memory counter)</div>
+            </div>
+        </div>
+    </div>
+
+    {# ── 30-Day Trend Chart ── #}
+    <div class="analytics-card mb-4">
+        <h5>30-Day Trend</h5>
+        {% if trend %}
+        <canvas id="trendChart" height="100"></canvas>
+        {% else %}
+        <div class="empty-state">No usage data yet.</div>
+        {% endif %}
+    </div>
+
+    {# ── Cost Trend Chart ── #}
+    <div class="analytics-card mb-4">
+        <h5>30-Day Cost</h5>
+        {% if trend %}
+        <canvas id="costChart" height="80"></canvas>
+        {% else %}
+        <div class="empty-state">No usage data yet.</div>
+        {% endif %}
+    </div>
+
+    {# ── Top Users Table ── #}
+    <div class="analytics-card">
+        <h5>Top Users (Past 30 Days)</h5>
+        {% if top_users %}
+        <div class="table-responsive">
+            <table class="table table-analytics mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th class="text-end">Calls</th>
+                        <th class="text-end">Input Tokens</th>
+                        <th class="text-end">Output Tokens</th>
+                        <th class="text-end">Total Tokens</th>
+                        <th class="text-end">Est. Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in top_users %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ u.username }}</td>
+                        <td class="text-end">{{ "{:,}".format(u.call_count) }}</td>
+                        <td class="text-end">{{ "{:,}".format(u.input_tokens) }}</td>
+                        <td class="text-end">{{ "{:,}".format(u.output_tokens) }}</td>
+                        <td class="text-end">{{ "{:,}".format(u.total_tokens) }}</td>
+                        <td class="text-end">${{ "%.2f"|format(u.cost) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">No registered user activity in the past 30 days.</div>
+        {% endif %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if trend %}
+<script>
+(function() {
+    const trend = {{ trend|tojson }};
+    const labels = trend.map(d => d.date);
+    const calls  = trend.map(d => d.calls);
+    const costs  = trend.map(d => d.cost);
+    const inTok  = trend.map(d => d.input_tokens);
+    const outTok = trend.map(d => d.output_tokens);
+
+    const gridColor = 'rgba(255,255,255,0.06)';
+    const tickColor = 'rgba(255,255,255,0.4)';
+
+    // Calls + token trend
+    new Chart(document.getElementById('trendChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Calls',
+                    data: calls,
+                    backgroundColor: 'rgba(13,110,253,0.7)',
+                    yAxisID: 'y',
+                    order: 2,
+                },
+                {
+                    label: 'Input Tokens',
+                    data: inTok,
+                    type: 'line',
+                    borderColor: 'rgba(25,135,84,0.8)',
+                    backgroundColor: 'rgba(25,135,84,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    yAxisID: 'y1',
+                    order: 1,
+                },
+                {
+                    label: 'Output Tokens',
+                    data: outTok,
+                    type: 'line',
+                    borderColor: 'rgba(255,193,7,0.8)',
+                    backgroundColor: 'rgba(255,193,7,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0,
+                    yAxisID: 'y1',
+                    order: 0,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                x: { ticks: { color: tickColor, maxRotation: 45 }, grid: { display: false } },
+                y:  { position: 'left',  title: { display: true, text: 'Calls', color: tickColor }, ticks: { color: tickColor }, grid: { color: gridColor } },
+                y1: { position: 'right', title: { display: true, text: 'Tokens', color: tickColor }, ticks: { color: tickColor }, grid: { drawOnChartArea: false } },
+            },
+            plugins: { legend: { labels: { color: tickColor } } },
+        },
+    });
+
+    // Cost trend
+    new Chart(document.getElementById('costChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Est. Cost ($)',
+                data: costs,
+                backgroundColor: 'rgba(220,53,69,0.6)',
+            }],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { ticks: { color: tickColor, maxRotation: 45 }, grid: { display: false } },
+                y: { ticks: { color: tickColor, callback: v => '$' + v.toFixed(2) }, grid: { color: gridColor } },
+            },
+            plugins: { legend: { labels: { color: tickColor } } },
+        },
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}
