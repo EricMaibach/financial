@@ -37,6 +37,10 @@ class Config:
     RATELIMIT_STORAGE_URI = 'memory://'
     RATELIMIT_DEFAULT = '100 per minute'
 
+    # Anonymous session AI limits (lifetime per session)
+    ANON_SESSION_LIMIT_CHATBOT = int(os.environ.get('ANON_SESSION_LIMIT_CHATBOT', 5))
+    ANON_SESSION_LIMIT_ANALYSIS = int(os.environ.get('ANON_SESSION_LIMIT_ANALYSIS', 2))
+
     # Optional services
     FRED_API_KEY = os.environ.get('FRED_API_KEY')
     TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
