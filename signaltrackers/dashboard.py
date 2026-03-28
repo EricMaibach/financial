@@ -6024,14 +6024,21 @@ def _filter_reasoning_artifacts(message):
     return result
 
 
-# Admin endpoints for testing scheduled jobs
+# Admin endpoints
+from decorators import admin_required
+
+
+@app.route('/admin/analytics')
+@admin_required
+def admin_analytics():
+    """Admin usage analytics dashboard."""
+    return render_template('admin/analytics.html')
+
+
 @app.route('/admin/trigger-alert-check')
-@login_required
+@admin_required
 def trigger_alert_check():
     """Manually trigger alert check (admin only)"""
-    if not current_user.is_admin:
-        return jsonify({'error': 'Unauthorized - admin access required'}), 403
-
     from jobs.alert_jobs import check_alert_thresholds
     check_alert_thresholds()
 
@@ -6039,12 +6046,9 @@ def trigger_alert_check():
 
 
 @app.route('/admin/trigger-daily-briefing')
-@login_required
+@admin_required
 def trigger_daily_briefing():
     """Manually trigger daily briefing (admin only)"""
-    if not current_user.is_admin:
-        return jsonify({'error': 'Unauthorized - admin access required'}), 403
-
     from jobs.email_jobs import send_daily_briefings
     send_daily_briefings()
 
