@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-28 (Features #380, #382 closed; #381 stories created; #410 needs-test-plan)
+**Last updated:** 2026-03-28 (Phase 12 complete — all 6 features closed, milestone closed, release v0.12.0 created)
 
 ---
 
@@ -24,10 +24,10 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 12 — AI Foundation & Metering
-**State:** BUILDING
+**Phase:** Phase 13 — TBD (Council will define scope during IDEATING)
+**State:** IDEATING
 
-**Reference doc:** [PHASE-12-AI-FOUNDATION-AND-METERING.md](PHASE-12-AI-FOUNDATION-AND-METERING.md)
+**Previous phase:** Phase 12 — AI Foundation & Metering ✅ COMPLETE (see below)
 
 ---
 
