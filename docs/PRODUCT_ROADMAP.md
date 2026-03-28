@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-27 (Feature #378 closed, #379 stories created)
+**Last updated:** 2026-03-27 (Feature #379 complete, stories created for #380 and #382)
 
 ---
 
