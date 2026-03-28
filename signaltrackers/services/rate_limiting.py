@@ -1,12 +1,13 @@
 """
-Anonymous Rate Limiting Service
+AI Rate Limiting Service
 
-Two layers of anonymous AI rate limiting:
+Three layers of rate limiting:
 1. Global daily cap — total anonymous AI calls across all sessions per day (US-12.3.2)
 2. Per-session limits — per-session caps by endpoint category (US-12.3.1)
+3. Registered daily limits — per-user daily caps by category (US-12.3.3)
 
-Registered users bypass all anonymous limits.
-Designed to be extended by US-12.3.3 (per-user registered limits).
+Anonymous users: layers 1 + 2.
+Registered users: layer 3 only (bypass anonymous limits).
 """
 
 import logging
@@ -25,7 +26,7 @@ CATEGORY_ANALYSIS = 'analysis'
 # Session keys for tracking usage counts
 _SESSION_KEY_PREFIX = 'rate_limit_'
 
-# Default limits (overridable via app config)
+# Default anonymous session limits (overridable via app config)
 DEFAULT_LIMITS = {
     CATEGORY_CHATBOT: 5,
     CATEGORY_ANALYSIS: 2,
@@ -33,6 +34,18 @@ DEFAULT_LIMITS = {
 
 # Default global daily anonymous cap
 DEFAULT_GLOBAL_DAILY_LIMIT = 100
+
+# Default registered user daily limits (overridable via app config)
+DEFAULT_REGISTERED_DAILY_LIMITS = {
+    CATEGORY_CHATBOT: 25,
+    CATEGORY_ANALYSIS: 5,
+}
+
+# Maps rate limit categories to ai_usage_records interaction_types
+_CATEGORY_INTERACTION_TYPES = {
+    CATEGORY_CHATBOT: ['chatbot', 'section_ai', 'sentence_drill_in'],
+    CATEGORY_ANALYSIS: ['portfolio_analysis'],
+}
 
 # ---------------------------------------------------------------------------
 # Global daily anonymous counter (in-memory, resets at midnight UTC)
@@ -166,14 +179,82 @@ def check_anonymous_rate_limit(category):
         return None
 
 
-def anonymous_rate_limit(category):
-    """Decorator that enforces anonymous rate limits on an endpoint.
+def _get_registered_daily_limit(category):
+    """Get the configured registered user daily limit for a category.
 
-    Check order (fail fast):
+    Checks app config first (set from env vars), falls back to defaults.
+    """
+    config_key = f'REGISTERED_DAILY_LIMIT_{category.upper()}'
+    return current_app.config.get(
+        config_key, DEFAULT_REGISTERED_DAILY_LIMITS.get(category, 0)
+    )
+
+
+def check_registered_daily_limit(category):
+    """Check if the current registered user has exceeded their daily limit.
+
+    Queries ai_usage_records for today's usage count by interaction type.
+
+    Args:
+        category: The endpoint category (CATEGORY_CHATBOT or CATEGORY_ANALYSIS).
+
+    Returns:
+        None if the request is allowed.
+        A dict with rate limit response data if the daily limit is hit.
+    """
+    try:
+        if not current_user.is_authenticated:
+            return None
+
+        from extensions import db
+        from models.ai_usage import AIUsageRecord
+
+        limit = _get_registered_daily_limit(category)
+        interaction_types = _CATEGORY_INTERACTION_TYPES.get(category, [])
+
+        if not interaction_types or limit <= 0:
+            return None
+
+        # Count today's usage (UTC) across all interaction types for this category
+        today_start = datetime.now(timezone.utc).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        count = db.session.query(db.func.count(AIUsageRecord.id)).filter(
+            AIUsageRecord.user_id == current_user.id,
+            AIUsageRecord.interaction_type.in_(interaction_types),
+            AIUsageRecord.timestamp >= today_start,
+        ).scalar() or 0
+
+        if count >= limit:
+            return {
+                'limited': True,
+                'message': (
+                    "You've reached your daily limit for this feature. "
+                    "Your limit resets tomorrow at midnight UTC."
+                ),
+                'limit_type': 'registered_daily',
+                'category': category,
+            }
+
+        return None
+
+    except Exception:
+        logger.exception('Registered daily rate limit check error (non-fatal)')
+        return None
+
+
+def anonymous_rate_limit(category):
+    """Decorator that enforces rate limits on an endpoint.
+
+    For anonymous users (check order, fail fast):
     1. Global daily anonymous cap (US-12.3.2)
     2. Per-session limit (US-12.3.1)
 
-    Records usage on both counters after a successful response (2xx status).
+    For registered users:
+    3. Per-user daily limit (US-12.3.3)
+
+    Records usage on anonymous counters after a successful response (2xx status).
+    Registered user usage is recorded by the metering system (usage_metering.py).
 
     Args:
         category: The endpoint category (CATEGORY_CHATBOT or CATEGORY_ANALYSIS).
@@ -181,19 +262,24 @@ def anonymous_rate_limit(category):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            # Global cap check first (fail fast)
+            # Registered users: check daily limit
+            registered_limit = check_registered_daily_limit(category)
+            if registered_limit:
+                return jsonify(registered_limit), 429
+
+            # Anonymous users: global cap check first (fail fast)
             global_limit = check_global_anonymous_limit()
             if global_limit:
                 return jsonify(global_limit), 429
 
-            # Per-session check
+            # Anonymous users: per-session check
             limit_response = check_anonymous_rate_limit(category)
             if limit_response:
                 return jsonify(limit_response), 429
 
             result = f(*args, **kwargs)
 
-            # Record usage on successful responses
+            # Record anonymous usage on successful responses
             # Flask views can return (response, status) tuples or Response objects
             status = 200
             if isinstance(result, tuple):
