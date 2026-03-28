@@ -6032,7 +6032,17 @@ from decorators import admin_required
 @admin_required
 def admin_analytics():
     """Admin usage analytics dashboard."""
-    return render_template('admin/analytics.html')
+    from services.admin_analytics import (
+        get_today_summary, get_daily_trend, get_top_users, get_anon_cap_status,
+    )
+
+    return render_template(
+        'admin/analytics.html',
+        today=get_today_summary(),
+        trend=get_daily_trend(30),
+        top_users=get_top_users(10),
+        anon_cap=get_anon_cap_status(),
+    )
 
 
 @app.route('/admin/trigger-alert-check')
