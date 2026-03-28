@@ -842,6 +842,13 @@ async function confirmDelete() {
     }
 }
 
+// Escape HTML to prevent XSS in rate limit messages
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Load portfolio AI summary
 async function loadPortfolioSummary() {
     try {
@@ -851,6 +858,15 @@ async function loadPortfolioSummary() {
         const contentDiv = document.getElementById('portfolio-summary-content');
         const errorDiv = document.getElementById('portfolio-summary-error');
         const timestampSpan = document.getElementById('portfolio-summary-timestamp');
+
+        if (response.status === 429) {
+            const msg = escapeHtml(data.message || 'Rate limit reached. Please try again later.');
+            const cta = data.signup_url ? ` <a href="${escapeHtml(data.signup_url)}" class="btn btn-sm btn-primary ms-2">Sign up free</a>` : '';
+            contentDiv.innerHTML = `<p class="text-warning mb-0"><i class="bi bi-exclamation-triangle"></i> ${msg}${cta}</p>`;
+            contentDiv.classList.remove('d-none');
+            errorDiv.classList.add('d-none');
+            return;
+        }
 
         if (data.error) {
             contentDiv.classList.add('d-none');
@@ -903,7 +919,9 @@ async function refreshPortfolioSummary() {
         const data = await response.json();
 
         if (response.status === 429) {
-            contentDiv.innerHTML = `<p class="text-warning"><i class="bi bi-exclamation-triangle"></i> ${data.message || 'Rate limit reached. Please try again later.'}</p>`;
+            const msg = escapeHtml(data.message || 'Rate limit reached. Please try again later.');
+            const cta = data.signup_url ? ` <a href="${escapeHtml(data.signup_url)}" class="btn btn-sm btn-primary ms-2">Sign up free</a>` : '';
+            contentDiv.innerHTML = `<p class="text-warning"><i class="bi bi-exclamation-triangle"></i> ${msg}${cta}</p>`;
         } else if (data.error) {
             contentDiv.innerHTML = `<p class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.error}</p>`;
         } else {

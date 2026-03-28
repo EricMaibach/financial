@@ -113,6 +113,7 @@ def check_global_anonymous_limit():
                         'higher limits.'
                     ),
                     'limit_type': 'anonymous_global_daily',
+                    'signup_url': '/register',
                 }
 
         return None
@@ -169,6 +170,7 @@ def check_anonymous_rate_limit(category):
                 ),
                 'limit_type': 'anonymous_session',
                 'category': category,
+                'signup_url': '/register',
             }
 
         return None
