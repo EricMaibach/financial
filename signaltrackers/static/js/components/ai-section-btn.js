@@ -128,9 +128,9 @@ async function openChatbotWithSection(sectionId) {
         widget.hideTypingIndicator();
 
         if (resp.status === 429) {
-            // Rate limited — show the rate limit message
+            // Rate limited — show inline message with signup CTA
             const errData = await resp.json();
-            widget.showError(errData.message || 'Rate limit reached. Please try again later.', false, '⚡');
+            widget.showRateLimitError(errData.message, errData.signup_url || null);
         } else if (!resp.ok) {
             // API error — fall back to static opening
             widget.addSectionOpeningMessage(ctx.opening);

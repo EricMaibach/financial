@@ -232,7 +232,7 @@ class ChatbotWidget {
             if (error.message === 'AI_UNAVAILABLE') {
                 this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
             } else if (error.message === 'RATE_LIMITED') {
-                this.showError(error.userMessage || 'Rate limit reached. Please try again later.', false, '⚡');
+                this.showRateLimitError(error.userMessage, error.signupUrl);
             } else {
                 // Network errors (fetch threw) or other server errors — show retry option
                 this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
@@ -267,6 +267,8 @@ class ChatbotWidget {
             const data = await response.json();
             const err = new Error('RATE_LIMITED');
             err.userMessage = data.message;
+            err.signupUrl = data.signup_url || null;
+            err.limitType = data.limit_type || null;
             throw err;
         }
         if (!response.ok) throw new Error('AI_REQUEST_FAILED');
@@ -418,6 +420,46 @@ class ChatbotWidget {
         this.messages.appendChild(errorEl);
         this.scrollToBottom();
         this.announce(`Error: ${errorMessage}`, 'assertive');
+    }
+
+    showRateLimitError(message, signupUrl) {
+        const fallback = 'Rate limit reached. Please try again later.';
+        const errorEl = document.createElement('div');
+        errorEl.className = 'chatbot-message chatbot-message--error chatbot-message--rate-limit';
+
+        const msgText = this.escapeHTML(message || fallback);
+        let ctaHtml = '';
+        if (signupUrl) {
+            ctaHtml = `<a href="${this.escapeHTML(signupUrl)}" class="chatbot-signup-cta">Sign up free</a>`;
+        }
+
+        errorEl.innerHTML = `
+            <span aria-hidden="true">⚡</span>
+            <div>
+                <p style="margin:0">${msgText}</p>
+                ${ctaHtml}
+            </div>
+        `;
+
+        this.messages.appendChild(errorEl);
+        this.scrollToBottom();
+        this.announce(`Rate limit: ${message || fallback}`, 'assertive');
+
+        // Disable input to indicate no more messages allowed
+        if (signupUrl) {
+            this.disableInput('Session limit reached');
+        }
+    }
+
+    disableInput(placeholder) {
+        if (this.input) {
+            this.input.disabled = true;
+            this.input.placeholder = placeholder || 'Rate limit reached';
+        }
+        const submitBtn = this.form?.querySelector('.chatbot-submit');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
     }
 
     async retryLastMessage() {
@@ -616,6 +658,8 @@ class ChatbotWidget {
                 const errData = await response.json();
                 const err = new Error('RATE_LIMITED');
                 err.userMessage = errData.message;
+                err.signupUrl = errData.signup_url || null;
+                err.limitType = errData.limit_type || null;
                 throw err;
             }
             if (!response.ok) {
@@ -634,7 +678,7 @@ class ChatbotWidget {
             if (error.message === 'AI_UNAVAILABLE') {
                 this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
             } else if (error.message === 'RATE_LIMITED') {
-                this.showError(error.userMessage || 'Rate limit reached. Please try again later.', false, '⚡');
+                this.showRateLimitError(error.userMessage, error.signupUrl);
             } else {
                 this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
             }
