@@ -127,7 +127,11 @@ async function openChatbotWithSection(sectionId) {
 
         widget.hideTypingIndicator();
 
-        if (!resp.ok) {
+        if (resp.status === 429) {
+            // Rate limited — show the rate limit message
+            const errData = await resp.json();
+            widget.showError(errData.message || 'Rate limit reached. Please try again later.', false, '⚡');
+        } else if (!resp.ok) {
             // API error — fall back to static opening
             widget.addSectionOpeningMessage(ctx.opening);
         } else {

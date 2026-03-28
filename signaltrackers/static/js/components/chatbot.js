@@ -231,6 +231,8 @@ class ChatbotWidget {
             this.hideTypingIndicator();
             if (error.message === 'AI_UNAVAILABLE') {
                 this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
+            } else if (error.message === 'RATE_LIMITED') {
+                this.showError(error.userMessage || 'Rate limit reached. Please try again later.', false, '⚡');
             } else {
                 // Network errors (fetch threw) or other server errors — show retry option
                 this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
@@ -261,6 +263,12 @@ class ChatbotWidget {
         });
 
         if (response.status === 503) throw new Error('AI_UNAVAILABLE');
+        if (response.status === 429) {
+            const data = await response.json();
+            const err = new Error('RATE_LIMITED');
+            err.userMessage = data.message;
+            throw err;
+        }
         if (!response.ok) throw new Error('AI_REQUEST_FAILED');
 
         const data = await response.json();
@@ -604,6 +612,12 @@ class ChatbotWidget {
 
             this.hideTypingIndicator();
 
+            if (response.status === 429) {
+                const errData = await response.json();
+                const err = new Error('RATE_LIMITED');
+                err.userMessage = errData.message;
+                throw err;
+            }
             if (!response.ok) {
                 throw new Error(response.status === 503 ? 'AI_UNAVAILABLE' : 'AI_REQUEST_FAILED');
             }
@@ -619,6 +633,8 @@ class ChatbotWidget {
             // Fallback: show selected text quoted as a user message so session is not broken
             if (error.message === 'AI_UNAVAILABLE') {
                 this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
+            } else if (error.message === 'RATE_LIMITED') {
+                this.showError(error.userMessage || 'Rate limit reached. Please try again later.', false, '⚡');
             } else {
                 this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
             }
