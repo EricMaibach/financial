@@ -1,14 +1,17 @@
 """
-Anonymous Session Rate Limiting Service
+Anonymous Rate Limiting Service
 
-Tracks per-session AI usage for anonymous users via Flask session.
-Registered users bypass anonymous session limits.
+Two layers of anonymous AI rate limiting:
+1. Global daily cap — total anonymous AI calls across all sessions per day (US-12.3.2)
+2. Per-session limits — per-session caps by endpoint category (US-12.3.1)
 
-Designed to be extended by US-12.3.2 (global daily cap) and
-US-12.3.3 (per-user registered limits).
+Registered users bypass all anonymous limits.
+Designed to be extended by US-12.3.3 (per-user registered limits).
 """
 
 import logging
+import threading
+from datetime import datetime, timezone
 from functools import wraps
 from flask import jsonify, session, current_app
 from flask_login import current_user
@@ -28,6 +31,16 @@ DEFAULT_LIMITS = {
     CATEGORY_ANALYSIS: 2,
 }
 
+# Default global daily anonymous cap
+DEFAULT_GLOBAL_DAILY_LIMIT = 100
+
+# ---------------------------------------------------------------------------
+# Global daily anonymous counter (in-memory, resets at midnight UTC)
+# ---------------------------------------------------------------------------
+_global_lock = threading.Lock()
+_global_count = 0
+_global_date = None  # UTC date of the current counter window
+
 
 def _get_limit(category):
     """Get the configured limit for a category.
@@ -41,6 +54,77 @@ def _get_limit(category):
 def _session_key(category):
     """Get the session storage key for a category counter."""
     return f'{_SESSION_KEY_PREFIX}{category}'
+
+
+def _get_global_daily_limit():
+    """Get the configured global daily anonymous cap.
+
+    Checks app config first (ANON_GLOBAL_DAILY_LIMIT env var), falls back to default.
+    """
+    return current_app.config.get('ANON_GLOBAL_DAILY_LIMIT', DEFAULT_GLOBAL_DAILY_LIMIT)
+
+
+def _reset_if_new_day():
+    """Reset the global counter if the UTC date has changed.
+
+    Must be called while holding _global_lock.
+    """
+    global _global_count, _global_date
+    today = datetime.now(timezone.utc).date()
+    if _global_date != today:
+        _global_count = 0
+        _global_date = today
+
+
+def check_global_anonymous_limit():
+    """Check if the global daily anonymous cap has been reached.
+
+    Returns:
+        None if the request is allowed.
+        A dict with rate limit response data if the global cap is hit.
+    """
+    try:
+        if current_user.is_authenticated:
+            return None
+
+        limit = _get_global_daily_limit()
+
+        with _global_lock:
+            _reset_if_new_day()
+            if _global_count >= limit:
+                return {
+                    'limited': True,
+                    'message': (
+                        'Our free AI features have reached their daily limit. '
+                        'Create a free account to get guaranteed access and '
+                        'higher limits.'
+                    ),
+                    'limit_type': 'anonymous_global_daily',
+                }
+
+        return None
+
+    except Exception:
+        logger.exception('Global anonymous rate limit check error (non-fatal)')
+        return None
+
+
+def record_global_anonymous_usage():
+    """Increment the global daily anonymous counter.
+
+    Call this AFTER a successful AI response is generated.
+    """
+    try:
+        if current_user.is_authenticated:
+            return
+
+        with _global_lock:
+            _reset_if_new_day()
+            global _global_count
+            _global_count += 1
+
+    except Exception:
+        logger.exception('Global anonymous rate limit record error (non-fatal)')
 
 
 def check_anonymous_rate_limit(category):
@@ -83,10 +167,13 @@ def check_anonymous_rate_limit(category):
 
 
 def anonymous_rate_limit(category):
-    """Decorator that enforces anonymous session rate limits on an endpoint.
+    """Decorator that enforces anonymous rate limits on an endpoint.
 
-    Checks the limit before the request and records usage after a successful
-    response (2xx status).
+    Check order (fail fast):
+    1. Global daily anonymous cap (US-12.3.2)
+    2. Per-session limit (US-12.3.1)
+
+    Records usage on both counters after a successful response (2xx status).
 
     Args:
         category: The endpoint category (CATEGORY_CHATBOT or CATEGORY_ANALYSIS).
@@ -94,6 +181,12 @@ def anonymous_rate_limit(category):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
+            # Global cap check first (fail fast)
+            global_limit = check_global_anonymous_limit()
+            if global_limit:
+                return jsonify(global_limit), 429
+
+            # Per-session check
             limit_response = check_anonymous_rate_limit(category)
             if limit_response:
                 return jsonify(limit_response), 429
@@ -106,6 +199,7 @@ def anonymous_rate_limit(category):
             if isinstance(result, tuple):
                 status = result[1] if len(result) > 1 else 200
             if 200 <= status < 300:
+                record_global_anonymous_usage()
                 record_anonymous_usage(category)
 
             return result
