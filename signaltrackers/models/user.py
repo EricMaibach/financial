@@ -1,16 +1,26 @@
 """
 User Model
 
-Database model for user accounts with secure password hashing.
+Database model for user accounts with secure password hashing
+and Stripe subscription tracking.
 """
 
+import enum
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from extensions import db
+
+
+class SubscriptionStatus(enum.Enum):
+    """Well-defined subscription states for paid subscribers."""
+    ACTIVE = 'active'
+    PAST_DUE = 'past_due'
+    CANCELED = 'canceled'
+    NONE = 'none'
 
 
 class User(UserMixin, db.Model):
@@ -27,6 +37,15 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
 
+    # Stripe subscription fields
+    stripe_customer_id = db.Column(
+        db.String(255), unique=True, nullable=True, index=True
+    )
+    subscription_status = db.Column(
+        db.String(20), nullable=False, default=SubscriptionStatus.NONE.value
+    )
+    subscription_end_date = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     portfolio_allocations = db.relationship(
         'PortfolioAllocation',
@@ -34,6 +53,29 @@ class User(UserMixin, db.Model):
         lazy='dynamic',
         cascade='all, delete-orphan'
     )
+
+    @property
+    def has_paid_access(self):
+        """Determine if user has paid subscriber access.
+
+        Business rules:
+        - active: full paid access
+        - past_due: retain access (Stripe is retrying payment)
+        - canceled: retain access until subscription_end_date passes
+        - none: no paid access
+        """
+        status = self.subscription_status
+        if status in (SubscriptionStatus.ACTIVE.value, SubscriptionStatus.PAST_DUE.value):
+            return True
+        if status == SubscriptionStatus.CANCELED.value:
+            if self.subscription_end_date is None:
+                return False
+            now = datetime.now(timezone.utc)
+            end = self.subscription_end_date
+            if end.tzinfo is None:
+                end = end.replace(tzinfo=timezone.utc)
+            return now < end
+        return False
 
     def set_password(self, password):
         """Hash and set password."""

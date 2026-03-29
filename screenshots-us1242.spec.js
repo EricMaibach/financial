@@ -26,7 +26,7 @@ test.describe('US-12.4.2: Rate limit redirect screenshots', () => {
         || window.__chatbotInstance;
       if (widget && widget.showRateLimitError) {
         widget.showRateLimitError(
-          "You've reached the free message limit for this session. Sign up for a free account to continue using AI features.",
+          "You've reached the free session limit for this feature. Subscribe to get higher limits and a personalized experience.",
           '/register'
         );
       } else {
@@ -38,8 +38,8 @@ test.describe('US-12.4.2: Rate limit redirect screenshots', () => {
           el.innerHTML = `
             <span aria-hidden="true">⚡</span>
             <div>
-              <p style="margin:0">You've reached the free message limit for this session. Sign up for a free account to continue using AI features.</p>
-              <a href="/register" class="chatbot-signup-cta">Sign up free</a>
+              <p style="margin:0">You've reached the free session limit for this feature. Subscribe to get higher limits and a personalized experience.</p>
+              <a href="/register" class="chatbot-signup-cta">Subscribe</a>
             </div>
           `;
           messages.appendChild(el);
@@ -70,8 +70,8 @@ test.describe('US-12.4.2: Rate limit redirect screenshots', () => {
         el.innerHTML = `
           <span aria-hidden="true">⚡</span>
           <div>
-            <p style="margin:0">AI features are temporarily unavailable due to high demand. Sign up for a free account to get higher limits.</p>
-            <a href="/register" class="chatbot-signup-cta">Sign up free</a>
+            <p style="margin:0">AI features are temporarily unavailable due to high demand. Subscribe to get guaranteed access and higher limits.</p>
+            <a href="/register" class="chatbot-signup-cta">Subscribe</a>
           </div>
         `;
         messages.appendChild(el);
@@ -103,8 +103,8 @@ test.describe('US-12.4.2: Rate limit redirect screenshots', () => {
         el.innerHTML = `
           <span aria-hidden="true">⚡</span>
           <div>
-            <p style="margin:0">You've reached the free message limit for this session. Sign up for a free account to continue using AI features.</p>
-            <a href="/register" class="chatbot-signup-cta">Sign up free</a>
+            <p style="margin:0">You've reached the free session limit for this feature. Subscribe to get higher limits and a personalized experience.</p>
+            <a href="/register" class="chatbot-signup-cta">Subscribe</a>
           </div>
         `;
         messages.appendChild(el);
@@ -172,8 +172,8 @@ test.describe('US-12.4.2: Rate limit redirect screenshots', () => {
         el.innerHTML = `
           <span aria-hidden="true">⚡</span>
           <div>
-            <p style="margin:0">You've reached the free message limit for this session. Sign up for a free account to continue using AI features.</p>
-            <a href="/register" class="chatbot-signup-cta">Sign up free</a>
+            <p style="margin:0">You've reached the free session limit for this feature. Subscribe to get higher limits and a personalized experience.</p>
+            <a href="/register" class="chatbot-signup-cta">Subscribe</a>
           </div>
         `;
         messages.appendChild(el);
@@ -211,8 +211,8 @@ test.describe('US-12.4.2: Rate limit redirect screenshots', () => {
         el.innerHTML = `
           <span aria-hidden="true">⚡</span>
           <div>
-            <p style="margin:0">You've reached the free message limit for this session. Sign up for a free account to continue using AI features.</p>
-            <a href="/register" class="chatbot-signup-cta">Sign up free</a>
+            <p style="margin:0">You've reached the free session limit for this feature. Subscribe to get higher limits and a personalized experience.</p>
+            <a href="/register" class="chatbot-signup-cta">Subscribe</a>
           </div>
         `;
         messages.appendChild(el);

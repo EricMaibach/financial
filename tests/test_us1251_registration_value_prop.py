@@ -51,7 +51,7 @@ class TestValueProposition:
     """Brief value proposition paragraph explains what registered users get."""
 
     def test_value_prop_paragraph_present(self, register_html):
-        assert "free account" in register_html.lower()
+        assert "subscribe" in register_html.lower()
 
     def test_value_prop_mentions_market_intelligence(self, register_html):
         assert "market intelligence" in register_html.lower()
@@ -60,7 +60,7 @@ class TestValueProposition:
         assert "investment decisions" in register_html.lower()
 
     def test_value_prop_appears_before_form(self, register_html):
-        prop_pos = register_html.index("free account")
+        prop_pos = register_html.lower().index("subscribe")
         form_pos = register_html.index('<form method="POST"')
         assert prop_pos < form_pos
 

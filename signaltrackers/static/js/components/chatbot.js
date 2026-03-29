@@ -430,7 +430,7 @@ class ChatbotWidget {
         const msgText = this.escapeHTML(message || fallback);
         let ctaHtml = '';
         if (signupUrl) {
-            ctaHtml = `<a href="${this.escapeHTML(signupUrl)}" class="chatbot-signup-cta">Sign up free</a>`;
+            ctaHtml = `<a href="${this.escapeHTML(signupUrl)}" class="chatbot-signup-cta">Subscribe</a>`;
         }
 
         errorEl.innerHTML = `
