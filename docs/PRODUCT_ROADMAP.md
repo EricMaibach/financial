@@ -24,8 +24,8 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 13 — TBD (Council will define scope during IDEATING)
-**State:** IDEATING
+**Phase:** Phase 13 — Stripe & Subscriptions
+**State:** BUILDING
 
 **Previous phase:** Phase 12 — AI Foundation & Metering ✅ COMPLETE (see below)
 
