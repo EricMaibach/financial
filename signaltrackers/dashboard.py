@@ -61,6 +61,7 @@ from conditions_config import (
 from property_interpretation_config import get_property_interpretation
 from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history, build_implications_matrix
 from services.rate_limiting import anonymous_rate_limit, CATEGORY_CHATBOT, CATEGORY_ANALYSIS
+from billing import init_stripe
 
 
 app = Flask(__name__)
@@ -70,6 +71,9 @@ app.config.from_object(get_config())
 
 # Initialize extensions (database, login manager, CSRF, rate limiting)
 init_extensions(app)
+
+# Initialize Stripe billing (gracefully skipped when env vars are absent)
+init_stripe(app)
 
 # Initialize OpenAI client (only if API key is available)
 openai_api_key = os.environ.get('OPENAI_API_KEY')

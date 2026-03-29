@@ -52,6 +52,12 @@ class Config:
     FRED_API_KEY = os.environ.get('FRED_API_KEY')
     TAVILY_API_KEY = os.environ.get('TAVILY_API_KEY')
 
+    # Stripe billing
+    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+    STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+    STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+    STRIPE_PRICE_ID = os.environ.get('STRIPE_PRICE_ID', '')
+
     # Email configuration (Flask-Mail)
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp-relay.brevo.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
