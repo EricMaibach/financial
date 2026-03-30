@@ -61,7 +61,7 @@ from conditions_config import (
 from property_interpretation_config import get_property_interpretation
 from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history, build_implications_matrix
 from services.rate_limiting import anonymous_rate_limit, CATEGORY_CHATBOT, CATEGORY_ANALYSIS
-from billing import init_stripe
+from billing import init_stripe, is_stripe_configured, get_webhook_secret
 
 
 app = Flask(__name__)
@@ -6067,6 +6067,57 @@ def trigger_daily_briefing():
     send_daily_briefings()
 
     return jsonify({'status': 'Daily briefing triggered successfully'})
+
+
+# ---------------------------------------------------------------------------
+# Stripe Webhook Endpoint
+# ---------------------------------------------------------------------------
+
+@csrf.exempt
+@app.route('/webhook/stripe', methods=['POST'])
+def stripe_webhook():
+    """Receive and process Stripe webhook events.
+
+    Verifies the event signature before dispatching to handlers.
+    Returns 200 for all valid requests (even unrecognised event types)
+    so Stripe does not retry.
+    """
+    import stripe as _stripe
+    from billing.webhooks import handle_webhook_event
+
+    if not is_stripe_configured():
+        return jsonify({'error': 'Billing not configured'}), 503
+
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+    webhook_secret = get_webhook_secret()
+
+    if not sig_header:
+        app.logger.warning("Stripe webhook: missing Stripe-Signature header")
+        return jsonify({'error': 'Missing signature'}), 400
+
+    if not webhook_secret:
+        app.logger.error("Stripe webhook: STRIPE_WEBHOOK_SECRET not configured")
+        return jsonify({'error': 'Webhook not configured'}), 503
+
+    try:
+        event = _stripe.Webhook.construct_event(
+            payload, sig_header, webhook_secret
+        )
+    except ValueError:
+        app.logger.warning("Stripe webhook: invalid payload")
+        return jsonify({'error': 'Invalid payload'}), 400
+    except _stripe.error.SignatureVerificationError:
+        app.logger.warning("Stripe webhook: signature verification failed")
+        return jsonify({'error': 'Invalid signature'}), 400
+
+    try:
+        result = handle_webhook_event(event)
+        return jsonify(result), 200
+    except Exception:
+        app.logger.exception("Stripe webhook handler error for event %s",
+                             event.get('id'))
+        return jsonify({'error': 'Internal error'}), 500
 
 
 # Initialize scheduler at module load time (works with both direct run and gunicorn --preload)
