@@ -55,17 +55,17 @@ class TestBackendResponseFormat:
         count = RATE_LIMITING_SOURCE.count("'signup_url'")
         assert count >= 2, f"Expected signup_url in at least 2 responses, found {count}"
 
-    def test_registered_user_response_no_signup_url(self):
-        """Registered user daily limit response does NOT include signup_url."""
-        # Find the registered user response block and verify no signup_url
-        # The registered response says "resets tomorrow" — not "create an account"
-        reg_block_start = RATE_LIMITING_SOURCE.find("'limit_type': 'registered_daily'")
-        assert reg_block_start != -1, "registered_daily limit_type not found"
+    def test_subscriber_response_no_signup_url(self):
+        """Subscriber daily limit response does NOT include signup_url."""
+        # Find the subscriber response block and verify no signup_url
+        # The subscriber response says "resets tomorrow" — not "create an account"
+        sub_block_start = RATE_LIMITING_SOURCE.find("'limit_type': 'subscriber_daily'")
+        assert sub_block_start != -1, "subscriber_daily limit_type not found"
         # Get the surrounding dict (look backwards for '{' and forwards for '}')
-        block_start = RATE_LIMITING_SOURCE.rfind('{', 0, reg_block_start)
-        block_end = RATE_LIMITING_SOURCE.find('}', reg_block_start)
-        reg_block = RATE_LIMITING_SOURCE[block_start:block_end + 1]
-        assert 'signup_url' not in reg_block, "Registered user response should not include signup_url"
+        block_start = RATE_LIMITING_SOURCE.rfind('{', 0, sub_block_start)
+        block_end = RATE_LIMITING_SOURCE.find('}', sub_block_start)
+        sub_block = RATE_LIMITING_SOURCE[block_start:block_end + 1]
+        assert 'signup_url' not in sub_block, "Subscriber response should not include signup_url"
 
     def test_anonymous_session_limit_type(self):
         """Session limit response uses limit_type 'anonymous_session'."""
@@ -75,9 +75,9 @@ class TestBackendResponseFormat:
         """Global daily cap response uses limit_type 'anonymous_global_daily'."""
         assert "'limit_type': 'anonymous_global_daily'" in RATE_LIMITING_SOURCE
 
-    def test_registered_limit_type(self):
-        """Registered daily limit response uses limit_type 'registered_daily'."""
-        assert "'limit_type': 'registered_daily'" in RATE_LIMITING_SOURCE
+    def test_subscriber_limit_type(self):
+        """Subscriber daily limit response uses limit_type 'subscriber_daily'."""
+        assert "'limit_type': 'subscriber_daily'" in RATE_LIMITING_SOURCE
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +168,7 @@ class TestPortfolioRateLimitUX:
     def test_portfolio_renders_signup_cta(self):
         """Portfolio rate limit messages include signup CTA link."""
         assert 'signup_url' in PORTFOLIO_SOURCE
-        assert 'Sign up free' in PORTFOLIO_SOURCE
+        assert 'Subscribe' in PORTFOLIO_SOURCE
 
     def test_portfolio_escapes_html(self):
         """Portfolio sanitizes rate limit messages to prevent XSS."""
@@ -179,18 +179,18 @@ class TestPortfolioRateLimitUX:
 # AC5: Registered users see different message (no signup CTA)
 # ---------------------------------------------------------------------------
 
-class TestRegisteredUserMessages:
-    """Verify registered users get appropriate messages without signup CTA."""
+class TestSubscriberUserMessages:
+    """Verify subscribers get appropriate messages without signup CTA."""
 
-    def test_registered_message_no_signup_prompt(self):
-        """Registered user limit message says 'resets tomorrow', not 'sign up'."""
-        reg_block_start = RATE_LIMITING_SOURCE.find("'limit_type': 'registered_daily'")
-        block_start = RATE_LIMITING_SOURCE.rfind('{', 0, reg_block_start)
-        block_end = RATE_LIMITING_SOURCE.find('}', reg_block_start)
-        reg_block = RATE_LIMITING_SOURCE[block_start:block_end + 1]
-        assert 'resets tomorrow' in reg_block.lower() or 'daily limit' in reg_block.lower()
-        assert 'sign up' not in reg_block.lower()
-        assert 'create' not in reg_block.lower()
+    def test_subscriber_message_no_signup_prompt(self):
+        """Subscriber limit message says 'resets tomorrow', not 'sign up'."""
+        sub_block_start = RATE_LIMITING_SOURCE.find("'limit_type': 'subscriber_daily'")
+        block_start = RATE_LIMITING_SOURCE.rfind('{', 0, sub_block_start)
+        block_end = RATE_LIMITING_SOURCE.find('}', sub_block_start)
+        sub_block = RATE_LIMITING_SOURCE[block_start:block_end + 1]
+        assert 'resets tomorrow' in sub_block.lower() or 'daily limit' in sub_block.lower()
+        assert 'sign up' not in sub_block.lower()
+        assert 'create' not in sub_block.lower()
 
     def test_frontend_conditionally_shows_signup(self):
         """Frontend only shows signup CTA when signup_url is present."""

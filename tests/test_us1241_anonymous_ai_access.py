@@ -156,8 +156,8 @@ class TestAnonymousContextHandling:
                 func_source = ast.get_source_segment(DASHBOARD_SOURCE, node)
                 assert 'anonymous' in func_source.lower(), \
                     'Portfolio generate must handle anonymous case'
-                assert 'account' in func_source.lower() or 'sign' in func_source.lower(), \
-                    'Anonymous response should mention creating an account'
+                assert 'subscribe' in func_source.lower() or 'account' in func_source.lower() or 'sign' in func_source.lower(), \
+                    'Anonymous response should mention subscribing or creating an account'
                 return
         pytest.fail('api_generate_portfolio_summary not found')
 

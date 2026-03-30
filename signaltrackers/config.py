@@ -44,9 +44,16 @@ class Config:
     # Global daily anonymous AI cap (total across all sessions, resets midnight UTC)
     ANON_GLOBAL_DAILY_LIMIT = int(os.environ.get('ANON_GLOBAL_DAILY_LIMIT', 100))
 
-    # Registered user daily AI limits (per user, resets midnight UTC)
-    REGISTERED_DAILY_LIMIT_CHATBOT = int(os.environ.get('REGISTERED_DAILY_LIMIT_CHATBOT', 25))
-    REGISTERED_DAILY_LIMIT_ANALYSIS = int(os.environ.get('REGISTERED_DAILY_LIMIT_ANALYSIS', 5))
+    # Subscriber daily AI limits (per paid user, resets midnight UTC)
+    # Supports both SUBSCRIBER_DAILY_LIMIT_* and legacy REGISTERED_DAILY_LIMIT_* env vars
+    SUBSCRIBER_DAILY_LIMIT_CHATBOT = int(
+        os.environ.get('SUBSCRIBER_DAILY_LIMIT_CHATBOT',
+                       os.environ.get('REGISTERED_DAILY_LIMIT_CHATBOT', 25))
+    )
+    SUBSCRIBER_DAILY_LIMIT_ANALYSIS = int(
+        os.environ.get('SUBSCRIBER_DAILY_LIMIT_ANALYSIS',
+                       os.environ.get('REGISTERED_DAILY_LIMIT_ANALYSIS', 5))
+    )
 
     # Optional services
     FRED_API_KEY = os.environ.get('FRED_API_KEY')

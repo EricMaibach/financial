@@ -4,10 +4,11 @@ AI Rate Limiting Service
 Three layers of rate limiting:
 1. Global daily cap — total anonymous AI calls across all sessions per day (US-12.3.2)
 2. Per-session limits — per-session caps by endpoint category (US-12.3.1)
-3. Registered daily limits — per-user daily caps by category (US-12.3.3)
+3. Subscriber daily limits — per-user daily caps by category (US-12.3.3, updated US-13.1.2)
 
 Anonymous users: layers 1 + 2.
-Registered users: layer 3 only (bypass anonymous limits).
+Paid subscribers: layer 3 only (bypass anonymous limits).
+Registered users without active subscription: treated as anonymous.
 """
 
 import logging
@@ -35,8 +36,8 @@ DEFAULT_LIMITS = {
 # Default global daily anonymous cap
 DEFAULT_GLOBAL_DAILY_LIMIT = 100
 
-# Default registered user daily limits (overridable via app config)
-DEFAULT_REGISTERED_DAILY_LIMITS = {
+# Default subscriber daily limits (overridable via app config)
+DEFAULT_SUBSCRIBER_DAILY_LIMITS = {
     CATEGORY_CHATBOT: 25,
     CATEGORY_ANALYSIS: 5,
 }
@@ -108,8 +109,8 @@ def check_global_anonymous_limit():
                 return {
                     'limited': True,
                     'message': (
-                        'Our free AI features have reached their daily limit. '
-                        'Create a free account to get guaranteed access and '
+                        'Our AI features have reached their daily limit. '
+                        'Subscribe to get guaranteed access and '
                         'higher limits.'
                     ),
                     'limit_type': 'anonymous_global_daily',
@@ -152,7 +153,7 @@ def check_anonymous_rate_limit(category):
         A dict with rate limit response data if the request should be blocked.
     """
     try:
-        # Registered users bypass anonymous session limits
+        # Paid subscribers bypass anonymous session limits
         if current_user.is_authenticated:
             return None
 
@@ -164,8 +165,8 @@ def check_anonymous_rate_limit(category):
             return {
                 'limited': True,
                 'message': (
-                    'You\'ve reached your free session limit for this feature. '
-                    'Create a free account to get higher limits and a '
+                    'You\'ve reached the free session limit for this feature. '
+                    'Subscribe to get higher limits and a '
                     'personalized experience.'
                 ),
                 'limit_type': 'anonymous_session',
@@ -181,19 +182,28 @@ def check_anonymous_rate_limit(category):
         return None
 
 
-def _get_registered_daily_limit(category):
-    """Get the configured registered user daily limit for a category.
+def _get_subscriber_daily_limit(category):
+    """Get the configured subscriber daily limit for a category.
 
     Checks app config first (set from env vars), falls back to defaults.
+    Supports both SUBSCRIBER_DAILY_LIMIT_* and legacy REGISTERED_DAILY_LIMIT_* env vars.
     """
-    config_key = f'REGISTERED_DAILY_LIMIT_{category.upper()}'
-    return current_app.config.get(
-        config_key, DEFAULT_REGISTERED_DAILY_LIMITS.get(category, 0)
-    )
+    config_key = f'SUBSCRIBER_DAILY_LIMIT_{category.upper()}'
+    legacy_key = f'REGISTERED_DAILY_LIMIT_{category.upper()}'
+    # Prefer new key, fall back to legacy key, then default
+    limit = current_app.config.get(config_key)
+    if limit is None:
+        limit = current_app.config.get(
+            legacy_key, DEFAULT_SUBSCRIBER_DAILY_LIMITS.get(category, 0)
+        )
+    return limit
 
 
-def check_registered_daily_limit(category):
-    """Check if the current registered user has exceeded their daily limit.
+def check_subscriber_daily_limit(category):
+    """Check if the current subscriber has exceeded their daily limit.
+
+    Only applies to authenticated users with active paid access.
+    Registered users without paid access are treated as anonymous.
 
     Queries ai_usage_records for today's usage count by interaction type.
 
@@ -201,17 +211,21 @@ def check_registered_daily_limit(category):
         category: The endpoint category (CATEGORY_CHATBOT or CATEGORY_ANALYSIS).
 
     Returns:
-        None if the request is allowed.
+        None if the request is allowed (or user is not a paid subscriber).
         A dict with rate limit response data if the daily limit is hit.
     """
     try:
         if not current_user.is_authenticated:
             return None
 
+        # Only paid subscribers get subscriber-tier limits
+        if hasattr(current_user, 'has_paid_access') and not current_user.has_paid_access:
+            return None
+
         from extensions import db
         from models.ai_usage import AIUsageRecord
 
-        limit = _get_registered_daily_limit(category)
+        limit = _get_subscriber_daily_limit(category)
         interaction_types = _CATEGORY_INTERACTION_TYPES.get(category, [])
 
         if not interaction_types or limit <= 0:
@@ -234,14 +248,14 @@ def check_registered_daily_limit(category):
                     "You've reached your daily limit for this feature. "
                     "Your limit resets tomorrow at midnight UTC."
                 ),
-                'limit_type': 'registered_daily',
+                'limit_type': 'subscriber_daily',
                 'category': category,
             }
 
         return None
 
     except Exception:
-        logger.exception('Registered daily rate limit check error (non-fatal)')
+        logger.exception('Subscriber daily rate limit check error (non-fatal)')
         return None
 
 
@@ -252,11 +266,13 @@ def anonymous_rate_limit(category):
     1. Global daily anonymous cap (US-12.3.2)
     2. Per-session limit (US-12.3.1)
 
-    For registered users:
+    For paid subscribers:
     3. Per-user daily limit (US-12.3.3)
 
+    Registered users without active subscription are treated as anonymous.
+
     Records usage on anonymous counters after a successful response (2xx status).
-    Registered user usage is recorded by the metering system (usage_metering.py).
+    Subscriber usage is recorded by the metering system (usage_metering.py).
 
     Args:
         category: The endpoint category (CATEGORY_CHATBOT or CATEGORY_ANALYSIS).
@@ -264,10 +280,10 @@ def anonymous_rate_limit(category):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            # Registered users: check daily limit
-            registered_limit = check_registered_daily_limit(category)
-            if registered_limit:
-                return jsonify(registered_limit), 429
+            # Paid subscribers: check daily limit
+            subscriber_limit = check_subscriber_daily_limit(category)
+            if subscriber_limit:
+                return jsonify(subscriber_limit), 429
 
             # Anonymous users: global cap check first (fail fast)
             global_limit = check_global_anonymous_limit()
