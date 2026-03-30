@@ -56,6 +56,20 @@ _global_count = 0
 _global_date = None  # UTC date of the current counter window
 
 
+def user_has_paid_access():
+    """Check if the current user is authenticated with an active paid subscription.
+
+    Centralizes the paid-access check so that registered users without
+    an active subscription are correctly treated as anonymous.
+
+    Use this instead of ``current_user.is_authenticated`` when gating
+    paid features (AI endpoints, usage metering, etc.).
+    """
+    return (current_user.is_authenticated
+            and hasattr(current_user, 'has_paid_access')
+            and current_user.has_paid_access)
+
+
 def _get_limit(category):
     """Get the configured limit for a category.
 
@@ -98,7 +112,7 @@ def check_global_anonymous_limit():
         A dict with rate limit response data if the global cap is hit.
     """
     try:
-        if current_user.is_authenticated:
+        if user_has_paid_access():
             return None
 
         limit = _get_global_daily_limit()
@@ -130,7 +144,7 @@ def record_global_anonymous_usage():
     Call this AFTER a successful AI response is generated.
     """
     try:
-        if current_user.is_authenticated:
+        if user_has_paid_access():
             return
 
         with _global_lock:
@@ -154,7 +168,7 @@ def check_anonymous_rate_limit(category):
     """
     try:
         # Paid subscribers bypass anonymous session limits
-        if current_user.is_authenticated:
+        if user_has_paid_access():
             return None
 
         limit = _get_limit(category)
@@ -215,11 +229,7 @@ def check_subscriber_daily_limit(category):
         A dict with rate limit response data if the daily limit is hit.
     """
     try:
-        if not current_user.is_authenticated:
-            return None
-
-        # Only paid subscribers get subscriber-tier limits
-        if hasattr(current_user, 'has_paid_access') and not current_user.has_paid_access:
+        if not user_has_paid_access():
             return None
 
         from extensions import db
@@ -320,7 +330,7 @@ def record_anonymous_usage(category):
         category: The endpoint category (CATEGORY_CHATBOT or CATEGORY_ANALYSIS).
     """
     try:
-        if current_user.is_authenticated:
+        if user_has_paid_access():
             return
 
         key = _session_key(category)

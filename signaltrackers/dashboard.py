@@ -60,7 +60,7 @@ from conditions_config import (
 )
 from property_interpretation_config import get_property_interpretation
 from market_conditions import update_market_conditions_cache, get_market_conditions, get_conditions_history, build_implications_matrix
-from services.rate_limiting import anonymous_rate_limit, CATEGORY_CHATBOT, CATEGORY_ANALYSIS
+from services.rate_limiting import anonymous_rate_limit, CATEGORY_CHATBOT, CATEGORY_ANALYSIS, user_has_paid_access
 from billing import init_stripe, is_stripe_configured, get_webhook_secret
 
 

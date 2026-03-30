@@ -173,15 +173,15 @@ class TestResponseFormat:
 class TestRegisteredUsersBypass:
     """Verify registered users bypass global cap."""
 
-    def test_check_global_bypasses_authenticated(self):
-        """check_global_anonymous_limit checks is_authenticated."""
+    def test_check_global_bypasses_paid_subscribers(self):
+        """check_global_anonymous_limit bypasses paid subscribers via user_has_paid_access."""
         func_src = _get_function_source_from_file(RATE_LIMITING_SOURCE, 'check_global_anonymous_limit')
-        assert 'is_authenticated' in func_src
+        assert 'user_has_paid_access()' in func_src
 
-    def test_record_global_bypasses_authenticated(self):
-        """record_global_anonymous_usage checks is_authenticated."""
+    def test_record_global_bypasses_paid_subscribers(self):
+        """record_global_anonymous_usage bypasses paid subscribers via user_has_paid_access."""
         func_src = _get_function_source_from_file(RATE_LIMITING_SOURCE, 'record_global_anonymous_usage')
-        assert 'is_authenticated' in func_src
+        assert 'user_has_paid_access()' in func_src
 
 
 # ---------------------------------------------------------------------------

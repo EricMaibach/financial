@@ -270,11 +270,11 @@ class TestAnonymousUnaffected:
     """Verify anonymous users bypass subscriber daily limits."""
 
     def test_check_returns_none_for_anonymous(self):
-        """check_subscriber_daily_limit returns None for unauthenticated users."""
+        """check_subscriber_daily_limit returns None for non-paid users."""
         func_src = _get_function_source_from_file(
             RATE_LIMITING_SOURCE, 'check_subscriber_daily_limit'
         )
-        assert 'is_authenticated' in func_src
+        assert 'user_has_paid_access()' in func_src
 
 
 # ---------------------------------------------------------------------------
