@@ -4327,7 +4327,7 @@ def api_generate_portfolio_summary():
                 'status': 'success',
                 'summary': (
                     'Portfolio AI analysis requires a saved portfolio. '
-                    'Create a free account to add your holdings and get '
+                    'Subscribe to add your holdings and get '
                     'personalized AI analysis of how your portfolio aligns '
                     'with current market conditions.'
                 ),
