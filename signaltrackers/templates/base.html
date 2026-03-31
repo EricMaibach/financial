@@ -182,6 +182,7 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if current_user.is_authenticated %}
     <!-- AI Briefing Confirm Pill: Mobile sentence tap flow (US-258.4) -->
     <div id="ai-briefing-confirm-pill" class="ai-briefing-confirm-pill" role="dialog" aria-label="Ask AI about this sentence">
         <button class="ai-briefing-confirm-pill__btn" type="button" aria-label="Ask AI about this sentence">
@@ -300,6 +301,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Refresh Progress Toast -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3">
@@ -327,10 +329,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% if current_user.is_authenticated %}
     <script src="{{ url_for('static', filename='js/components/chatbot.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-section-btn.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-briefing-toolbar.js') }}"></script>
     <script src="{{ url_for('static', filename='js/components/ai-briefing-mobile.js') }}"></script>
+    {% endif %}
 
     <!-- Refresh Data Handler -->
     <script>
