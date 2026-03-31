@@ -28,6 +28,9 @@ class Config:
     SYSTEM_ANTHROPIC_KEY = os.environ.get('ANTHROPIC_API_KEY')
     ANTHROPIC_EFFORT = os.environ.get('ANTHROPIC_EFFORT', 'medium').lower()
 
+    # Invite-only registration (empty string disables the gate)
+    INVITE_CODE = os.environ.get('INVITE_CODE', '')
+
     # Session
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
     SESSION_COOKIE_HTTPONLY = True
