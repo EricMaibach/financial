@@ -49,6 +49,9 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
       - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER:-}
       - BASE_URL=${BASE_URL:-http://localhost:5000}
+
+      # Invite code for registration
+      - INVITE_CODE=${INVITE_CODE:-}
     volumes:
       # Persist market data between container restarts
       - ./signaltrackers/data:/app/data

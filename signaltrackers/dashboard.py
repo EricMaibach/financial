@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from datetime import datetime, timedelta, date as _date
+import hmac
 import json
 import subprocess
 import threading
@@ -1691,8 +1692,14 @@ def register():
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
+        invite_code = request.form.get('invite_code', '').strip()
 
         errors = []
+
+        # Invite code validation (when configured)
+        expected_code = app.config.get('INVITE_CODE', '')
+        if expected_code and not hmac.compare_digest(invite_code, expected_code):
+            errors.append('Registration is currently invite-only. Contact us for access.')
 
         # Validation
         if not username:
