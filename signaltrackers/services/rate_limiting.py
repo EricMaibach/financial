@@ -218,9 +218,12 @@ def check_subscriber_daily_limit(category):
         if not current_user.is_authenticated:
             return None
 
-        # Only paid subscribers get subscriber-tier limits
-        if hasattr(current_user, 'has_paid_access') and not current_user.has_paid_access:
-            return None
+        # In invite-only mode, all authenticated users get subscriber-tier limits.
+        # In paid mode, only users with active paid access get these limits.
+        site_mode = current_app.config.get('SITE_MODE', 'invite_only')
+        if site_mode != 'invite_only':
+            if hasattr(current_user, 'has_paid_access') and not current_user.has_paid_access:
+                return None
 
         from extensions import db
         from models.ai_usage import AIUsageRecord

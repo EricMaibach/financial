@@ -239,7 +239,7 @@
         <p class="asset-page-header__description">Tracking the US Dollar Index, major currency pairs, and global FX dynamics</p>
         <p class="asset-page-header__updated">Last Updated: <span id="last-updated-time">Loading...</span></p>
         <div class="asset-page-header__actions">
-            <button class="btn ai-section-btn" data-section-id="asset-dollar" aria-label="Ask AI about US Dollar"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>
+            {% if current_user.is_authenticated %}<button class="btn ai-section-btn" data-section-id="asset-dollar" aria-label="Ask AI about US Dollar"><svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2" y="14" width="4" height="8" rx="1" fill="#A5B4FC"/><rect x="8" y="10" width="4" height="12" rx="1" fill="#818CF8"/><rect x="14" y="6" width="4" height="16" rx="1" fill="#6366F1"/><path d="M21,2 L22,4.5 L24.5,5.5 L22,6.5 L21,9 L20,6.5 L17.5,5.5 L20,4.5 Z" fill="#F59E0B"/></svg><span aria-hidden="true">AI</span></button>{% endif %}
         </div>
     </header>
 

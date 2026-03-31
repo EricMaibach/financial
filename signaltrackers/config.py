@@ -31,6 +31,10 @@ class Config:
     # Invite-only registration (empty string disables the gate)
     INVITE_CODE = os.environ.get('INVITE_CODE', '')
 
+    # Site mode: 'invite_only', 'paid', or 'open'
+    # Controls access model and user-facing rate limit messaging
+    SITE_MODE = os.environ.get('SITE_MODE', 'invite_only')
+
     # Session
     SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
     SESSION_COOKIE_HTTPONLY = True

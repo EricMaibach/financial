@@ -51,6 +51,9 @@ services:
 
       # Invite code for registration
       - INVITE_CODE=${INVITE_CODE:-}
+
+      # Site mode: invite_only, paid, or open
+      - SITE_MODE=${SITE_MODE:-invite_only}
     volumes:
       # Named volumes — isolated from production data
       - signaltrackers-preview-data:/app/data

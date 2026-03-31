@@ -53,3 +53,11 @@ def init_extensions(app):
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(user_id)
+
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        """Return JSON 401 for API routes, redirect for pages."""
+        from flask import request, jsonify, redirect, url_for
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Authentication required'}), 401
+        return redirect(url_for('login'))

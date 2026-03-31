@@ -2941,6 +2941,7 @@ def api_ai_summary():
 
 
 @app.route('/api/ai-summary/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_summary():
     """Manually trigger AI summary generation."""
@@ -2980,6 +2981,7 @@ def api_crypto_summary():
 
 
 @app.route('/api/crypto-summary/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_crypto_summary():
     """Manually trigger crypto AI summary generation."""
@@ -3017,6 +3019,7 @@ def api_equity_summary():
 
 
 @app.route('/api/equity-summary/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_equity_summary():
     """Manually trigger equity AI summary generation."""
@@ -3054,6 +3057,7 @@ def api_rates_summary():
 
 
 @app.route('/api/rates-summary/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_rates_summary():
     """Manually trigger rates AI summary generation."""
@@ -3091,6 +3095,7 @@ def api_dollar_summary():
 
 
 @app.route('/api/dollar-summary/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_dollar_summary():
     """Manually trigger dollar AI summary generation."""
@@ -3128,6 +3133,7 @@ def api_credit_summary():
 
 
 @app.route('/api/credit-summary/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_credit_summary():
     """Manually trigger credit AI summary generation."""
@@ -3236,6 +3242,7 @@ def _build_chatbot_enrichment_context():
 
 @app.route('/api/chatbot', methods=['POST'])
 @csrf.exempt
+@login_required
 @anonymous_rate_limit(CATEGORY_CHATBOT)
 def api_chatbot():
     """Handle AI chatbot conversation requests using the system API key."""
@@ -3793,6 +3800,7 @@ def _get_section_live_data(section_id: str) -> str:
 
 @app.route('/api/chatbot/section-opening', methods=['POST'])
 @csrf.exempt
+@login_required
 @anonymous_rate_limit(CATEGORY_CHATBOT)
 def api_chatbot_section_opening():
     """Generate an AI-powered opening message for a section AI button click.
@@ -4142,6 +4150,7 @@ def api_market_conditions_synthesis():
 
 
 @app.route('/api/market-conditions-synthesis/generate', methods=['POST'])
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_market_synthesis():
     """Manually trigger market conditions synthesis generation."""
@@ -4300,6 +4309,7 @@ def api_portfolio_summary():
 
 @app.route('/api/portfolio/summary/generate', methods=['POST'])
 @csrf.exempt
+@login_required
 @anonymous_rate_limit(CATEGORY_ANALYSIS)
 def api_generate_portfolio_summary():
     """Trigger portfolio AI summary generation.
