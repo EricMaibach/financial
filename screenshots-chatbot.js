@@ -10,22 +10,29 @@ const { chromium } = require('playwright');
     { name: 'desktop', width: 1920, height: 1080 }    // Desktop
   ];
 
-  const pageUrl = 'http://localhost:5000/'; // Homepage
+  const baseUrl = 'http://localhost:5000';
+
+  // Login required — anonymous users cannot see chatbot (US-13.2.2)
+  await page.goto(`${baseUrl}/login`);
+  await page.fill('input[name=username]', 'testuser');
+  await page.fill('input[name=password]', 'testpassword');
+  await page.click('button[type=submit]');
+  await page.waitForURL(`${baseUrl}/`);
 
   for (const viewport of viewports) {
     console.log(`Capturing chatbot on ${viewport.name}...`);
 
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
-    await page.goto(pageUrl);
+    await page.goto(`${baseUrl}/`);
 
     // Wait for page to fully load
     await page.waitForLoadState('networkidle');
 
-    // Click the chatbot button
-    await page.click('#ai-chat-button');
+    // Click the chatbot FAB
+    await page.click('#chatbot-fab');
 
-    // Wait for chatbot container to be visible
-    await page.waitForSelector('#ai-chat-container', { state: 'visible', timeout: 5000 });
+    // Wait for chatbot panel to be visible
+    await page.waitForSelector('#chatbot-panel', { state: 'visible', timeout: 5000 });
 
     // Wait a bit for any animations to complete
     await page.waitForTimeout(500);
