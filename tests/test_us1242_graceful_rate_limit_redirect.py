@@ -98,7 +98,7 @@ class TestChatbotRateLimitUX:
 
     def test_chatbot_calls_rate_limit_error_on_429(self):
         """Chatbot calls showRateLimitError (not generic showError) on RATE_LIMITED."""
-        assert "this.showRateLimitError(error.userMessage, error.signupUrl)" in CHATBOT_JS_SOURCE
+        assert "this.showRateLimitError(error.userMessage, error.signupUrl, error.signupLabel)" in CHATBOT_JS_SOURCE
 
     def test_chatbot_renders_signup_cta_link(self):
         """Rate limit error renders a signup CTA link."""
@@ -168,7 +168,7 @@ class TestPortfolioRateLimitUX:
     def test_portfolio_renders_signup_cta(self):
         """Portfolio rate limit messages include signup CTA link."""
         assert 'signup_url' in PORTFOLIO_SOURCE
-        assert 'Subscribe' in PORTFOLIO_SOURCE
+        assert 'signup_label' in PORTFOLIO_SOURCE
 
     def test_portfolio_escapes_html(self):
         """Portfolio sanitizes rate limit messages to prevent XSS."""

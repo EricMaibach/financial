@@ -20,6 +20,41 @@ from flask_login import current_user
 
 logger = logging.getLogger(__name__)
 
+# SITE_MODE-driven user-facing copy for rate limit and signup messages
+_SITE_MODE_MESSAGES = {
+    'invite_only': {
+        'anonymous_rate_limit': (
+            "You've reached your daily limit. "
+            "Limits reset at midnight UTC."
+        ),
+        'signup_prompt': 'Registration is invite-only. Contact us for access.',
+        'signup_label': 'Request Access',
+    },
+    'paid': {
+        'anonymous_rate_limit': (
+            'Subscribe to get guaranteed access and higher limits.'
+        ),
+        'signup_prompt': 'Sign up for a free trial.',
+        'signup_label': 'Subscribe',
+    },
+    'open': {
+        'anonymous_rate_limit': (
+            "You've reached the free limit for this feature."
+        ),
+        'signup_prompt': 'Create an account for higher limits.',
+        'signup_label': 'Sign Up',
+    },
+}
+
+_DEFAULT_SITE_MODE = 'invite_only'
+
+
+def _get_site_mode_messages():
+    """Get user-facing copy for the current SITE_MODE."""
+    mode = current_app.config.get('SITE_MODE', _DEFAULT_SITE_MODE)
+    return _SITE_MODE_MESSAGES.get(mode, _SITE_MODE_MESSAGES[_DEFAULT_SITE_MODE])
+
+
 # Endpoint category constants
 CATEGORY_CHATBOT = 'chatbot'
 CATEGORY_ANALYSIS = 'analysis'
@@ -106,15 +141,13 @@ def check_global_anonymous_limit():
         with _global_lock:
             _reset_if_new_day()
             if _global_count >= limit:
+                msgs = _get_site_mode_messages()
                 return {
                     'limited': True,
-                    'message': (
-                        'Our AI features have reached their daily limit. '
-                        'Subscribe to get guaranteed access and '
-                        'higher limits.'
-                    ),
+                    'message': msgs['anonymous_rate_limit'],
                     'limit_type': 'anonymous_global_daily',
                     'signup_url': '/register',
+                    'signup_label': msgs['signup_label'],
                 }
 
         return None
@@ -162,16 +195,14 @@ def check_anonymous_rate_limit(category):
         current_count = session.get(key, 0)
 
         if current_count >= limit:
+            msgs = _get_site_mode_messages()
             return {
                 'limited': True,
-                'message': (
-                    'You\'ve reached the free session limit for this feature. '
-                    'Subscribe to get higher limits and a '
-                    'personalized experience.'
-                ),
+                'message': msgs['anonymous_rate_limit'],
                 'limit_type': 'anonymous_session',
                 'category': category,
                 'signup_url': '/register',
+                'signup_label': msgs['signup_label'],
             }
 
         return None
