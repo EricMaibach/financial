@@ -48,6 +48,9 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD:-}
       - MAIL_DEFAULT_SENDER=${MAIL_DEFAULT_SENDER:-}
       - BASE_URL=${BASE_URL:-http://192.168.1.101:5016}
+
+      # Invite code for registration
+      - INVITE_CODE=${INVITE_CODE:-}
     volumes:
       # Named volumes — isolated from production data
       - signaltrackers-preview-data:/app/data
