@@ -861,7 +861,8 @@ async function loadPortfolioSummary() {
 
         if (response.status === 429) {
             const msg = escapeHtml(data.message || 'Rate limit reached. Please try again later.');
-            const cta = data.signup_url ? ` <a href="${escapeHtml(data.signup_url)}" class="btn btn-sm btn-primary ms-2">Subscribe</a>` : '';
+            const ctaLabel = escapeHtml(data.signup_label || 'Sign Up');
+            const cta = data.signup_url ? ` <a href="${escapeHtml(data.signup_url)}" class="btn btn-sm btn-primary ms-2">${ctaLabel}</a>` : '';
             contentDiv.innerHTML = `<p class="text-warning mb-0"><i class="bi bi-exclamation-triangle"></i> ${msg}${cta}</p>`;
             contentDiv.classList.remove('d-none');
             errorDiv.classList.add('d-none');
@@ -920,7 +921,8 @@ async function refreshPortfolioSummary() {
 
         if (response.status === 429) {
             const msg = escapeHtml(data.message || 'Rate limit reached. Please try again later.');
-            const cta = data.signup_url ? ` <a href="${escapeHtml(data.signup_url)}" class="btn btn-sm btn-primary ms-2">Subscribe</a>` : '';
+            const ctaLabel = escapeHtml(data.signup_label || 'Sign Up');
+            const cta = data.signup_url ? ` <a href="${escapeHtml(data.signup_url)}" class="btn btn-sm btn-primary ms-2">${ctaLabel}</a>` : '';
             contentDiv.innerHTML = `<p class="text-warning"><i class="bi bi-exclamation-triangle"></i> ${msg}${cta}</p>`;
         } else if (data.error) {
             contentDiv.innerHTML = `<p class="text-danger"><i class="bi bi-exclamation-circle"></i> ${data.error}</p>`;

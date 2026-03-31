@@ -130,7 +130,7 @@ async function openChatbotWithSection(sectionId) {
         if (resp.status === 429) {
             // Rate limited — show inline message with signup CTA
             const errData = await resp.json();
-            widget.showRateLimitError(errData.message, errData.signup_url || null);
+            widget.showRateLimitError(errData.message, errData.signup_url || null, errData.signup_label || null);
         } else if (!resp.ok) {
             // API error — fall back to static opening
             widget.addSectionOpeningMessage(ctx.opening);

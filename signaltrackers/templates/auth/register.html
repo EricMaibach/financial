@@ -6,21 +6,16 @@
 <div class="row justify-content-center mt-5">
     <div class="col-md-8 col-lg-6">
         <div class="text-center mb-4">
-            <h2 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary"></i> Unlock the Full Power of SignalTrackers</h2>
+            <h2 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-primary"></i> Create Your Account</h2>
+            {% if config.SITE_MODE == 'invite_only' %}
             <p class="text-muted mb-3">
-                Subscribe to get deeper market intelligence and make more informed investment decisions.
+                MacroClarity is currently in private beta. Enter your invite code to create an account.
             </p>
-            <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mb-2">
-                <span class="badge bg-primary bg-opacity-10 text-primary fw-normal px-3 py-2">
-                    <i class="bi bi-chat-dots"></i> More AI-powered analysis
-                </span>
-                <span class="badge bg-primary bg-opacity-10 text-primary fw-normal px-3 py-2">
-                    <i class="bi bi-briefcase"></i> Portfolio tracking
-                </span>
-                <span class="badge bg-primary bg-opacity-10 text-primary fw-normal px-3 py-2">
-                    <i class="bi bi-sliders"></i> Saved preferences
-                </span>
-            </div>
+            {% else %}
+            <p class="text-muted mb-3">
+                Get deeper market intelligence with AI-powered analysis, portfolio tracking, and personalized insights.
+            </p>
+            {% endif %}
         </div>
 
         <div class="card shadow">

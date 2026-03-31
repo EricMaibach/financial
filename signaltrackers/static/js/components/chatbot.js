@@ -232,7 +232,7 @@ class ChatbotWidget {
             if (error.message === 'AI_UNAVAILABLE') {
                 this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
             } else if (error.message === 'RATE_LIMITED') {
-                this.showRateLimitError(error.userMessage, error.signupUrl);
+                this.showRateLimitError(error.userMessage, error.signupUrl, error.signupLabel);
             } else {
                 // Network errors (fetch threw) or other server errors — show retry option
                 this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
@@ -268,6 +268,7 @@ class ChatbotWidget {
             const err = new Error('RATE_LIMITED');
             err.userMessage = data.message;
             err.signupUrl = data.signup_url || null;
+            err.signupLabel = data.signup_label || null;
             err.limitType = data.limit_type || null;
             throw err;
         }
@@ -422,7 +423,7 @@ class ChatbotWidget {
         this.announce(`Error: ${errorMessage}`, 'assertive');
     }
 
-    showRateLimitError(message, signupUrl) {
+    showRateLimitError(message, signupUrl, signupLabel) {
         const fallback = 'Rate limit reached. Please try again later.';
         const errorEl = document.createElement('div');
         errorEl.className = 'chatbot-message chatbot-message--error chatbot-message--rate-limit';
@@ -430,7 +431,8 @@ class ChatbotWidget {
         const msgText = this.escapeHTML(message || fallback);
         let ctaHtml = '';
         if (signupUrl) {
-            ctaHtml = `<a href="${this.escapeHTML(signupUrl)}" class="chatbot-signup-cta">Subscribe</a>`;
+            const label = this.escapeHTML(signupLabel || 'Sign Up');
+            ctaHtml = `<a href="${this.escapeHTML(signupUrl)}" class="chatbot-signup-cta">${label}</a>`;
         }
 
         errorEl.innerHTML = `
@@ -678,7 +680,7 @@ class ChatbotWidget {
             if (error.message === 'AI_UNAVAILABLE') {
                 this.showError('AI Temporarily Unavailable. Please try again later.', false, '🤖');
             } else if (error.message === 'RATE_LIMITED') {
-                this.showRateLimitError(error.userMessage, error.signupUrl);
+                this.showRateLimitError(error.userMessage, error.signupUrl, error.signupLabel);
             } else {
                 this.showError('Connection Error. Could not reach the AI. Check your internet connection.', true, '⚠️');
             }
