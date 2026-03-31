@@ -1,6 +1,6 @@
 # SignalTrackers Product Roadmap
 
-**Last updated:** 2026-03-28 (Phase 12 complete — all 6 features closed, milestone closed, release v0.12.0 created)
+**Last updated:** 2026-03-30 (Phase 13 rescoped — monetization paused, access control & launch prep)
 
 ---
 
@@ -24,10 +24,21 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 13 — Stripe & Subscriptions
+**Phase:** Phase 13 — Access Control & Launch Prep
 **State:** BUILDING
 
 **Previous phase:** Phase 12 — AI Foundation & Metering ✅ COMPLETE (see below)
+
+**Phase 13 context:** Original plan was Stripe & Subscriptions ($19/mo paid tier). After strategic review (2026-03-30), monetization is paused. Product hasn't validated market demand — building payment infrastructure before knowing if anyone wants the product is premature. Phase 13 is now: invite-only registration, remove anonymous AI trial, shelve Stripe work, prepare for public launch. See [PHASE-13-ACCESS-CONTROL-AND-LAUNCH-PREP.md](PHASE-13-ACCESS-CONTROL-AND-LAUNCH-PREP.md) for full scope.
+
+### Phase Sequence
+
+| Phase | Title | Focus |
+|-------|-------|-------|
+| **13** | **Access Control & Launch Prep** | Invite code, remove anonymous AI, shelve Stripe |
+| **14** | **MacroClarity Rebrand** | Full rebrand: templates, CSS, AI prompts, emails, meta/SEO, favicon |
+| **15** | **Public Deployment** | DNS → macroclarity.com, production config, SSL, monitoring |
+| **16+** | **Traction & Learning** | SEO, content, observe usage, decide on monetization |
 
 ---
 
@@ -257,6 +268,7 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Phase 6 | Regime → action gap: users who view Regime Implications Panel after checking regime score |
 | Phase 10 | Model accuracy: walk-forward composite score meaningfully above 52.3/100 baseline |
 | Phase 11 | Conditions engagement: users who expand dimension details from verdict card |
+| Phase 13 | Invite-only registration working, anonymous AI removed, site stable for public traffic |
 
 ---
 
