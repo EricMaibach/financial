@@ -24,18 +24,15 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 13 — Access Control & Launch Prep
-**State:** BUILDING
+**Phase:** Phase 14 — MacroClarity Rebrand
+**State:** IDEATING
 
-**Previous phase:** Phase 12 — AI Foundation & Metering ✅ COMPLETE (see below)
-
-**Phase 13 context:** Original plan was Stripe & Subscriptions ($19/mo paid tier). After strategic review (2026-03-30), monetization is paused. Product hasn't validated market demand — building payment infrastructure before knowing if anyone wants the product is premature. Phase 13 is now: invite-only registration, remove anonymous AI trial, shelve Stripe work, prepare for public launch. See [PHASE-13-ACCESS-CONTROL-AND-LAUNCH-PREP.md](PHASE-13-ACCESS-CONTROL-AND-LAUNCH-PREP.md) for full scope.
+**Previous phase:** Phase 13 — Access Control & Launch Prep ✅ COMPLETE (see below)
 
 ### Phase Sequence
 
 | Phase | Title | Focus |
 |-------|-------|-------|
-| **13** | **Access Control & Launch Prep** | Invite code, remove anonymous AI, shelve Stripe |
 | **14** | **MacroClarity Rebrand** | Full rebrand: templates, CSS, AI prompts, emails, meta/SEO, favicon |
 | **15** | **Public Deployment** | DNS → macroclarity.com, production config, SSL, monitoring |
 | **16+** | **Traction & Learning** | SEO, content, observe usage, decide on monetization |
@@ -248,6 +245,30 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
+## Phase 12: AI Foundation & Metering ✅ COMPLETE
+
+**Milestone goal:** Ship AI infrastructure for anonymous users: remove BYOK requirement, add anonymous AI trial with session limits, usage metering, and admin analytics. All 6 features closed, 12 user stories, release v0.12.0.
+
+---
+
+## Phase 13: Access Control & Launch Prep ✅ COMPLETE
+
+**Milestone goal:** Ship invite-only registration, remove anonymous AI trial, prepare for public launch. Monetization paused pending traction validation.
+
+**Context:** Original plan was Stripe & Subscriptions ($19/mo). After strategic review (2026-03-30), pivoted to access control — validate demand before building payments. Stripe foundation code (13.1.1–13.1.3) remains dormant in codebase. See [PHASE-13-ACCESS-CONTROL-AND-LAUNCH-PREP.md](PHASE-13-ACCESS-CONTROL-AND-LAUNCH-PREP.md).
+
+| Feature | Status |
+|---------|--------|
+| #426 — Access Control & Launch Prep | CLOSED ✅ |
+| US-13.2.1 (#427) — Invite Code on Registration | CLOSED ✅ |
+| US-13.2.2 (#428) — Remove Anonymous AI Trial | CLOSED ✅ |
+| US-13.2.3 (#429) — Update Registration & Rate Limit Messaging | CLOSED ✅ |
+| US-13.2.4 (#430) — Verify Access Model for Invite-Only Users | CLOSED ✅ |
+
+**Deferred:** Stripe issues #412–#417, #421 (closed with `deferred` label). PR #425 open, unmerged.
+
+---
+
 ## What We Are NOT Building
 
 These directions have been evaluated and dismissed. Do not re-propose without new evidence:
@@ -268,7 +289,8 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Phase 6 | Regime → action gap: users who view Regime Implications Panel after checking regime score |
 | Phase 10 | Model accuracy: walk-forward composite score meaningfully above 52.3/100 baseline |
 | Phase 11 | Conditions engagement: users who expand dimension details from verdict card |
-| Phase 13 | Invite-only registration working, anonymous AI removed, site stable for public traffic |
+| Phase 13 | Invite-only registration working, anonymous AI removed, site stable for public traffic ✅ |
+| Phase 14 | Full rebrand shipped: all user-facing references updated to MacroClarity |
 
 ---
 

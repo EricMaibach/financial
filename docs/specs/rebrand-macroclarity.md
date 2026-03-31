@@ -211,7 +211,7 @@ Only load Noto Serif 700 (bold) — it's only used for H1 hero headings. Inter l
 | Property | Current | New |
 |----------|---------|-----|
 | Background | `bg-dark` (Bootstrap) | `--brand-navy-dark` (`#09264c`) |
-| Brand element | `bi-graph-up-arrow` icon + "SignalTrackers" | Logo SVG (24-28px) + "MACROCLARITY" text with weight split |
+| Brand element | `bi-graph-up-arrow` icon + "SignalTrackers" | Logo icon SVG (24-28px) + HTML `<span>` "MACROCLARITY" with weight split (no lockup SVG needed — icon + styled text is more flexible and searchable) |
 | Tagline | "Comprehensive macro intelligence for individual investors" | "Macro Finance Data & Analysis" |
 | Shadow | `0 2px 4px rgba(0,0,0,0.1)` | `0 2px 4px rgba(11,28,48,0.06)` |
 | Height, links, active states | unchanged | unchanged |
@@ -342,7 +342,7 @@ Files to create or update for the rebrand:
 | Asset | Status | Notes |
 |-------|--------|-------|
 | Logo SVG (icon only) | Done | `docs/macroclarityrebrand/MacroClarityLogoOnly.svg` |
-| Logo SVG (icon + text lockup) | Needed | For navbar desktop, email header |
+| Logo SVG (icon + text lockup) | Not needed for implementation | Navbar uses icon SVG + HTML `<span>` text (more flexible, searchable). Lockup SVG only needed later for OG images / social cards if desired. |
 | Favicon set (16x16, 32x32, ICO) | Needed | Generate from logo SVG, test legibility at small sizes |
 | Apple touch icon (180x180 PNG) | Needed | |
 | Open Graph image (1200x630) | Needed | Full lockup + tagline on brand navy background |
