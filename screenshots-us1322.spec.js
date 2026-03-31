@@ -31,12 +31,12 @@ test.describe('Anonymous user — no AI elements', () => {
     });
   });
 
-  test('equities-anonymous-desktop', async ({ page }) => {
+  test('equity-anonymous-desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(`${BASE_URL}/equities`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/equity`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(500);
     await page.screenshot({
-      path: path.join(OUT_DIR, 'equities-anonymous-desktop.png'),
+      path: path.join(OUT_DIR, 'equity-anonymous-desktop.png'),
       fullPage: false,
     });
   });
@@ -74,7 +74,7 @@ test.describe('Logged-in user — AI elements present', () => {
     });
   });
 
-  test('equities-loggedin-desktop', async ({ page }) => {
+  test('equity-loggedin-desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     // Login
     await page.goto(`${BASE_URL}/login`);
@@ -82,11 +82,11 @@ test.describe('Logged-in user — AI elements present', () => {
     await page.fill('input[name=password]', 'testpassword');
     await page.click('button[type=submit]');
     await page.waitForURL(`${BASE_URL}/`);
-    // Navigate to equities
-    await page.goto(`${BASE_URL}/equities`, { waitUntil: 'networkidle' });
+    // Navigate to equity category page
+    await page.goto(`${BASE_URL}/equity`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(500);
     await page.screenshot({
-      path: path.join(OUT_DIR, 'equities-loggedin-desktop.png'),
+      path: path.join(OUT_DIR, 'equity-loggedin-desktop.png'),
       fullPage: false,
     });
   });
