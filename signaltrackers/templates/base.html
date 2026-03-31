@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Daily macro intelligence briefings for individual investors. Track credit, equities, rates, safe havens, crypto, and currency markets in one dashboard.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+    <!-- Open Graph -->
+    <meta property="og:title" content="MacroClarity - Macro Finance Data & Analysis">
+    <meta property="og:description" content="Daily macro intelligence briefings for individual investors. Track credit, equities, rates, safe havens, crypto, and currency markets in one dashboard.">
+    <meta property="og:image" content="{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='img/og-image.png') }}">
+    <meta property="og:type" content="website">
     <title>{% block title %}SignalTrackers - Macro Intelligence Platform{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
