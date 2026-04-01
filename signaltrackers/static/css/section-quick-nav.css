@@ -12,7 +12,7 @@
     z-index: 100;
     background: #fff;
     border-bottom: 1px solid var(--neutral-200, #e5e7eb);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 4px rgba(11, 28, 48, 0.06);
     height: 48px;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
@@ -108,14 +108,14 @@
     border: 1.5px solid var(--brand-blue-500, #3b82f6);
     background: #fff;
     color: var(--brand-blue-500, #3b82f6);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(11, 28, 48, 0.15);
     cursor: pointer;
     transition: box-shadow 150ms ease-out, background 150ms ease-out, transform 150ms ease-out;
 }
 
 .section-quick-nav-fab:hover,
 .section-quick-nav-fab:focus-visible {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 16px rgba(11, 28, 48, 0.2);
     background: var(--brand-blue-100, #dbeafe);
     outline: 2px solid var(--brand-blue-500, #3b82f6);
     outline-offset: 2px;

@@ -27,7 +27,7 @@
     width: 100%;
     min-height: 56px;
     padding: var(--space-4);
-    background: var(--neutral-50, #f8f9fa);
+    background: var(--surface-container-low, #eff4ff);
     border: none;
     border-bottom: 1px solid var(--neutral-200, #dee2e6);
     cursor: pointer;

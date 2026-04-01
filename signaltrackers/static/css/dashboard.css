@@ -32,7 +32,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
+    background-color: var(--surface);
+    color: var(--on-surface);
 }
 
 /* Crisis Score */
@@ -64,7 +65,7 @@ body {
 }
 
 .metric-card:hover {
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0.5rem 1rem rgba(11, 28, 48, 0.15);
     transform: translateY(-2px);
 }
 
@@ -104,7 +105,7 @@ canvas {
 /* Scenario Meters */
 .scenario-meter {
     padding: 0.75rem;
-    background-color: #f8f9fa;
+    background-color: var(--surface-container-low);
     border-radius: 0.25rem;
 }
 
@@ -289,15 +290,18 @@ canvas {
 
 /* Cards */
 .card {
+    background: var(--surface-container-lowest);
     border: none;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 4px var(--shadow-navy);
     margin-bottom: 1.5rem;
 }
 
 .card-header {
-    background-color: #fff;
+    background-color: var(--surface-container-lowest);
     border-bottom: 2px solid #e9ecef;
     font-weight: 600;
+    border-radius: 0.75rem 0.75rem 0 0;
 }
 
 /* Timeline */
@@ -573,7 +577,7 @@ footer {
 
 .skeleton-line {
     height: 1rem;
-    background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
+    background: linear-gradient(90deg, #e9ecef 25%, var(--surface) 50%, #e9ecef 75%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
     border-radius: 4px;
@@ -634,30 +638,31 @@ footer {
     font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 1rem;
-    color: #333;
+    color: var(--on-surface);
 }
 
 /* Market Cards */
 .market-card {
     border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(11, 28, 48, 0.08);
     transition: all 0.2s ease;
 }
 
 .market-card:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 16px rgba(11, 28, 48, 0.12);
     transform: translateY(-2px);
 }
 
 .market-card .card-header {
-    background: #f8f9fa;
+    background: var(--surface-container-low);
     border-bottom: 1px solid #e9ecef;
     font-weight: 600;
     padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .market-card .category-icon {
@@ -956,17 +961,17 @@ footer {
     font-weight: 500;
     padding: 0.5rem 1.25rem;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 4px rgba(11, 28, 48, 0.08);
 }
 
 #market-conditions-toggle:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 8px rgba(11, 28, 48, 0.15);
 }
 
 #market-conditions-toggle:active {
     transform: translateY(0);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 2px rgba(11, 28, 48, 0.1);
 }
 
 /* ========================================
@@ -985,7 +990,7 @@ footer {
 .whats-moving-section .section-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #333;
+    color: var(--on-surface);
 }
 
 /* Mover Card - Bootstrap grid responsive */
@@ -1000,7 +1005,7 @@ footer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(11, 28, 48, 0.05);
 }
 
 .mover-card:hover {
@@ -1023,7 +1028,7 @@ footer {
 .mover-name {
     font-size: 0.875rem;
     font-weight: 600;
-    color: #333;
+    color: var(--on-surface);
     margin-bottom: 0.5rem;
     white-space: nowrap;
     overflow: hidden;
@@ -1108,7 +1113,7 @@ footer {
 /* Pulse animation for extreme movers (z-score > 2.5) */
 @keyframes attention-pulse {
     0%, 100% {
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 4px rgba(11, 28, 48, 0.05);
     }
     50% {
         box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.2), 0 4px 12px rgba(220, 53, 69, 0.15);
@@ -1168,7 +1173,7 @@ footer {
 
 /* Signal Cards - Muted/Secondary styling */
 .signal-card {
-    background: #f8f9fa;
+    background: var(--surface-container-low);
     border: 1px solid #e9ecef;
     border-radius: 8px;
     padding: 1.25rem;
@@ -1177,7 +1182,7 @@ footer {
 }
 
 .signal-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(11, 28, 48, 0.08);
     border-color: #dee2e6;
     transform: translateY(-2px);
 }
@@ -1185,7 +1190,7 @@ footer {
 .signal-header {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #333;
+    color: var(--on-surface);
     margin-bottom: 0.75rem;
 }
 
@@ -1340,9 +1345,9 @@ footer {
 }
 
 .summary-indicator:hover {
-    background-color: #f8f9fa;
+    background-color: var(--surface-container-low);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(11, 28, 48, 0.1);
     text-decoration: none;
     color: inherit;
 }
@@ -1379,7 +1384,7 @@ footer {
 }
 
 .summary-synthesis .synthesis-text {
-    color: #333;
+    color: var(--on-surface);
     font-style: italic;
 }
 
@@ -1476,7 +1481,7 @@ footer {
 
 /* AI Synthesis Container */
 .ai-synthesis-container {
-    background-color: #f8f9fa;
+    background-color: var(--surface-container-low);
     border-left: 3px solid #0dcaf0;
     padding: 0.75rem 1rem;
     border-radius: 0.375rem;
@@ -1506,18 +1511,18 @@ footer {
 }
 
 .badge-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    background: linear-gradient(135deg, var(--surface-container-lowest) 0%, var(--surface) 100%);
     border: 1px solid #dee2e6;
     border-radius: 0.5rem;
     padding: 1.25rem;
     text-align: center;
     transition: all 0.2s ease;
     cursor: default;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 3px rgba(11, 28, 48, 0.05);
 }
 
 .badge-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(11, 28, 48, 0.1);
     transform: translateY(-2px);
 }
 
@@ -1745,4 +1750,38 @@ footer {
     font-size: 14px; /* text-sm */
     line-height: 1.5;
     margin: 0;
+}
+
+/* ========================================
+   MacroClarity Rebrand — Button Overrides
+   ======================================== */
+
+/* Secondary buttons: surface-container-low bg, on-surface text, no border */
+.btn-secondary,
+.btn-outline-secondary {
+    background-color: var(--surface-container-low);
+    color: var(--on-surface);
+    border: none;
+}
+
+.btn-secondary:hover,
+.btn-outline-secondary:hover {
+    background-color: #e4eafc;
+    color: var(--on-surface);
+    border: none;
+}
+
+.btn-secondary:focus,
+.btn-outline-secondary:focus {
+    background-color: var(--surface-container-low);
+    color: var(--on-surface);
+    border: none;
+    box-shadow: 0 0 0 3px rgba(14, 58, 103, 0.15);
+}
+
+.btn-secondary:active,
+.btn-outline-secondary:active {
+    background-color: #dae1f7;
+    color: var(--on-surface);
+    border: none;
 }
