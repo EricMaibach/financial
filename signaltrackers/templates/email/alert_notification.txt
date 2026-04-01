@@ -1,7 +1,7 @@
 {% extends "email/base_email.txt" %}
 
 {% block content %}
-SIGNALTRACKERS MARKET ALERT{% if alerts|length > 1 %}S{% endif %}
+MACROCLARITY MARKET ALERT{% if alerts|length > 1 %}S{% endif %}
 {{ triggered_time }}
 ================================================================================
 
