@@ -131,14 +131,37 @@ canvas {
     z-index: 1030; /* Bootstrap navbar z-index; quick-nav strip is 100 */
 }
 
+.navbar-brand-navy {
+    background-color: var(--brand-navy-dark);
+    box-shadow: 0 2px 4px rgba(11, 28, 48, 0.06);
+}
+
 .navbar-brand-container {
     display: flex;
     flex-direction: column;
 }
 
 .navbar-brand {
-    font-weight: bold;
     font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.navbar-logo {
+    vertical-align: middle;
+}
+
+.navbar-brand-text {
+    letter-spacing: 0.05em;
+}
+
+.navbar-brand-bold {
+    font-weight: 700;
+}
+
+.navbar-brand-light {
+    font-weight: 400;
 }
 
 .navbar-tagline {
@@ -157,6 +180,11 @@ canvas {
     .navbar-tagline {
         margin-top: 0;
     }
+}
+
+/* Footer */
+.footer-brand-navy {
+    background-color: var(--brand-navy-dark);
 }
 
 .nav-link {

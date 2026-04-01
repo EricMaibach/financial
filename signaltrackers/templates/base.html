@@ -15,7 +15,7 @@
     <meta property="og:description" content="Daily macro intelligence briefings for individual investors. Track credit, equities, rates, safe havens, crypto, and currency markets in one dashboard.">
     <meta property="og:image" content="{{ request.url_root.rstrip('/') }}{{ url_for('static', filename='img/og-image.png') }}">
     <meta property="og:type" content="website">
-    <title>{% block title %}SignalTrackers - Macro Intelligence Platform{% endblock %}</title>
+    <title>{% block title %}MacroClarity - Macro Finance Data & Analysis{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:wght@700&display=swap" rel="stylesheet">
@@ -37,14 +37,16 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-brand-navy">
         <div class="container-fluid">
             <div class="navbar-brand-container">
                 <a class="navbar-brand" href="/">
-                    <i class="bi bi-graph-up-arrow"></i> SignalTrackers
+                    <img src="{{ url_for('static', filename='img/macroclarity-logo-white.svg') }}" alt="MacroClarity" class="navbar-logo d-none d-lg-inline-block" width="28" height="28">
+                    <img src="{{ url_for('static', filename='img/macroclarity-logo-white.svg') }}" alt="MacroClarity" class="navbar-logo d-inline-block d-lg-none" width="24" height="24">
+                    <span class="navbar-brand-text d-none d-lg-inline"><span class="navbar-brand-bold">MACRO</span><span class="navbar-brand-light">CLARITY</span></span>
                 </a>
                 <span class="navbar-tagline d-none d-md-inline">
-                    Comprehensive macro intelligence for individual investors
+                    Macro Finance Data &amp; Analysis
                 </span>
             </div>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -331,9 +333,9 @@
     </div>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light py-3 mt-5">
+    <footer class="footer-brand-navy text-light py-3 mt-5">
         <div class="container text-center">
-            <small>SignalTrackers | Macro Intelligence for Individual Investors | Data updated daily</small>
+            <small>MacroClarity | Macro Finance Data &amp; Analysis | Data updated daily</small>
         </div>
     </footer>
 
