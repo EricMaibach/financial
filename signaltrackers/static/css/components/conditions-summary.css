@@ -543,6 +543,7 @@ a.dimension-metric-row:hover {
     font-weight: 600;
     color: #1E293B;
     font-family: var(--font-mono, monospace);
+    font-variant-numeric: tabular-nums;
 }
 .dimension-metric-row__arrow {
     font-size: 0.75rem;

@@ -92,8 +92,9 @@
 
 .property-metric-card__value {
     font-size: 2rem;
-    font-family: monospace;
+    font-family: var(--font-mono, monospace);
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     color: var(--neutral-800, #212529);
     line-height: 1.2;
 }
@@ -162,8 +163,9 @@
 }
 
 .property-farmland-dl__row dd {
-    font-family: monospace;
+    font-family: var(--font-mono, monospace);
     font-weight: 600;
+    font-variant-numeric: tabular-nums;
     font-size: 1.125rem;
     color: var(--neutral-800, #212529);
     margin: 0;
