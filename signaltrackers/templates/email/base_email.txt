@@ -1,6 +1,6 @@
 {% block header %}
 ================================================================================
-SIGNALTRACKERS - Macro Financial Intelligence
+MACROCLARITY - Macro Finance Data & Analysis
 ================================================================================
 {% endblock %}
 
@@ -10,7 +10,7 @@ SIGNALTRACKERS - Macro Financial Intelligence
 {% block footer %}
 --------------------------------------------------------------------------------
 
-This email was sent by SignalTrackers
+This email was sent by MacroClarity
 
 {% block unsubscribe_text %}
 To unsubscribe from these emails, visit: {{ unsubscribe_url }}
