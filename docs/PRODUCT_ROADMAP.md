@@ -24,16 +24,15 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 14 — MacroClarity Rebrand
-**State:** BUILDING
+**Phase:** Phase 15 — Public Deployment
+**State:** IDEATING
 
-**Previous phase:** Phase 13 — Access Control & Launch Prep ✅ COMPLETE (see below)
+**Previous phase:** Phase 14 — MacroClarity Rebrand ✅ COMPLETE (see below)
 
 ### Phase Sequence
 
 | Phase | Title | Focus |
 |-------|-------|-------|
-| **14** | **MacroClarity Rebrand** | Full rebrand: templates, CSS, AI prompts, emails, meta/SEO, favicon |
 | **15** | **Public Deployment** | DNS → macroclarity.com, production config, SSL, monitoring |
 | **16+** | **Traction & Learning** | SEO, content, observe usage, decide on monetization |
 
