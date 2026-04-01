@@ -224,10 +224,18 @@ Only load Noto Serif 700 (bold) — it's only used for H1 hero headings. Inter l
 | Property | Current | New |
 |----------|---------|-----|
 | Background | `bg-dark` (Bootstrap) | `--brand-navy-dark` (`#09264c`) |
-| Brand element | `bi-graph-up-arrow` icon + "SignalTrackers" | Logo icon SVG (24-28px) + HTML `<span>` "MACROCLARITY" with weight split (no lockup SVG needed — icon + styled text is more flexible and searchable) |
-| Tagline | "Comprehensive macro intelligence for individual investors" | "Macro Finance Data & Analysis" |
+| Brand element | `bi-graph-up-arrow` icon + "SignalTrackers" | Logo icon SVG (white variant, 24-28px) + HTML `<span>` "MACROCLARITY" with weight split (no lockup SVG needed — icon + styled text is more flexible and searchable) |
+| Tagline | "Comprehensive macro intelligence for individual investors" | **Remove entirely.** "MacroClarity" is self-descriptive — the tagline is redundant and clutters the navbar. |
+| "Dashboard" nav link | Present as first nav item | **Remove.** Clicking the logo/brand element already navigates home — this is a universal convention. Removing it frees horizontal space and reduces cognitive load. |
+| "Last updated" timestamp | Clock icon + timestamp text (e.g. "Never") | **Remove entirely.** This is operational metadata that doesn't help users make decisions. If data freshness matters, it belongs on the dashboard page near the data, not in the global navbar. |
 | Shadow | `0 2px 4px rgba(0,0,0,0.1)` | `0 2px 4px rgba(11,28,48,0.06)` |
-| Height, links, active states | unchanged | unchanged |
+| Height, active states, hamburger menu | unchanged | unchanged |
+
+**Resulting navbar layout:**
+```
+Desktop:  [MC icon] MACROCLARITY          News  Markets ▾  Explorer          [user menu / Login  Register]
+Mobile:   [MC icon]  [hamburger]
+```
 
 **Mobile navbar:** Logo icon only (no text). Hamburger menu unchanged.
 
@@ -335,9 +343,11 @@ Every instance of the old brand name that needs updating:
 
 | File/Location | Current Text | New Text |
 |---------------|-------------|----------|
-| `base.html` — `<title>` | "SignalTrackers - Macro Intelligence Platform" | "MacroClarity - Macro Finance Data & Analysis" |
-| `base.html` — navbar brand | `<i class="bi bi-graph-up-arrow"></i> SignalTrackers` | Logo SVG + "MACROCLARITY" (weight split) |
-| `base.html` — navbar tagline | "Comprehensive macro intelligence for individual investors" | "Macro Finance Data & Analysis" |
+| `base.html` — `<title>` | "SignalTrackers - Macro Intelligence Platform" | "MacroClarity" |
+| `base.html` — navbar brand | `<i class="bi bi-graph-up-arrow"></i> SignalTrackers` | Logo SVG (white variant) + "MACROCLARITY" (weight split) |
+| `base.html` — navbar tagline | "Comprehensive macro intelligence for individual investors" | **Remove entirely** |
+| `base.html` — "Dashboard" nav link | Present as first nav item | **Remove entirely** (logo click → home) |
+| `base.html` — "Last updated" timestamp | Clock icon + timestamp text | **Remove entirely** |
 | `base.html` — chatbot header | "SignalTrackers AI" | "MacroClarity AI" |
 | `base.html` — footer | "SignalTrackers \| Macro Intelligence for Individual Investors \| Data updated daily" | "MacroClarity \| Macro Finance Data & Analysis \| Data updated daily" |
 | `email/base_email.html` — header | "SignalTrackers" | "MacroClarity" |
@@ -381,3 +391,16 @@ Suggested order for engineering implementation:
 9. **Text replacement** — All "SignalTrackers" → "MacroClarity" across templates
 10. **Email templates** — Update header, branding, colors
 11. **Design system doc** — Update `docs/design-system.md` to reflect new system
+
+---
+
+## 10. Spec Changelog
+
+Changes made after the initial draft, for PM visibility when creating/updating stories.
+
+| Date | Change | Impact |
+|------|--------|--------|
+| 2026-03-31 | **Logo white variant needed.** Dark navy logo invisible on dark navy navbar. Created `MacroClarityLogoOnly-white.svg`. Navbar must use white variant. | Updated US-14.3.1 (#445) — `needs-design-changes` label set. |
+| 2026-04-01 | **Remove navbar tagline.** "Macro Finance Data & Analysis" is redundant — "MacroClarity" is self-descriptive. Tagline clutters the navbar. | **New story needed.** Remove the tagline element from `base.html` navbar. |
+| 2026-04-01 | **Remove "Dashboard" nav link.** Clicking the logo already navigates home (universal convention). The link wastes horizontal space and adds cognitive load. | **New story needed.** Remove the Dashboard `<li>` from the navbar nav items. |
+| 2026-04-01 | **Remove "Last updated" timestamp from navbar.** Clock icon + timestamp (showing "Never") is operational metadata that doesn't help users. If data freshness matters, it belongs on the dashboard page near the data. | **New story needed.** Remove the last-updated element from `base.html` navbar. |
