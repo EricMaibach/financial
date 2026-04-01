@@ -45,18 +45,9 @@
                     <img src="{{ url_for('static', filename='img/macroclarity-logo-white.svg') }}" alt="MacroClarity" class="navbar-logo d-inline-block d-lg-none" width="24" height="24">
                     <span class="navbar-brand-text d-none d-lg-inline"><span class="navbar-brand-bold">MACRO</span><span class="navbar-brand-light">CLARITY</span></span>
                 </a>
-                <span class="navbar-tagline d-none d-md-inline">
-                    Macro Finance Data &amp; Analysis
-                </span>
             </div>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="/">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-                    </li>
-
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'news' %}active{% endif %}" href="/news">
                             <i class="bi bi-newspaper"></i> News
@@ -108,17 +99,6 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item me-3">
-                        <span class="navbar-text" id="last-updated">
-                            <i class="bi bi-clock"></i> <span id="update-time">Loading...</span>
-                        </span>
-                    </li>
-                    <li class="nav-item me-3">
-                        <!-- <button class="btn btn-outline-light btn-sm" id="refresh-data-btn" title="Refresh market data and AI briefings">
-                            <i class="bi bi-arrow-repeat" id="refresh-icon"></i>
-                            <span class="d-none d-lg-inline" id="refresh-text">Refresh Data</span>
-                        </button> -->
-                    </li>
                     {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"

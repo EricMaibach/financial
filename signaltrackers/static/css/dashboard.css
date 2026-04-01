@@ -188,21 +188,11 @@ canvas {
     font-weight: 400;
 }
 
-.navbar-tagline {
-    font-size: 0.75rem;
-    color: #adb5bd;
-    margin-top: -4px;
-}
-
 @media (min-width: 992px) {
     .navbar-brand-container {
         flex-direction: row;
         align-items: baseline;
         gap: 1rem;
-    }
-
-    .navbar-tagline {
-        margin-top: 0;
     }
 }
 

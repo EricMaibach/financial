@@ -87,26 +87,8 @@ function setupAutoRefresh(refreshInterval = 60000) {
 document.addEventListener('DOMContentLoaded', function() {
     initializeBootstrap();
     setupAutoRefresh();
-    updateLastUpdatedTime();
     initConditionsAnnotations();
 });
-
-// Update last updated time
-async function updateLastUpdatedTime() {
-    try {
-        const response = await fetch('/api/reload-status');
-        const status = await response.json();
-
-        const updateTimeElement = document.getElementById('update-time');
-        if (updateTimeElement && status.last_reload) {
-            updateTimeElement.textContent = status.last_reload;
-        } else if (updateTimeElement) {
-            updateTimeElement.textContent = 'Never';
-        }
-    } catch (error) {
-        console.error('Error fetching last updated time:', error);
-    }
-}
 
 // Initialize conditions annotation toggles (US-4.1.3)
 // Mobile: toggle expand/collapse. Tablet+: CSS keeps text always visible.
