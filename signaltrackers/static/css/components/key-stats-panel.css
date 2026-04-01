@@ -88,7 +88,7 @@
   font-weight: 700;
   color: var(--neutral-800);
   font-family: var(--font-mono, monospace);
-  font-feature-settings: 'tnum'; /* Tabular numbers */
+  font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
 
