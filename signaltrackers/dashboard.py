@@ -3832,7 +3832,7 @@ def api_chatbot_section_opening():
     live_data = _get_section_live_data(section_id)
 
     system_prompt = (
-        "You are SignalTrackers AI, a financial market assistant helping an individual investor "
+        "You are MacroClarity AI, a financial market assistant helping an individual investor "
         "understand macro financial markets. Write for a financially literate non-professional — "
         "someone who reads the WSJ and owns ETFs but doesn't work in finance. Use financial terms "
         "freely, but always make the implication clear in plain language. Avoid z-scores, basis point counts, and percentile references — "
@@ -3841,7 +3841,7 @@ def api_chatbot_section_opening():
         "and data-driven. Keep your response to 2-3 short paragraphs."
     )
     user_message = (
-        f"The user just opened the '{section_name}' section of the SignalTrackers dashboard. "
+        f"The user just opened the '{section_name}' section of the MacroClarity dashboard. "
         f"Here is the current live data for this section:\n\n{live_data}\n\n"
         "Give a holistic explanation of what this section shows and what the current data "
         "means for investors in plain language. Reference the specific data values above. "

@@ -7,7 +7,7 @@ Verifies:
 - Source cards: aria-label with 'opens in new tab', arrow icon, domain display, rel attrs
 - Empty states: bi-newspaper icon for 'no data'; bi-wifi-off for 'API unavailable no prior data'
 - Stale banner: warning styling class, exclamation icon, date shown
-- Page title: 'News — SignalTrackers'
+- Page title: 'News — MacroClarity'
 - Security: summary_text and headline NOT rendered with | safe filter
 - CSS: hover translateY, warning color vars, source card no-grid (single column flex)
 - Accessibility: role=region on summary card, aria-label on source links
@@ -65,7 +65,7 @@ class TestNewsRouteRendering:
     def test_page_title_correct(self, flask_app):
         resp = flask_app.get('/news')
         html = resp.data.decode('utf-8')
-        assert 'News' in html and 'SignalTrackers' in html
+        assert 'News' in html and 'MacroClarity' in html
 
     def test_page_contains_heading(self, flask_app):
         resp = flask_app.get('/news')

@@ -45,7 +45,7 @@ class TestPropertyPageBasicRendering(PropertyPageTestCase):
     def test_page_title(self):
         resp = self.client.get('/property')
         html = resp.data.decode()
-        self.assertIn('<title>Property Macro — SignalTrackers</title>', html)
+        self.assertIn('<title>Property Macro — MacroClarity</title>', html)
 
     def test_page_header_icon(self):
         resp = self.client.get('/property')
