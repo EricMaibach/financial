@@ -29,7 +29,7 @@ class TestHeadline:
     """Registration page displays a compelling headline above the form."""
 
     def test_headline_text_present(self, register_html):
-        assert "Unlock the Full Power of SignalTrackers" in register_html
+        assert "Unlock the Full Power of MacroClarity" in register_html
 
     def test_headline_is_h2(self, register_html):
         assert re.search(r'<h2[^>]*>.*Unlock the Full Power', register_html, re.DOTALL)

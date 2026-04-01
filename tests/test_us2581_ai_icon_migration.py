@@ -129,15 +129,15 @@ class TestChatbotFABIcon:
 
 class TestChatbotPanelHeader:
     def test_panel_title_signaletrackers_ai(self, base_html):
-        assert 'SignalTrackers AI' in base_html
+        assert 'MacroClarity AI' in base_html
 
     def test_panel_header_sparkle_mark(self, base_html):
-        # Mark SVG (16px sparkle) should appear before "SignalTrackers AI"
+        # Mark SVG (16px sparkle) should appear before "MacroClarity AI"
         title_section = re.search(r'id="chatbot-title"[^>]*>(.+?)</h2>', base_html, re.DOTALL)
         assert title_section is not None
         title_content = title_section.group(1)
         assert '<svg' in title_content
-        assert 'SignalTrackers AI' in title_content
+        assert 'MacroClarity AI' in title_content
 
     def test_panel_header_mark_indigo(self, base_html):
         title_section = re.search(r'id="chatbot-title"[^>]*>(.+?)</h2>', base_html, re.DOTALL)

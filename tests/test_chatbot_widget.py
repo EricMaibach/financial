@@ -78,8 +78,8 @@ class TestChatbotPanel:
         assert '<header class="chatbot-header"' in page
 
     def test_panel_title_text(self, page):
-        # US-258.1: panel header updated to "SignalTrackers AI" with sparkle mark icon
-        assert 'SignalTrackers AI' in page
+        # US-258.1: panel header updated to "MacroClarity AI" with sparkle mark icon
+        assert 'MacroClarity AI' in page
 
     def test_panel_title_id(self, page):
         assert 'id="chatbot-title"' in page
