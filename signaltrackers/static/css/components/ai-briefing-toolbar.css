@@ -12,7 +12,7 @@
     background: #ffffff;
     border: 1px solid var(--neutral-200, #e5e7eb);
     border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 2px 8px rgba(11, 28, 48, 0.12);
     overflow: hidden;
     white-space: nowrap;
 }
@@ -91,7 +91,7 @@
     background: #ffffff;
     border: 1px solid var(--neutral-200, #e5e7eb);
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 4px 16px rgba(11, 28, 48, 0.14);
     overflow: hidden;
     /* Fade-in */
     opacity: 0;

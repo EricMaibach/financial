@@ -33,7 +33,7 @@
 
 /* Shadow effect when stuck (set via JavaScript) */
 .sticky-selector[data-stuck="true"] {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(11, 28, 48, 0.08);
 }
 
 /* Label */
