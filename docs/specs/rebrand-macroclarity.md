@@ -36,14 +36,27 @@ The logomark is an angular **MC monogram** with an integrated upward arrow, rend
 
 ### Logo Usage
 
-| Context | Format | Notes |
-|---------|--------|-------|
-| Navbar (desktop) | Icon + "MACROCLARITY" text | Icon ~28px height, text uses weight split: "MACRO" bold / "CLARITY" normal |
-| Navbar (mobile) | Icon only | Icon ~24px height |
-| Favicon (16x16, 32x32) | Icon only | May need simplified version at small sizes — test legibility |
-| Apple touch icon (180x180) | Icon only | Full detail version |
-| Email header | Icon + "MacroClarity" text | Inline with header background |
-| Open Graph / social | Full lockup with tagline | 1200x630 recommended |
+| Context | Format | Variant | Notes |
+|---------|--------|---------|-------|
+| Navbar (desktop) | Icon + "MACROCLARITY" text | **White** | Dark navbar background — must use white variant for contrast |
+| Navbar (mobile) | Icon only | **White** | Icon ~24px height |
+| Favicon (16x16, 32x32) | Icon only | Dark | May need simplified version at small sizes — test legibility |
+| Apple touch icon (180x180) | Icon only | Dark | Full detail version |
+| Email header | Icon + "MacroClarity" text | **White** | Dark header background |
+| Open Graph / social | Full lockup with tagline | Dark | 1200x630 recommended, on light/white background |
+
+### Logo Color Variants
+
+The logo requires two color variants:
+
+| Variant | Body fills | Arrow/detail | Use on |
+|---------|-----------|--------------|--------|
+| **Dark** (default) | `#09264c`, `#0e3a67` | `#fdfdfd` (white) | Light backgrounds (favicon, OG images, print) |
+| **White** | `#ffffff` | transparent (background shows through) | Dark backgrounds (navbar, footer, email header) |
+
+Source files:
+- Dark: `docs/macroclarityrebrand/MacroClarityLogoOnly.svg`
+- White: `docs/macroclarityrebrand/MacroClarityLogoOnly-white.svg`
 
 ### Brand Text Treatment
 
@@ -341,7 +354,8 @@ Files to create or update for the rebrand:
 
 | Asset | Status | Notes |
 |-------|--------|-------|
-| Logo SVG (icon only) | Done | `docs/macroclarityrebrand/MacroClarityLogoOnly.svg` |
+| Logo SVG — dark variant (icon only) | Done | `docs/macroclarityrebrand/MacroClarityLogoOnly.svg` — for light backgrounds |
+| Logo SVG — white variant (icon only) | Done | `docs/macroclarityrebrand/MacroClarityLogoOnly-white.svg` — for dark backgrounds (navbar, footer, email). Body fills → `#ffffff`, accent → 85% white, arrow detail → transparent. |
 | Logo SVG (icon + text lockup) | Not needed for implementation | Navbar uses icon SVG + HTML `<span>` text (more flexible, searchable). Lockup SVG only needed later for OG images / social cards if desired. |
 | Favicon set (16x16, 32x32, ICO) | Needed | Generate from logo SVG, test legibility at small sizes |
 | Apple touch icon (180x180 PNG) | Needed | |
