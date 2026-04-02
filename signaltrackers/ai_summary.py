@@ -602,6 +602,42 @@ def _build_conditions_context(conditions):
     if growth is not None and inflation is not None:
         parts.append(f"  Growth composite: {growth:+.2f}, Inflation composite: {inflation:+.2f}")
 
+    # Inflation breadth
+    breadth = quad_dims.get('inflation_breadth')
+    breadth_total = quad_dims.get('inflation_breadth_total')
+    if breadth is not None and breadth_total is not None:
+        parts.append(f"  Inflation breadth: {breadth}/{breadth_total} indicators agree on direction")
+
+    # Inflation component breakdown
+    components = quad_dims.get('inflation_components')
+    if components:
+        comp_lines = []
+        _INDICATOR_LABELS = {
+            'CPIAUCSL': 'CPI',
+            'PCEPILFE': 'Core PCE',
+            'MEDCPIM158SFRBCLE': 'Median CPI',
+            'T10YIE': '10Y Breakeven',
+            'T5YIFR': '5Y5Y Forward',
+            'MICH': 'Michigan 1Y Expectations',
+        }
+        for key, comp in components.items():
+            label = _INDICATOR_LABELS.get(key, key)
+            if comp is None:
+                comp_lines.append(f"    {label}: no data")
+            else:
+                direction = comp.get('direction', '?')
+                z = comp.get('z_score')
+                raw = comp.get('raw_value')
+                line = f"    {label}: {direction}"
+                if z is not None:
+                    line += f" (z={z:+.2f})"
+                if raw is not None:
+                    line += f" [raw={raw}]"
+                comp_lines.append(line)
+        if comp_lines:
+            parts.append("  Inflation components:")
+            parts.extend(comp_lines)
+
     # Liquidity
     liq_state = liq.get('state', 'Unknown')
     liq_score = liq.get('score')
