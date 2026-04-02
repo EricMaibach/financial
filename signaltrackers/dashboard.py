@@ -668,6 +668,9 @@ METRIC_CATEGORIES = {
     'breakeven_inflation_5y': 'Conditions: Growth × Inflation',
     'cpi': 'Conditions: Growth × Inflation',
     'core_pce_price_index': 'Conditions: Growth × Inflation',
+    'median_cpi': 'Conditions: Growth × Inflation',
+    'inflation_expectations_5y5y': 'Conditions: Growth × Inflation',
+    'michigan_inflation_expectations': 'Conditions: Growth × Inflation',
     # Market Conditions — Risk
     'vix_3month': 'Conditions: Risk',
     'stl_financial_stress': 'Conditions: Risk',
@@ -756,6 +759,9 @@ METRIC_DISPLAY_NAMES = {
     'ccc_spread': 'CCC Spread',
     'cpi': 'CPI (Consumer Price Index)',
     'core_pce_price_index': 'Core PCE Price Index',
+    'median_cpi': 'Cleveland Fed Median CPI',
+    'inflation_expectations_5y5y': '5Y5Y Forward Inflation Expectations',
+    'michigan_inflation_expectations': 'Michigan 1-Year Inflation Expectations',
     'ecb_total_assets': 'ECB Total Assets (M EUR)',
     'eurusd_price': 'EUR/USD Exchange Rate',
     'fed_balance_sheet': 'Fed Balance Sheet (WALCL)',
@@ -5445,6 +5451,9 @@ def generate_rates_market_summary():
         boj_df = load_csv_data('boj_total_assets.csv')
         ecb_df = load_csv_data('ecb_total_assets.csv')
         breakeven_5y_df = load_csv_data('breakeven_inflation_5y.csv')
+        median_cpi_df = load_csv_data('median_cpi.csv')
+        inflation_5y5y_df = load_csv_data('inflation_expectations_5y5y.csv')
+        michigan_inflation_df = load_csv_data('michigan_inflation_expectations.csv')
         fed_funds_upper_df = load_csv_data('fed_funds_upper_target.csv')
         real_yield_proxy_df = load_csv_data('real_yield_proxy.csv')
         tips_df = load_csv_data('tips_inflation_price.csv')
@@ -5546,6 +5555,21 @@ def generate_rates_market_summary():
             stats = get_metric_stats(cpi_df)
             if stats:
                 summary_parts.append(f"CPI (YoY): {stats['current']:.1f}%")
+        if median_cpi_df is not None:
+            stats = get_metric_stats(median_cpi_df)
+            if stats:
+                summary_parts.append(f"Cleveland Fed Median CPI: {stats['current']:.1f}% ({stats['percentile']:.1f}th %ile) | 30d: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Noise-filtered CPI trend — strips extreme price changes)")
+        if inflation_5y5y_df is not None:
+            stats = get_metric_stats(inflation_5y5y_df)
+            if stats:
+                summary_parts.append(f"5Y5Y Forward Inflation Expectations: {stats['current']:.2f}% ({stats['percentile']:.1f}th %ile) | 1d: {stats['change_1d']*100:+.0f} bps | 30d: {stats['change_30d']*100:+.0f} bps")
+                summary_parts.append("  (Fed's preferred long-run expectations anchor — strips near-term noise)")
+        if michigan_inflation_df is not None:
+            stats = get_metric_stats(michigan_inflation_df)
+            if stats:
+                summary_parts.append(f"Michigan 1-Year Inflation Expectations: {stats['current']:.1f}% ({stats['percentile']:.1f}th %ile)")
+                summary_parts.append("  (Consumer expectations — divergence from market breakevens signals unanchoring risk)")
         summary_parts.append("")
 
         # Fed Policy Section
