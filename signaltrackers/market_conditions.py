@@ -362,10 +362,26 @@ def _compute_acceleration(series: pd.Series, period: int) -> pd.Series:
 
     This is the Hedgeye "second derivative" approach — detects inflection
     points earlier than level-based classification.
+
+    Retained as a secondary early-warning signal for regime transitions.
+    The primary classifier is now YoY direction (see _compute_yoy_direction).
     """
     yoy_current = series / series.shift(period) - 1
     yoy_prior = series.shift(1) / series.shift(period + 1) - 1
     return yoy_current - yoy_prior
+
+
+def _compute_yoy_direction(series: pd.Series, period: int) -> pd.Series:
+    """
+    Compute YoY rate direction (first derivative of YoY rate).
+
+    Returns the YoY rate of change itself — positive means the level is
+    rising year-over-year, negative means it is falling.
+
+    This is the primary inflation classifier used by practitioner frameworks
+    (Bridgewater, Gavekal, Hedgeye): is inflation going up or down?
+    """
+    return series / series.shift(period) - 1
 
 
 def _load_growth_signals() -> dict[str, Optional[pd.Series]]:
@@ -427,38 +443,85 @@ def _load_growth_signals() -> dict[str, Optional[pd.Series]]:
 
 
 def _load_inflation_signals() -> dict[str, Optional[pd.Series]]:
-    """Load and compute z-scored acceleration for each inflation indicator."""
+    """
+    Load and compute z-scored YoY direction for each inflation indicator.
+
+    Uses YoY rate direction (first derivative) as the primary classifier,
+    normalized against a 24-month rolling window (504 trading days for daily,
+    24 months for monthly series).
+
+    6 indicators across 3 dimensions:
+      Realized Trend: CPI, Core PCE, Median CPI
+      Market Expectations: 10Y Breakeven, 5Y5Y Forward
+      Consumer Expectations: Michigan 1-Year
+    """
     signals = {}
 
-    # 10Y Breakeven (T10YIE) — daily, level change
-    t10yie_df = _load_csv('breakeven_inflation_10y')
-    t10yie = _to_series(t10yie_df, 'breakeven_inflation_10y')
-    if t10yie is not None and len(t10yie) >= 253:
-        level_change = t10yie.diff(252)
-        z = _rolling_zscore(level_change, 1260)
-        signals['T10YIE'] = z
-    else:
-        signals['T10YIE'] = None
+    # --- Realized Trend (monthly, period=12) ---
 
-    # CPI (CPIAUCSL) — monthly, acceleration
+    # CPI (CPIAUCSL) — monthly, YoY direction
     cpi_df = _load_csv('cpi')
     cpi = _to_series(cpi_df, 'cpi')
-    if cpi is not None and len(cpi) >= 14:
-        accel = _compute_acceleration(cpi, 12)
-        z = _rolling_zscore(accel, 60)
+    if cpi is not None and len(cpi) >= 13:
+        yoy = _compute_yoy_direction(cpi, 12)
+        z = _rolling_zscore(yoy, 24)
         signals['CPIAUCSL'] = z
     else:
         signals['CPIAUCSL'] = None
 
-    # Core PCE (PCEPILFE) — monthly, acceleration
+    # Core PCE (PCEPILFE) — monthly, YoY direction
     pce_df = _load_csv('core_pce_price_index')
     pce = _to_series(pce_df, 'core_pce_price_index')
-    if pce is not None and len(pce) >= 14:
-        accel = _compute_acceleration(pce, 12)
-        z = _rolling_zscore(accel, 60)
+    if pce is not None and len(pce) >= 13:
+        yoy = _compute_yoy_direction(pce, 12)
+        z = _rolling_zscore(yoy, 24)
         signals['PCEPILFE'] = z
     else:
         signals['PCEPILFE'] = None
+
+    # Cleveland Fed Median CPI (MEDCPIM158SFRBCLE) — monthly, YoY direction
+    med_df = _load_csv('median_cpi')
+    med = _to_series(med_df, 'median_cpi')
+    if med is not None and len(med) >= 13:
+        yoy = _compute_yoy_direction(med, 12)
+        z = _rolling_zscore(yoy, 24)
+        signals['MEDCPIM158SFRBCLE'] = z
+    else:
+        signals['MEDCPIM158SFRBCLE'] = None
+
+    # --- Market Expectations (daily, period=252) ---
+
+    # 10Y Breakeven (T10YIE) — daily, YoY direction
+    t10yie_df = _load_csv('breakeven_inflation_10y')
+    t10yie = _to_series(t10yie_df, 'breakeven_inflation_10y')
+    if t10yie is not None and len(t10yie) >= 253:
+        yoy = _compute_yoy_direction(t10yie, 252)
+        z = _rolling_zscore(yoy, 504)
+        signals['T10YIE'] = z
+    else:
+        signals['T10YIE'] = None
+
+    # 5Y5Y Forward (T5YIFR) — daily, YoY direction
+    fwd_df = _load_csv('inflation_expectations_5y5y')
+    fwd = _to_series(fwd_df, 'inflation_expectations_5y5y')
+    if fwd is not None and len(fwd) >= 253:
+        yoy = _compute_yoy_direction(fwd, 252)
+        z = _rolling_zscore(yoy, 504)
+        signals['T5YIFR'] = z
+    else:
+        signals['T5YIFR'] = None
+
+    # --- Consumer Expectations (monthly, period=12) ---
+
+    # Michigan 1-Year Expectations (MICH) — monthly, YoY direction
+    mich_df = _load_csv('michigan_inflation_expectations')
+    mich = _to_series(mich_df, 'michigan_inflation_expectations')
+    if mich is not None and len(mich) >= 13:
+        yoy = _compute_yoy_direction(mich, 12)
+        z = _rolling_zscore(yoy, 24)
+        signals['MICH'] = z
+    else:
+        signals['MICH'] = None
 
     return signals
 
@@ -572,7 +635,7 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
 
     Steps:
       1. Compute acceleration-based z-scores for 5 growth indicators
-      2. Compute acceleration-based z-scores for 4 inflation indicators
+      2. Compute YoY-direction z-scores for 6 inflation indicators (24-month window)
       3. Equal-weight composites for growth and inflation
       4. Classify into quadrant
       5. Apply stability filter (2+ consecutive months)

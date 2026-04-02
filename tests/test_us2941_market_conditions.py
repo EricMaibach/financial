@@ -6,7 +6,8 @@ Covers:
   - ECB/BOJ currency conversions
   - YoY rate of change and z-score normalization
   - Liquidity classification thresholds
-  - Growth and inflation composite acceleration
+  - Growth composite acceleration
+  - Inflation YoY direction classifier (6 indicators, 24-month window)
   - Quadrant classification logic
   - Stability filter (2+ consecutive months)
   - Historical spot-checks (2008, 2020, 2022, 2023-24)
@@ -40,6 +41,8 @@ from signaltrackers.market_conditions import (
     _yoy_change,
     _classify_liquidity,
     _compute_acceleration,
+    _compute_yoy_direction,
+    _load_inflation_signals,
     _classify_quadrant,
     _apply_stability_filter,
     _compute_monthly_composite,
@@ -288,6 +291,132 @@ class TestAcceleration:
         valid = accel.dropna()
         # Should have some positive acceleration
         assert len(valid) > 0
+
+
+# ---------------------------------------------------------------------------
+# Tests: YoY direction classifier
+# ---------------------------------------------------------------------------
+
+class TestYoyDirection:
+    def test_rising_series_positive(self):
+        """A steadily rising series should produce positive YoY direction."""
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        s = pd.Series(100 * np.exp(np.linspace(0, 0.5, 36)), index=idx)
+        yoy = _compute_yoy_direction(s, 12)
+        valid = yoy.dropna()
+        assert len(valid) > 0
+        assert all(v > 0 for v in valid)
+
+    def test_falling_series_negative(self):
+        """A steadily falling series should produce negative YoY direction."""
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        s = pd.Series(100 * np.exp(np.linspace(0, -0.3, 36)), index=idx)
+        yoy = _compute_yoy_direction(s, 12)
+        valid = yoy.dropna()
+        assert len(valid) > 0
+        assert all(v < 0 for v in valid)
+
+    def test_constant_series_zero(self):
+        """A flat series should produce zero YoY direction."""
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        s = pd.Series([100.0] * 36, index=idx)
+        yoy = _compute_yoy_direction(s, 12)
+        valid = yoy.dropna()
+        assert len(valid) > 0
+        assert all(abs(v) < 1e-10 for v in valid)
+
+    def test_first_period_is_nan(self):
+        """First `period` observations should be NaN."""
+        idx = pd.date_range('2020-01-01', periods=24, freq='MS')
+        s = pd.Series(range(100, 124), index=idx, dtype=float)
+        yoy = _compute_yoy_direction(s, 12)
+        for i in range(12):
+            assert np.isnan(yoy.iloc[i])
+        assert not np.isnan(yoy.iloc[12])
+
+    def test_captures_steady_rise_that_acceleration_misses(self):
+        """
+        Inflation rising at a constant rate produces zero acceleration
+        but positive YoY direction — this was the root cause of the
+        Deflation Risk misclassification.
+        """
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        # Linear growth → constant YoY → zero acceleration, positive direction
+        s = pd.Series(np.arange(100, 136, dtype=float), index=idx)
+        accel = _compute_acceleration(s, 12)
+        yoy = _compute_yoy_direction(s, 12)
+        accel_valid = accel.dropna()
+        yoy_valid = yoy.dropna()
+        # Acceleration should be ~0
+        assert accel_valid.abs().max() < 0.01
+        # YoY direction should be positive (rising)
+        assert all(v > 0 for v in yoy_valid)
+
+
+# ---------------------------------------------------------------------------
+# Tests: Inflation signals (6-indicator set, 24-month window)
+# ---------------------------------------------------------------------------
+
+class TestLoadInflationSignals:
+    def _setup_inflation_data(self, data_dir, n_months=60):
+        """Create synthetic data for all 6 inflation indicators."""
+        dates_m = _generate_monthly_dates('2018-01-01', n_months)
+        dates_d = _generate_daily_dates('2018-01-01', n_months * 22)
+
+        # Realized trend (monthly)
+        cpi = [230 + i * 0.3 for i in range(n_months)]
+        _write_csv(data_dir, 'cpi', 'cpi', dates_m, cpi)
+
+        pce = [110 + i * 0.2 for i in range(n_months)]
+        _write_csv(data_dir, 'core_pce_price_index', 'core_pce_price_index', dates_m, pce)
+
+        med = [2.5 + i * 0.01 for i in range(n_months)]
+        _write_csv(data_dir, 'median_cpi', 'median_cpi', dates_m, med)
+
+        # Market expectations (daily)
+        t10yie = [2.0 + i * 0.0001 for i in range(len(dates_d))]
+        _write_csv(data_dir, 'breakeven_inflation_10y', 'breakeven_inflation_10y', dates_d, t10yie)
+
+        fwd = [2.3 + i * 0.0001 for i in range(len(dates_d))]
+        _write_csv(data_dir, 'inflation_expectations_5y5y', 'inflation_expectations_5y5y', dates_d, fwd)
+
+        # Consumer expectations (monthly)
+        mich = [3.0 + i * 0.02 for i in range(n_months)]
+        _write_csv(data_dir, 'michigan_inflation_expectations', 'michigan_inflation_expectations', dates_m, mich)
+
+    def test_returns_six_indicators(self, tmp_data_dir):
+        self._setup_inflation_data(tmp_data_dir)
+        signals = _load_inflation_signals()
+        expected_keys = {'CPIAUCSL', 'PCEPILFE', 'MEDCPIM158SFRBCLE', 'T10YIE', 'T5YIFR', 'MICH'}
+        assert set(signals.keys()) == expected_keys
+
+    def test_t5yie_not_in_signals(self, tmp_data_dir):
+        self._setup_inflation_data(tmp_data_dir)
+        signals = _load_inflation_signals()
+        assert 'T5YIE' not in signals
+
+    def test_missing_single_indicator_graceful(self, tmp_data_dir):
+        """Missing one CSV still returns None for that signal, others work."""
+        self._setup_inflation_data(tmp_data_dir)
+        # Remove median CPI
+        os.remove(os.path.join(str(tmp_data_dir), 'median_cpi.csv'))
+        signals = _load_inflation_signals()
+        assert signals['MEDCPIM158SFRBCLE'] is None
+        # Others should still compute
+        non_none = [k for k, v in signals.items() if v is not None]
+        assert len(non_none) >= 4
+
+    def test_all_missing_returns_all_none(self, tmp_data_dir):
+        signals = _load_inflation_signals()
+        assert all(v is None for v in signals.values())
+
+    def test_insufficient_data_returns_none(self, tmp_data_dir):
+        """Too few data points should return None for that signal."""
+        dates_m = _generate_monthly_dates('2024-01-01', 6)
+        cpi = [230 + i * 0.3 for i in range(6)]
+        _write_csv(tmp_data_dir, 'cpi', 'cpi', dates_m, cpi)
+        signals = _load_inflation_signals()
+        assert signals['CPIAUCSL'] is None  # Needs >= 13 months
 
 
 # ---------------------------------------------------------------------------
@@ -581,15 +710,9 @@ class TestComputeQuadrant:
         permit = [1200 + i * growth_trend * 5 for i in range(n_months)]
         _write_csv(data_dir, 'building_permits', 'building_permits', dates_m, permit)
 
-        # Inflation indicators
-        # T10YIE (daily)
-        t10yie = [2.0 + i * inflation_trend * 0.001 for i in range(len(dates_d))]
-        _write_csv(data_dir, 'breakeven_inflation_10y', 'breakeven_inflation_10y', dates_d, t10yie)
+        # Inflation indicators (6 total — YoY direction, 24-month z-score window)
 
-        # T5YIE (daily)
-        t5yie = [2.0 + i * inflation_trend * 0.001 for i in range(len(dates_d))]
-        _write_csv(data_dir, 'breakeven_inflation_5y', 'breakeven_inflation_5y', dates_d, t5yie)
-
+        # Realized Trend
         # CPI (monthly)
         cpi = [230 + i * (0.3 + inflation_trend * 0.2) for i in range(n_months)]
         _write_csv(data_dir, 'cpi', 'cpi', dates_m, cpi)
@@ -597,6 +720,24 @@ class TestComputeQuadrant:
         # Core PCE (monthly)
         pce = [110 + i * (0.2 + inflation_trend * 0.1) for i in range(n_months)]
         _write_csv(data_dir, 'core_pce_price_index', 'core_pce_price_index', dates_m, pce)
+
+        # Cleveland Fed Median CPI (monthly)
+        med_cpi = [2.5 + i * (0.01 + inflation_trend * 0.005) for i in range(n_months)]
+        _write_csv(data_dir, 'median_cpi', 'median_cpi', dates_m, med_cpi)
+
+        # Market Expectations
+        # T10YIE (daily)
+        t10yie = [2.0 + i * inflation_trend * 0.001 for i in range(len(dates_d))]
+        _write_csv(data_dir, 'breakeven_inflation_10y', 'breakeven_inflation_10y', dates_d, t10yie)
+
+        # 5Y5Y Forward (daily)
+        fwd5y5y = [2.3 + i * inflation_trend * 0.0008 for i in range(len(dates_d))]
+        _write_csv(data_dir, 'inflation_expectations_5y5y', 'inflation_expectations_5y5y', dates_d, fwd5y5y)
+
+        # Consumer Expectations
+        # Michigan 1-Year (monthly)
+        mich = [3.0 + i * (0.02 + inflation_trend * 0.01) for i in range(n_months)]
+        _write_csv(data_dir, 'michigan_inflation_expectations', 'michigan_inflation_expectations', dates_m, mich)
 
     def test_returns_result(self, tmp_data_dir):
         self._setup_quadrant_data(tmp_data_dir)
@@ -719,6 +860,16 @@ class TestNoLookaheadBias:
         for i in range(13):
             assert np.isnan(accel.iloc[i])
         assert not np.isnan(accel.iloc[13])
+
+    def test_yoy_direction_no_future_data(self):
+        """YoY direction at T uses T and T-period, both ≤ T."""
+        idx = pd.date_range('2020-01-01', periods=24, freq='MS')
+        s = pd.Series(range(100, 124), index=idx, dtype=float)
+        yoy = _compute_yoy_direction(s, 12)
+        # First valid: needs shift(12), so at least index 12
+        for i in range(12):
+            assert np.isnan(yoy.iloc[i])
+        assert not np.isnan(yoy.iloc[12])
 
 
 # ---------------------------------------------------------------------------
