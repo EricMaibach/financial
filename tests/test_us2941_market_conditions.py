@@ -35,6 +35,7 @@ from signaltrackers.market_conditions import (
     _align_weekly,
     _align_monthly,
     _rolling_zscore,
+    _expanding_zscore,
     _compute_fed_net_liquidity,
     _compute_ecb_usd,
     _compute_boj_usd,
@@ -47,6 +48,8 @@ from signaltrackers.market_conditions import (
     _classify_quadrant,
     _apply_stability_filter,
     _compute_monthly_composite,
+    _compute_inflation_composite,
+    _INFLATION_DIMENSIONS,
     compute_liquidity,
     compute_quadrant,
     compute_liquidity_history,
@@ -408,7 +411,140 @@ class TestRateMomentum:
 
 
 # ---------------------------------------------------------------------------
-# Tests: Inflation signals (6-indicator set, 24-month window)
+# Tests: Expanding z-score
+# ---------------------------------------------------------------------------
+
+class TestExpandingZscore:
+    def test_above_mean_positive(self):
+        """Values above the expanding mean should have positive z-scores."""
+        idx = pd.date_range('2010-01-01', periods=60, freq='MS')
+        # Rising series: later values are above the expanding mean
+        s = pd.Series([2.0 + i * 0.1 for i in range(60)], index=idx)
+        z = _expanding_zscore(s)
+        # Latest values should be positive (above expanding mean)
+        assert z.iloc[-1] > 0
+
+    def test_below_mean_negative(self):
+        """Values below the expanding mean should have negative z-scores."""
+        idx = pd.date_range('2010-01-01', periods=60, freq='MS')
+        # Falling series: later values are below the expanding mean
+        s = pd.Series([5.0 - i * 0.1 for i in range(60)], index=idx)
+        z = _expanding_zscore(s)
+        assert z.iloc[-1] < 0
+
+    def test_constant_series_zero(self):
+        """A constant series should produce z-scores near zero."""
+        idx = pd.date_range('2010-01-01', periods=60, freq='MS')
+        s = pd.Series([3.0] * 60, index=idx)
+        z = _expanding_zscore(s)
+        # Std dev is 0 → NaN, which is expected for constant series
+        assert z.dropna().empty or all(abs(v) < 1e-10 for v in z.dropna())
+
+    def test_min_periods_respected(self):
+        """First min_periods observations should be NaN."""
+        idx = pd.date_range('2010-01-01', periods=24, freq='MS')
+        s = pd.Series([2.0 + i * 0.1 for i in range(24)], index=idx)
+        z = _expanding_zscore(s, min_periods=12)
+        # First 11 should be NaN (min_periods=12 means 12th is first valid)
+        for i in range(11):
+            assert np.isnan(z.iloc[i])
+        assert not np.isnan(z.iloc[11])
+
+    def test_uses_full_history(self):
+        """Expanding z-score uses all prior data, not a fixed window."""
+        idx = pd.date_range('2000-01-01', periods=120, freq='MS')
+        # First 60 months at 2.0, next 60 at 4.0
+        vals = [2.0] * 60 + [4.0] * 60
+        s = pd.Series(vals, index=idx)
+        z = _expanding_zscore(s)
+        # At month 60 (first 4.0), z-score should be very high
+        assert z.iloc[60] > 1.5
+        # At month 119 (last 4.0), z-score still positive but less extreme
+        # because expanding mean has shifted toward 3.0
+        assert z.iloc[-1] > 0
+        assert z.iloc[-1] < z.iloc[60]  # Less extreme as history grows
+
+
+# ---------------------------------------------------------------------------
+# Tests: Inflation composite (dimensional weighting)
+# ---------------------------------------------------------------------------
+
+class TestInflationComposite:
+    def test_dimensional_grouping(self):
+        """Inflation dimensions cover all 6 indicators."""
+        all_keys = set()
+        for keys in _INFLATION_DIMENSIONS.values():
+            all_keys.update(keys)
+        expected = {'CPIAUCSL', 'PCEPILFE', 'MEDCPIM158SFRBCLE',
+                    'T10YIE', 'T5YIFR', 'MICH'}
+        assert all_keys == expected
+
+    def test_equal_weight_per_dimension(self):
+        """Each dimension gets 1/3 weight regardless of indicator count."""
+        idx = pd.date_range('2020-01-01', periods=36, freq='MS')
+        # Realized: all +1.0 (3 indicators)
+        # Market: all -1.0 (2 indicators)
+        # Consumer: +2.0 (1 indicator)
+        signals = {
+            'CPIAUCSL': pd.Series([1.0] * 36, index=idx),
+            'PCEPILFE': pd.Series([1.0] * 36, index=idx),
+            'MEDCPIM158SFRBCLE': pd.Series([1.0] * 36, index=idx),
+            'T10YIE': pd.Series([-1.0] * 36, index=idx),
+            'T5YIFR': pd.Series([-1.0] * 36, index=idx),
+            'MICH': pd.Series([2.0] * 36, index=idx),
+        }
+        composite = _compute_inflation_composite(signals)
+        # Realized avg = 1.0, Market avg = -1.0, Consumer avg = 2.0
+        # Composite = (1.0 + (-1.0) + 2.0) / 3 = 0.667
+        assert composite is not None
+        assert abs(composite.iloc[-1] - 2.0 / 3) < 0.01
+
+    def test_forward_fill_handles_lag(self):
+        """Signals that end 1 month early are forward-filled."""
+        idx_long = pd.date_range('2020-01-01', periods=36, freq='MS')
+        idx_short = pd.date_range('2020-01-01', periods=35, freq='MS')
+        signals = {
+            'CPIAUCSL': pd.Series([1.0] * 36, index=idx_long),
+            'PCEPILFE': pd.Series([2.0] * 35, index=idx_short),  # 1 month shorter
+            'MEDCPIM158SFRBCLE': pd.Series([1.0] * 36, index=idx_long),
+            'T10YIE': pd.Series([0.5] * 36, index=idx_long),
+            'T5YIFR': pd.Series([0.5] * 36, index=idx_long),
+            'MICH': pd.Series([1.5] * 36, index=idx_long),
+        }
+        composite = _compute_inflation_composite(signals)
+        # PCE at 2.0 should be forward-filled into the last month
+        # Realized = (1.0 + 2.0 + 1.0) / 3 = 1.333
+        # Market = (0.5 + 0.5) / 2 = 0.5
+        # Consumer = 1.5
+        # Overall = (1.333 + 0.5 + 1.5) / 3 ≈ 1.111
+        assert composite is not None
+        assert abs(composite.iloc[-1] - (4.0 / 3 + 0.5 + 1.5) / 3) < 0.05
+
+    def test_missing_dimension_still_computes(self):
+        """If all indicators in a dimension are None, other dims still work."""
+        idx = pd.date_range('2020-01-01', periods=36, freq='MS')
+        signals = {
+            'CPIAUCSL': pd.Series([1.0] * 36, index=idx),
+            'PCEPILFE': pd.Series([1.0] * 36, index=idx),
+            'MEDCPIM158SFRBCLE': pd.Series([1.0] * 36, index=idx),
+            'T10YIE': None,
+            'T5YIFR': None,
+            'MICH': pd.Series([2.0] * 36, index=idx),
+        }
+        composite = _compute_inflation_composite(signals)
+        # Realized = 1.0, Consumer = 2.0, Market missing
+        # Overall = (1.0 + 2.0) / 2 = 1.5
+        assert composite is not None
+        assert abs(composite.iloc[-1] - 1.5) < 0.01
+
+    def test_all_none_returns_none(self):
+        signals = {k: None for k in ['CPIAUCSL', 'PCEPILFE', 'MEDCPIM158SFRBCLE',
+                                       'T10YIE', 'T5YIFR', 'MICH']}
+        assert _compute_inflation_composite(signals) is None
+
+
+# ---------------------------------------------------------------------------
+# Tests: Inflation signals (6-indicator set)
 # ---------------------------------------------------------------------------
 
 class TestLoadInflationSignals:
@@ -764,7 +900,7 @@ class TestComputeQuadrant:
         permit = [1200 + i * growth_trend * 5 for i in range(n_months)]
         _write_csv(data_dir, 'building_permits', 'building_permits', dates_m, permit)
 
-        # Inflation indicators (6 total — YoY direction, 24-month z-score window)
+        # Inflation indicators (6 total — direction for indices, expanding level for rates)
 
         # Realized Trend
         # CPI (monthly)
