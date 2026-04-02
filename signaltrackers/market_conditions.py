@@ -140,6 +140,22 @@ def _rolling_zscore(series: pd.Series, window: int) -> pd.Series:
     return (series - roll_mean) / roll_std
 
 
+def _expanding_zscore(series: pd.Series, min_periods: int = 12) -> pd.Series:
+    """
+    Compute expanding z-score against the full available history.
+
+    Used for rate-based inflation series (breakevens, survey expectations)
+    where the level itself IS the inflation signal. Z-scoring against the
+    full history answers "is this rate high or low relative to historical
+    norms?" — appropriate for expectation indicators whose absolute level
+    matters more than short-term momentum.
+    """
+    exp_mean = series.expanding(min_periods=min_periods).mean()
+    exp_std = series.expanding(min_periods=min_periods).std()
+    exp_std = exp_std.replace(0, np.nan)
+    return (series - exp_mean) / exp_std
+
+
 # ---------------------------------------------------------------------------
 # Layer 1: Global Liquidity
 # ---------------------------------------------------------------------------
@@ -362,10 +378,43 @@ def _compute_acceleration(series: pd.Series, period: int) -> pd.Series:
 
     This is the Hedgeye "second derivative" approach — detects inflection
     points earlier than level-based classification.
+
+    Retained as a secondary early-warning signal for regime transitions.
+    The primary classifier is now YoY direction (see _compute_yoy_direction).
     """
     yoy_current = series / series.shift(period) - 1
     yoy_prior = series.shift(1) / series.shift(period + 1) - 1
     return yoy_current - yoy_prior
+
+
+def _compute_yoy_direction(series: pd.Series, period: int) -> pd.Series:
+    """
+    Compute YoY rate direction for index-level series (e.g. CPI, Core PCE).
+
+    Uses percentage change: series / series.shift(period) - 1.
+    This converts a price index into a YoY inflation rate — positive means
+    inflation is rising year-over-year.
+
+    Only valid for index-level series. For rate-based series (breakevens,
+    survey expectations, median CPI), use _compute_rate_momentum instead.
+    """
+    return series / series.shift(period) - 1
+
+
+def _compute_rate_momentum(series: pd.Series, period: int) -> pd.Series:
+    """
+    Compute YoY momentum for rate-based series (e.g. breakevens, Michigan).
+
+    Uses simple difference: series - series.shift(period).
+    Rate-based series are already expressed as percentages, so their level
+    IS the inflation signal. The difference tells us whether the rate is
+    rising or falling — positive means inflation expectations are increasing.
+
+    Using percentage change on rates would give "change in the rate of change"
+    (essentially acceleration), which defeats the purpose of using direction
+    as the primary classifier.
+    """
+    return series.diff(period)
 
 
 def _load_growth_signals() -> dict[str, Optional[pd.Series]]:
@@ -427,38 +476,99 @@ def _load_growth_signals() -> dict[str, Optional[pd.Series]]:
 
 
 def _load_inflation_signals() -> dict[str, Optional[pd.Series]]:
-    """Load and compute z-scored acceleration for each inflation indicator."""
+    """
+    Load and compute z-scored inflation signals for each indicator.
+
+    Two signal types based on the nature of each series:
+
+    - **Index-level series** (CPI, Core PCE): Compute YoY rate direction
+      (first derivative) and z-score against a 24-month rolling window.
+      This measures whether the realized inflation rate is rising or falling
+      relative to recent history.
+
+    - **Rate-based series** (Median CPI, breakevens, forwards, Michigan):
+      Z-score the raw level against an expanding (full-history) window.
+      These series are already expressed as inflation rates/percentages;
+      their level IS the inflation signal. The expanding z-score measures
+      whether the rate is high or low relative to historical norms —
+      appropriate for expectation indicators where an elevated level signals
+      inflationary pressure regardless of short-term momentum.
+
+    6 indicators across 3 dimensions:
+      Realized Trend: CPI, Core PCE, Median CPI
+      Market Expectations: 10Y Breakeven, 5Y5Y Forward
+      Consumer Expectations: Michigan 1-Year
+    """
     signals = {}
 
-    # 10Y Breakeven (T10YIE) — daily, level change
-    t10yie_df = _load_csv('breakeven_inflation_10y')
-    t10yie = _to_series(t10yie_df, 'breakeven_inflation_10y')
-    if t10yie is not None and len(t10yie) >= 253:
-        level_change = t10yie.diff(252)
-        z = _rolling_zscore(level_change, 1260)
-        signals['T10YIE'] = z
-    else:
-        signals['T10YIE'] = None
+    # --- Realized Trend (monthly) ---
 
-    # CPI (CPIAUCSL) — monthly, acceleration
+    # CPI (CPIAUCSL) — price index, YoY direction z-scored over 24 months
     cpi_df = _load_csv('cpi')
     cpi = _to_series(cpi_df, 'cpi')
-    if cpi is not None and len(cpi) >= 14:
-        accel = _compute_acceleration(cpi, 12)
-        z = _rolling_zscore(accel, 60)
+    if cpi is not None and len(cpi) >= 13:
+        yoy = _compute_yoy_direction(cpi, 12)
+        z = _rolling_zscore(yoy, 24)
         signals['CPIAUCSL'] = z
     else:
         signals['CPIAUCSL'] = None
 
-    # Core PCE (PCEPILFE) — monthly, acceleration
+    # Core PCE (PCEPILFE) — price index, YoY direction z-scored over 24 months
     pce_df = _load_csv('core_pce_price_index')
     pce = _to_series(pce_df, 'core_pce_price_index')
-    if pce is not None and len(pce) >= 14:
-        accel = _compute_acceleration(pce, 12)
-        z = _rolling_zscore(accel, 60)
+    if pce is not None and len(pce) >= 13:
+        yoy = _compute_yoy_direction(pce, 12)
+        z = _rolling_zscore(yoy, 24)
         signals['PCEPILFE'] = z
     else:
         signals['PCEPILFE'] = None
+
+    # Cleveland Fed Median CPI (MEDCPIM158SFRBCLE) — rate-based (YoY %)
+    # Level z-scored against full history: "is this inflation rate
+    # historically high or low?"
+    med_df = _load_csv('median_cpi')
+    med = _to_series(med_df, 'median_cpi')
+    if med is not None and len(med) >= 13:
+        z = _expanding_zscore(med)
+        signals['MEDCPIM158SFRBCLE'] = z
+    else:
+        signals['MEDCPIM158SFRBCLE'] = None
+
+    # --- Market Expectations (daily) ---
+
+    # 10Y Breakeven (T10YIE) — rate-based (%)
+    # Level z-scored against full history: "are inflation expectations
+    # elevated relative to historical norms?"
+    t10yie_df = _load_csv('breakeven_inflation_10y')
+    t10yie = _to_series(t10yie_df, 'breakeven_inflation_10y')
+    if t10yie is not None and len(t10yie) >= 253:
+        z = _expanding_zscore(t10yie)
+        signals['T10YIE'] = z
+    else:
+        signals['T10YIE'] = None
+
+    # 5Y5Y Forward (T5YIFR) — rate-based (%)
+    # Level z-scored against full history
+    fwd_df = _load_csv('inflation_expectations_5y5y')
+    fwd = _to_series(fwd_df, 'inflation_expectations_5y5y')
+    if fwd is not None and len(fwd) >= 253:
+        z = _expanding_zscore(fwd)
+        signals['T5YIFR'] = z
+    else:
+        signals['T5YIFR'] = None
+
+    # --- Consumer Expectations (monthly) ---
+
+    # Michigan 1-Year Expectations (MICH) — rate-based (%)
+    # Level z-scored against full history: "are consumer expectations
+    # elevated relative to historical norms?"
+    mich_df = _load_csv('michigan_inflation_expectations')
+    mich = _to_series(mich_df, 'michigan_inflation_expectations')
+    if mich is not None and len(mich) >= 13:
+        z = _expanding_zscore(mich)
+        signals['MICH'] = z
+    else:
+        signals['MICH'] = None
 
     return signals
 
@@ -496,6 +606,69 @@ def _compute_monthly_composite(signals: dict[str, Optional[pd.Series]]) -> Optio
     # Combine into DataFrame and compute row-wise mean (ignoring NaN)
     combined = pd.DataFrame(monthly_signals)
     composite = combined.mean(axis=1)
+    return composite.dropna()
+
+
+# Dimensional grouping for inflation indicators.
+# Equal weight per dimension (1/3 each) prevents any single dimension
+# from dominating the composite — e.g., 3 realized indicators don't
+# get 3x the voice of 1 consumer indicator.
+_INFLATION_DIMENSIONS = {
+    'realized': ['CPIAUCSL', 'PCEPILFE', 'MEDCPIM158SFRBCLE'],
+    'market': ['T10YIE', 'T5YIFR'],
+    'consumer': ['MICH'],
+}
+
+
+def _compute_inflation_composite(
+    signals: dict[str, Optional[pd.Series]],
+) -> Optional[pd.Series]:
+    """
+    Compute dimensionally-weighted inflation composite.
+
+    Groups 6 inflation indicators into 3 dimensions (realized trend,
+    market expectations, consumer expectations), computes a per-dimension
+    average, then averages the dimensions with equal weight.
+
+    Each signal is forward-filled by 1 month after monthly resampling to
+    handle publication lag — monthly indicators (CPI, PCE, Median CPI,
+    Michigan) typically publish with a 1-month delay, so carrying forward
+    the last known value prevents the composite from losing important
+    signals in the most recent months.
+    """
+    # Step 1: Build per-dimension composites
+    dim_composites = {}
+    for dim_name, indicator_keys in _INFLATION_DIMENSIONS.items():
+        dim_signals = {
+            k: signals[k]
+            for k in indicator_keys
+            if signals.get(k) is not None and len(signals[k]) > 0
+        }
+        if not dim_signals:
+            continue
+
+        # Resample each to monthly, forward-fill 1 month for publication lag
+        monthly = {}
+        for name, s in dim_signals.items():
+            m = s.resample('ME').last()
+            monthly[name] = m
+
+        # Combine into DataFrame (auto-aligns to union of date indices),
+        # then forward-fill each column by 1 period
+        combined = pd.DataFrame(monthly)
+        combined = combined.ffill(limit=1)
+        dim_avg = combined.mean(axis=1).dropna()
+
+        if len(dim_avg) > 0:
+            dim_composites[dim_name] = dim_avg
+
+    if not dim_composites:
+        return None
+
+    # Step 2: Equal-weight average of dimensional composites
+    dim_df = pd.DataFrame(dim_composites)
+    dim_df = dim_df.ffill(limit=1)  # Forward-fill dimensional composites too
+    composite = dim_df.mean(axis=1)
     return composite.dropna()
 
 
@@ -572,8 +745,10 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
 
     Steps:
       1. Compute acceleration-based z-scores for 5 growth indicators
-      2. Compute acceleration-based z-scores for 4 inflation indicators
-      3. Equal-weight composites for growth and inflation
+      2. Compute z-scored inflation signals (direction for indices,
+         expanding level for rate-based series)
+      3. Equal-weight growth composite; dimensionally-weighted inflation
+         composite (realized/market/consumer each 1/3)
       4. Classify into quadrant
       5. Apply stability filter (2+ consecutive months)
 
@@ -587,7 +762,7 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
     inflation_signals = _load_inflation_signals()
 
     growth_composite = _compute_monthly_composite(growth_signals)
-    inflation_composite = _compute_monthly_composite(inflation_signals)
+    inflation_composite = _compute_inflation_composite(inflation_signals)
 
     if growth_composite is None or inflation_composite is None:
         logger.warning('Insufficient data for quadrant calculation')
