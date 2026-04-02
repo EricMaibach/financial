@@ -24,17 +24,20 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 15 — Public Deployment
+**Phase:** Phase 15 — Inflation Composite Redesign
 **State:** IDEATING
 
 **Previous phase:** Phase 14 — MacroClarity Rebrand ✅ COMPLETE (see below)
+
+**Phase 15 context:** The inflation composite is misclassifying the current environment as "Deflation Risk" while consensus points toward stagflation. Root causes: acceleration (second derivative) used as primary classifier instead of YoY direction (first derivative), 60-month z-score window suppresses signals at turning points, and the indicator set double-counts breakevens while lacking consumer expectations. See [INFLATION-COMPOSITE-REDESIGN.md](INFLATION-COMPOSITE-REDESIGN.md) for full analysis.
 
 ### Phase Sequence
 
 | Phase | Title | Focus |
 |-------|-------|-------|
-| **15** | **Public Deployment** | DNS → macroclarity.com, production config, SSL, monitoring |
-| **16+** | **Traction & Learning** | SEO, content, observe usage, decide on monetization |
+| **15** | **Inflation Composite Redesign** | Fix misclassification: new FRED data, YoY direction classifier, breadth signal, graduated stability |
+| **16** | **Public Deployment** | DNS → macroclarity.com, production config, SSL, monitoring |
+| **17+** | **Traction & Learning** | SEO, content, observe usage, decide on monetization |
 
 ---
 
@@ -289,7 +292,8 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Phase 10 | Model accuracy: walk-forward composite score meaningfully above 52.3/100 baseline |
 | Phase 11 | Conditions engagement: users who expand dimension details from verdict card |
 | Phase 13 | Invite-only registration working, anonymous AI removed, site stable for public traffic ✅ |
-| Phase 14 | Full rebrand shipped: all user-facing references updated to MacroClarity |
+| Phase 14 | Full rebrand shipped: all user-facing references updated to MacroClarity ✅ |
+| Phase 15 | Inflation composite correctly classifies current environment; regime transitions detected within 1 month; component signals visible |
 
 ---
 
