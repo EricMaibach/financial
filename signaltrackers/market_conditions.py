@@ -373,15 +373,32 @@ def _compute_acceleration(series: pd.Series, period: int) -> pd.Series:
 
 def _compute_yoy_direction(series: pd.Series, period: int) -> pd.Series:
     """
-    Compute YoY rate direction (first derivative of YoY rate).
+    Compute YoY rate direction for index-level series (e.g. CPI, Core PCE).
 
-    Returns the YoY rate of change itself — positive means the level is
-    rising year-over-year, negative means it is falling.
+    Uses percentage change: series / series.shift(period) - 1.
+    This converts a price index into a YoY inflation rate — positive means
+    inflation is rising year-over-year.
 
-    This is the primary inflation classifier used by practitioner frameworks
-    (Bridgewater, Gavekal, Hedgeye): is inflation going up or down?
+    Only valid for index-level series. For rate-based series (breakevens,
+    survey expectations, median CPI), use _compute_rate_momentum instead.
     """
     return series / series.shift(period) - 1
+
+
+def _compute_rate_momentum(series: pd.Series, period: int) -> pd.Series:
+    """
+    Compute YoY momentum for rate-based series (e.g. breakevens, Michigan).
+
+    Uses simple difference: series - series.shift(period).
+    Rate-based series are already expressed as percentages, so their level
+    IS the inflation signal. The difference tells us whether the rate is
+    rising or falling — positive means inflation expectations are increasing.
+
+    Using percentage change on rates would give "change in the rate of change"
+    (essentially acceleration), which defeats the purpose of using direction
+    as the primary classifier.
+    """
+    return series.diff(period)
 
 
 def _load_growth_signals() -> dict[str, Optional[pd.Series]]:
@@ -479,46 +496,50 @@ def _load_inflation_signals() -> dict[str, Optional[pd.Series]]:
     else:
         signals['PCEPILFE'] = None
 
-    # Cleveland Fed Median CPI (MEDCPIM158SFRBCLE) — monthly, YoY direction
+    # Cleveland Fed Median CPI (MEDCPIM158SFRBCLE) — monthly, rate-based
+    # Already a YoY % change rate; use momentum (diff) not percentage change
     med_df = _load_csv('median_cpi')
     med = _to_series(med_df, 'median_cpi')
     if med is not None and len(med) >= 13:
-        yoy = _compute_yoy_direction(med, 12)
-        z = _rolling_zscore(yoy, 24)
+        momentum = _compute_rate_momentum(med, 12)
+        z = _rolling_zscore(momentum, 24)
         signals['MEDCPIM158SFRBCLE'] = z
     else:
         signals['MEDCPIM158SFRBCLE'] = None
 
     # --- Market Expectations (daily, period=252) ---
 
-    # 10Y Breakeven (T10YIE) — daily, YoY direction
+    # 10Y Breakeven (T10YIE) — daily, rate-based
+    # Already a % rate; use momentum (diff) not percentage change
     t10yie_df = _load_csv('breakeven_inflation_10y')
     t10yie = _to_series(t10yie_df, 'breakeven_inflation_10y')
     if t10yie is not None and len(t10yie) >= 253:
-        yoy = _compute_yoy_direction(t10yie, 252)
-        z = _rolling_zscore(yoy, 504)
+        momentum = _compute_rate_momentum(t10yie, 252)
+        z = _rolling_zscore(momentum, 504)
         signals['T10YIE'] = z
     else:
         signals['T10YIE'] = None
 
-    # 5Y5Y Forward (T5YIFR) — daily, YoY direction
+    # 5Y5Y Forward (T5YIFR) — daily, rate-based
+    # Already a % rate; use momentum (diff) not percentage change
     fwd_df = _load_csv('inflation_expectations_5y5y')
     fwd = _to_series(fwd_df, 'inflation_expectations_5y5y')
     if fwd is not None and len(fwd) >= 253:
-        yoy = _compute_yoy_direction(fwd, 252)
-        z = _rolling_zscore(yoy, 504)
+        momentum = _compute_rate_momentum(fwd, 252)
+        z = _rolling_zscore(momentum, 504)
         signals['T5YIFR'] = z
     else:
         signals['T5YIFR'] = None
 
     # --- Consumer Expectations (monthly, period=12) ---
 
-    # Michigan 1-Year Expectations (MICH) — monthly, YoY direction
+    # Michigan 1-Year Expectations (MICH) — monthly, rate-based
+    # Already a % expectation; use momentum (diff) not percentage change
     mich_df = _load_csv('michigan_inflation_expectations')
     mich = _to_series(mich_df, 'michigan_inflation_expectations')
     if mich is not None and len(mich) >= 13:
-        yoy = _compute_yoy_direction(mich, 12)
-        z = _rolling_zscore(yoy, 24)
+        momentum = _compute_rate_momentum(mich, 12)
+        z = _rolling_zscore(momentum, 24)
         signals['MICH'] = z
     else:
         signals['MICH'] = None

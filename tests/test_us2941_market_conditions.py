@@ -42,6 +42,7 @@ from signaltrackers.market_conditions import (
     _classify_liquidity,
     _compute_acceleration,
     _compute_yoy_direction,
+    _compute_rate_momentum,
     _load_inflation_signals,
     _classify_quadrant,
     _apply_stability_filter,
@@ -351,6 +352,59 @@ class TestYoyDirection:
         assert accel_valid.abs().max() < 0.01
         # YoY direction should be positive (rising)
         assert all(v > 0 for v in yoy_valid)
+
+
+# ---------------------------------------------------------------------------
+# Tests: Rate momentum (for rate-based inflation indicators)
+# ---------------------------------------------------------------------------
+
+class TestRateMomentum:
+    def test_rising_rate_positive(self):
+        """A steadily rising rate should produce positive momentum."""
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        s = pd.Series([2.0 + i * 0.05 for i in range(36)], index=idx)
+        mom = _compute_rate_momentum(s, 12)
+        valid = mom.dropna()
+        assert len(valid) > 0
+        assert all(v > 0 for v in valid)
+
+    def test_falling_rate_negative(self):
+        """A steadily falling rate should produce negative momentum."""
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        s = pd.Series([5.0 - i * 0.05 for i in range(36)], index=idx)
+        mom = _compute_rate_momentum(s, 12)
+        valid = mom.dropna()
+        assert len(valid) > 0
+        assert all(v < 0 for v in valid)
+
+    def test_constant_rate_zero(self):
+        """A flat rate should produce zero momentum."""
+        idx = pd.date_range('2018-01-01', periods=36, freq='MS')
+        s = pd.Series([3.0] * 36, index=idx)
+        mom = _compute_rate_momentum(s, 12)
+        valid = mom.dropna()
+        assert len(valid) > 0
+        assert all(abs(v) < 1e-10 for v in valid)
+
+    def test_first_period_is_nan(self):
+        """First `period` observations should be NaN."""
+        idx = pd.date_range('2020-01-01', periods=24, freq='MS')
+        s = pd.Series([2.0 + i * 0.1 for i in range(24)], index=idx)
+        mom = _compute_rate_momentum(s, 12)
+        for i in range(12):
+            assert np.isnan(mom.iloc[i])
+        assert not np.isnan(mom.iloc[12])
+
+    def test_uses_diff_not_pct_change(self):
+        """Rate momentum uses absolute diff, not percentage change.
+
+        For a rate at 2.0 rising to 3.0, momentum should be +1.0 (diff),
+        not +0.5 (pct change). This is the key distinction from _compute_yoy_direction.
+        """
+        idx = pd.date_range('2020-01-01', periods=24, freq='MS')
+        s = pd.Series([2.0] * 12 + [3.0] * 12, index=idx)
+        mom = _compute_rate_momentum(s, 12)
+        assert abs(mom.iloc[12] - 1.0) < 1e-10  # diff = 3.0 - 2.0 = 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -870,6 +924,15 @@ class TestNoLookaheadBias:
         for i in range(12):
             assert np.isnan(yoy.iloc[i])
         assert not np.isnan(yoy.iloc[12])
+
+    def test_rate_momentum_no_future_data(self):
+        """Rate momentum at T uses T and T-period, both ≤ T."""
+        idx = pd.date_range('2020-01-01', periods=24, freq='MS')
+        s = pd.Series([2.0 + i * 0.1 for i in range(24)], index=idx)
+        mom = _compute_rate_momentum(s, 12)
+        for i in range(12):
+            assert np.isnan(mom.iloc[i])
+        assert not np.isnan(mom.iloc[12])
 
 
 # ---------------------------------------------------------------------------
