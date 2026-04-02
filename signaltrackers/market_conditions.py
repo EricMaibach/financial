@@ -440,16 +440,6 @@ def _load_inflation_signals() -> dict[str, Optional[pd.Series]]:
     else:
         signals['T10YIE'] = None
 
-    # 5Y Breakeven (T5YIE) — daily, level change
-    t5yie_df = _load_csv('breakeven_inflation_5y')
-    t5yie = _to_series(t5yie_df, 'breakeven_inflation_5y')
-    if t5yie is not None and len(t5yie) >= 253:
-        level_change = t5yie.diff(252)
-        z = _rolling_zscore(level_change, 1260)
-        signals['T5YIE'] = z
-    else:
-        signals['T5YIE'] = None
-
     # CPI (CPIAUCSL) — monthly, acceleration
     cpi_df = _load_csv('cpi')
     cpi = _to_series(cpi_df, 'cpi')

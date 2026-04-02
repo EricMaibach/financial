@@ -122,6 +122,10 @@ class MarketSignalsTracker:
             'potential_gdp': 'GDPPOT',              # CBO Potential GDP (quarterly) — Taylor Rule calibration; subject to large revisions
             'unemployment_rate': 'UNRATE',           # Unemployment Rate (monthly, %) — for Okun's Law output gap
             'natural_unemployment_rate': 'NROU',     # CBO Natural Rate of Unemployment (quarterly, %) — for Okun's Law
+            # --- Inflation Composite Redesign (Phase 15) ---
+            'median_cpi': 'MEDCPIM158SFRBCLE',       # Cleveland Fed Median CPI (monthly) — noise-filtered trend inflation
+            'inflation_expectations_5y5y': 'T5YIFR',  # 5Y5Y Forward Inflation Expectation Rate (daily) — long-run expectations anchor
+            'michigan_inflation_expectations': 'MICH', # University of Michigan 1-Year Inflation Expectations (monthly) — consumer expectations
         }
 
         # ETF tickers organized by category
