@@ -596,6 +596,12 @@ def _build_conditions_context(conditions):
     parts = ["## CURRENT MARKET CONDITIONS"]
     parts.append(f"Quadrant: {quadrant}")
 
+    # Transition watch (graduated stability filter)
+    tw = quad_dims.get('transition_watch')
+    if tw is not None:
+        direction = tw.get('direction', 'Unknown')
+        parts.append(f"  ⚠ Transition Watch — signals shifting toward {direction} (month {tw.get('month', 1)} of 2 for confirmation)")
+
     # Growth/inflation composites if available
     growth = quad_dims.get('growth_composite')
     inflation = quad_dims.get('inflation_composite')
@@ -724,8 +730,14 @@ def _build_conditions_history_context(history, days=90):
         if liq_score is not None:
             liq_str = f"{liq_state}({liq_score:.2f})"
 
+        # Transition watch indicator
+        tw = entry.get('transition_watch') or dims.get('quadrant', {}).get('transition_watch')
+        tw_str = ""
+        if tw is not None:
+            tw_str = f" [WATCH→{tw.get('direction', '?')}]"
+
         parts.append(
-            f"  {date}: {quadrant}{score_str} | Liq: {liq_str} | Risk: {risk_state} | Policy: {policy_stance}/{policy_dir}"
+            f"  {date}: {quadrant}{score_str}{tw_str} | Liq: {liq_str} | Risk: {risk_state} | Policy: {policy_stance}/{policy_dir}"
         )
 
     # Compute summary statistics for the AI
