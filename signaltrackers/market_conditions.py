@@ -53,6 +53,9 @@ class QuadrantResult:
     raw_quadrant: str      # Before stability filter
     stable: bool           # Whether the stability filter confirms the quadrant
     as_of: Optional[str] = None
+    inflation_breadth: Optional[int] = None        # Count of indicators agreeing on majority direction
+    inflation_breadth_total: Optional[int] = None   # Total indicators available
+    inflation_components: Optional[dict] = None     # Per-indicator detail: {name: {direction, z_score, raw_value}}
 
 
 @dataclass
@@ -573,6 +576,70 @@ def _load_inflation_signals() -> dict[str, Optional[pd.Series]]:
     return signals
 
 
+def _load_inflation_raw_values() -> dict[str, Optional[dict]]:
+    """Load raw values and direction labels for each inflation indicator.
+
+    Returns a dict mapping indicator name to {raw_value, direction} for the
+    latest available observation, or None if the indicator is unavailable.
+    Used for component-level storage in market_conditions_history.json.
+    """
+    raw = {}
+
+    # --- Realized Trend (index-level: direction = YoY rate direction) ---
+
+    cpi_df = _load_csv('cpi')
+    cpi = _to_series(cpi_df, 'cpi')
+    if cpi is not None and len(cpi) >= 13:
+        yoy = _compute_yoy_direction(cpi, 12)
+        yoy_clean = yoy.dropna()
+        if len(yoy_clean) > 0:
+            latest = float(yoy_clean.iloc[-1])
+            raw['CPIAUCSL'] = {
+                'raw_value': round(latest, 6),
+                'direction': 'rising' if latest > 0 else 'falling',
+            }
+    if 'CPIAUCSL' not in raw:
+        raw['CPIAUCSL'] = None
+
+    pce_df = _load_csv('core_pce_price_index')
+    pce = _to_series(pce_df, 'core_pce_price_index')
+    if pce is not None and len(pce) >= 13:
+        yoy = _compute_yoy_direction(pce, 12)
+        yoy_clean = yoy.dropna()
+        if len(yoy_clean) > 0:
+            latest = float(yoy_clean.iloc[-1])
+            raw['PCEPILFE'] = {
+                'raw_value': round(latest, 6),
+                'direction': 'rising' if latest > 0 else 'falling',
+            }
+    if 'PCEPILFE' not in raw:
+        raw['PCEPILFE'] = None
+
+    # --- Rate-based series: direction = above/below expanding mean ---
+
+    for csv_name, col_name, key in [
+        ('median_cpi', 'median_cpi', 'MEDCPIM158SFRBCLE'),
+        ('breakeven_inflation_10y', 'breakeven_inflation_10y', 'T10YIE'),
+        ('inflation_expectations_5y5y', 'inflation_expectations_5y5y', 'T5YIFR'),
+        ('michigan_inflation_expectations', 'michigan_inflation_expectations', 'MICH'),
+    ]:
+        df = _load_csv(csv_name)
+        s = _to_series(df, col_name)
+        min_len = 253 if key in ('T10YIE', 'T5YIFR') else 13
+        if s is not None and len(s) >= min_len:
+            exp_mean = s.expanding(min_periods=12).mean()
+            latest_val = float(s.iloc[-1])
+            latest_mean = float(exp_mean.iloc[-1])
+            raw[key] = {
+                'raw_value': round(latest_val, 4),
+                'direction': 'rising' if latest_val > latest_mean else 'falling',
+            }
+        else:
+            raw[key] = None
+
+    return raw
+
+
 def _compute_monthly_composite(signals: dict[str, Optional[pd.Series]]) -> Optional[pd.Series]:
     """
     Compute equal-weight composite from mixed-frequency z-scored signals.
@@ -620,6 +687,12 @@ _INFLATION_DIMENSIONS = {
 }
 
 
+# Daily signals that should use rolling smoothing before monthly resampling
+# to preserve intra-month responsiveness without noise.
+_DAILY_SIGNALS = {'T10YIE', 'T5YIFR'}
+_DAILY_SMOOTHING_WINDOW = 20  # ~1 trading month
+
+
 def _compute_inflation_composite(
     signals: dict[str, Optional[pd.Series]],
 ) -> Optional[pd.Series]:
@@ -631,10 +704,14 @@ def _compute_inflation_composite(
     average, then averages the dimensions with equal weight.
 
     Each signal is forward-filled by 1 month after monthly resampling to
-    handle publication lag — monthly indicators (CPI, PCE, Median CPI,
-    Michigan) typically publish with a 1-month delay, so carrying forward
-    the last known value prevents the composite from losing important
-    signals in the most recent months.
+    handle publication lag within a dimension. At the cross-dimension level,
+    forward-fill extends to 2 months because monthly FRED indicators
+    (CPI, PCE, Median CPI, Michigan) publish with ~1-month lag, creating
+    a 2-month-end gap relative to daily market signals early in each month.
+
+    Daily signals (T10YIE, T5YIFR) use a 20-day rolling mean before
+    monthly resampling to preserve intra-month responsiveness without
+    introducing daily noise.
     """
     # Step 1: Build per-dimension composites
     dim_composites = {}
@@ -650,7 +727,13 @@ def _compute_inflation_composite(
         # Resample each to monthly, forward-fill 1 month for publication lag
         monthly = {}
         for name, s in dim_signals.items():
-            m = s.resample('ME').last()
+            if name in _DAILY_SIGNALS:
+                # Daily signals: smooth with rolling mean before resampling
+                # to capture intra-month movements without daily noise
+                smoothed = s.rolling(_DAILY_SMOOTHING_WINDOW, min_periods=5).mean()
+                m = smoothed.resample('ME').last()
+            else:
+                m = s.resample('ME').last()
             monthly[name] = m
 
         # Combine into DataFrame (auto-aligns to union of date indices),
@@ -667,9 +750,98 @@ def _compute_inflation_composite(
 
     # Step 2: Equal-weight average of dimensional composites
     dim_df = pd.DataFrame(dim_composites)
-    dim_df = dim_df.ffill(limit=1)  # Forward-fill dimensional composites too
+    dim_df = dim_df.ffill(limit=2)  # Bridge 2-month gap: monthly FRED data lags ~1 month
     composite = dim_df.mean(axis=1)
     return composite.dropna()
+
+
+def _compute_inflation_breadth(
+    signals: dict[str, Optional[pd.Series]],
+) -> tuple[Optional[int], Optional[int]]:
+    """
+    Compute inflation breadth: count of indicators agreeing on majority direction.
+
+    For each indicator, determine direction at the latest month-end:
+    - Positive z-score → rising inflation signal
+    - Negative z-score → falling inflation signal
+
+    Breadth = count of indicators agreeing with the majority direction.
+
+    Returns:
+        (breadth_count, total_indicators) or (None, None) if no data.
+    """
+    directions = []
+    for dim_name, indicator_keys in _INFLATION_DIMENSIONS.items():
+        for key in indicator_keys:
+            s = signals.get(key)
+            if s is None or len(s) == 0:
+                continue
+            if key in _DAILY_SIGNALS:
+                smoothed = s.rolling(_DAILY_SMOOTHING_WINDOW, min_periods=5).mean()
+                monthly = smoothed.resample('ME').last().dropna()
+            else:
+                monthly = s.resample('ME').last().dropna()
+            # Forward-fill 1 period for publication lag
+            monthly = monthly.ffill(limit=1)
+            if len(monthly) == 0:
+                continue
+            latest_z = float(monthly.iloc[-1])
+            directions.append('rising' if latest_z > 0 else 'falling')
+
+    if not directions:
+        return None, None
+
+    rising_count = sum(1 for d in directions if d == 'rising')
+    falling_count = len(directions) - rising_count
+    breadth = max(rising_count, falling_count)
+    return breadth, len(directions)
+
+
+def _compute_inflation_components(
+    signals: dict[str, Optional[pd.Series]],
+    raw_values: dict[str, Optional[dict]],
+) -> dict:
+    """
+    Build per-indicator component data for storage and briefing.
+
+    Returns a dict keyed by indicator name with direction, z_score, and
+    raw_value for each available indicator. Missing indicators have None.
+    """
+    components = {}
+    all_keys = [k for keys in _INFLATION_DIMENSIONS.values() for k in keys]
+
+    for key in all_keys:
+        s = signals.get(key)
+        rv = raw_values.get(key)
+
+        if s is None or len(s) == 0:
+            components[key] = None
+            continue
+
+        if key in _DAILY_SIGNALS:
+            smoothed = s.rolling(_DAILY_SMOOTHING_WINDOW, min_periods=5).mean()
+            monthly = smoothed.resample('ME').last().dropna()
+        else:
+            monthly = s.resample('ME').last().dropna()
+        monthly = monthly.ffill(limit=1)
+
+        if len(monthly) == 0:
+            components[key] = None
+            continue
+
+        latest_z = float(monthly.iloc[-1])
+        comp = {
+            'z_score': round(latest_z, 4),
+            'direction': 'rising' if latest_z > 0 else 'falling',
+        }
+        if rv is not None:
+            comp['raw_value'] = rv.get('raw_value')
+        else:
+            comp['raw_value'] = None
+
+        components[key] = comp
+
+    return components
 
 
 def _apply_stability_filter(
@@ -768,6 +940,11 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
         logger.warning('Insufficient data for quadrant calculation')
         return None
 
+    # Compute inflation breadth and component data
+    breadth, breadth_total = _compute_inflation_breadth(inflation_signals)
+    raw_values = _load_inflation_raw_values()
+    components = _compute_inflation_components(inflation_signals, raw_values)
+
     # Align growth and inflation to common dates
     common_idx = growth_composite.index.intersection(inflation_composite.index)
     if len(common_idx) == 0:
@@ -813,6 +990,9 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
         raw_quadrant=raw_q,
         stable=(raw_q == stable_q),
         as_of=str(latest_idx.date()),
+        inflation_breadth=breadth,
+        inflation_breadth_total=breadth_total,
+        inflation_components=components,
     )
 
 
@@ -1905,6 +2085,9 @@ def update_market_conditions_cache() -> Optional[dict]:
                     'state': quadrant_result.quadrant,
                     'growth_composite': round(quadrant_result.growth_composite, 4),
                     'inflation_composite': round(quadrant_result.inflation_composite, 4),
+                    'inflation_breadth': quadrant_result.inflation_breadth,
+                    'inflation_breadth_total': quadrant_result.inflation_breadth_total,
+                    'inflation_components': quadrant_result.inflation_components,
                 },
                 'risk': {
                     'state': risk_state,
