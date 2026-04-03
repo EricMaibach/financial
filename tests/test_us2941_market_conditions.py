@@ -537,6 +537,37 @@ class TestInflationComposite:
         assert composite is not None
         assert abs(composite.iloc[-1] - 1.5) < 0.01
 
+    def test_two_month_gap_forward_fill(self):
+        """Monthly dimensions ending 2 months before daily signals are still included.
+
+        Regression test: early in each month, monthly FRED data (realized, consumer)
+        lags ~1 month, creating a 2-month-end gap relative to daily market signals.
+        The dimensional ffill(limit=2) must bridge this gap so the composite uses
+        all 3 dimensions, not just market.
+        """
+        # Monthly indicators end at month 34 (simulating ~1 month publication lag)
+        idx_monthly = pd.date_range('2020-01-01', periods=34, freq='MS')
+        # Daily signals extend 2 months further (to month 36)
+        idx_daily = pd.date_range('2020-01-01', periods=36, freq='MS')
+        signals = {
+            'CPIAUCSL': pd.Series([1.0] * 34, index=idx_monthly),
+            'PCEPILFE': pd.Series([1.0] * 34, index=idx_monthly),
+            'MEDCPIM158SFRBCLE': pd.Series([1.0] * 34, index=idx_monthly),
+            'T10YIE': pd.Series([-1.0] * 36, index=idx_daily),
+            'T5YIFR': pd.Series([-1.0] * 36, index=idx_daily),
+            'MICH': pd.Series([2.0] * 34, index=idx_monthly),
+        }
+        composite = _compute_inflation_composite(signals)
+        assert composite is not None
+        # At the last month (month 36), all 3 dimensions should contribute:
+        # Realized = 1.0 (ffilled), Market = -1.0, Consumer = 2.0 (ffilled)
+        # Composite = (1.0 + (-1.0) + 2.0) / 3 ≈ 0.667
+        last_val = composite.iloc[-1]
+        assert abs(last_val - 2.0 / 3) < 0.05, (
+            f"Expected ~0.667 (all 3 dims), got {last_val} — "
+            "composite may have collapsed to market dimension only"
+        )
+
     def test_all_none_returns_none(self):
         signals = {k: None for k in ['CPIAUCSL', 'PCEPILFE', 'MEDCPIM158SFRBCLE',
                                        'T10YIE', 'T5YIFR', 'MICH']}

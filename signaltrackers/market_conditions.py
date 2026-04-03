@@ -704,10 +704,10 @@ def _compute_inflation_composite(
     average, then averages the dimensions with equal weight.
 
     Each signal is forward-filled by 1 month after monthly resampling to
-    handle publication lag — monthly indicators (CPI, PCE, Median CPI,
-    Michigan) typically publish with a 1-month delay, so carrying forward
-    the last known value prevents the composite from losing important
-    signals in the most recent months.
+    handle publication lag within a dimension. At the cross-dimension level,
+    forward-fill extends to 2 months because monthly FRED indicators
+    (CPI, PCE, Median CPI, Michigan) publish with ~1-month lag, creating
+    a 2-month-end gap relative to daily market signals early in each month.
 
     Daily signals (T10YIE, T5YIFR) use a 20-day rolling mean before
     monthly resampling to preserve intra-month responsiveness without
@@ -750,7 +750,7 @@ def _compute_inflation_composite(
 
     # Step 2: Equal-weight average of dimensional composites
     dim_df = pd.DataFrame(dim_composites)
-    dim_df = dim_df.ffill(limit=1)  # Forward-fill dimensional composites too
+    dim_df = dim_df.ffill(limit=2)  # Bridge 2-month gap: monthly FRED data lags ~1 month
     composite = dim_df.mean(axis=1)
     return composite.dropna()
 
