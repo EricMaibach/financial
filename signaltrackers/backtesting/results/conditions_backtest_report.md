@@ -1,127 +1,125 @@
-# Market Conditions Backtest Report
+# Market Conditions Backtest Report (Quadrant-Led)
 
-Generated: 2026-03-17 08:09:19
-Evaluation period: 2006-08-31 to 2025-10-31
-Total evaluations: 231
+Generated: 2026-04-03 09:01:38
+Evaluation period: 2005-01-31 to 2025-12-31
+Total evaluations: 252
 Baseline (k-means): 52.3/100
 
-## Overall Composite Score: 31.9/100 (FAIL: -20.4 vs baseline)
+Scoring: S&P 500 uses real (inflation-adjusted) returns. Treasuries and Gold use nominal directional accuracy.
+
+## Overall Composite Score: 27.8/100 (FAIL: -24.5 vs baseline)
 
 Components:
-- Multi-asset accuracy (50% weight): 63.9%
-- Drawdown ordering Favorable→Defensive (25% weight): FAIL
-- S&P 500 return ordering Favorable→Defensive (25% weight): FAIL
+- Multi-asset accuracy (50% weight): 55.5%
+- Real return magnitude ordering Goldilocks→Stagflation (25% weight): FAIL
+- Drawdown ordering Goldilocks→Stagflation (25% weight): FAIL
 
 ## Walk-Forward Validation
 
-- Mean fold score: 62.4%
-- Std deviation: 7.9%
-- Sharpe-like ratio: 7.86
+- Mean fold score: 54.4%
+- Std deviation: 7.5%
+- Sharpe-like ratio: 7.21
 - Number of folds: 10
 
 | Fold | Period | Evaluations | Score |
 |------|--------|-------------|-------|
-| 1 | 2005-01-01 to 2006-12-31 | 5 | 50.0% |
-| 2 | 2007-01-01 to 2008-12-31 | 24 | 62.2% |
-| 3 | 2009-01-01 to 2010-12-31 | 24 | 62.6% |
-| 4 | 2011-01-01 to 2012-12-31 | 24 | 72.3% |
-| 5 | 2013-01-01 to 2014-12-31 | 24 | 65.5% |
-| 6 | 2015-01-01 to 2016-12-31 | 24 | 53.5% |
-| 7 | 2017-01-01 to 2018-12-31 | 24 | 73.8% |
-| 8 | 2019-01-01 to 2020-12-31 | 24 | 69.0% |
-| 9 | 2021-01-01 to 2022-12-31 | 24 | 55.6% |
-| 10 | 2023-01-01 to 2024-12-31 | 24 | 59.6% |
+| 1 | 2005-01-01 to 2006-12-31 | 24 | 45.2% |
+| 2 | 2007-01-01 to 2008-12-31 | 24 | 46.2% |
+| 3 | 2009-01-01 to 2010-12-31 | 24 | 55.6% |
+| 4 | 2011-01-01 to 2012-12-31 | 24 | 47.5% |
+| 5 | 2013-01-01 to 2014-12-31 | 24 | 48.8% |
+| 6 | 2015-01-01 to 2016-12-31 | 24 | 51.3% |
+| 7 | 2017-01-01 to 2018-12-31 | 24 | 64.1% |
+| 8 | 2019-01-01 to 2020-12-31 | 24 | 64.5% |
+| 9 | 2021-01-01 to 2022-12-31 | 24 | 59.2% |
+| 10 | 2023-01-01 to 2024-12-31 | 24 | 61.7% |
 
 ## Per-Asset Accuracy
 
 | Asset | Weight | Accuracy | Evaluations |
 |-------|--------|----------|-------------|
-| S&P 500 | 38% | 58.2% | 231 |
-| Treasuries (TLT) | 31% | 68.0% | 231 |
-| Gold | 31% | 66.7% | 231 |
+| S&P 500 | 38% | 50.0% | 252 |
+| Treasuries (TLT) | 31% | 50.8% | 252 |
+| Gold | 31% | 66.7% | 252 |
 
-## Per-Verdict Summary
+## Per-Quadrant Summary
 
-| Verdict | Count | Multi-Asset Accuracy | S&P 500 Avg 90d | S&P 500 Avg Max DD |
-|---------|-------|---------------------|-----------------|-------------------|
-| Favorable | 39 | 78.2% | 4.83% | -6.27% |
-| Mixed | 107 | 74.4% | 2.22% | -8.5% |
-| Cautious | 64 | 39.8% | 2.71% | -6.41% |
-| Defensive | 21 | 57.1% | 3.17% | -8.36% |
+| Quadrant | Count | Multi-Asset Accuracy | S&P 500 Real Avg 90d | S&P 500 Avg Max DD |
+|----------|-------|---------------------|----------------------|-------------------|
+| Goldilocks | 69 | 70.4% | 4.15% | -6.63% |
+| Deflation Risk | 47 | 48.1% | 3.79% | -7.24% |
+| Reflation | 45 | 56.0% | 0.48% | -8.43% |
+| Stagflation | 91 | 47.7% | 0.61% | -7.23% |
 
-## Per-Verdict Asset Detail
+## Per-Quadrant Asset Detail
 
-### Favorable (n=39)
-- **S&P 500**: accuracy=84.6% | 30d avg=2.77%, 60d avg=4.25%, 90d avg=4.83%
-- **Treasuries (TLT)**: accuracy=73.1% | 30d avg=-0.07%, 60d avg=0.31%, 90d avg=1.12%
-- **Gold**: accuracy=75.6% | 30d avg=-0.22%, 60d avg=0.18%, 90d avg=1.35%
+### Goldilocks (n=69)
+- **S&P 500** (expect positive): accuracy=79.7% | 30d avg=1.64%, 60d avg=3.2%, 90d avg=4.57%, real 90d avg=4.15%
+- **Treasuries (TLT)** (expect positive): accuracy=56.5% | 30d avg=0.0%, 60d avg=0.34%, 90d avg=0.43%
+- **Gold** (expect neutral): accuracy=73.2% | 30d avg=0.93%, 60d avg=2.29%, 90d avg=3.12%
 
-### Mixed (n=107)
-- **S&P 500**: accuracy=71.5% | 30d avg=0.31%, 60d avg=1.12%, 90d avg=2.22%
-- **Treasuries (TLT)**: accuracy=80.8% | 30d avg=0.86%, 60d avg=1.72%, 90d avg=2.15%
-- **Gold**: accuracy=71.5% | 30d avg=1.62%, 60d avg=3.22%, 90d avg=4.42%
+### Deflation Risk (n=47)
+- **S&P 500** (expect negative): accuracy=19.1% | 30d avg=1.33%, 60d avg=2.55%, 90d avg=4.04%, real 90d avg=3.79%
+- **Treasuries (TLT)** (expect positive): accuracy=59.6% | 30d avg=0.27%, 60d avg=0.64%, 90d avg=0.88%
+- **Gold** (expect neutral): accuracy=71.3% | 30d avg=1.38%, 60d avg=2.76%, 90d avg=3.94%
 
-### Cautious (n=64)
-- **S&P 500**: accuracy=28.1% | 30d avg=1.1%, 60d avg=1.98%, 90d avg=2.71%
-- **Treasuries (TLT)**: accuracy=46.9% | 30d avg=-0.67%, 60d avg=-0.57%, 90d avg=-1.15%
-- **Gold**: accuracy=46.9% | 30d avg=0.14%, 60d avg=0.42%, 90d avg=0.71%
+### Reflation (n=45)
+- **S&P 500** (expect positive): accuracy=62.2% | 30d avg=0.53%, 60d avg=0.76%, 90d avg=1.31%, real 90d avg=0.48%
+- **Treasuries (TLT)** (expect negative): accuracy=28.9% | 30d avg=1.16%, 60d avg=2.56%, 90d avg=4.02%
+- **Gold** (expect positive): accuracy=75.6% | 30d avg=2.1%, 60d avg=4.52%, 90d avg=6.49%
 
-### Defensive (n=21)
-- **S&P 500**: accuracy=33.3% | 30d avg=0.73%, 60d avg=1.67%, 90d avg=3.17%
-- **Treasuries (TLT)**: accuracy=57.1% | 30d avg=0.32%, 60d avg=0.0%, 90d avg=0.98%
-- **Gold**: accuracy=85.7% | 30d avg=1.19%, 60d avg=2.42%, 90d avg=4.01%
+### Stagflation (n=91)
+- **S&P 500** (expect negative): accuracy=37.4% | 30d avg=0.46%, 60d avg=1.09%, 90d avg=1.55%, real 90d avg=0.61%
+- **Treasuries (TLT)** (expect negative): accuracy=52.7% | 30d avg=-0.13%, 60d avg=0.01%, 90d avg=-0.15%
+- **Gold** (expect positive): accuracy=54.9% | 30d avg=0.3%, 60d avg=0.69%, 90d avg=1.14%
 
 ## Economic Plausibility Checks
 
-**Overall: PASS**
+**Overall: FAIL**
 
-- **march_2020_not_favorable**: PASS
-  - dominant_verdict: Mixed
-  - verdicts_found: ['Mixed', 'Favorable']
-  - verdict_distribution: {'Mixed': 1, 'Favorable': 1}
+- **march_2020_not_goldilocks**: FAIL
+  - dominant_quadrant: Goldilocks
+  - quadrants_found: ['Goldilocks']
+  - quadrant_distribution: {'Goldilocks': 2}
 - **2022_stagflation_present**: PASS
-  - quadrants_found: ['Deflation Risk', 'Stagflation']
-  - quadrant_distribution: {'Deflation Risk': 8, 'Stagflation': 4}
-- **verdict_stability**: PASS
-  - avg_duration_months: 4.2
-  - total_transitions: 54
-  - min_duration: 1
-  - max_duration: 21
+  - quadrants_found: ['Stagflation']
+  - quadrant_distribution: {'Stagflation': 12}
+- **quadrant_stability**: PASS
+  - avg_duration_months: 7.2
+  - total_transitions: 34
+  - min_duration: 2
+  - max_duration: 23
 
 ## Combinatorial Purged Cross-Validation (CPCV)
 
 - PBO (Probability of Backtest Overfitting): 0.467 (PASS)
 - Number of paths tested: 15
-- OOS mean accuracy: 63.9%
-- OOS std: 2.4%
-- IS mean accuracy: 64.0%
+- OOS mean accuracy: 55.5%
+- OOS std: 4.9%
+- IS mean accuracy: 55.6%
 
 ## Deflated Sharpe Ratio (DSR)
 
-- DSR z-score: 42.4204
+- DSR z-score: 48.219
 - p-value: 0.0 (SIGNIFICANT)
-- Observed Sharpe: 7.86
-- Expected max Sharpe (null): 0.6858
-- Number of trials corrected for: 7
+- Observed Sharpe: 7.21
+- Expected max Sharpe (null): 0.3196
+- Number of trials corrected for: 3
 
-## Weight Sensitivity Analysis
+## Risk Filter Sensitivity Analysis
 
 | Configuration | Composite | Multi-Asset | WF Mean | WF Std | WF Sharpe | DD Order | Ret Order |
 |---------------|-----------|-------------|---------|--------|-----------|----------|-----------|
-| Default (35/35/20/10) | 31.9 | 63.9% | 62.4% | 7.9% | 7.86 | FAIL | FAIL |
-| Liquidity-heavy (40/30/20/10) | 31.9 | 63.7% | 62.3% | 7.9% | 7.89 | FAIL | FAIL |
-| Quadrant-heavy (30/40/20/10) | 31.4 | 62.8% | 61.3% | 7.7% | 7.92 | FAIL | FAIL |
-| Risk+Policy up (30/30/25/15) | 32.5 | 65.1% | 63.6% | 7.0% | 9.11 | FAIL | FAIL |
-| Risk-heavy (25/25/30/20) | 32.4 | 64.8% | 65.9% | 8.1% | 8.11 | FAIL | FAIL |
-| Macro-dominant (40/40/10/10) | 30.9 | 61.9% | 60.4% | 7.2% | 8.44 | FAIL | FAIL |
-| Low-policy (35/35/25/5) | 31.2 | 62.4% | 61.1% | 7.7% | 7.98 | FAIL | FAIL |
+| No risk filter (quadrant only) | 27.8 | 55.5% | 54.4% | 7.5% | 7.21 | FAIL | FAIL |
+| Stressed override (default) | 27.8 | 55.5% | 54.4% | 7.5% | 7.21 | FAIL | FAIL |
+| Elevated+Stressed override | 27.2 | 54.4% | 53.6% | 6.9% | 7.73 | FAIL | FAIL |
 
-**Recommended configuration:** Risk+Policy up (30/30/25/15)
-- Rationale: Highest walk-forward Sharpe ratio (9.11)
-- Weights: Liq=0.3, Quad=0.3, Risk=0.25, Policy=0.15
+**Recommended configuration:** Elevated+Stressed override
+- Rationale: Highest walk-forward Sharpe ratio (7.73)
 
 ## Final Recommendation
 
-**FAIL: Composite score 31.9/100 does not beat baseline 52.3/100.**
+**FAIL: Composite score 27.8/100 does not beat baseline 52.3/100.**
+Economic plausibility checks failed.
 
 DO NOT proceed to Phase 11. Investigate and iterate on the conditions engine.

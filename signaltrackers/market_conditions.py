@@ -1147,7 +1147,7 @@ def compute_quadrant_history(start_date: Optional[str] = None) -> Optional[pd.Da
     inflation_signals = _load_inflation_signals()
 
     growth_composite = _compute_monthly_composite(growth_signals)
-    inflation_composite = _compute_monthly_composite(inflation_signals)
+    inflation_composite = _compute_inflation_composite(inflation_signals)
 
     if growth_composite is None or inflation_composite is None:
         return None
