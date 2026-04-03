@@ -9,6 +9,13 @@
 {% set _risk = _dims.risk.state if _dims.risk else '' %}
 {% set _policy_dir = _dims.policy.direction if _dims.policy else '' %}
 
+{# Transition watch and breadth data (US-15.3.1) #}
+{% set _transition_watch = _dims.quadrant.get('transition_watch') if _dims.quadrant and _dims.quadrant.get is defined else None %}
+{% set _inflation_breadth = _dims.quadrant.get('inflation_breadth') if _dims.quadrant and _dims.quadrant.get is defined else None %}
+{% set _inflation_breadth_total = _dims.quadrant.get('inflation_breadth_total', 6) if _dims.quadrant and _dims.quadrant.get is defined else 6 %}
+{% set _is_transition = _transition_watch is not none and _transition_watch %}
+{% set _transition_direction = _transition_watch.get('direction', '') if _is_transition and _transition_watch.get is defined else '' %}
+
 {# Display label mappings #}
 {% set _liq_labels = {
     'Strongly Expanding': 'Expanding ↑↑',
@@ -61,7 +68,11 @@
 {% else %}
 {# Standard: Quadrant leads #}
 {% set _strip_class = _quadrant_class %}
+{% if _is_transition %}
+{% set _headline = _quadrant|upper + ' · TRANSITION WATCH' %}
+{% else %}
 {% set _headline = _quadrant|upper %}
+{% endif %}
 {% set _secondary_items = [
     {'label': 'Liquidity', 'value': _liq_display},
     {'label': 'Risk', 'value': _risk},
@@ -70,10 +81,13 @@
 {% set _mobile_items = _secondary_items %}
 {% endif %}
 
-<div class="conditions-strip {{ _strip_class }}" role="complementary" aria-label="Market conditions for this page">
+<div class="conditions-strip {{ _strip_class }}{% if _is_transition %} conditions-strip--transition{% endif %}" role="complementary" aria-label="Market conditions for this page">
     <div class="conditions-strip__headline">
         <span class="conditions-strip__dot" aria-hidden="true"></span>
         <span class="conditions-strip__name" aria-live="polite">{{ _headline }}</span>
+        {% if _inflation_breadth is not none %}
+        <span class="conditions-strip__breadth{% if _inflation_breadth >= 5 %} conditions-strip__breadth--high{% elif _inflation_breadth <= 3 %} conditions-strip__breadth--low{% endif %}" aria-label="Inflation breadth: {{ _inflation_breadth }} of {{ _inflation_breadth_total }}">{{ _inflation_breadth }}/{{ _inflation_breadth_total }}</span>
+        {% endif %}
     </div>
 
     {# Desktop: inline dimensions #}
@@ -95,6 +109,18 @@
         <span class="conditions-strip__chevron" aria-hidden="true">&#9662;</span>
     </button>
     <div class="conditions-strip__expand" id="conditions-strip-expand" hidden>
+        {% if _inflation_breadth is not none %}
+        <div class="conditions-strip__expand-row">
+            <span class="conditions-strip__expand-label">Inflation Breadth</span>
+            <span class="conditions-strip__expand-value conditions-strip__breadth{% if _inflation_breadth >= 5 %} conditions-strip__breadth--high{% elif _inflation_breadth <= 3 %} conditions-strip__breadth--low{% endif %}">{{ _inflation_breadth }}/{{ _inflation_breadth_total }}</span>
+        </div>
+        {% endif %}
+        {% if _is_transition and _transition_direction %}
+        <div class="conditions-strip__expand-row">
+            <span class="conditions-strip__expand-label">Transition Watch</span>
+            <span class="conditions-strip__expand-value">Shifting toward {{ _transition_direction }}</span>
+        </div>
+        {% endif %}
         {% for item in _mobile_items %}
         <div class="conditions-strip__expand-row">
             <span class="conditions-strip__expand-label">{{ item.label }}</span>
