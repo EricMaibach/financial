@@ -56,6 +56,7 @@ class QuadrantResult:
     inflation_breadth: Optional[int] = None        # Count of indicators agreeing on majority direction
     inflation_breadth_total: Optional[int] = None   # Total indicators available
     inflation_components: Optional[dict] = None     # Per-indicator detail: {name: {direction, z_score, raw_value}}
+    transition_watch: Optional[dict] = None         # None if confirmed; {direction: str, month: int} if in transition
 
 
 @dataclass
@@ -899,6 +900,64 @@ def _apply_stability_filter(
     return pd.Series(result, index=quadrant_series.index)
 
 
+def _apply_graduated_stability_filter(
+    quadrant_series: pd.Series,
+    required_consecutive: int = 2,
+) -> tuple:
+    """Apply graduated stability filter with transition watch state.
+
+    Instead of silently suppressing month-1 transitions, this filter reports
+    them as "Transition Watch" — an early warning that signals are shifting.
+
+    Returns:
+        (stable_series, transition_watch_series)
+        - stable_series: pd.Series of confirmed quadrant labels (same as binary filter)
+        - transition_watch_series: pd.Series of dicts or None per time step.
+          None = confirmed; {'direction': str, 'month': int} = watching.
+    """
+    if len(quadrant_series) == 0:
+        return quadrant_series, pd.Series([], dtype=object)
+
+    stable_result = []
+    watch_result = []
+    current_stable = quadrant_series.iloc[0]
+
+    for i, q in enumerate(quadrant_series):
+        if i == 0:
+            # First data point is always confirmed
+            stable_result.append(current_stable)
+            watch_result.append(None)
+            continue
+
+        if q == current_stable:
+            # Same as confirmed — no transition
+            stable_result.append(current_stable)
+            watch_result.append(None)
+        else:
+            # New quadrant detected — count consecutive months backward
+            count = 1
+            for j in range(i - 1, max(i - required_consecutive, -1), -1):
+                if quadrant_series.iloc[j] == q:
+                    count += 1
+                else:
+                    break
+
+            if count >= required_consecutive:
+                # Threshold met — confirm transition
+                current_stable = q
+                stable_result.append(current_stable)
+                watch_result.append(None)
+            else:
+                # Not yet confirmed — transition watch
+                stable_result.append(current_stable)
+                watch_result.append({'direction': q, 'month': count})
+
+    return (
+        pd.Series(stable_result, index=quadrant_series.index),
+        pd.Series(watch_result, index=quadrant_series.index),
+    )
+
+
 def _classify_quadrant(growth: float, inflation: float) -> str:
     """Classify into one of four quadrants based on growth and inflation composites."""
     if growth > 0 and inflation <= 0:
@@ -959,8 +1018,10 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
         index=common_idx,
     )
 
-    # Apply stability filter
-    stable_quadrants = _apply_stability_filter(raw_quadrants, required_consecutive=2)
+    # Apply graduated stability filter (transition watch for early warning)
+    stable_quadrants, watch_series = _apply_graduated_stability_filter(
+        raw_quadrants, required_consecutive=2,
+    )
 
     # Determine as_of cutoff
     if as_of_date is not None:
@@ -973,6 +1034,7 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
         inflation_aligned = inflation_aligned.reindex(common_idx)
         raw_quadrants = raw_quadrants.reindex(common_idx)
         stable_quadrants = stable_quadrants.reindex(common_idx)
+        watch_series = watch_series.reindex(common_idx)
 
     if len(common_idx) == 0:
         return None
@@ -982,6 +1044,7 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
     i_val = float(inflation_aligned.iloc[-1])
     raw_q = raw_quadrants.iloc[-1]
     stable_q = stable_quadrants.iloc[-1]
+    tw = watch_series.iloc[-1]  # None or {'direction': str, 'month': int}
 
     return QuadrantResult(
         quadrant=stable_q,
@@ -993,6 +1056,7 @@ def compute_quadrant(as_of_date: Optional[str] = None) -> Optional[QuadrantResul
         inflation_breadth=breadth,
         inflation_breadth_total=breadth_total,
         inflation_components=components,
+        transition_watch=tw,
     )
 
 
@@ -1102,7 +1166,9 @@ def compute_quadrant_history(start_date: Optional[str] = None) -> Optional[pd.Da
         [_classify_quadrant(g, i) for g, i in zip(growth_aligned, inflation_aligned)],
         index=common_idx,
     )
-    stable_quadrants = _apply_stability_filter(raw_quadrants, required_consecutive=2)
+    stable_quadrants, watch_series = _apply_graduated_stability_filter(
+        raw_quadrants, required_consecutive=2,
+    )
 
     return pd.DataFrame({
         'date': common_idx,
@@ -1110,6 +1176,7 @@ def compute_quadrant_history(start_date: Optional[str] = None) -> Optional[pd.Da
         'inflation': inflation_aligned.values,
         'raw_quadrant': raw_quadrants.values,
         'quadrant': stable_quadrants.values,
+        'transition_watch': watch_series.values,
     })
 
 
@@ -2088,6 +2155,7 @@ def update_market_conditions_cache() -> Optional[dict]:
                     'inflation_breadth': quadrant_result.inflation_breadth,
                     'inflation_breadth_total': quadrant_result.inflation_breadth_total,
                     'inflation_components': quadrant_result.inflation_components,
+                    'transition_watch': quadrant_result.transition_watch,
                 },
                 'risk': {
                     'state': risk_state,
@@ -2206,6 +2274,7 @@ def _append_conditions_history(cache_data: dict) -> None:
         'growth_score': quad_dims.get('growth_composite'),
         'inflation_score': quad_dims.get('inflation_composite'),
         'raw_quadrant': quad_dims.get('state', cache_data.get('quadrant')),
+        'transition_watch': quad_dims.get('transition_watch'),
         'dimensions': dims,
         'asset_expectations': cache_data.get('asset_expectations', []),
         'updated_at': cache_data.get('updated_at'),
