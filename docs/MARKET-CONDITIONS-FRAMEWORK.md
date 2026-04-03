@@ -396,22 +396,24 @@ liquidity_score = 0.40 * fed_z + 0.20 * ecb_z + 0.15 * boj_z + 0.25 * m2_z
 
 #### Rate of Change Methodology
 
-The framework uses **acceleration** (rate of change of YoY change) — the Hedgeye "second derivative" approach. This detects inflection points earlier than level-based classification.
+The growth dimension uses **acceleration** (second derivative) — the Hedgeye approach for detecting inflection points early.
+
+The inflation dimension uses **YoY direction** (first derivative) as the primary classifier. Every major practitioner framework (Bridgewater, Gavekal, Hedgeye) uses direction of YoY rate as the primary inflation signal. Acceleration is retained as a secondary early-warning signal for regime transitions.
 
 ```python
+# Growth: acceleration (second derivative)
 def compute_acceleration(series, period=12):
-    """
-    Compute the acceleration of a YoY rate of change.
-
-    For monthly data: period=12 (12-month YoY)
-    For weekly data: period=52 (52-week YoY)
-
-    Returns: positive = accelerating, negative = decelerating
-    """
     yoy_current = series / series.shift(period) - 1
     yoy_prior = series.shift(1) / series.shift(period + 1) - 1
-    acceleration = yoy_current - yoy_prior
-    return acceleration
+    return yoy_current - yoy_prior
+
+# Inflation (index-level series): YoY direction (first derivative)
+def compute_yoy_direction(series, period=12):
+    return series / series.shift(period) - 1
+
+# Inflation (rate-based series): level difference
+def compute_rate_momentum(series, period=12):
+    return series.diff(period)
 ```
 
 #### Growth Composite
@@ -425,7 +427,6 @@ def compute_acceleration(series, period=12):
 | Building Permits | `PERMIT` | Monthly | Direct | 1.0 |
 
 ```python
-# Compute acceleration for each, normalize to z-scores, apply direction
 growth_signals = {
     'ICSA':   -1 * zscore(compute_acceleration(ICSA, period=52)),   # inverted
     'T10Y2Y': +1 * zscore(T10Y2Y.diff(252)),                       # level change over 12m
@@ -435,31 +436,64 @@ growth_signals = {
 }
 
 growth_composite = mean(growth_signals.values())
-# > 0 → Growth Accelerating
-# < 0 → Growth Decelerating
+# > 0 → Growth Accelerating, < 0 → Growth Decelerating
 ```
 
-#### Inflation Composite
+#### Inflation Composite (Phase 15.2 Redesign)
 
-| Indicator | Series | Frequency | Weight |
-|-----------|--------|-----------|--------|
-| 10Y Breakeven Inflation | `T10YIE` | Daily | 1.0 |
-| 5Y Breakeven Inflation | `T5YIE` | Daily | 1.0 |
-| CPI All Items YoY | `CPIAUCSL` | Monthly | 1.0 |
-| Core PCE YoY | `PCEPILFE` | Monthly | 1.0 |
+Six indicators across three dimensions, each dimension weighted equally (1/3):
+
+**Realized Trend (1/3 weight):**
+
+| Indicator | Series | Frequency | Signal Type | Z-Score Window |
+|-----------|--------|-----------|-------------|----------------|
+| CPI All Items | `CPIAUCSL` | Monthly | Index → YoY direction | 24-month rolling |
+| Core PCE | `PCEPILFE` | Monthly | Index → YoY direction | 24-month rolling |
+| Cleveland Fed Median CPI | `MEDCPIM158SFRBCLE` | Monthly | Rate → level | Expanding (full history) |
+
+**Market Expectations (1/3 weight):**
+
+| Indicator | Series | Frequency | Signal Type | Z-Score Window |
+|-----------|--------|-----------|-------------|----------------|
+| 10Y Breakeven | `T10YIE` | Daily | Rate → level | Expanding (full history) |
+| 5Y5Y Forward | `T5YIFR` | Daily | Rate → level | Expanding (full history) |
+
+**Consumer Expectations (1/3 weight):**
+
+| Indicator | Series | Frequency | Signal Type | Z-Score Window |
+|-----------|--------|-----------|-------------|----------------|
+| Michigan 1-Year | `MICH` | Monthly | Rate → level | Expanding (full history) |
+
+**Why two z-score approaches:**
+- **Index-level series** (CPI, Core PCE): YoY direction z-scored over 24-month rolling window. Measures whether the realized inflation rate is rising or falling relative to recent history. The 24-month window (vs previous 60-month) prevents the 2022 inflation surge from suppressing current moderate signals.
+- **Rate-based series** (Median CPI, breakevens, forwards, Michigan): Level z-scored against expanding (full-history) window. These are already expressed as inflation rates; their level IS the signal. An elevated breakeven signals inflationary pressure regardless of short-term momentum.
 
 ```python
+# Step 1: Compute z-scored signals
 inflation_signals = {
-    'T10YIE':  zscore(T10YIE.diff(252)),                             # level change
-    'T5YIE':   zscore(T5YIE.diff(252)),                              # level change
-    'CPIAUCSL': zscore(compute_acceleration(CPIAUCSL, period=12)),
-    'PCEPILFE': zscore(compute_acceleration(PCEPILFE, period=12)),
+    # Index-level: YoY direction, 24-month rolling z-score
+    'CPIAUCSL':          rolling_zscore(compute_yoy_direction(CPI, 12), window=24),
+    'PCEPILFE':          rolling_zscore(compute_yoy_direction(PCE, 12), window=24),
+    # Rate-based: level, expanding z-score
+    'MEDCPIM158SFRBCLE': expanding_zscore(MEDIAN_CPI),
+    'T10YIE':            expanding_zscore(smooth_20d(T10YIE)),  # daily → 20d rolling mean
+    'T5YIFR':            expanding_zscore(smooth_20d(T5YIFR)),  # daily → 20d rolling mean
+    'MICH':              expanding_zscore(MICH),
 }
 
-inflation_composite = mean(inflation_signals.values())
-# > 0 → Inflation Rising
-# < 0 → Inflation Falling
+# Step 2: Dimensional composites (forward-fill 1 month for publication lag)
+realized_avg  = mean(CPIAUCSL, PCEPILFE, MEDCPIM158SFRBCLE)  # ffill(1)
+market_avg    = mean(T10YIE, T5YIFR)                          # ffill(1)
+consumer_avg  = MICH                                           # ffill(1)
+
+# Step 3: Cross-dimension equal-weight average (forward-fill 2 months)
+inflation_composite = mean(realized_avg, market_avg, consumer_avg)  # ffill(2)
+# > 0 → Inflation Rising, < 0 → Inflation Falling
 ```
+
+**Inflation breadth signal:** Count of indicators agreeing on majority direction (e.g., "5/6 indicators rising"). Fed research (FEDS Notes, Dec 2024) shows broad-based inflation pressure is more persistent. Breadth is surfaced as a confidence indicator alongside the composite.
+
+**Component-level storage:** Each indicator's z-score, direction, and raw value are stored in `market_conditions_history.json` for divergence analysis, debugging, and AI briefing context.
 
 #### Quadrant Classification
 
@@ -476,16 +510,27 @@ else:
 
 The actual composite values (not just the sign) position a dot within the quadrant for visualization, communicating conviction. A growth_composite of +0.1 means "barely accelerating" (near the boundary); +2.0 means "strongly accelerating."
 
+#### Graduated Stability Filter
+
+The quadrant uses a graduated stability filter (replacing the previous binary 2-month persistence gate):
+
+- **Month 1 in a new quadrant:** Confirmed quadrant unchanged; **Transition Watch** state emitted with direction and month count. This provides early warning to users that signals are shifting.
+- **Month 2+ confirmed:** Transition is confirmed; Transition Watch clears.
+
+This prevents false transitions from single-month noise while still surfacing regime shifts within 1 month via the Transition Watch mechanism.
+
 #### Historical Quadrant Frequency
 
-Based on academic research (Alpha Architect 2024, 62 years of US data):
+Based on backtest (2005–2025, 252 monthly evaluations):
 
-| Quadrant | Approx. Frequency | Avg. Duration |
-|----------|-------------------|---------------|
-| Goldilocks | ~30% | 4-8 months |
-| Reflation | ~30% | 4-8 months |
-| Deflation Risk | ~25% | 3-6 months |
-| Stagflation | ~15% | 2-4 months (unstable, resolves quickly) |
+| Quadrant | Frequency | Avg. Duration |
+|----------|-----------|---------------|
+| Stagflation | 36% | 7.2 months avg |
+| Goldilocks | 27% | |
+| Deflation Risk | 19% | |
+| Reflation | 18% | |
+
+Total transitions: 34 (avg duration 7.2 months, min 2, max 23).
 
 **Update frequency:** Monthly (after all monthly indicators release, typically first week of month).
 
