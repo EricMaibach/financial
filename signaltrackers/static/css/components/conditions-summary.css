@@ -207,6 +207,106 @@
     color: #92400E;
 }
 
+/* === Inflation Component Signals (US-15.3.2) === */
+.inflation-components {
+    margin-top: 0.5rem;
+}
+
+.inflation-components__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748B;
+    transition: color 0.15s;
+}
+
+.inflation-components__toggle:hover {
+    color: #334155;
+}
+
+.inflation-components__chevron {
+    font-size: 0.625rem;
+    transition: transform 0.25s ease-out;
+}
+
+.inflation-components--expanded .inflation-components__chevron {
+    transform: rotate(180deg);
+}
+
+.inflation-components__panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease-out;
+}
+
+.inflation-components__panel[hidden] {
+    display: block;
+    max-height: 0;
+    visibility: hidden;
+}
+
+.inflation-components--expanded .inflation-components__panel {
+    visibility: visible;
+}
+
+.inflation-components__group {
+    margin-top: 0.5rem;
+}
+
+.inflation-components__group-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94A3B8;
+    margin-bottom: 0.25rem;
+}
+
+.inflation-components__indicators {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+}
+
+.inflation-components__indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.inflation-components__arrow {
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.inflation-components__indicator--rising .inflation-components__arrow {
+    color: #DC2626;
+}
+
+.inflation-components__indicator--falling .inflation-components__arrow {
+    color: #16A34A;
+}
+
+.inflation-components__indicator--unknown .inflation-components__arrow {
+    color: #94A3B8;
+}
+
+.inflation-components__name {
+    color: #475569;
+}
+
+/* Divergence visual: when groups have mixed directions, the color contrast
+   between red arrows and green arrows within a group or across groups
+   makes the divergence immediately apparent. No extra styling needed. */
+
 /* Quadrant 2×2 Visualization */
 .quadrant-hero__viz {
     width: 100%;

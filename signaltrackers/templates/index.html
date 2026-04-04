@@ -222,6 +222,60 @@
                 </div>
                 {% endif %}
 
+                {# ── Inflation Component Signals (US-15.3.2) ────────────── #}
+                {% set _inflation_components = quad.get('inflation_components') if quad and quad.get is defined else None %}
+                {% if _inflation_components %}
+                {% set _comp_labels = {
+                    'CPIAUCSL': 'CPI All Items',
+                    'PCEPILFE': 'Core PCE',
+                    'MEDCPIM158SFRBCLE': 'Median CPI',
+                    'T10YIE': '10Y Breakeven',
+                    'T5YIFR': '5Y5Y Forward',
+                    'MICH': 'Michigan 1Y'
+                } %}
+                {% set _comp_dimensions = [
+                    {'name': 'Realized Trend', 'ids': ['CPIAUCSL', 'PCEPILFE', 'MEDCPIM158SFRBCLE']},
+                    {'name': 'Market Expectations', 'ids': ['T10YIE', 'T5YIFR']},
+                    {'name': 'Consumer Expectations', 'ids': ['MICH']}
+                ] %}
+                <div class="inflation-components" aria-label="Inflation component signals">
+                    <button class="inflation-components__toggle"
+                            aria-expanded="false"
+                            aria-controls="inflation-components-panel"
+                            id="inflation-components-toggle">
+                        <span class="inflation-components__toggle-label">Component signals</span>
+                        <i class="bi bi-chevron-down inflation-components__chevron" aria-hidden="true"></i>
+                    </button>
+                    <div class="inflation-components__panel" id="inflation-components-panel" hidden>
+                        {% for dim in _comp_dimensions %}
+                        {% set ns_dim = namespace(has_any=false) %}
+                        {% for key in dim.ids %}
+                            {% if _inflation_components.get(key) is not none %}{% set ns_dim.has_any = true %}{% endif %}
+                        {% endfor %}
+                        {% if ns_dim.has_any %}
+                        <div class="inflation-components__group">
+                            <div class="inflation-components__group-label">{{ dim.name }}</div>
+                            <div class="inflation-components__indicators">
+                                {% for key in dim.ids %}
+                                {% set comp = _inflation_components.get(key) %}
+                                {% if comp is not none %}
+                                {% set dir = comp.get('direction', '') if comp.get is defined else '' %}
+                                {% set is_rising = dir == 'rising' %}
+                                <div class="inflation-components__indicator inflation-components__indicator--{{ 'rising' if is_rising else ('falling' if dir == 'falling' else 'unknown') }}"
+                                     aria-label="{{ _comp_labels.get(key, key) }}: {{ dir or 'unknown' }}">
+                                    <span class="inflation-components__arrow" aria-hidden="true">{{ '↑' if is_rising else ('↓' if dir == 'falling' else '–') }}</span>
+                                    <span class="inflation-components__name">{{ _comp_labels.get(key, key) }}</span>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
                 {# Favored / Watch strip — use list.append trick (returns None, always falsy) #}
                 {% set _favored = [] %}
                 {% set _watch = [] %}
@@ -879,6 +933,33 @@ function renderMoversStrip(movers) {
     }
 
     document.addEventListener('DOMContentLoaded', initDimensionCards);
+}());
+
+{# ════════════════════════════════════════════════════════════════
+   Inflation component signals toggle (US-15.3.2)
+   ════════════════════════════════════════════════════════════════ #}
+(function() {
+    'use strict';
+    document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('inflation-components-toggle');
+        var panel = document.getElementById('inflation-components-panel');
+        if (!toggle || !panel) return;
+
+        toggle.addEventListener('click', function() {
+            var expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            if (expanded) {
+                panel.style.maxHeight = '0';
+                setTimeout(function() { panel.setAttribute('hidden', ''); panel.style.maxHeight = ''; }, 250);
+                toggle.closest('.inflation-components').classList.remove('inflation-components--expanded');
+            } else {
+                panel.removeAttribute('hidden');
+                panel.style.maxHeight = panel.scrollHeight + 'px';
+                toggle.closest('.inflation-components').classList.add('inflation-components--expanded');
+                setTimeout(function() { panel.style.maxHeight = ''; }, 250);
+            }
+        });
+    });
 }());
 
 {# ════════════════════════════════════════════════════════════════
