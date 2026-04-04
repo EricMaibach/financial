@@ -252,6 +252,7 @@
 }
 
 .inflation-components--expanded .inflation-components__panel {
+    max-height: none;
     visibility: visible;
 }
 
