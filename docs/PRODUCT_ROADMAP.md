@@ -24,18 +24,15 @@ Investors who use SignalTrackers as their primary macro intelligence tool — re
 ---
 
 ## Active Phase
-**Phase:** Phase 15 — Inflation Composite Redesign
+**Phase:** Phase 16 — Public Deployment
 **State:** IDEATING
 
-**Previous phase:** Phase 14 — MacroClarity Rebrand ✅ COMPLETE (see below)
-
-**Phase 15 context:** The inflation composite is misclassifying the current environment as "Deflation Risk" while consensus points toward stagflation. Root causes: acceleration (second derivative) used as primary classifier instead of YoY direction (first derivative), 60-month z-score window suppresses signals at turning points, and the indicator set double-counts breakevens while lacking consumer expectations. See [INFLATION-COMPOSITE-REDESIGN.md](INFLATION-COMPOSITE-REDESIGN.md) for full analysis.
+**Previous phase:** Phase 15 — Inflation Composite Redesign ✅ COMPLETE (see below)
 
 ### Phase Sequence
 
 | Phase | Title | Focus |
 |-------|-------|-------|
-| **15** | **Inflation Composite Redesign** | Fix misclassification: new FRED data, YoY direction classifier, breadth signal, graduated stability |
 | **16** | **Public Deployment** | DNS → macroclarity.com, production config, SSL, monitoring |
 | **17+** | **Traction & Learning** | SEO, content, observe usage, decide on monetization |
 
@@ -271,6 +268,20 @@ These are open questions. Council researches and proposes — CEO approves/dismi
 
 ---
 
+## Phase 15: Inflation Composite Redesign ✅ COMPLETE
+
+**Milestone goal:** Fix inflation composite misclassification. Dashboard was showing "Deflation Risk" during a stagflationary environment. Root causes: acceleration-based classifier, 60-month z-score window, redundant indicators. See [INFLATION-COMPOSITE-REDESIGN.md](INFLATION-COMPOSITE-REDESIGN.md).
+
+| Feature | Status |
+|---------|--------|
+| #459 — Inflation Data Pipeline Expansion | CLOSED ✅ |
+| #460 — Inflation Composite Engine Redesign | CLOSED ✅ |
+| #461 — Inflation Composite UI Updates | CLOSED ✅ |
+
+**Key changes:** YoY direction (first derivative) replaces acceleration as primary classifier, 24-month z-score window, 6-indicator set (added Median CPI, 5Y5Y Forward, Michigan expectations; swapped out 5Y Breakeven), inflation breadth signal, component-level storage, graduated stability filter ("Transition Watch"), backtest validated.
+
+---
+
 ## What We Are NOT Building
 
 These directions have been evaluated and dismissed. Do not re-propose without new evidence:
@@ -293,7 +304,8 @@ These directions have been evaluated and dismissed. Do not re-propose without ne
 | Phase 11 | Conditions engagement: users who expand dimension details from verdict card |
 | Phase 13 | Invite-only registration working, anonymous AI removed, site stable for public traffic ✅ |
 | Phase 14 | Full rebrand shipped: all user-facing references updated to MacroClarity ✅ |
-| Phase 15 | Inflation composite correctly classifies current environment; regime transitions detected within 1 month; component signals visible |
+| Phase 15 | Inflation composite correctly classifies current environment; regime transitions detected within 1 month; component signals visible ✅ |
+| Phase 16 | Site live at macroclarity.com, stable under public traffic |
 
 ---
 
