@@ -130,6 +130,13 @@
 {% set pol = dims.policy %}
 {% set quadrant_name = conditions.quadrant %}
 
+{# Transition watch and breadth data (US-15.3.1) #}
+{% set _transition_watch = quad.get('transition_watch') if quad and quad.get is defined else None %}
+{% set _inflation_breadth = quad.get('inflation_breadth') if quad and quad.get is defined else None %}
+{% set _inflation_breadth_total = quad.get('inflation_breadth_total', 6) if quad and quad.get is defined else 6 %}
+{% set _is_transition = _transition_watch is not none and _transition_watch %}
+{% set _transition_direction = _transition_watch.get('direction', '') if _is_transition and _transition_watch.get is defined else '' %}
+
 {# Quadrant color mapping #}
 {% set _quad_color_map = {
     'Goldilocks': 'goldilocks',
@@ -188,14 +195,32 @@
     </div>
 
     {# ── Quadrant Hero Card ────────────────────────────────────── #}
-    <div class="quadrant-hero quadrant-hero--{{ _quad_key }}" aria-live="polite">
+    <div class="quadrant-hero quadrant-hero--{{ _quad_key }}{% if _is_transition %} quadrant-hero--transition{% endif %}" aria-live="polite">
         <div class="quadrant-hero__content">
             <div class="quadrant-hero__text">
                 <div class="quadrant-hero__name">
                     <span class="quadrant-hero__dot quadrant-dot--{{ _quad_key }}" aria-hidden="true"></span>
                     {{ quadrant_name | upper }}
+                    {% if _is_transition %}
+                    <span class="quadrant-hero__transition-badge" aria-label="Transition Watch: signals shifting toward {{ _transition_direction }}">TRANSITION WATCH</span>
+                    {% endif %}
                 </div>
+                {% if _is_transition and _transition_direction %}
+                <p class="quadrant-hero__desc quadrant-hero__desc--transition">Transition Watch — signals shifting toward {{ _transition_direction }}. Awaiting confirmation.</p>
+                {% else %}
                 <p class="quadrant-hero__desc">{{ _quad_desc.get(quadrant_name, '') }}</p>
+                {% endif %}
+                {% if _inflation_breadth is not none %}
+                <div class="quadrant-hero__breadth" aria-label="Inflation breadth: {{ _inflation_breadth }} of {{ _inflation_breadth_total }} indicators agree">
+                    <span class="quadrant-hero__breadth-label">Inflation breadth:</span>
+                    <span class="quadrant-hero__breadth-dots">
+                        {% for i in range(_inflation_breadth_total) %}
+                        <span class="quadrant-hero__breadth-dot{% if i < _inflation_breadth %} quadrant-hero__breadth-dot--filled{% endif %}" aria-hidden="true"></span>
+                        {% endfor %}
+                    </span>
+                    <span class="quadrant-hero__breadth-count{% if _inflation_breadth >= 5 %} quadrant-hero__breadth-count--high{% elif _inflation_breadth <= 3 %} quadrant-hero__breadth-count--low{% endif %}">{{ _inflation_breadth }}/{{ _inflation_breadth_total }}</span>
+                </div>
+                {% endif %}
 
                 {# Favored / Watch strip — use list.append trick (returns None, always falsy) #}
                 {% set _favored = [] %}

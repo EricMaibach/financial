@@ -98,6 +98,7 @@
 .quadrant-hero__name {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.5rem;
     font-size: 1.25rem;
     font-weight: 700;
@@ -133,6 +134,77 @@
 .quadrant-hero__signal-label {
     font-weight: 600;
     color: #334155;
+}
+
+/* === Transition Watch state (US-15.3.1) === */
+.quadrant-hero--transition {
+    border-top-style: dashed;
+}
+
+.quadrant-hero--transition .quadrant-hero__dot {
+    opacity: 0.6;
+}
+
+.quadrant-hero__transition-badge {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #FEF3C7;
+    color: #92400E;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.quadrant-hero__desc--transition {
+    font-style: italic;
+    color: #92400E;
+}
+
+/* === Breadth indicator (US-15.3.1) === */
+.quadrant-hero__breadth {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #64748B;
+    margin-top: 0.25rem;
+}
+
+.quadrant-hero__breadth-label {
+    font-weight: 500;
+}
+
+.quadrant-hero__breadth-dots {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.quadrant-hero__breadth-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #E2E8F0;
+    display: inline-block;
+}
+
+.quadrant-hero__breadth-dot--filled {
+    background: #64748B;
+}
+
+.quadrant-hero__breadth-count {
+    font-weight: 600;
+    color: #64748B;
+}
+
+.quadrant-hero__breadth-count--high {
+    color: #065F46;
+}
+
+.quadrant-hero__breadth-count--low {
+    color: #92400E;
 }
 
 /* Quadrant 2×2 Visualization */

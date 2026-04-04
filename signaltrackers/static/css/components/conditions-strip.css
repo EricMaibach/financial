@@ -170,6 +170,37 @@
     line-height: 1.5;
 }
 
+/* === Transition Watch state (US-15.3.1) === */
+.conditions-strip--transition {
+    border-bottom-style: dashed;
+}
+
+.conditions-strip--transition .conditions-strip__dot {
+    opacity: 0.6;
+}
+
+/* === Breadth indicator (US-15.3.1) === */
+.conditions-strip__breadth {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #E5E7EB;
+    color: #6B7280;
+    white-space: nowrap;
+    margin-left: 4px;
+}
+
+.conditions-strip__breadth--high {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.conditions-strip__breadth--low {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
 /* === Desktop (768px+): show dimensions, hide toggle === */
 @media (min-width: 768px) {
     .conditions-strip__dimensions {
